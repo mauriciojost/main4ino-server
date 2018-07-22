@@ -17,7 +17,7 @@ class ServiceSpec extends org.specs2.mutable.Specification {
   }
 
   private[this] val retApiV1Help: Response[IO] = {
-    val getHW = Request[IO](Method.GET, Uri.uri("/api/v1/help"))
+    val getHW = Request[IO](Method.GET, Uri.uri("/help"))
     Service.service.orNotFound(getHW).unsafeRunSync()
   }
 
