@@ -9,7 +9,7 @@ pipeline {
   stages {
     stage('Test') {
       steps {
-        sh 'sbt test'
+        sh 'sbt -Dsbt.global.base=.sbt -Dsbt.boot.directory=.sbt -Dsbt.ivy.home=.ivy2 clean test'
       }
     }
   }
