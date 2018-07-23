@@ -3,7 +3,7 @@
 pipeline {
   agent {
     docker { 
-      image 'mauriciojost/scala:latest' 
+      image 'mauriciojost/scala-sbt-ci:openjdk8-scala2.12.6-sbt1.1.6-0.1.0'
     }
   }
   stages {
