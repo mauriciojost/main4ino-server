@@ -18,15 +18,13 @@ object Service extends Http4sDsl[IO] {
 
   implicit val decoderTarget = jsonOf[IO, Target]
 
-  final val HelpMsg =
-    """
+  val HelpMsg = // TODO: complete me
+    s"""
       | API HELP
+      | --- ----
       |
-      | GET  /api/v1/help
-      |   (as user) retrieve help message
+      | TODO
       |
-      | POST /api/v1/device/<dev>/target/
-      |   (as app) create a property target
       |
     """.stripMargin
 
@@ -34,7 +32,7 @@ object Service extends Http4sDsl[IO] {
     HttpService[IO] {
 
       case GET -> Root / "help" => {
-        Ok(Json.obj("message" -> Json.fromString(HelpMsg)))
+        Ok(HelpMsg)
       }
 
       case req @ POST -> Root / "device" / device / "target" => {
