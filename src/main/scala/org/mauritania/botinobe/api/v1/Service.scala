@@ -8,6 +8,8 @@ import org.http4s.HttpService
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 
+// Use as reference:
+// https://github.com/jaspervz/todo-http4s-doobie/tree/master/src/main/scala
 object Service extends Http4sDsl[IO] {
 
   type Props = Map[String, String]
