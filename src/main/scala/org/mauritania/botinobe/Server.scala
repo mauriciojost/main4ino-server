@@ -15,12 +15,11 @@ object Server extends StreamApp[IO] {
 
 object ServerStream {
 
-  //def serviceApiV1[F[_]: Effect] = new ServiceApiV1[F].service
   def serviceApiV1 = Service.service
 
   def stream(implicit ec: ExecutionContext) =
     BlazeBuilder[IO]
       .bindHttp(8080, "0.0.0.0")
-      .mountService(serviceApiV1, "/api/v1/")
+      .mountService(serviceApiV1, "/v1/")
       .serve
 }
