@@ -9,21 +9,17 @@ class ServiceSpec extends org.specs2.mutable.Specification {
 
   "Help request" >> {
     "return 200" >> {
-      uriReturns200()
+      getApiV1("/help").status must beEqualTo(Status.Ok)
     }
     "return help message" >> {
-      uriReturnsHelp()
+      getApiV1("/help").as[String].unsafeRunSync() must contain("API HELP")
     }
   }
 
-  private[this] val retApiV1Help: Response[IO] = {
-    val getHW = Request[IO](Method.GET, Uri.uri("/help"))
+  private[this] def getApiV1(path: String): Response[IO] = {
+    val getHW = Request[IO](Method.GET, Uri.unsafeFromString(path))
     Service.service.orNotFound(getHW).unsafeRunSync()
   }
 
-  private[this] def uriReturns200(): MatchResult[Status] =
-    retApiV1Help.status must beEqualTo(Status.Ok)
 
-  private[this] def uriReturnsHelp(): MatchResult[String] =
-    retApiV1Help.as[String].unsafeRunSync() must contain("API HELP")
 }
