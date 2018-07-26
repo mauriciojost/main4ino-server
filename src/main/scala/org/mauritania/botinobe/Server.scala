@@ -1,25 +1,32 @@
 package org.mauritania.botinobe
 
-import cats.effect.{Effect, IO}
-import fs2.StreamApp
+import cats.effect.IO
+import config.Config
+import db.Database
+import fs2.{Stream, StreamApp}
+import fs2.StreamApp.ExitCode
+import org.http4s.dsl.Http4sDsl
 import org.http4s.server.blaze.BlazeBuilder
-import org.mauritania.botinobe.api.v1.Service
+import org.mauritania.botinobe.api.v1
+import cats.effect.IO
+import config.Config
+import db.Database
+import fs2.{Stream, StreamApp}
+import fs2.StreamApp.ExitCode
+import org.http4s.dsl.Http4sDsl
+import org.http4s.server.blaze.BlazeBuilder
+import scala.concurrent.ExecutionContext.Implicits.global
 
-import scala.concurrent.ExecutionContext
-
-object Server extends StreamApp[IO] {
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  def stream(args: List[String], requestShutdown: IO[Unit]) = ServerStream.stream
-}
-
-object ServerStream {
-
-  def serviceApiV1 = Service.service
-
-  def stream(implicit ec: ExecutionContext) =
-    BlazeBuilder[IO]
-      .bindHttp(8080, "0.0.0.0")
-      .mountService(serviceApiV1, "/v1/")
-      .serve
+object Server extends StreamApp[IO] with Http4sDsl[IO] {
+  def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
+    for {
+      config <- Stream.eval(Config.load())
+      transactor <- Stream.eval(Database.transactor(config.database))
+      _ <- Stream.eval(Database.initialize(transactor))
+      exitCode <- BlazeBuilder[IO]
+        .bindHttp(config.server.port, config.server.host)
+        .mountService(new v1.Service(new Repository(transactor)).service, "/v1/")
+        .serve
+    } yield exitCode
+  }
 }
