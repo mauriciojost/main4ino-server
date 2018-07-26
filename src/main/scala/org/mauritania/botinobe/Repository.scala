@@ -33,8 +33,8 @@ class Repository(transactor: Transactor[IO]) {
   }
 
   private def insertManyTargetActorProps(t: List[TargetActorProp], targetId: RecordId): ConnectionIO[Int] = {
-    val sql = s"insert into target_props (target_id, actor_name, property_name, property_value) values ($targetId, ?, ?, ?)"
-    Update[TargetActorProp](sql).updateMany(t)
+    val sql = s"insert into target_props (target_id, actor_name, property_name, property_value) values (?, ?, ?, ?)"
+    Update[TargetActorProp](sql).updateMany(t.map(_.copy(targetId = targetId)))
   }
 
 
