@@ -6,12 +6,12 @@ import io.circe.syntax._
 import org.http4s.{HttpService, MediaType}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import org.mauritania.botinobe.models.TargetStatus._
 import org.mauritania.botinobe.Repository
-import io.circe.{Decoder, Encoder}
 import org.mauritania.botinobe.api.v1.Service.IdResponse
 import org.mauritania.botinobe.models._
 import org.mauritania.botinobe.models.Target.Metadata
+import org.http4s.headers.`Content-Type`
+import fs2.Stream
 
 // Guidelines for REST:
 // - https://blog.octo.com/wp-content/uploads/2014/10/RESTful-API-design-OCTO-Quick-Reference-Card-2.2.pdf
@@ -42,6 +42,11 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         } yield (resp)
       }
 
+      case req@GET -> Root / "devices" / device / "targets"  => {
+        Ok(Stream("[") ++ repository.readTargetIds(device).map(_.toString).intersperse(",") ++ Stream("]"),
+          `Content-Type`(MediaType.`application/json`))
+      }
+
       case req@GET -> Root / "devices" / device / "targets" / LongVar(id) => {
         for {
           t <- repository.readTarget(id)
@@ -53,9 +58,6 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 
       TODO
 
-      | >  POST /v1/devices/<dev1>/targets/  {"actor1":{"prop1": "val1"}}
-      | <    200 {"id": 1}
-      |
       | // existent targets for dev1
       | >  GET /v1/devices/<dev1>/targets/
         | <    200 {"targets":[1, 2], "count": 2}
