@@ -5,7 +5,6 @@ import cats.effect.IO
 import doobie.util.transactor.Transactor
 import doobie._
 import doobie.implicits._
-import org.mauritania.botinobe.models.TargetStatus._
 import org.mauritania.botinobe.models.Target.Metadata
 import org.mauritania.botinobe.models.{DeviceName, Prop, RecordId, Target}
 import fs2.Stream

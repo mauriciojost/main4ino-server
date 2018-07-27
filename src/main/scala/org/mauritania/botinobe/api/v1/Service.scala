@@ -7,7 +7,7 @@ import org.http4s.{HttpService, MediaType}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.botinobe.Repository
-import org.mauritania.botinobe.api.v1.Service.IdResponse
+import org.mauritania.botinobe.api.v1.Service.{CountResponse, IdResponse, IdsResponse}
 import org.mauritania.botinobe.models._
 import org.mauritania.botinobe.models.Target.Metadata
 import org.http4s.headers.`Content-Type`
@@ -17,6 +17,8 @@ import fs2.Stream
 // - https://blog.octo.com/wp-content/uploads/2014/10/RESTful-API-design-OCTO-Quick-Reference-Card-2.2.pdf
 
 class Service(repository: Repository) extends Http4sDsl[IO] {
+
+  object CountQueryParamMatcher extends QueryParamDecoderMatcher[Boolean]("count")
 
   val HelpMsg = // TODO: complete me
     s"""
@@ -42,9 +44,15 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         } yield (resp)
       }
 
-      case req@GET -> Root / "devices" / device / "targets"  => {
-        Ok(Stream("[") ++ repository.readTargetIds(device).map(_.toString).intersperse(",") ++ Stream("]"),
-          `Content-Type`(MediaType.`application/json`))
+      case req@GET -> Root / "devices" / device / "targets" :? CountQueryParamMatcher(count) => {
+        val targetIds = repository.readTargetIds(device)
+        if (count) {
+          Ok(targetIds.map(_ => 1).reduce(_+_).map(CountResponse(_).asJson),
+            `Content-Type`(MediaType.`application/json`))
+        } else {
+          Ok(targetIds.map(a => List(a)).reduce((a, b) => a ++ b).map(IdsResponse(_).asJson),
+            `Content-Type`(MediaType.`application/json`))
+        }
       }
 
       case req@GET -> Root / "devices" / device / "targets" / LongVar(id) => {
@@ -84,5 +92,8 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 object Service {
 
   case class IdResponse(id: RecordId)
+  case class IdsResponse(ids: List[RecordId])
+
+  case class CountResponse(count: Int)
 
 }
