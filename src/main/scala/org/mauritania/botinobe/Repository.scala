@@ -5,13 +5,15 @@ import cats.effect.IO
 import doobie.util.transactor.Transactor
 import doobie._
 import doobie.implicits._
-import org.mauritania.botinobe.Models._
+import org.mauritania.botinobe.models.TargetStatus._
+import org.mauritania.botinobe.models.Target.Metadata
+import org.mauritania.botinobe.models.{Prop, RecordId, Target}
 
 // Naming regarding to CRUD
 class Repository(transactor: Transactor[IO]) {
 
   def createTarget(t: Target): IO[RecordId] = {
-    val taps = t.expand.toList
+    val taps = t.expandProps.toList
 
     val transaction = for {
       targetId <- insertOneTarget(t)
@@ -33,23 +35,23 @@ class Repository(transactor: Transactor[IO]) {
   }
 
   private def insertOneTarget(t: Target): ConnectionIO[RecordId] = {
-    sql"INSERT INTO targets (status, device_name) VALUES (${Created}, ${t.target1.device})"
+    sql"INSERT INTO targets (status, device_name) VALUES (${Target.Created}, ${t.metadata.device})"
       .update.withUniqueGeneratedKeys[RecordId]("id")
   }
 
-  private def insertManyTargetActorProps(t: List[Prop1], targetId: RecordId): ConnectionIO[Int] = {
+  private def insertManyTargetActorProps(t: List[Prop], targetId: RecordId): ConnectionIO[Int] = {
     val sql = s"insert into target_props (target_id, actor_name, property_name, property_value) values (?, ?, ?, ?)"
-    Update[Prop](sql).updateMany(t.map(m => Prop(targetId, m)))
+    Update[(RecordId, Prop)](sql).updateMany(t.map(m => (targetId, m)))
   }
 
-  private def readOneTarget1(id: RecordId): ConnectionIO[Target1] = {
+  private def readOneTarget1(id: RecordId): ConnectionIO[Metadata] = {
     sql"SELECT status, device_name from targets where id=$id"
-      .query[Target1].unique
+      .query[Metadata].unique
   }
 
-  private def readProps1OfOneTarget(targetId: RecordId): ConnectionIO[List[Prop1]] = {
+  private def readProps1OfOneTarget(targetId: RecordId): ConnectionIO[List[Prop]] = {
     sql"SELECT actor_name, property_name, property_value from target_props where target_id=$targetId"
-      .query[Prop1].accumulate
+      .query[Prop].accumulate
   }
 
 }
