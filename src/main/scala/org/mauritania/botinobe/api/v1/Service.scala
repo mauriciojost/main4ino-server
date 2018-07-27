@@ -7,7 +7,7 @@ import org.http4s.{HttpService, MediaType}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.botinobe.Repository
-import org.mauritania.botinobe.api.v1.Service.{CountResponse, IdResponse, IdsResponse}
+import org.mauritania.botinobe.api.v1.Service.{CountResponse, IdResponse, TargetsResponse}
 import org.mauritania.botinobe.models._
 import org.mauritania.botinobe.models.Target.Metadata
 import org.http4s.headers.`Content-Type`
@@ -47,10 +47,16 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
       case req@GET -> Root / "devices" / device / "targets" :? CountQueryParamMatcher(count) => {
         val targetIds = repository.readTargetIds(device)
         if (count) {
-          Ok(targetIds.map(_ => 1).reduce(_+_).map(CountResponse(_).asJson),
+          Ok(targetIds.map(_ => 1).reduce(_+_).lastOr(0).map(CountResponse(_).asJson),
             `Content-Type`(MediaType.`application/json`))
         } else {
-          Ok(targetIds.map(a => List(a)).reduce((a, b) => a ++ b).map(IdsResponse(_).asJson),
+          val targets = for {
+            id <- targetIds
+            target <- Stream.eval[IO, Target](repository.readTarget(id))
+          } yield (target)
+
+
+          Ok(targets.map(a => List(a)).reduce((a, b) => a ++ b).lastOr(List.empty[Target]).map(TargetsResponse(_).asJson),
             `Content-Type`(MediaType.`application/json`))
         }
       }
@@ -92,8 +98,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 object Service {
 
   case class IdResponse(id: RecordId)
-  case class IdsResponse(ids: List[RecordId])
-
   case class CountResponse(count: Int)
+  case class TargetsResponse(ts: List[Target])
 
 }
