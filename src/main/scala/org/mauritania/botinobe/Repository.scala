@@ -33,7 +33,8 @@ class Repository(transactor: Transactor[IO]) {
   }
 
   private def insertOneTarget(t: Target): ConnectionIO[RecordId] = {
-    sql"INSERT INTO targets (status, device_name) VALUES (${Created}, ${t.target1.device})".update.withUniqueGeneratedKeys[RecordId]("id")
+    sql"INSERT INTO targets (status, device_name) VALUES (${Created}, ${t.target1.device})"
+      .update.withUniqueGeneratedKeys[RecordId]("id")
   }
 
   private def insertManyTargetActorProps(t: List[Prop1], targetId: RecordId): ConnectionIO[Int] = {
@@ -42,11 +43,13 @@ class Repository(transactor: Transactor[IO]) {
   }
 
   private def readOneTarget1(id: RecordId): ConnectionIO[Target1] = {
-    sql"SELECT status, device_name from targets where id=$id".query[Target1].unique
+    sql"SELECT status, device_name from targets where id=$id"
+      .query[Target1].unique
   }
 
   private def readProps1OfOneTarget(targetId: RecordId): ConnectionIO[List[Prop1]] = {
-    sql"SELECT actor_name, property_name, property_value from target_props where target_id=$targetId".query[Prop1].accumulate
+    sql"SELECT actor_name, property_name, property_value from target_props where target_id=$targetId"
+      .query[Prop1].accumulate
   }
 
 }
