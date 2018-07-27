@@ -44,16 +44,17 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
       case req@POST -> Root / "devices" / device / "targets" => {
         for {
           p <- req.decodeJson[ActorPropsMap]
-          id <- repository.createTarget(Target(Models.Created, device, p))
+          id <- repository.createTarget(Target(Target1(Models.Created, device), p))
           resp <- Created(PostResponse(id).asJson)
         } yield (resp)
       }
 
-        /*
-      case req@GET -> Root / "devices" / device / "targets" / "last" => {
-        Ok(Stream("[") ++ repository.getTarget(device).map(_.asJson).intersperse(",") ++ Stream("]"), `Content-Type`(MediaType.`application/json`))
+      case req@GET -> Root / "devices" / device / "targets" / LongVar(id) => {
+        for {
+          t <- repository.readTarget(id)
+          resp <- Created(t.asJson)
+        } yield (resp)
       }
-      */
 
       /*
   case GET -> Root / "todos" / LongVar(id) =>        to fix the parameter to a given type
