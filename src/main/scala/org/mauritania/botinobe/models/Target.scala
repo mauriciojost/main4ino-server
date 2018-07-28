@@ -6,7 +6,7 @@ import scalaz.Scalaz._
 
 case class Target(
 	metadata: Metadata,
-	props: ActorPropsMap
+	props: ActorPropsMap = Target.EmptyActorsPropMap
 ) extends Expandable {
 
 	import Target._
@@ -26,6 +26,8 @@ object Target {
 	val Created: Status = "created"
 	val Consumed: Status = "consumed"
 	val Merged: Status = "merged"
+
+	val EmptyActorsPropMap: ActorPropsMap = Map.empty[ActorName, Map[PropName, PropValue]]
 
 	case class Metadata (
 		status: Status,

@@ -8,33 +8,111 @@ import cats.effect.IO
 import fs2.Stream
 import io.circe.Json
 import io.circe.literal._
+import io.circe.generic.auto._
+import io.circe.syntax._
+import org.http4s.{HttpService, MediaType, Request, Response}
+import org.http4s.circe._
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.dsl.Http4sDsl._
 import org.http4s.syntax._
 import org.http4s.{Request, Response, Status, Uri}
 import org.mauritania.botinobe.Repository
+import org.mauritania.botinobe.models.Target.Metadata
+import org.mauritania.botinobe.models._
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
 
 class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
-
+  val TargetTemplate = Target(Metadata(Target.Created, "dev1"), Map("actor1" -> Map("prop1" -> "value1")))
 
   "Help request" should {
+
+    val r = stub[Repository]
+    val s = new Service(r)
+
     "return 200" in {
-      getApiV1("/help").status shouldBe(Status.Ok)
+      getApiV1( "/help")(s).status shouldBe(Status.Ok)
     }
+
     "return help message" in {
-      getApiV1("/help").as[String].unsafeRunSync() should include("API HELP")
+      getApiV1( "/help")(s).as[String].unsafeRunSync() should include("API HELP")
+    }
+
+  }
+
+
+  "Create target request" should {
+
+    val r = stub[Repository]
+    val s = new Service(r)
+
+    "returns 201 with empty properties" in {
+      val t = Target(Metadata(Target.Created, "dev1"))
+      testATargetCreationReturns(t, Status.Created)(s, r)
+    }
+
+    "returns 201 with a regular target" in {
+      val t = TargetTemplate
+      testATargetCreationReturns(t, Status.Created)(s, r)
+    }
+
+    "returns 417 with an empty device name" in {
+      val t = Target(Metadata(Target.Created, ""))
+      testATargetCreationReturns(t, Status.ExpectationFailed)(s, r)
+    }
+
+  }
+
+  private [this] def testATargetCreationReturns(
+    t: Target,
+    s: Status
+  )(service: Service, repository: Repository) = {
+    (repository.createTarget _).when(t).returns(IO.pure(1L)) // mock
+    val body = asEntityBody(t.props.asJson.toString)
+    postApiV1(s"/devices/${t.metadata.device}/targets", body)(service).status shouldBe(s)
+  }
+
+
+  "Read target request" should {
+
+    val r = stub[Repository]
+    val s = new Service(r)
+
+    "returns 200 with an existent target" in {
+      (r.readTarget _).when(1L).returns(IO.pure(TargetTemplate)) // mock
+      getApiV1("/devices/dev1/targets/1")(s).status shouldBe(Status.Ok)
+      getApiV1("/devices/dev1/targets/1")(s).as[Json].unsafeRunSync() shouldBe(TargetTemplate.asJson)
+
     }
   }
 
-  private[this] def getApiV1(path: String): Response[IO] = {
-    val repository = stub[Repository]
-    val service = new Service(repository)
-    val request = Request[IO](Method.GET, Uri.unsafeFromString(path))
+  private [this] def testATargetReadReturns(
+    id: RecordId,
+    t: Target,
+    s: Status,
+    body: Json
+  )(service: Service, repository: Repository) = {
+    (repository.readTarget _).when(id).returns(IO.pure(t)) // mock
+    getApiV1("/devices/dev1/targets/1")(service).status shouldBe(Status.Ok)
+    getApiV1("/devices/dev1/targets/1")(service).as[Json].unsafeRunSync() shouldBe(TargetTemplate.asJson)
+  }
+
+  // Basic testing utilities
+
+  private[this] def getApiV1(path: String)(service: Service): Response[IO] = {
+    val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path))
     service.request(request).unsafeRunSync()
+  }
+
+  private[this] def postApiV1(path: String, body: EntityBody[IO])(service: Service): Response[IO] = {
+    val request = Request[IO](method = Method.POST, uri = Uri.unsafeFromString(path), body = body)
+    service.request(request).unsafeRunSync()
+  }
+
+  private [this] def asEntityBody(content: String): EntityBody[IO] = {
+    Stream.fromIterator[IO, Byte](content.toCharArray.map(_.toByte).toIterator)
   }
 
   /*

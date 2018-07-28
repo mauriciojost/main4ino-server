@@ -19,6 +19,8 @@ import fs2.Stream
 
 class Service(repository: Repository) extends Http4sDsl[IO] {
 
+  val MinDeviceNameLength = 4
+
   object CountQueryParamMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("count")
   object MergeQueryParamMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("merge")
   object CleanQueryParamMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("clean")
@@ -40,11 +42,15 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
       }
 
       case req@POST -> Root / "devices" / device / "targets" => {
-        for {
-          p <- req.decodeJson[ActorPropsMap]
-          id <- repository.createTarget(Target(Metadata(Target.Created, device), p))
-          resp <- Created(IdResponse(id).asJson)
-        } yield (resp)
+        if (device.length < MinDeviceNameLength) {
+          ExpectationFailed(s"Device name lenght must be at least $MinDeviceNameLength")
+        } else {
+          for {
+            p <- req.decodeJson[ActorPropsMap]
+            id <- repository.createTarget(Target(Metadata(Target.Created, device), p))
+            resp <- Created(IdResponse(id).asJson)
+          } yield (resp)
+        }
       }
 
       case req@GET -> Root / "devices" / device / "targets" :? CountQueryParamMatcher(count) +& CleanQueryParamMatcher(clean) +& MergeQueryParamMatcher(merge) => {
@@ -72,7 +78,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
       case req@GET -> Root / "devices" / device / "targets" / LongVar(id) => {
         for {
           t <- repository.readTarget(id)
-          resp <- Created(t.asJson)
+          resp <- Ok(t.asJson)
         } yield (resp)
       }
 
