@@ -1,8 +1,8 @@
 CREATE TABLE targets (
   id SERIAL PRIMARY KEY,
-  t TIMESTAMP,
   status TEXT,
-  device_name TEXT
+  device_name TEXT,
+  t LONG
 );
 
 CREATE TABLE target_props (
