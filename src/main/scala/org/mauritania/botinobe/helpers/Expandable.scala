@@ -2,7 +2,6 @@ package org.mauritania.botinobe.helpers
 
 import org.mauritania.botinobe.models.{ActorPropsMap, Prop}
 
-
 trait Expandable {
 	this: {
 		val props: ActorPropsMap

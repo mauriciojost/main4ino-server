@@ -1,20 +1,14 @@
 package org.mauritania.botinobe
 
 import cats.effect.IO
-import config.Config
-import db.Database
-import fs2.{Stream, StreamApp}
 import fs2.StreamApp.ExitCode
+import fs2.{Stream, StreamApp}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.blaze.BlazeBuilder
 import org.mauritania.botinobe.api.v1
-import cats.effect.IO
-import config.Config
-import db.Database
-import fs2.{Stream, StreamApp}
-import fs2.StreamApp.ExitCode
-import org.http4s.dsl.Http4sDsl
-import org.http4s.server.blaze.BlazeBuilder
+import org.mauritania.botinobe.config.Config
+import org.mauritania.botinobe.db.Database
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Server extends StreamApp[IO] with Http4sDsl[IO] {
