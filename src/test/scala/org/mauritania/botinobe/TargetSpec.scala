@@ -6,7 +6,7 @@ import org.scalatest.{Matchers, WordSpec}
 class TargetSpec extends WordSpec with Matchers {
 
   val TargetTemplate = Target(
-    Metadata(Target.Created, "dev1"),
+    Metadata(Target.Created, "dev1", Some(0L)),
     Map(
       "actorx" ->
         Map(
@@ -66,7 +66,7 @@ class TargetSpec extends WordSpec with Matchers {
       val merged = Target.merge("dev1", Target.Created, Seq(t1, t2))
 
       merged.size shouldBe(1)
-      merged(0).metadata shouldBe(Metadata(Target.Merged, "dev1", None))
+      merged(0).metadata shouldBe(Metadata(Target.Merged, "dev1", Some(0L)))
       merged(0).props.keys.toSet shouldBe(Set("actorx"))
       merged(0).props("actorx").toSet shouldBe(
         Set(

@@ -19,9 +19,9 @@ object Target {
 	val EmptyActorsPropMap: ActorPropsMap = Map.empty[ActorName, Map[PropName, PropValue]]
 
 	case class Metadata (
-		status: Status = Created,
+		status: Status,
 		device: DeviceName,
-    timestamp: Option[Timestamp] = None
+		timestamp: Option[Timestamp]
 	)
 
 	def fromListOfProps(metadata: Metadata, ps: Iterable[Prop]): Target = {
@@ -43,7 +43,7 @@ object Target {
 		} yield Prop(aName, pName, lastValue)
 
 		if (actorLastProps.size > 0) {
-			Seq(Target.fromListOfProps(Metadata(Merged, d), actorLastProps))
+			Seq(Target.fromListOfProps(Metadata(Merged, d, Some(0L)), actorLastProps))
 		} else {
 			Seq.empty[Target]
 		}

@@ -25,7 +25,7 @@ import org.scalatest.{Matchers, WordSpec}
 
 class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
-  val TargetTemplate = Target(Metadata(Target.Created, "dev1"), Map("actor1" -> Map("prop1" -> "value1")))
+  val TargetTemplate = Target(Metadata(Target.Created, "dev1", Some(0L)), Map("actor1" -> Map("prop1" -> "value1")))
 
   "Help request" should {
 
@@ -49,7 +49,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val s = new Service(r)
 
     "returns 201 with empty properties" in {
-      val t = Target(Metadata(Target.Created, "dev1"))
+      val t = Target(Metadata(Target.Created, "dev1", Some(0L)))
       testATargetCreationReturns(t)(Status.Created)(s, r)
     }
 
@@ -59,7 +59,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     }
 
     "returns 417 with an empty device name" in {
-      val t = Target(Metadata(Target.Created, ""))
+      val t = Target(Metadata(Target.Created, "", Some(0L)))
       testATargetCreationReturns(t)(Status.ExpectationFailed)(s, r)
     }
 
