@@ -6,3 +6,13 @@ case class Prop(
 	value: PropValue
 )
 
+object Prop {
+
+	def asActorPropsMap(ps: Iterable[Prop]): ActorPropsMap = {
+		val props = ps.groupBy(_.actor)
+			.mapValues(_.groupBy(_.prop)
+				.mapValues(_.head.value))
+		props
+	}
+}
+
