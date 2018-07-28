@@ -19,9 +19,7 @@ class Repository(transactor: Transactor[IO]) {
       targetId <- sqlInsertTarget(t)
       nroTargetActorProps <- sqlInsertTargetActorProps(taps, targetId)
     } yield (targetId)
-
     transaction.transact(transactor)
-
   }
 
   def readTarget(i: RecordId): IO[Target] = {
