@@ -13,6 +13,7 @@ import org.mauritania.botinobe.models._
 import org.mauritania.botinobe.models.Target.Metadata
 import org.http4s.headers.`Content-Type`
 import fs2.Stream
+import org.mauritania.botinobe.helpers.Time
 
 // Guidelines for REST:
 // - https://blog.octo.com/wp-content/uploads/2014/10/RESTful-API-design-OCTO-Quick-Reference-Card-2.2.pdf
@@ -47,7 +48,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         } else {
           for {
             p <- req.decodeJson[ActorPropsMap]
-            id <- repository.createTarget(Target(Metadata(Target.Created, device), p))
+            id <- repository.createTarget(Target(Metadata(Target.Created, device, Some(Time.now)), p))
             resp <- Created(IdResponse(id).asJson)
           } yield (resp)
         }

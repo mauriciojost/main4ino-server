@@ -43,6 +43,40 @@ class TargetSpec extends WordSpec with Matchers {
 
   "Targets" should {
 
+    "merge two similar targets" in {
+      val t1 = TargetTemplate
+      val t2 = TargetTemplate
+
+      val merged = Target.merge(t1.metadata.device, t2.metadata.status, Seq(t1, t2))
+
+      merged.size shouldBe(1)
+      merged(0).metadata shouldBe(TargetTemplate.metadata.copy(status = Target.Merged))
+      merged(0).props("actorx").toSet shouldBe(TargetTemplate.props("actorx").toSet)
+      merged(0).props("actory").toSet shouldBe(TargetTemplate.props("actory").toSet)
+    }
+
+    "merge targets (take last xprop1 and add new xprop2)" in {
+      val t1 = Target(Metadata(Target.Created, "dev1", Some(1L)), // first target request
+        Map("actorx" -> Map("xprop1" -> "xvalue1"))
+      )
+      val t2 = Target(Metadata(Target.Created, "dev1", Some(2L)), // second target request
+        Map("actorx" -> Map("xprop1" -> "xvalueU", "xprop2" -> "xvalue2"))
+      )
+
+      val merged = Target.merge("dev1", Target.Created, Seq(t1, t2))
+
+      merged.size shouldBe(1)
+      merged(0).metadata shouldBe(Metadata(Target.Merged, "dev1", None))
+      merged(0).props.keys.toSet shouldBe(Set("actorx"))
+      merged(0).props("actorx").toSet shouldBe(
+        Set(
+          "xprop1" -> "xvalueU",
+          "xprop2" -> "xvalue2"
+        )
+      )
+    }
+
+
     "internal method " in {
       Target.tuple4Seq2MapOfMaps[ActorName, PropName, Timestamp, PropValue](
         Seq(
@@ -64,17 +98,6 @@ class TargetSpec extends WordSpec with Matchers {
           )
         )
       )
-    }
-
-    "merge" in {
-      val t1 = TargetTemplate
-      val t2 = TargetTemplate
-
-      val merged = Target.merge(t1.metadata.device, t2.metadata.status, Seq(t1, t2))
-
-      merged.size shouldBe(1)
-      merged(0).metadata shouldBe(TargetTemplate.metadata)
-      merged(0).props("actorx").toSet shouldBe(TargetTemplate.props("actorx").toSet)
     }
 
   }

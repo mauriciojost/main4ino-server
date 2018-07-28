@@ -1,5 +1,6 @@
 CREATE TABLE targets (
   id SERIAL PRIMARY KEY,
+  t TIMESTAMP,
   status TEXT,
   device_name TEXT
 );

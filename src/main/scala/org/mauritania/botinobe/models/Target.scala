@@ -19,9 +19,9 @@ object Target {
 	val EmptyActorsPropMap: ActorPropsMap = Map.empty[ActorName, Map[PropName, PropValue]]
 
 	case class Metadata (
-		// TODO add timestamp to be able to sort it
-		status: Status,
-		device: DeviceName
+		status: Status = Created,
+		device: DeviceName,
+    timestamp: Option[Timestamp] = None
 	)
 
 	def fromListOfProps(metadata: Metadata, ps: Iterable[Prop]): Target = {
@@ -33,17 +33,17 @@ object Target {
 		val tuples = for {
 			t <- ts
 			Prop(aName, pName, pValue) <- t.expandProps
-		} yield((aName, pName, 1L, pValue))
+		} yield((aName, pName, t.metadata.timestamp, pValue))
 
 		val actorPropTimestampValues = tuple4Seq2MapOfMaps(tuples)
 		val actorLastProps = for {
 			(aName, props) <- actorPropTimestampValues
 			(pName, timestampValue) <- props
-			lastValue <- Seq(timestampValue.maxBy(_._1)._2)
+			lastValue <- Seq(timestampValue.maxBy(_._1.getOrElse(0L))._2)
 		} yield Prop(aName, pName, lastValue)
 
 		if (actorLastProps.size > 0) {
-			Seq(Target.fromListOfProps(Metadata(s, d), actorLastProps))
+			Seq(Target.fromListOfProps(Metadata(Merged, d), actorLastProps))
 		} else {
 			Seq.empty[Target]
 		}
