@@ -70,7 +70,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
   )(
     s: Status
   )(service: Service, repository: Repository) = {
-    (repository.createTarget _).when(t).returns(IO.pure(1L)) // mock
+    (repository.createTarget _).when(*).returns(IO.pure(1L)) // mock
     val body = asEntityBody(t.props.asJson.toString)
     postApiV1(s"/devices/${t.metadata.device}/targets", body)(service).status shouldBe(s)
   }
