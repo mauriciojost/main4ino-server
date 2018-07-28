@@ -44,7 +44,7 @@ class Repository(transactor: Transactor[IO]) {
   }
 
   private def sqlInsertTarget(t: Target): ConnectionIO[RecordId] = {
-    sql"INSERT INTO targets (status, device_name, t) VALUES (${Target.Created}, ${t.metadata.device}, ${t.metadata.timestamp} )"
+    sql"INSERT INTO targets (status, device_name, creation) VALUES (${Target.Created}, ${t.metadata.device}, ${t.metadata.timestamp} )"
       .update.withUniqueGeneratedKeys[RecordId]("id")
   }
 
@@ -54,7 +54,7 @@ class Repository(transactor: Transactor[IO]) {
   }
 
   private def sqlReadOneTarget(id: RecordId): ConnectionIO[Metadata] = {
-    sql"SELECT status, device_name, t from targets where id=$id"
+    sql"SELECT status, device_name, creation from targets where id=$id"
       .query[Metadata].unique
   }
 
