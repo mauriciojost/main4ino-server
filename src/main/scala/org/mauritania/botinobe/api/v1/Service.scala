@@ -4,7 +4,7 @@ import cats.Monoid
 import cats.effect.IO
 import io.circe.generic.auto._
 import io.circe.syntax._
-import org.http4s.{HttpService, MediaType}
+import org.http4s.{HttpService, MediaType, Request, Response}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.botinobe.Repository
@@ -92,6 +92,8 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 
     }
   }
+
+  def request(r: Request[IO]): IO[Response[IO]] = service.orNotFound(r)
 
 }
 

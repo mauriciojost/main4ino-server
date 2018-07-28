@@ -4,24 +4,38 @@ import cats.effect.IO
 import org.http4s._
 import org.http4s.implicits._
 import org.specs2.matcher.MatchResult
+import cats.effect.IO
+import fs2.Stream
+import io.circe.Json
+import io.circe.literal._
+import org.http4s.circe._
+import org.http4s.dsl.io._
+import org.http4s.dsl.Http4sDsl._
+import org.http4s.syntax._
+import org.http4s.{Request, Response, Status, Uri}
+import org.mauritania.botinobe.Repository
+import org.scalamock.scalatest.MockFactory
+import org.scalatest.{Matchers, WordSpec}
 
-class ServiceSpec extends org.specs2.mutable.Specification {
+class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
-  /*
-  "Help request" >> {
-    "return 200" >> {
-      getApiV1("/help").status must beEqualTo(Status.Ok)
+
+
+  "Help request" should {
+    "return 200" in {
+      getApiV1("/help").status shouldBe(Status.Ok)
     }
-    "return help message" >> {
-      getApiV1("/help").as[String].unsafeRunSync() must contain("API HELP")
+    "return help message" in {
+      getApiV1("/help").as[String].unsafeRunSync() should include("API HELP")
     }
   }
 
   private[this] def getApiV1(path: String): Response[IO] = {
-    val getHW = Request[IO](Method.GET, Uri.unsafeFromString(path))
-    new Service().orNotFound(getHW).unsafeRunSync()
+    val repository = stub[Repository]
+    val service = new Service(repository)
+    val request = Request[IO](Method.GET, Uri.unsafeFromString(path))
+    service.request(request).unsafeRunSync()
   }
-  */
 
   /*
   |
