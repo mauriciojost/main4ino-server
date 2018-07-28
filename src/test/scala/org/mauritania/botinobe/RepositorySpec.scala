@@ -36,8 +36,8 @@ class RepositorySpec extends DbSuite {
 
     repo.createTarget(TargetFixture1).unsafeRunSync() shouldBe(1L)
 
-    repo.readAndUpdateTargetAsConsumed(1L).unsafeRunSync() shouldBe(t1Created)
-    repo.readAndUpdateTargetAsConsumed(1L).unsafeRunSync() shouldBe(t1Consumed)
+    repo.readTargetConsume(1L).unsafeRunSync() shouldBe(t1Created)
+    repo.readTargetConsume(1L).unsafeRunSync() shouldBe(t1Consumed)
   }
 
 }

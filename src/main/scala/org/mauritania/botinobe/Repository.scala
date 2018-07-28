@@ -30,7 +30,7 @@ class Repository(transactor: Transactor[IO]) {
     transaction.transact(transactor)
   }
 
-  def readAndUpdateTargetAsConsumed(i: RecordId): IO[Target] = {
+  def readTargetConsume(i: RecordId): IO[Target] = {
     val transaction = for {
       t <- sqlReadOneTarget(i)
       c <- sqlUpdateTargetAsConsumed(i)
@@ -41,6 +41,10 @@ class Repository(transactor: Transactor[IO]) {
 
   def readTargetIds(device: DeviceName): Stream[IO, RecordId] = {
     sqlReadTargetIds(device).transact(transactor)
+  }
+
+  def readTargetIdsWhereStatus(device: DeviceName, status: Target.Status): Stream[IO, RecordId] = {
+    sqlReadTargetIdsWhereStatus(device, status).transact(transactor)
   }
 
   private def sqlInsertTarget(t: Target): ConnectionIO[RecordId] = {
@@ -60,6 +64,11 @@ class Repository(transactor: Transactor[IO]) {
 
   private def sqlReadTargetIds(device: DeviceName): Stream[ConnectionIO, RecordId] = {
     sql"SELECT id from targets where device_name=$device"
+      .query[RecordId].stream
+  }
+
+  private def sqlReadTargetIdsWhereStatus(device: DeviceName, status: Target.Status): Stream[ConnectionIO, RecordId] = {
+    sql"SELECT id from targets where device_name=$device and status=$status"
       .query[RecordId].stream
   }
 

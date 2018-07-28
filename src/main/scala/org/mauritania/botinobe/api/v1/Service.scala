@@ -13,6 +13,7 @@ import org.mauritania.botinobe.models._
 import org.mauritania.botinobe.models.Target.Metadata
 import org.http4s.headers.`Content-Type`
 import fs2.Stream
+import io.circe.Json
 import org.mauritania.botinobe.helpers.Time
 
 // Guidelines for REST:
@@ -55,25 +56,20 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
       }
 
       case req@GET -> Root / "devices" / device / "targets" :? CountQueryParamMatcher(count) +& CleanQueryParamMatcher(clean) +& MergeQueryParamMatcher(merge) => {
-        val targetIds = repository.readTargetIds(device)
+        val targetIds = repository.readTargetIdsWhereStatus(device, Target.Created)
         if (count.exists(_ == true)) {
-          Ok(targetIds.map(_ => 1).reduce(_+_).lastOr(0).map(CountResponse(_).asJson),
-            `Content-Type`(MediaType.`application/json`))
-        } /*else if (clean) {
-          val targets = for {
-            id <- targetIds
-            target <- Stream.eval[IO, Target](repository.readTarget(id))
-          } yield (target)
-          Ok(targets.map(a => Map(1L, a.props)).reduce(reducer(merge)).lastOr(List.empty[Target]).map(TargetsResponse(_).asJson),
-            `Content-Type`(MediaType.`application/json`))
-        } */else /*(!clean)*/ {
-          val targets = for {
-            id <- targetIds
-            target <- Stream.eval[IO, Target](repository.readAndUpdateTargetAsConsumed(id))
-          } yield (target)
-          val v = targets.fold(List.empty[Target])(_:+_).map(Target.merge(device, Target.Created, _))
-          Ok(v.map(TargetsResponse(_).asJson), `Content-Type`(MediaType.`application/json`))
-        }
+          Ok(readCountTargets(targetIds), `Content-Type`(MediaType.`application/json`))
+        } else {
+					Ok(
+						readTargets(
+							device,
+							targetIds,
+							clean.exists(identity),
+              merge.exists(identity)
+						),
+						`Content-Type`(MediaType.`application/json`)
+					)
+				}
       }
 
       case req@GET -> Root / "devices" / device / "targets" / LongVar(id) => {
@@ -83,24 +79,30 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         } yield (resp)
       }
 
-      /*
-
-      TODO
-
-      | // get all targets merged dev1 and clean (transactional)
-      | >  GET /v1/devices/<dev1>/targets?merge=true?clean=true
-      | <    200 {"actor1":{"prop1": "val1", "prop2": "val2"}}
-      |
-      |
-      | >  GET /v1/devices/<dev2>/actors/actor3/targets?merge=true&clean=true
-      | <    200 {"prop5": "val5"}
-
-    */
-
     }
   }
 
-  def request(r: Request[IO]): IO[Response[IO]] = service.orNotFound(r)
+	private def readTargets(
+		device: String,
+		targetIds: Stream[IO, RecordId],
+		clean: Boolean,
+		merge: Boolean
+	) = {
+		val targets = for {
+			id <- targetIds
+			target <- Stream.eval[IO, Target](if (clean) repository.readTargetConsume(id) else repository.readTarget(id))
+		} yield (target)
+		val v = targets.fold(List.empty[Target])(_ :+ _).map(
+			if (merge) Target.merge(device, Target.Created, _) else identity
+		)
+		v.map(TargetsResponse(_).asJson)
+	}
+
+	private def readCountTargets(targetIds: Stream[IO, RecordId]) = {
+		targetIds.map(_ => 1).reduce(_ + _).lastOr(0).map(CountResponse(_).asJson)
+	}
+
+	def request(r: Request[IO]): IO[Response[IO]] = service.orNotFound(r)
 
 }
 
