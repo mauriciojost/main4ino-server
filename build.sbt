@@ -22,6 +22,7 @@ lazy val root = (project in file("."))
       "io.circe" %% "circe-literal" % CirceVersion,
       "org.http4s" %% "http4s-dsl" % Http4sVersion,
       "org.specs2" %% "specs2-core" % Specs2Version % "test",
+      "org.scalaz" %% "scalaz-core" % "7.2.25",
       "ch.qos.logback" % "logback-classic" % LogbackVersion,
       "org.http4s" %% "http4s-blaze-client" % Http4sVersion % "test",
       "org.tpolecat" %% "doobie-core" % DoobieVersion,
