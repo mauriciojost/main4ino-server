@@ -50,23 +50,24 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
     "returns 201 with empty properties" in {
       val t = Target(Metadata(Target.Created, "dev1"))
-      testATargetCreationReturns(t, Status.Created)(s, r)
+      testATargetCreationReturns(t)(Status.Created)(s, r)
     }
 
     "returns 201 with a regular target" in {
       val t = TargetTemplate
-      testATargetCreationReturns(t, Status.Created)(s, r)
+      testATargetCreationReturns(t)(Status.Created)(s, r)
     }
 
     "returns 417 with an empty device name" in {
       val t = Target(Metadata(Target.Created, ""))
-      testATargetCreationReturns(t, Status.ExpectationFailed)(s, r)
+      testATargetCreationReturns(t)(Status.ExpectationFailed)(s, r)
     }
 
   }
 
   private [this] def testATargetCreationReturns(
-    t: Target,
+    t: Target
+  )(
     s: Status
   )(service: Service, repository: Repository) = {
     (repository.createTarget _).when(t).returns(IO.pure(1L)) // mock
@@ -81,16 +82,14 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val s = new Service(r)
 
     "returns 200 with an existent target" in {
-      (r.readTarget _).when(1L).returns(IO.pure(TargetTemplate)) // mock
-      getApiV1("/devices/dev1/targets/1")(s).status shouldBe(Status.Ok)
-      getApiV1("/devices/dev1/targets/1")(s).as[Json].unsafeRunSync() shouldBe(TargetTemplate.asJson)
-
+      testATargetReadReturns(1L, TargetTemplate)(Status.Ok, TargetTemplate.asJson)(s, r)
     }
   }
 
   private [this] def testATargetReadReturns(
     id: RecordId,
-    t: Target,
+    t: Target
+  )(
     s: Status,
     body: Json
   )(service: Service, repository: Repository) = {
