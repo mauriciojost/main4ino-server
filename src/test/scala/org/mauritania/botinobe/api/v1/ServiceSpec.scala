@@ -7,7 +7,6 @@ import org.specs2.matcher.MatchResult
 import cats.effect.IO
 import fs2.Stream
 import io.circe.Json
-import io.circe.literal._
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.{HttpService, MediaType, Request, Response}
