@@ -9,11 +9,14 @@ object Database {
     HikariTransactor.newHikariTransactor[IO](config.driver, config.url, config.user, config.password)
   }
 
-  def initialize(transactor: HikariTransactor[IO]): IO[Unit] = {
+  def initialize(transactor: HikariTransactor[IO], clean: Boolean = false): IO[Unit] = {
     transactor.configure { datasource =>
       IO {
         val flyWay = new Flyway()
         flyWay.setDataSource(datasource)
+        if (clean) {
+          flyWay.clean()
+        }
         flyWay.migrate()
       }
     }
