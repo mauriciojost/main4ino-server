@@ -1,6 +1,8 @@
 
 import fs2.Stream
 import cats.effect.IO
+import org.mauritania.botinobe.models.Target
+/*
 val eff = Stream.eval(
   IO {
     println("BEING RUN!!")
@@ -17,3 +19,6 @@ val eff2 = Stream.eval[IO, Int](
 
 //val k = eff(1)
 eff.compile.toList.unsafeRunSync()
+*/
+
+

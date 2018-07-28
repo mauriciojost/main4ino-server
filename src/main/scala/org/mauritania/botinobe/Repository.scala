@@ -32,6 +32,15 @@ class Repository(transactor: Transactor[IO]) {
     transaction.transact(transactor)
   }
 
+  def readAndUpdateTargetAsConsumed(i: RecordId): IO[Target] = {
+    val transaction = for {
+      t <- sqlReadOneTarget(i)
+      c <- sqlUpdateTargetAsConsumed(i)
+      p <- sqlReadPropsOfTarget(i)
+    } yield (Target.fromListOfProps(t, p))
+    transaction.transact(transactor)
+  }
+
   def readTargetIds(device: DeviceName): Stream[IO, RecordId] = {
     sqlReadTargetIds(device).transact(transactor)
   }
@@ -59,6 +68,10 @@ class Repository(transactor: Transactor[IO]) {
   private def sqlReadPropsOfTarget(targetId: RecordId): ConnectionIO[List[Prop]] = {
     sql"SELECT actor_name, property_name, property_value from target_props where target_id=$targetId"
       .query[Prop].accumulate
+  }
+
+  private def sqlUpdateTargetAsConsumed(targetId: RecordId): ConnectionIO[Int] = {
+    sql"update targets set status = ${Target.Consumed} where id=$targetId".update.run
   }
 
 }

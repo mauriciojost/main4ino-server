@@ -1,6 +1,6 @@
-package org.mauritania.botinobe
+package org.mauritania.botinobe.helpers
 
-import org.mauritania.botinobe.models.{Prop, ActorPropsMap}
+import org.mauritania.botinobe.models.{ActorPropsMap, Prop}
 
 
 trait Expandable {

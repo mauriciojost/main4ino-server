@@ -1,5 +1,6 @@
 package org.mauritania.botinobe.api.v1
 
+import cats.Monoid
 import cats.effect.IO
 import io.circe.generic.auto._
 import io.circe.syntax._
@@ -18,7 +19,9 @@ import fs2.Stream
 
 class Service(repository: Repository) extends Http4sDsl[IO] {
 
-  object CountQueryParamMatcher extends QueryParamDecoderMatcher[Boolean]("count")
+  object CountQueryParamMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("count")
+  object MergeQueryParamMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("merge")
+  object CleanQueryParamMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("clean")
 
   val HelpMsg = // TODO: complete me
     s"""
@@ -44,20 +47,25 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         } yield (resp)
       }
 
-      case req@GET -> Root / "devices" / device / "targets" :? CountQueryParamMatcher(count) => {
+      case req@GET -> Root / "devices" / device / "targets" :? CountQueryParamMatcher(count) +& CleanQueryParamMatcher(clean) +& MergeQueryParamMatcher(merge) => {
         val targetIds = repository.readTargetIds(device)
-        if (count) {
+        if (count.exists(_ == true)) {
           Ok(targetIds.map(_ => 1).reduce(_+_).lastOr(0).map(CountResponse(_).asJson),
             `Content-Type`(MediaType.`application/json`))
-        } else {
+        } /*else if (clean) {
           val targets = for {
             id <- targetIds
             target <- Stream.eval[IO, Target](repository.readTarget(id))
           } yield (target)
-
-
-          Ok(targets.map(a => List(a)).reduce((a, b) => a ++ b).lastOr(List.empty[Target]).map(TargetsResponse(_).asJson),
+          Ok(targets.map(a => Map(1L, a.props)).reduce(reducer(merge)).lastOr(List.empty[Target]).map(TargetsResponse(_).asJson),
             `Content-Type`(MediaType.`application/json`))
+        } */else /*(!clean)*/ {
+          val targets = for {
+            id <- targetIds
+            target <- Stream.eval[IO, Target](repository.readAndUpdateTargetAsConsumed(id))
+          } yield (target)
+          val v = targets.fold(List.empty[Target])(_:+_).map(Target.merge(device, Target.Created, _))
+          Ok(v.map(TargetsResponse(_).asJson), `Content-Type`(MediaType.`application/json`))
         }
       }
 
@@ -72,17 +80,9 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 
       TODO
 
-      | // existent targets for dev1
-      | >  GET /v1/devices/<dev1>/targets/
-        | <    200 {"targets":[1, 2], "count": 2}
-      |
       | // get all targets merged dev1 and clean (transactional)
       | >  GET /v1/devices/<dev1>/targets?merge=true?clean=true
       | <    200 {"actor1":{"prop1": "val1", "prop2": "val2"}}
-      |
-      | // we can retrieve a specific target
-      | >  GET /v1/devices/<dev2>/targets/<3>
-        | <    200 {"actor3":{"prop3": "val3", "prop4": "val4"}}
       |
       |
       | >  GET /v1/devices/<dev2>/actors/actor3/targets?merge=true&clean=true
@@ -99,6 +99,6 @@ object Service {
 
   case class IdResponse(id: RecordId)
   case class CountResponse(count: Int)
-  case class TargetsResponse(ts: List[Target])
+  case class TargetsResponse(ts: Seq[Target])
 
 }
