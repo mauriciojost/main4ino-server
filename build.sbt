@@ -28,8 +28,6 @@ lazy val root = (project in file("."))
       "org.tpolecat" %% "doobie-core" % DoobieVersion,
       "org.tpolecat" %% "doobie-h2" % DoobieVersion,
       "org.tpolecat" %% "doobie-hikari" % DoobieVersion,
-      //"org.tpolecat" %% "doobie-specs2" % DoobieVersion,
-      //"org.tpolecat" %% "doobie-scalatest" % DoobieVersion,
       "com.h2database" % "h2" % H2Version,
       "org.flywaydb" % "flyway-core" % FlywayVersion,
       "io.circe" %% "circe-optics" % CirceVersion % "test",
