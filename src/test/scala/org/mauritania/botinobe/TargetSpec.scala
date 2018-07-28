@@ -1,32 +1,16 @@
 package org.mauritania.botinobe.models
 
+import org.mauritania.botinobe.Fixtures.TargetFixture1
 import org.mauritania.botinobe.models.Target.Metadata
 import org.scalatest.{Matchers, WordSpec}
 
 class TargetSpec extends WordSpec with Matchers {
 
-  val TargetTemplate = Target(
-    Metadata(Target.Created, "dev1", Some(0L)),
-    Map(
-      "actorx" ->
-        Map(
-          "xprop1" -> "xvalue1",
-          "xprop2" -> "xvalue2",
-          "xprop3" -> "xvalue3"
-        ),
-      "actory" ->
-        Map(
-          "yprop1" -> "yvalue1",
-          "yprop2" -> "yvalue2"
-        )
-      )
-  )
-
   "A target" should {
 
     "expands its properties" in {
 
-      TargetTemplate.expandProps.toSet shouldBe(
+      TargetFixture1.expandProps.toSet shouldBe(
         Set(
           Prop("actorx", "xprop1", "xvalue1"),
           Prop("actorx", "xprop2", "xvalue2"),
@@ -44,15 +28,15 @@ class TargetSpec extends WordSpec with Matchers {
   "Targets" should {
 
     "merge two similar targets" in {
-      val t1 = TargetTemplate
-      val t2 = TargetTemplate
+      val t1 = TargetFixture1
+      val t2 = TargetFixture1
 
       val merged = Target.merge(t1.metadata.device, t2.metadata.status, Seq(t1, t2))
 
       merged.size shouldBe(1)
-      merged(0).metadata shouldBe(TargetTemplate.metadata.copy(status = Target.Merged))
-      merged(0).props("actorx").toSet shouldBe(TargetTemplate.props("actorx").toSet)
-      merged(0).props("actory").toSet shouldBe(TargetTemplate.props("actory").toSet)
+      merged(0).metadata shouldBe(TargetFixture1.metadata.copy(status = Target.Merged))
+      merged(0).props("actorx").toSet shouldBe(TargetFixture1.props("actorx").toSet)
+      merged(0).props("actory").toSet shouldBe(TargetFixture1.props("actory").toSet)
     }
 
     "merge targets (take last xprop1 and add new xprop2)" in {

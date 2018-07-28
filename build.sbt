@@ -1,7 +1,7 @@
 val Http4sVersion = "0.18.14"
 val Specs2Version = "4.2.0"
 val LogbackVersion = "1.2.3"
-val DoobieVersion = "0.5.2"
+val DoobieVersion = "0.6.0-M2"
 val H2Version = "1.4.192"
 val FlywayVersion = "4.2.0"
 val CirceVersion = "0.6.1"
@@ -28,6 +28,8 @@ lazy val root = (project in file("."))
       "org.tpolecat" %% "doobie-core" % DoobieVersion,
       "org.tpolecat" %% "doobie-h2" % DoobieVersion,
       "org.tpolecat" %% "doobie-hikari" % DoobieVersion,
+      //"org.tpolecat" %% "doobie-specs2" % DoobieVersion,
+      //"org.tpolecat" %% "doobie-scalatest" % DoobieVersion,
       "com.h2database" % "h2" % H2Version,
       "org.flywaydb" % "flyway-core" % FlywayVersion,
       "io.circe" %% "circe-optics" % CirceVersion % "test",
