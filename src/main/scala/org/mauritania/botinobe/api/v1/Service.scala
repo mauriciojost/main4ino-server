@@ -95,9 +95,9 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         val clean = cleanOp.exists(identity)
         val merge = mergeOp.exists(identity)
 
-        val propIds = repository.readTargetPropIdsWhereStatus(device, if (created) Some(Status.Created) else None)
+        val propIds = repository.readTargetPropIdsWhereDeviceStatus(device, if (created) Some(Status.Created) else None)
         if (count) {
-          Ok(readCountTargets(propIds), `Content-Type`(MediaType.`application/json`))
+          Ok(readCountIds(propIds), `Content-Type`(MediaType.`application/json`))
         } else {
 					Ok(readTargets(device, propIds, clean, merge), `Content-Type`(MediaType.`application/json`))
 				}
@@ -106,16 +106,32 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
       case req@GET -> Root / "devices" / device / "targets" / LongVar(id) => {
         for {
           t <- repository.readTarget(id)
-          resp <- Ok(t.asJson)
+          resp <- Ok(DeviceU.fromBom(t).asJson)
         } yield (resp)
       }
 
       case req@GET -> Root / "devices" / device / "targets" / "last" => {
         for {
           r <- repository.readLastTarget(device)
-          resp <- Ok(r.asJson)
+          resp <- Ok(DeviceU.fromBom(r).asJson)
         } yield (resp)
       }
+
+      case req@GET -> Root / "devices" / device / "actors" / actor / "targets" :? CreatedMatcher(createdOp) +& CounMatcher(countOp) +& CleanMatcher(cleanOp) +& MergeMatcher(mergeOp) => {
+
+        val created = createdOp.exists(identity)
+        val count = countOp.exists(identity)
+        val clean = cleanOp.exists(identity)
+        val merge = mergeOp.exists(identity)
+
+        val propIds = repository.readTargetPropIdsWhereDeviceActorStatus(device, actor, if (created) Some(Status.Created) else None)
+        if (count) {
+          Ok(readCountIds(propIds), `Content-Type`(MediaType.`application/json`))
+        } else {
+					Ok(readTargets(device, propIds, clean, merge), `Content-Type`(MediaType.`application/json`))
+				}
+      }
+
 
 
       // Reports
@@ -123,14 +139,14 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
       case req@GET -> Root / "devices" / device / "reports" / LongVar(id) => {
         for {
           r <- repository.readReport(id)
-          resp <- Ok(r.asJson)
+          resp <- Ok(DeviceU.fromBom(r).asJson)
         } yield (resp)
       }
 
       case req@GET -> Root / "devices" / device / "reports" / "last" => {
         for {
           r <- repository.readLastReport(device)
-          resp <- Ok(r.asJson)
+          resp <- Ok(DeviceU.fromBom(r).asJson)
         } yield (resp)
       }
 
@@ -139,8 +155,21 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
           ExpectationFailed(s"Device name lenght must be at least $MinDeviceNameLength")
         } else {
           for {
-            p <- req.decodeJson[ActorMap]
-            id <- repository.createReport(Device(Metadata(None, Some(Time.now), device), p))
+            p <- req.decodeJson[ActorMapU]
+            id <- repository.createReport(DeviceU(MetadataU(None, Some(Time.now), device), p).toBom)
+            resp <- Created(IdResponse(id).asJson)
+          } yield (resp)
+        }
+      }
+
+      case req@POST -> Root / "devices" / device / "actors" / actor / "targets" => {
+        ???
+        if (device.length < MinDeviceNameLength) {
+          ExpectationFailed(s"Device name lenght must be at least $MinDeviceNameLength")
+        } else {
+          for {
+            p <- req.decodeJson[ActorMapU]
+            id <- repository.createTarget(DeviceU(MetadataU(None, Some(Time.now), device), p).toBom)
             resp <- Created(IdResponse(id).asJson)
           } yield (resp)
         }
@@ -165,7 +194,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 		v.map(i => DevicesResponse(i.map(DeviceU.fromBom)).asJson)
 	}
 
-	private def readCountTargets(ids: Stream[IO, RecordId]) = {
+	private def readCountIds(ids: Stream[IO, RecordId]) = {
 		ids.map(_ => 1).reduce(_ + _).lastOr(0).map(CountResponse(_).asJson)
 	}
 

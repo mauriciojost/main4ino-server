@@ -52,10 +52,17 @@ class Repository(transactor: Transactor[IO]) {
     sqlIdFromDeviceName_target_requests(device).transact(transactor)
   }
 
-  def readTargetPropIdsWhereStatus(device: DeviceName, status: Option[Status]): Stream[IO, RecordId] = {
+  def readTargetPropIdsWhereDeviceStatus(device: DeviceName, status: Option[Status]): Stream[IO, RecordId] = {
     status match {
       case Some(s) => sqlIdFromDeviceNameStatus_targets(device, s).transact (transactor)
       case None => sqlIdFromDeviceName_targets(device).transact (transactor)
+    }
+  }
+
+  def readTargetPropIdsWhereDeviceActorStatus(device: DeviceName, actor: ActorName, status: Option[Status]): Stream[IO, RecordId] = {
+    status match {
+      case Some(s) => sqlIdFromDeviceNameActorNameStatus_targets(device, actor, s).transact (transactor)
+      case None => sqlIdFromDeviceNameActorName_targets(device, actor).transact (transactor)
     }
   }
 
@@ -175,9 +182,20 @@ class Repository(transactor: Transactor[IO]) {
       .query[RecordId].stream
   }
 
+  private def sqlIdFromDeviceNameActorNameStatus_targets(device: DeviceName, actor: ActorName, status: Status): Stream[ConnectionIO, RecordId] = {
+    sql"SELECT id FROM targets WHERE property_status=$status and device_name=$device AND actorn_name=$actor"
+      .query[RecordId].stream
+  }
+
+  private def sqlIdFromDeviceNameActorName_targets(device: DeviceName, actor: ActorName): Stream[ConnectionIO, RecordId] = {
+    sql"SELECT DISTINCT target_id FROM targets WHERE device_name=$device AND actor_name =$actor"
+      .query[RecordId].stream
+  }
+
   private def sqlIdFromDeviceName_targets(device: DeviceName): Stream[ConnectionIO, RecordId] = {
     sql"SELECT DISTINCT target_id FROM targets WHERE device_name=$device"
       .query[RecordId].stream
   }
+
 
 }
