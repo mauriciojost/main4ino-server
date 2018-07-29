@@ -26,7 +26,7 @@ class Repository(transactor: Transactor[IO]) {
     val transaction = for {
       t <- sqlReadOneTarget(i)
       p <- sqlReadPropsOfTarget(i)
-    } yield (Target.fromListOfProps(t, p))
+    } yield (Target.fromProps(t, p))
     transaction.transact(transactor)
   }
 
@@ -35,7 +35,7 @@ class Repository(transactor: Transactor[IO]) {
       t <- sqlReadOneTarget(i)
       c <- sqlUpdateTargetAsConsumed(i)
       p <- sqlReadPropsOfTarget(i)
-    } yield (Target.fromListOfProps(t, p))
+    } yield (Target.fromProps(t, p))
     transaction.transact(transactor)
   }
 

@@ -18,7 +18,7 @@ object Target {
 		timestamp: Option[Timestamp]
 	)
 
-	def fromListOfProps(metadata: Metadata, ps: Iterable[Prop]): Target = {
+	def fromProps(metadata: Metadata, ps: Iterable[Prop]): Target = {
 		Target(metadata, Prop.asActorPropsMap(ps))
 	}
 
@@ -33,11 +33,11 @@ object Target {
 		val actorLastProps = for {
 			(aName, props) <- actorPropTimestampValues
 			(pName, timestampValue) <- props
-			lastValue <- Seq(timestampValue.maxBy(_._1.getOrElse(0L))._2)
+			lastValue <- Seq(timestampValue.maxBy(_._1)._2)
 		} yield Prop(aName, pName, lastValue)
 
 		if (actorLastProps.size > 0) {
-			Seq(Target.fromListOfProps(Metadata(Status.Merged, d, None), actorLastProps))
+			Seq(Target.fromProps(Metadata(Status.Merged, d, None), actorLastProps))
 		} else {
 			Seq.empty[Target]
 		}
