@@ -31,6 +31,30 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
        | API HELP
        | --- ----
        |
+       | // About help
+       |
+       | GET /help
+       |
+       |
+       | // About targets (set by the user, read by device)
+       |
+       | POST /devices/<device_name>/targets
+       |
+       | GET  /devices/<device_name>/targets/<id>
+       |
+       | GET  /devices/<device_name>/targets/last
+       |
+       | GET  /devices/<device_name>/targets  params: count[boolean], clean[boolean], merge[boolean]
+       |
+       |
+       | // About reports (set by the device, read by the user)
+       |
+       | POST /devices/<device_name>/reports
+       |
+       | GET  /devices/<device_name>/reports/<id>
+       |
+       | GET  /devices/<device_name>/reports/last
+       |
        | ...
        |
     """.stripMargin
@@ -138,7 +162,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 		targetIds.map(_ => 1).reduce(_ + _).lastOr(0).map(CountResponse(_).asJson)
 	}
 
-	def request(r: Request[IO]): IO[Response[IO]] = service.orNotFound(r)
+	private[v1] def request(r: Request[IO]): IO[Response[IO]] = service.orNotFound(r)
 
 }
 
