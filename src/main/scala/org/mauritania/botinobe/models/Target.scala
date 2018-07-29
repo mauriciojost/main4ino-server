@@ -43,7 +43,7 @@ object Target {
 		} yield Prop(aName, pName, lastValue)
 
 		if (actorLastProps.size > 0) {
-			Seq(Target.fromListOfProps(Metadata(Merged, d, Some(0L)), actorLastProps))
+			Seq(Target.fromListOfProps(Metadata(Merged, d, None), actorLastProps))
 		} else {
 			Seq.empty[Target]
 		}
