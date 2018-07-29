@@ -46,6 +46,8 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
        |
        | GET  /devices/<device_name>/targets  params: count[boolean], clean[boolean], merge[boolean]
        |
+       | GET  /devices/<device_name>/actors/<actor_name>/targets/
+       |
        |
        | // About reports (set by the device, read by the user)
        |
@@ -55,6 +57,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
        |
        | GET  /devices/<device_name>/reports/last
        |
+       | POST /devices/<device_name>/actors/<actor_name>/reports
        | ...
        |
     """.stripMargin
