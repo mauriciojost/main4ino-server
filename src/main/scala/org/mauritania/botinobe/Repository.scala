@@ -13,8 +13,6 @@ import fs2.Stream
 class Repository(transactor: Transactor[IO]) {
 
 
-  // Targets
-
   def createTarget(t: Device): IO[RecordId] = {
     val transaction = for {
       targetId <- sqlDeviceIn_target_requests(t)
@@ -88,6 +86,19 @@ class Repository(transactor: Transactor[IO]) {
     transaction.transact(transactor)
   }
 
+  def readReportIds(device: DeviceName): Stream[IO, RecordId] = {
+    sqlIdFromDeviceName_report_requests(device).transact(transactor)
+  }
+
+  def readReportConsume(i: RecordId): IO[Device] = {
+    val transaction = for {
+      t <- sqlMetadataFromId_report_requests(i)
+      c <- sqlChangeStatus_reports(i)
+      p <- sqlActorTupsFromId_reports(i)
+    } yield (Device.fromActorTups(t, p))
+    transaction.transact(transactor)
+  }
+
 
 
   private def sqlActorTupsIn_targets(t: Iterable[ActorTup], targetId: RecordId): ConnectionIO[Int] = {
@@ -117,7 +128,7 @@ class Repository(transactor: Transactor[IO]) {
   }
 
   private def sqlMetadataFromId_report_requests(id: RecordId): ConnectionIO[Metadata] = {
-    sql"SELECT id, creation, device_nam FROM reports_requests WHERE id=$id"
+    sql"SELECT id, creation, device_name FROM report_requests WHERE id=$id"
       .query[Metadata].unique
   }
 
@@ -153,6 +164,10 @@ class Repository(transactor: Transactor[IO]) {
 
   private def sqlChangeStatus_targets(targetId: RecordId): ConnectionIO[Int] = {
     sql"UPDATE targets SET property_status = ${Status.Consumed} WHERE target_id=$targetId".update.run
+  }
+
+  private def sqlChangeStatus_reports(targetId: RecordId): ConnectionIO[Int] = {
+    sql"UPDATE reports SET property_status = ${Status.Consumed} WHERE target_id=$targetId".update.run
   }
 
   private def sqlIdFromDeviceNameStatus_targets(device: DeviceName, status: Status): Stream[ConnectionIO, RecordId] = {
