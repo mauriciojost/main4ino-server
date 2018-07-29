@@ -65,34 +65,49 @@ class Repository(transactor: Transactor[IO]) {
 
   def createReport(t: Device): IO[RecordId] = {
     val transaction = for {
-      targetId <- sqlDeviceIn_reports(t)
-      nroTargetActorProps <- sqlActorTupsIn_report_props(t.asActorTups, targetId)
+      targetId <- sqlDeviceIn_report_requests(t)
+      nroTargetActorProps <- sqlActorTupsIn_reports(t.asActorTups, targetId)
     } yield (targetId)
     transaction.transact(transactor)
   }
 
   def readReport(i: RecordId): IO[Device] = {
     val transaction = for {
-      t <- sqlMetadataFromId_reports(i)
-      p <- sqlActorTupsFromId_report_props(i)
+      t <- sqlMetadataFromId_report_requests(i)
+      p <- sqlActorTupsFromId_reports(i)
     } yield (Device.fromActorTups(t, p))
     transaction.transact(transactor)
   }
 
   def readLastReport(device: DeviceName): IO[Device] = {
     val transaction = for {
-      i <- sqlIdFromDeviceLast_reports(device)
-      t <- sqlMetadataFromId_reports(i)
-      p <- sqlActorTupsFromId_report_props(i)
+      i <- sqlIdFromDeviceLast_report_requests(device)
+      t <- sqlMetadataFromId_report_requests(i)
+      p <- sqlActorTupsFromId_reports(i)
     } yield (Device.fromActorTups(t, p))
     transaction.transact(transactor)
   }
 
 
-  // target_requests table
+
+  private def sqlActorTupsIn_targets(t: Iterable[ActorTup], targetId: RecordId): ConnectionIO[Int] = {
+    val sql = s"INSERT INTO targets (target_id, device_name, actor_name, property_name, property_value, property_status) VALUES (?, ?, ?, ?, ?, ?)"
+    Update[ActorTup](sql).updateMany(t.toList.map(_.withId(Some(targetId))))
+  }
+
+  private def sqlActorTupsIn_reports(t: Iterable[ActorTup], targetId: RecordId): ConnectionIO[Int] = {
+    val sql = s"INSERT into reports (target_id, device_name, actor_name, property_name, property_value, property_status) VALUES (?, ?, ?, ?, ?, ?)"
+    Update[ActorTup](sql).updateMany(t.toList.map(_.withId(Some(targetId))))
+  }
+
 
   private def sqlDeviceIn_target_requests(t: Device): ConnectionIO[RecordId] = {
     sql"INSERT INTO target_requests (creation, device_name) VALUES (${t.metadata.timestamp}, ${t.metadata.device})"
+      .update.withUniqueGeneratedKeys[RecordId]("id")
+  }
+
+  private def sqlDeviceIn_report_requests(t: Device): ConnectionIO[RecordId] = {
+    sql"INSERT INTO report_requests (creation, device_name) VALUES (${t.metadata.timestamp}, ${t.metadata.device})"
       .update.withUniqueGeneratedKeys[RecordId]("id")
   }
 
@@ -101,9 +116,43 @@ class Repository(transactor: Transactor[IO]) {
       .query[Metadata].unique
   }
 
+  private def sqlMetadataFromId_report_requests(id: RecordId): ConnectionIO[Metadata] = {
+    sql"SELECT id, creation, device_nam FROM reports_requests WHERE id=$id"
+      .query[Metadata].unique
+  }
+
   private def sqlIdFromDeviceName_target_requests(device: DeviceName): Stream[ConnectionIO, RecordId] = {
     sql"SELECT id FROM target_requests WHERE device_name=$device"
       .query[RecordId].stream
+  }
+
+  private def sqlIdFromDeviceName_report_requests(device: DeviceName): Stream[ConnectionIO, RecordId] = {
+    sql"SELECT id FROM report_requests WHERE device_name=$device"
+      .query[RecordId].stream
+  }
+
+  private def sqlIdFromDeviceLast_target_requests(device: DeviceName): ConnectionIO[RecordId] = {
+    sql"SELECT MAX(id) FROM target_requests WHERE device_name=$device"
+      .query[RecordId].unique
+  }
+
+  private def sqlIdFromDeviceLast_report_requests(device: DeviceName): ConnectionIO[RecordId] = {
+    sql"SELECT MAX(id) FROM report_requests WHERE device_name=$device"
+      .query[RecordId].unique
+  }
+
+  private def sqlActorTupsFromId_targets(targetId: RecordId): ConnectionIO[List[ActorTup]] = {
+    sql"SELECT target_id, device_name, actor_name, property_name, property_value, property_status FROM targets WHERE target_id=$targetId"
+      .query[ActorTup].accumulate
+  }
+
+  private def sqlActorTupsFromId_reports(targetId: RecordId): ConnectionIO[List[ActorTup]] = {
+    sql"SELECT target_id, device_name, actor_name, property_name, property_value, property_status FROM reports WHERE target_id=$targetId"
+      .query[ActorTup].accumulate
+  }
+
+  private def sqlChangeStatus_targets(targetId: RecordId): ConnectionIO[Int] = {
+    sql"UPDATE targets SET property_status = ${Status.Consumed} WHERE target_id=$targetId".update.run
   }
 
   private def sqlIdFromDeviceNameStatus_targets(device: DeviceName, status: Status): Stream[ConnectionIO, RecordId] = {
@@ -115,65 +164,5 @@ class Repository(transactor: Transactor[IO]) {
     sql"SELECT DISTINCT target_id FROM targets WHERE device_name=$device"
       .query[RecordId].stream
   }
-
-
-  private def sqlIdFromDeviceLast_target_requests(device: DeviceName): ConnectionIO[RecordId] = {
-    sql"SELECT MAX(id) FROM target_requests WHERE device_name=$device"
-      .query[RecordId].unique
-  }
-
-
-  // targets table
-
-  private def sqlActorTupsIn_targets(t: Iterable[ActorTup], targetId: RecordId): ConnectionIO[Int] = {
-    val sql = s"INSERT INTO targets (target_id, device_name, actor_name, property_name, property_value, property_status) VALUES (?, ?, ?, ?, ?, ?)"
-    Update[ActorTup](sql).updateMany(t.toList.map(_.withId(Some(targetId))))
-  }
-
-  private def sqlActorTupsFromId_targets(targetId: RecordId): ConnectionIO[List[ActorTup]] = {
-    sql"SELECT target_id, device_name, actor_name, property_name, property_value, property_status FROM targets WHERE target_id=$targetId"
-      .query[ActorTup].accumulate
-  }
-
-  private def sqlChangeStatus_targets(targetId: RecordId): ConnectionIO[Int] = {
-    sql"UPDATE targets SET property_status = ${Status.Consumed} WHERE target_id=$targetId".update.run
-  }
-
-
-  // reports table
-
-  private def sqlDeviceIn_reports(t: Device): ConnectionIO[RecordId] = {
-    sql"INSERT INTO reports (property_status, device_name, creation) VALUES (${Status.Created}, ${t.metadata.device}, ${t.metadata.timestamp} )"
-      .update.withUniqueGeneratedKeys[RecordId]("id")
-  }
-
-  private def sqlMetadataFromId_reports(id: RecordId): ConnectionIO[Metadata] = {
-    sql"SELECT id, property_status, device_name, creation FROM reports WHERE id=$id"
-      .query[Metadata].unique
-  }
-
-  private def sqlIdFromDeviceLast_reports(device: DeviceName): ConnectionIO[RecordId] = {
-    sql"SELECT MAX(id) FROM reports WHERE device_name=$device"
-      .query[RecordId].unique
-  }
-
-  private def sqlIdFromDeviceName_reports(device: DeviceName): Stream[ConnectionIO, RecordId] = {
-    sql"SELECT id FROM reports WHERE device_name=$device"
-      .query[RecordId].stream
-  }
-
-
-  // report_props table
-
-  private def sqlActorTupsIn_report_props(t: Iterable[ActorTup], targetId: RecordId): ConnectionIO[Int] = {
-    val sql = s"INSERT into report_props (target_id, actor_name, property_name, property_value, property_status) VALUES (?, ?, ?, ?, ?)"
-    Update[(RecordId, ActorTup)](sql).updateMany(t.toList.map(m => (targetId, m)))
-  }
-
-  private def sqlActorTupsFromId_report_props(targetId: RecordId): ConnectionIO[List[ActorTup]] = {
-    sql"SELECT actor_name, property_name, property_value, property_status FROM report_props WHERE target_id=$targetId"
-      .query[ActorTup].accumulate
-  }
-
 
 }
