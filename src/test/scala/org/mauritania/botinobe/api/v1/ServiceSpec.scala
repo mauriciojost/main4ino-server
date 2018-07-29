@@ -15,16 +15,16 @@ import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.dsl.Http4sDsl._
 import org.http4s.syntax._
-import org.http4s.{Request, Response, Status, Uri}
+import org.http4s.{Request, Response, Uri, Status => HttpStatus}
 import org.mauritania.botinobe.Repository
 import org.mauritania.botinobe.models.Target.Metadata
-import org.mauritania.botinobe.models._
+import org.mauritania.botinobe.models.{RecordId, Target, Status => MStatus}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
 
 class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
-  val TargetTemplate = Target(Metadata(Target.Created, "dev1", Some(0L)), Map("actor1" -> Map("prop1" -> "value1")))
+  val TargetTemplate = Target(Metadata(MStatus.Created, "dev1", Some(0L)), Map("actor1" -> Map("prop1" -> "value1")))
 
   "Help request" should {
 
@@ -32,7 +32,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val s = new Service(r)
 
     "return 200" in {
-      getApiV1( "/help")(s).status shouldBe(Status.Ok)
+      getApiV1( "/help")(s).status shouldBe(HttpStatus.Ok)
     }
 
     "return help message" in {
@@ -48,18 +48,18 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val s = new Service(r)
 
     "returns 201 with empty properties" in {
-      val t = Target(Metadata(Target.Created, "dev1", Some(0L)))
-      testATargetCreationReturns(t)(Status.Created)(s, r)
+      val t = Target(Metadata(MStatus.Created, "dev1", Some(0L)))
+      testATargetCreationReturns(t)(HttpStatus.Created)(s, r)
     }
 
     "returns 201 with a regular target" in {
       val t = TargetTemplate
-      testATargetCreationReturns(t)(Status.Created)(s, r)
+      testATargetCreationReturns(t)(HttpStatus.Created)(s, r)
     }
 
     "returns 417 with an empty device name" in {
-      val t = Target(Metadata(Target.Created, "", Some(0L)))
-      testATargetCreationReturns(t)(Status.ExpectationFailed)(s, r)
+      val t = Target(Metadata(MStatus.Created, "", Some(0L)))
+      testATargetCreationReturns(t)(HttpStatus.ExpectationFailed)(s, r)
     }
 
   }
@@ -67,7 +67,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
   private [this] def testATargetCreationReturns(
     t: Target
   )(
-    s: Status
+    s: HttpStatus
   )(service: Service, repository: Repository) = {
     (repository.createTarget _).when(*).returns(IO.pure(1L)) // mock
     val body = asEntityBody(t.props.asJson.toString)
@@ -81,7 +81,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val s = new Service(r)
 
     "returns 200 with an existent target" in {
-      testATargetReadReturns(1L, TargetTemplate)(Status.Ok, TargetTemplate.asJson)(s, r)
+      testATargetReadReturns(1L, TargetTemplate)(HttpStatus.Ok, TargetTemplate.asJson)(s, r)
     }
   }
 
@@ -89,11 +89,11 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     id: RecordId,
     t: Target
   )(
-    s: Status,
+    s: HttpStatus,
     body: Json
   )(service: Service, repository: Repository) = {
     (repository.readTarget _).when(id).returns(IO.pure(t)) // mock
-    getApiV1("/devices/dev1/targets/1")(service).status shouldBe(Status.Ok)
+    getApiV1("/devices/dev1/targets/1")(service).status shouldBe(HttpStatus.Ok)
     getApiV1("/devices/dev1/targets/1")(service).as[Json].unsafeRunSync() shouldBe(TargetTemplate.asJson)
   }
 

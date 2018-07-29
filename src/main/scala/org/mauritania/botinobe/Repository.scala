@@ -6,7 +6,7 @@ import doobie.util.transactor.Transactor
 import doobie._
 import doobie.implicits._
 import org.mauritania.botinobe.models.Target.Metadata
-import org.mauritania.botinobe.models.{DeviceName, Prop, RecordId, Target}
+import org.mauritania.botinobe.models._
 import fs2.Stream
 
 // Naming regarding to CRUD
@@ -43,14 +43,14 @@ class Repository(transactor: Transactor[IO]) {
     sqlReadTargetIds(device).transact(transactor)
   }
 
-  def readTargetIdsWhereStatus(device: DeviceName, status: Target.Status): Stream[IO, RecordId] = {
+  def readTargetIdsWhereStatus(device: DeviceName, status: Status): Stream[IO, RecordId] = {
     sqlReadTargetIdsWhereStatus(device, status).transact(transactor)
   }
 
 
   // targets table
   private def sqlInsertTarget(t: Target): ConnectionIO[RecordId] = {
-    sql"INSERT INTO targets (status, device_name, creation) VALUES (${Target.Created}, ${t.metadata.device}, ${t.metadata.timestamp} )"
+    sql"INSERT INTO targets (status, device_name, creation) VALUES (${Status.Created}, ${t.metadata.device}, ${t.metadata.timestamp} )"
       .update.withUniqueGeneratedKeys[RecordId]("id")
   }
 
@@ -64,13 +64,13 @@ class Repository(transactor: Transactor[IO]) {
       .query[RecordId].stream
   }
 
-  private def sqlReadTargetIdsWhereStatus(device: DeviceName, status: Target.Status): Stream[ConnectionIO, RecordId] = {
+  private def sqlReadTargetIdsWhereStatus(device: DeviceName, status: Status): Stream[ConnectionIO, RecordId] = {
     sql"SELECT id from targets where device_name=$device and status=$status"
       .query[RecordId].stream
   }
 
   private def sqlUpdateTargetAsConsumed(targetId: RecordId): ConnectionIO[Int] = {
-    sql"update targets set status = ${Target.Consumed} where id=$targetId".update.run
+    sql"update targets set status = ${Status.Consumed} where id=$targetId".update.run
   }
 
 

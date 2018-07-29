@@ -10,12 +10,6 @@ case class Target(
 
 object Target {
 
-	// TODO: create a dedicated ADT for this
-	type Status = String
-	val Created: Status = "C"
-	val Consumed: Status = "R"
-	val Merged: Status = "M"
-
 	val EmptyActorsPropMap: ActorPropsMap = Map.empty[ActorName, Map[PropName, PropValue]]
 
 	case class Metadata (
@@ -43,7 +37,7 @@ object Target {
 		} yield Prop(aName, pName, lastValue)
 
 		if (actorLastProps.size > 0) {
-			Seq(Target.fromListOfProps(Metadata(Merged, d, None), actorLastProps))
+			Seq(Target.fromListOfProps(Metadata(Status.Merged, d, None), actorLastProps))
 		} else {
 			Seq.empty[Target]
 		}

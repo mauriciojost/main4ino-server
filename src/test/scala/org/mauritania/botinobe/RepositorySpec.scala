@@ -31,8 +31,8 @@ class RepositorySpec extends DbSuite {
   it should "read target ids and update them as consumed" in {
     val repo = new Repository(transactor)
 
-    val t1Created = TargetFixture1.copy(metadata = TargetFixture1.metadata.copy(status = Target.Created))
-    val t1Consumed = TargetFixture1.copy(metadata = TargetFixture1.metadata.copy(status = Target.Consumed))
+    val t1Created = TargetFixture1.copy(metadata = TargetFixture1.metadata.copy(status = Status.Created))
+    val t1Consumed = TargetFixture1.copy(metadata = TargetFixture1.metadata.copy(status = Status.Consumed))
 
     repo.createTarget(TargetFixture1).unsafeRunSync() shouldBe(1L)
 

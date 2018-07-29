@@ -34,23 +34,23 @@ class TargetSpec extends WordSpec with Matchers {
       val merged = Target.merge(t1.metadata.device, t2.metadata.status, Seq(t1, t2))
 
       merged.size shouldBe(1)
-      merged(0).metadata shouldBe(TargetFixture1.metadata.copy(status = Target.Merged))
+      merged(0).metadata shouldBe(TargetFixture1.metadata.copy(status = Status.Merged, timestamp = None))
       merged(0).props("actorx").toSet shouldBe(TargetFixture1.props("actorx").toSet)
       merged(0).props("actory").toSet shouldBe(TargetFixture1.props("actory").toSet)
     }
 
     "merge targets (take last xprop1 and add new xprop2)" in {
-      val t1 = Target(Metadata(Target.Created, "dev1", Some(1L)), // first target request
+      val t1 = Target(Metadata(Status.Created, "dev1", Some(1L)), // first target request
         Map("actorx" -> Map("xprop1" -> "xvalue1"))
       )
-      val t2 = Target(Metadata(Target.Created, "dev1", Some(2L)), // second target request
+      val t2 = Target(Metadata(Status.Created, "dev1", Some(2L)), // second target request
         Map("actorx" -> Map("xprop1" -> "xvalueU", "xprop2" -> "xvalue2"))
       )
 
-      val merged = Target.merge("dev1", Target.Created, Seq(t1, t2))
+      val merged = Target.merge("dev1", Status.Created, Seq(t1, t2))
 
       merged.size shouldBe(1)
-      merged(0).metadata shouldBe(Metadata(Target.Merged, "dev1", Some(0L)))
+      merged(0).metadata shouldBe(Metadata(Status.Merged, "dev1", None))
       merged(0).props.keys.toSet shouldBe(Set("actorx"))
       merged(0).props("actorx").toSet shouldBe(
         Set(

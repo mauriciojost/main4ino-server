@@ -2,6 +2,8 @@ package org.mauritania.botinobe
 
 package object models {
 
+	type Status = String
+
 	type RecordId = Long
 
 	type DeviceName = String
