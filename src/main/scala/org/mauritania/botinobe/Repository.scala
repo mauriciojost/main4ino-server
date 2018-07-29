@@ -13,7 +13,7 @@ import fs2.Stream
 class Repository(transactor: Transactor[IO]) {
 
   def createTarget(t: Target): IO[RecordId] = {
-    val taps = t.expandProps.toList
+    val taps = t.asProps
 
     val transaction = for {
       targetId <- sqlInsertTarget(t)
@@ -76,9 +76,9 @@ class Repository(transactor: Transactor[IO]) {
 
   // target_props table
 
-  private def sqlInsertTargetActorProps(t: List[Prop], targetId: RecordId): ConnectionIO[Int] = {
+  private def sqlInsertTargetActorProps(t: Iterable[Prop], targetId: RecordId): ConnectionIO[Int] = {
     val sql = s"insert into target_props (target_id, actor_name, property_name, property_value) values (?, ?, ?, ?)"
-    Update[(RecordId, Prop)](sql).updateMany(t.map(m => (targetId, m)))
+    Update[(RecordId, Prop)](sql).updateMany(t.toList.map(m => (targetId, m)))
   }
 
   private def sqlReadPropsOfTarget(targetId: RecordId): ConnectionIO[List[Prop]] = {

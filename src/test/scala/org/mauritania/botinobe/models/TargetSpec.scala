@@ -10,7 +10,7 @@ class TargetSpec extends WordSpec with Matchers {
 
     "expands its properties" in {
 
-      TargetFixture1.expandProps.toSet shouldBe(
+      TargetFixture1.asProps.toSet shouldBe(
         Set(
           Prop("actorx", "xprop1", "xvalue1"),
           Prop("actorx", "xprop2", "xvalue2"),

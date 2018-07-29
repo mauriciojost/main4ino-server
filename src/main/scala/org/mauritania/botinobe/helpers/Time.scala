@@ -1,8 +1,8 @@
 package org.mauritania.botinobe.helpers
 
-object Time {
+import org.mauritania.botinobe.models.Timestamp
 
-	type Timestamp = Long
+object Time {
 
 	def now: Timestamp = System.currentTimeMillis()
 
