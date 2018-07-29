@@ -1,4 +1,4 @@
-CREATE TABLE target_requests (
+CREATE TABLE targets_requests (
   id SERIAL PRIMARY KEY,
   creation LONG,
   device_name TEXT
@@ -13,7 +13,7 @@ CREATE TABLE targets (
   property_status TEXT
 );
 
-CREATE TABLE report_requests (
+CREATE TABLE reports_requests (
   id SERIAL PRIMARY KEY,
   creation LONG,
   device_name TEXT

@@ -69,7 +69,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
   )(
     s: HttpStatus
   )(service: Service, repository: Repository) = {
-    (repository.createTarget _).when(*).returns(IO.pure(1L)) // mock
+    (repository.createDevice _).when(*, *).returns(IO.pure(1L)) // mock
     val body = asEntityBody(DeviceU.fromBom(d).actors.asJson.toString)
     postApiV1(s"/devices/${d.metadata.device}/targets", body)(service).status shouldBe(s)
   }
@@ -81,7 +81,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val s = new Service(r)
 
     "returns 200 with an existent target" in {
-      (r.readTarget _).when(1L).returns(IO.pure(Dev1)) // mock
+      (r.readDevice _).when(*, 1L).returns(IO.pure(Dev1)) // mock
       getApiV1("/devices/dev1/targets/1")(s).status shouldBe(HttpStatus.Ok)
       getApiV1("/devices/dev1/targets/1")(s).as[Json].unsafeRunSync() shouldBe(Dev1.asJson)
     }
