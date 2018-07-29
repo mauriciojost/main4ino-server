@@ -47,14 +47,11 @@ class Repository(transactor: Transactor[IO]) {
     sqlReadTargetIdsWhereStatus(device, status).transact(transactor)
   }
 
+
+  // targets table
   private def sqlInsertTarget(t: Target): ConnectionIO[RecordId] = {
     sql"INSERT INTO targets (status, device_name, creation) VALUES (${Target.Created}, ${t.metadata.device}, ${t.metadata.timestamp} )"
       .update.withUniqueGeneratedKeys[RecordId]("id")
-  }
-
-  private def sqlInsertTargetActorProps(t: List[Prop], targetId: RecordId): ConnectionIO[Int] = {
-    val sql = s"insert into target_props (target_id, actor_name, property_name, property_value) values (?, ?, ?, ?)"
-    Update[(RecordId, Prop)](sql).updateMany(t.map(m => (targetId, m)))
   }
 
   private def sqlReadOneTarget(id: RecordId): ConnectionIO[Metadata] = {
@@ -72,13 +69,21 @@ class Repository(transactor: Transactor[IO]) {
       .query[RecordId].stream
   }
 
+  private def sqlUpdateTargetAsConsumed(targetId: RecordId): ConnectionIO[Int] = {
+    sql"update targets set status = ${Target.Consumed} where id=$targetId".update.run
+  }
+
+
+  // target_props table
+
+  private def sqlInsertTargetActorProps(t: List[Prop], targetId: RecordId): ConnectionIO[Int] = {
+    val sql = s"insert into target_props (target_id, actor_name, property_name, property_value) values (?, ?, ?, ?)"
+    Update[(RecordId, Prop)](sql).updateMany(t.map(m => (targetId, m)))
+  }
+
   private def sqlReadPropsOfTarget(targetId: RecordId): ConnectionIO[List[Prop]] = {
     sql"SELECT actor_name, property_name, property_value from target_props where target_id=$targetId"
       .query[Prop].accumulate
-  }
-
-  private def sqlUpdateTargetAsConsumed(targetId: RecordId): ConnectionIO[Int] = {
-    sql"update targets set status = ${Target.Consumed} where id=$targetId".update.run
   }
 
 }
