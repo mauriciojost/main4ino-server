@@ -178,12 +178,12 @@ class Repository(transactor: Transactor[IO]) {
   }
 
   private def sqlIdFromDeviceNameStatus_targets(device: DeviceName, status: Status): Stream[ConnectionIO, RecordId] = {
-    sql"SELECT id FROM targets WHERE property_status=$status and device_name=$device"
+    sql"SELECT target_id FROM targets WHERE property_status=$status and device_name=$device"
       .query[RecordId].stream
   }
 
   private def sqlIdFromDeviceNameActorNameStatus_targets(device: DeviceName, actor: ActorName, status: Status): Stream[ConnectionIO, RecordId] = {
-    sql"SELECT id FROM targets WHERE property_status=$status and device_name=$device AND actorn_name=$actor"
+    sql"SELECT target_id FROM targets WHERE property_status=$status and device_name=$device AND actorn_name=$actor"
       .query[RecordId].stream
   }
 

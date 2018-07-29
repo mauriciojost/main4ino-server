@@ -1,10 +1,10 @@
 package org.mauritania.botinobe.api.v1
 
 import cats.effect.IO
-import io.circe.generic.auto._
 import io.circe.syntax._
-import org.http4s.{HttpService, MediaType, Request, Response}
 import org.http4s.circe._
+import io.circe.generic.auto._
+import org.http4s.{HttpService, MediaType, Request, Response}
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.botinobe.Repository
 import org.mauritania.botinobe.api.v1.Service.{CountResponse, DevicesResponse, IdResponse}
