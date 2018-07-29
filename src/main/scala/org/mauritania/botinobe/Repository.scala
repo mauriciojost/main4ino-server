@@ -121,12 +121,12 @@ class Repository(transactor: Transactor[IO]) {
   // target_props table
 
   private def sqlActorTupsIn_target_props(t: Iterable[ActorTup], targetId: RecordId): ConnectionIO[Int] = {
-    val sql = s"insert into target_props (target_id, actor_name, property_name, property_value) values (?, ?, ?, ?)"
+    val sql = s"insert into target_props (target_id, actor_name, property_name, property_value, property_status) values (?, ?, ?, ?, ?)"
     Update[(RecordId, ActorTup)](sql).updateMany(t.toList.map(m => (targetId, m)))
   }
 
   private def sqlActorTupsFromId_target_props(targetId: RecordId): ConnectionIO[List[ActorTup]] = {
-    sql"SELECT actor_name, property_name, property_value from target_props where target_id=$targetId"
+    sql"SELECT actor_name, property_name, property_value, property_status from target_props where target_id=$targetId"
       .query[ActorTup].accumulate
   }
 
@@ -165,12 +165,12 @@ class Repository(transactor: Transactor[IO]) {
   // report_props table
 
   private def sqlActorTupsIn_report_props(t: Iterable[ActorTup], targetId: RecordId): ConnectionIO[Int] = {
-    val sql = s"insert into report_props (target_id, actor_name, property_name, property_value) values (?, ?, ?, ?)"
+    val sql = s"insert into report_props (target_id, actor_name, property_name, property_value, property_status) values (?, ?, ?, ?, ?)"
     Update[(RecordId, ActorTup)](sql).updateMany(t.toList.map(m => (targetId, m)))
   }
 
   private def sqlActorTupsFromId_report_props(targetId: RecordId): ConnectionIO[List[ActorTup]] = {
-    sql"SELECT actor_name, property_name, property_value from report_props where target_id=$targetId"
+    sql"SELECT actor_name, property_name, property_value, property_status from report_props where target_id=$targetId"
       .query[ActorTup].accumulate
   }
 

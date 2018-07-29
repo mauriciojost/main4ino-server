@@ -9,7 +9,8 @@ CREATE TABLE target_props (
   target_id INT,
   actor_name TEXT,
   property_name TEXT,
-  property_value TEXT
+  property_value TEXT,
+  property_status TEXT
 );
 
 CREATE TABLE reports (
@@ -23,5 +24,6 @@ CREATE TABLE report_props (
   target_id INT,
   actor_name TEXT,
   property_name TEXT,
-  property_value TEXT
+  property_value TEXT,
+  property_status TEXT
 );

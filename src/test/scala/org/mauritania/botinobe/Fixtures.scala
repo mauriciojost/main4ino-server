@@ -10,14 +10,14 @@ object Fixtures {
     Map(
       "actorx" ->
         Map(
-          "xprop1" -> "xvalue1",
-          "xprop2" -> "xvalue2",
-          "xprop3" -> "xvalue3"
+          "xprop1" -> ("xvalue1", Status.Created),
+          "xprop2" -> ("xvalue2", Status.Created),
+          "xprop3" -> ("xvalue3", Status.Created)
         ),
       "actory" ->
         Map(
-          "yprop1" -> "yvalue1",
-          "yprop2" -> "yvalue2"
+          "yprop1" -> ("yvalue1", Status.Created),
+          "yprop2" -> ("yvalue2", Status.Created)
         )
     )
   )

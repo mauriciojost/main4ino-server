@@ -16,15 +16,15 @@ import org.http4s.dsl.io._
 import org.http4s.dsl.Http4sDsl._
 import org.http4s.syntax._
 import org.http4s.{Request, Response, Uri, Status => HttpStatus}
-import org.mauritania.botinobe.Repository
+import org.mauritania.botinobe.{Fixtures, Repository}
 import org.mauritania.botinobe.models.Device.Metadata
-import org.mauritania.botinobe.models.{RecordId, Device, Status => MStatus}
+import org.mauritania.botinobe.models.{Device, RecordId, Status => MStatus}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
 
 class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
-  val DeviceFixt = Device(Metadata(None, MStatus.Created, "dev1", Some(0L)), Map("actor1" -> Map("prop1" -> "value1")))
+  val Dev1 = Fixtures.Device1
 
   "Help request" should {
 
@@ -53,7 +53,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     }
 
     "returns 201 with a regular target" in {
-      val t = DeviceFixt
+      val t = Dev1
       createATargetAndExpect(t)(HttpStatus.Created)(s, r)
     }
 
@@ -81,7 +81,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val s = new Service(r)
 
     "returns 200 with an existent target" in {
-      readATargetAndExpect(1L)(HttpStatus.Ok, DeviceFixt)(s, r)
+      readATargetAndExpect(1L)(HttpStatus.Ok, Dev1)(s, r)
     }
   }
 

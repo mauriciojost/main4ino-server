@@ -13,7 +13,7 @@ case class Device(
 			(propName, propValue) <- ps.toSeq
 		} yield (ActorTup(actor, propName, propValue))
 
-	def asTuples: Iterable[(ActorName, PropName, Option[Timestamp], PropValue)] = {
+	def asTuples: Iterable[(ActorName, PropName, Option[Timestamp], PropValueStatus)] = {
 		this.asActorTups.map(p => (p.actor, p.prop, metadata.timestamp, p.value))
 	}
 
@@ -26,7 +26,7 @@ case class Device(
 
 object Device {
 
-	val EmptyAcPropsMap: ActorMap = Map.empty[ActorName, Map[PropName, PropValue]]
+	val EmptyAcPropsMap: ActorMap = Map.empty[ActorName, Map[PropName, PropValueStatus]]
 
 	case class Metadata (
 		id: Option[RecordId],

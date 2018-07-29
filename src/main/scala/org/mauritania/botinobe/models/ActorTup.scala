@@ -3,7 +3,7 @@ package org.mauritania.botinobe.models
 case class ActorTup(
 	actor: ActorName,
 	prop: PropName,
-	value: PropValue
+	value: PropValueStatus
 )
 
 object ActorTup {
