@@ -48,7 +48,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val s = new Service(r)
 
     "returns 201 with empty properties" in {
-      val t = Device(Metadata(None, MStatus.Created, "dev1", Some(0L)))
+      val t = Device(Metadata(None, Some(0L), "dev1"))
       createATargetAndExpect(t)(HttpStatus.Created)(s, r)
     }
 
@@ -58,7 +58,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     }
 
     "returns 417 with an empty device name" in {
-      val t = Device(Metadata(None, MStatus.Created, "", Some(0L)))
+      val t = Device(Metadata(None, Some(0L), ""))
       createATargetAndExpect(t)(HttpStatus.ExpectationFailed)(s, r)
     }
 

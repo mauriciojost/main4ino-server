@@ -22,6 +22,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 
   val MinDeviceNameLength = 4
 
+  object CreatedMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("created")
   object CounMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("count")
   object MergeMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("merge")
   object CleanMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("clean")
@@ -81,21 +82,24 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         } else {
           for {
             p <- req.decodeJson[ActorMap]
-            id <- repository.createTarget(Device(Metadata(None, Status.Created, device, Some(Time.now)), p))
+            id <- repository.createTarget(Device(Metadata(None, Some(Time.now), device), p))
             resp <- Created(IdResponse(id).asJson)
           } yield (resp)
         }
       }
 
-      case req@GET -> Root / "devices" / device / "targets" :? CounMatcher(count) +& CleanMatcher(clean) +& MergeMatcher(merge) => {
-        val targetIds = repository.readTargetIdsWhereStatus(device, Status.Created)
-        if (count.exists(identity)) {
-          Ok(readCountTargets(targetIds), `Content-Type`(MediaType.`application/json`))
+      case req@GET -> Root / "devices" / device / "targets" :? CreatedMatcher(createdOp) +& CounMatcher(countOp) +& CleanMatcher(cleanOp) +& MergeMatcher(mergeOp) => {
+
+        val created = createdOp.exists(identity)
+        val count = countOp.exists(identity)
+        val clean = cleanOp.exists(identity)
+        val merge = mergeOp.exists(identity)
+
+        val propIds = repository.readTargetPropIdsWhereStatus(device, if (created) Some(Status.Created) else None)
+        if (count) {
+          Ok(readCountTargets(propIds), `Content-Type`(MediaType.`application/json`))
         } else {
-					Ok(
-						readTargets(device, targetIds, clean.exists(identity), merge.exists(identity)),
-						`Content-Type`(MediaType.`application/json`)
-					)
+					Ok(readTargets(device, propIds, clean, merge), `Content-Type`(MediaType.`application/json`))
 				}
       }
 
@@ -136,7 +140,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         } else {
           for {
             p <- req.decodeJson[ActorMap]
-            id <- repository.createReport(Device(Metadata(None, Status.Created, device, Some(Time.now)), p))
+            id <- repository.createReport(Device(Metadata(None, Some(Time.now), device), p))
             resp <- Created(IdResponse(id).asJson)
           } yield (resp)
         }
@@ -147,22 +151,22 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 
 	private def readTargets(
 		device: String,
-		targetIds: Stream[IO, RecordId],
+		propIds: Stream[IO, RecordId],
 		clean: Boolean,
 		merge: Boolean
 	) = {
 		val targets = for {
-			id <- targetIds
-			target <- Stream.eval[IO, Device](if (clean) repository.readTargetConsume(id) else repository.readTarget(id))
+      pd <- propIds
+      target <- Stream.eval[IO, Device](if (clean) repository.readTargetConsume(pd) else repository.readTarget(pd))
 		} yield (target)
 		val v = targets.fold(List.empty[Device])(_ :+ _).map(
-			if (merge) Device.merge(device, Status.Created, _) else identity
+			if (merge) Device.merge else identity
 		)
 		v.map(DevicesResponse(_).asJson)
 	}
 
-	private def readCountTargets(targetIds: Stream[IO, RecordId]) = {
-		targetIds.map(_ => 1).reduce(_ + _).lastOr(0).map(CountResponse(_).asJson)
+	private def readCountTargets(ids: Stream[IO, RecordId]) = {
+		ids.map(_ => 1).reduce(_ + _).lastOr(0).map(CountResponse(_).asJson)
 	}
 
 	private[v1] def request(r: Request[IO]): IO[Response[IO]] = service.orNotFound(r)

@@ -31,13 +31,12 @@ class RepositorySpec extends DbSuite {
   it should "read target ids and update them as consumed" in {
     val repo = new Repository(transactor)
 
-    val t1Created = Device1.withStatus(Status.Created).withId(Some(1L))
-    val t1Consumed = Device1.withStatus(Status.Consumed).withId(Some(1L))
+    val ref = Device1.withId(Some(1L))
+    repo.createTarget(Device1).unsafeRunSync() shouldBe 1L
 
-    repo.createTarget(Device1).unsafeRunSync() shouldBe(1L)
+    repo.readTarget(1L).unsafeRunSync() shouldBe ref.withStatus(Status.Created)
+    repo.readTargetConsume(1L).unsafeRunSync() shouldBe ref.withStatus(Status.Consumed)
 
-    repo.readTargetConsume(1L).unsafeRunSync() shouldBe(t1Created)
-    repo.readTargetConsume(1L).unsafeRunSync() shouldBe(t1Consumed)
   }
 
 }

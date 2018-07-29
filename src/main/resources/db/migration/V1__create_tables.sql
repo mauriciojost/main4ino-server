@@ -1,27 +1,27 @@
-CREATE TABLE targets (
+CREATE TABLE target_requests (
   id SERIAL PRIMARY KEY,
-  status TEXT,
-  device_name TEXT,
-  creation LONG
+  creation LONG,
+  device_name TEXT
 );
 
-CREATE TABLE target_props (
+CREATE TABLE targets (
   target_id INT,
+  device_name TEXT,
   actor_name TEXT,
   property_name TEXT,
   property_value TEXT,
   property_status TEXT
 );
 
-CREATE TABLE reports (
+CREATE TABLE report_requests (
   id SERIAL PRIMARY KEY,
-  status TEXT,
-  device_name TEXT,
-  creation LONG
+  creation LONG,
+  device_name TEXT
 );
 
-CREATE TABLE report_props (
+CREATE TABLE reports (
   target_id INT,
+  device_name TEXT,
   actor_name TEXT,
   property_name TEXT,
   property_value TEXT,
