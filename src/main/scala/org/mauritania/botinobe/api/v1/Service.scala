@@ -39,9 +39,15 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
   val service = {
     HttpService[IO] {
 
+
+      // Help
+
       case GET -> Root / "help" => {
         Ok(HelpMsg)
       }
+
+
+      // Targets
 
       case req@POST -> Root / "devices" / device / "targets" => {
         if (device.length < MinDeviceNameLength) {
@@ -72,6 +78,35 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
           t <- repository.readTarget(id)
           resp <- Ok(t.asJson)
         } yield (resp)
+      }
+
+
+      // Reports
+
+      case req@GET -> Root / "devices" / device / "reports" / "last" => {
+        for {
+          r <- repository.readLastReport(device)
+          resp <- Ok(r.asJson)
+        } yield (resp)
+      }
+
+      case req@GET -> Root / "devices" / device / "reports" / LongVar(id) => {
+        for {
+          r <- repository.readReport(id)
+          resp <- Ok(r.asJson)
+        } yield (resp)
+      }
+
+      case req@POST -> Root / "devices" / device / "reports" => {
+        if (device.length < MinDeviceNameLength) {
+          ExpectationFailed(s"Device name lenght must be at least $MinDeviceNameLength")
+        } else {
+          for {
+            p <- req.decodeJson[ActorMap]
+            id <- repository.createReport(Device(Metadata(Status.Created, device, Some(Time.now)), p))
+            resp <- Created(IdResponse(id).asJson)
+          } yield (resp)
+        }
       }
 
     }
