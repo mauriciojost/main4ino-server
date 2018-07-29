@@ -1,27 +1,27 @@
 package org.mauritania.botinobe.models
 
-import org.mauritania.botinobe.models.Target.Metadata
+import org.mauritania.botinobe.models.Device.Metadata
 
-case class Target(
+case class Device(
 	metadata: Metadata,
-	props: ActorPropsMap = Target.EmptyActorsPropMap
+	actors: ActorMap = Device.EmptyAcPropsMap
 ) {
 
-	def asProps: Iterable[Prop] =
+	def asActorTups: Iterable[ActorTup] =
 		for {
-			(actor, ps) <- props.toSeq
+			(actor, ps) <- actors.toSeq
 			(propName, propValue) <- ps.toSeq
-		} yield (Prop(actor, propName, propValue))
+		} yield (ActorTup(actor, propName, propValue))
 
 	def asTuples: Iterable[(ActorName, PropName, Option[Timestamp], PropValue)] = {
-		this.asProps.map(p => (p.actor, p.prop, metadata.timestamp, p.value))
+		this.asActorTups.map(p => (p.actor, p.prop, metadata.timestamp, p.value))
 	}
 
 }
 
-object Target {
+object Device {
 
-	val EmptyActorsPropMap: ActorPropsMap = Map.empty[ActorName, Map[PropName, PropValue]]
+	val EmptyAcPropsMap: ActorMap = Map.empty[ActorName, Map[PropName, PropValue]]
 
 	case class Metadata (
 		status: Status,
@@ -29,23 +29,23 @@ object Target {
 		timestamp: Option[Timestamp]
 	)
 
-	def fromProps(metadata: Metadata, ps: Iterable[Prop]): Target = {
-		Target(metadata, Prop.asActorPropsMap(ps))
+	def fromActorTups(metadata: Metadata, ps: Iterable[ActorTup]): Device = {
+		Device(metadata, ActorTup.asActorMap(ps))
 	}
 
-	def merge(d: DeviceName, s: Status, targets: Seq[Target]): Seq[Target] = {
-		val ts = targets.filter(t => t.metadata.device == d && t.metadata.status == s)
+	def merge(d: DeviceName, s: Status, devices: Seq[Device]): Seq[Device] = {
+		val ts = devices.filter(t => t.metadata.device == d && t.metadata.status == s)
 		val actorPropTimestampValues = tuple4Seq2MapOfMaps(ts.flatMap(_.asTuples))
 		val actorLastProps = for {
 			(aName, props) <- actorPropTimestampValues
 			(pName, timestampValue) <- props
 			lastValue <- Seq(timestampValue.maxBy(_._1)._2)
-		} yield Prop(aName, pName, lastValue)
+		} yield ActorTup(aName, pName, lastValue)
 
 		if (actorLastProps.isEmpty) {
-			Seq.empty[Target]
+			Seq.empty[Device]
 		} else {
-			Seq(Target.fromProps(Metadata(Status.Merged, d, None), actorLastProps))
+			Seq(Device.fromActorTups(Metadata(Status.Merged, d, None), actorLastProps))
 		}
 	}
 

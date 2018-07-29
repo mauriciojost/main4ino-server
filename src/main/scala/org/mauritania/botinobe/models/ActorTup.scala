@@ -1,14 +1,14 @@
 package org.mauritania.botinobe.models
 
-case class Prop(
+case class ActorTup(
 	actor: ActorName,
 	prop: PropName,
 	value: PropValue
 )
 
-object Prop {
+object ActorTup {
 
-	def asActorPropsMap(ps: Iterable[Prop]): ActorPropsMap = {
+	def asActorMap(ps: Iterable[ActorTup]): ActorMap = {
 		val props = ps.groupBy(_.actor)
 			.mapValues(_.groupBy(_.prop)
 				.mapValues(_.head.value))

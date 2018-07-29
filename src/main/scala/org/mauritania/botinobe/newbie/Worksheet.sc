@@ -1,7 +1,7 @@
 
 import fs2.Stream
 import cats.effect.IO
-import org.mauritania.botinobe.models.Target
+import org.mauritania.botinobe.models.Device
 /*
 val eff = Stream.eval(
   IO {

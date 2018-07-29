@@ -1,11 +1,11 @@
 package org.mauritania.botinobe
 
-import org.mauritania.botinobe.models.{Status, Target}
-import org.mauritania.botinobe.models.Target.Metadata
+import org.mauritania.botinobe.models.{Status, Device}
+import org.mauritania.botinobe.models.Device.Metadata
 
 object Fixtures {
 
-  val TargetFixture1 = Target(
+  val Device1 = Device(
     Metadata(Status.Created, "dev1", Some(0L)),
     Map(
       "actorx" ->

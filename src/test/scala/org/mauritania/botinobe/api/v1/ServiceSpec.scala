@@ -17,14 +17,14 @@ import org.http4s.dsl.Http4sDsl._
 import org.http4s.syntax._
 import org.http4s.{Request, Response, Uri, Status => HttpStatus}
 import org.mauritania.botinobe.Repository
-import org.mauritania.botinobe.models.Target.Metadata
-import org.mauritania.botinobe.models.{RecordId, Target, Status => MStatus}
+import org.mauritania.botinobe.models.Device.Metadata
+import org.mauritania.botinobe.models.{RecordId, Device, Status => MStatus}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
 
 class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
-  val TargetTemplate = Target(Metadata(MStatus.Created, "dev1", Some(0L)), Map("actor1" -> Map("prop1" -> "value1")))
+  val TargetTemplate = Device(Metadata(MStatus.Created, "dev1", Some(0L)), Map("actor1" -> Map("prop1" -> "value1")))
 
   "Help request" should {
 
@@ -48,7 +48,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val s = new Service(r)
 
     "returns 201 with empty properties" in {
-      val t = Target(Metadata(MStatus.Created, "dev1", Some(0L)))
+      val t = Device(Metadata(MStatus.Created, "dev1", Some(0L)))
       testATargetCreationReturns(t)(HttpStatus.Created)(s, r)
     }
 
@@ -58,19 +58,19 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     }
 
     "returns 417 with an empty device name" in {
-      val t = Target(Metadata(MStatus.Created, "", Some(0L)))
+      val t = Device(Metadata(MStatus.Created, "", Some(0L)))
       testATargetCreationReturns(t)(HttpStatus.ExpectationFailed)(s, r)
     }
 
   }
 
   private [this] def testATargetCreationReturns(
-    t: Target
+    t: Device
   )(
     s: HttpStatus
   )(service: Service, repository: Repository) = {
     (repository.createTarget _).when(*).returns(IO.pure(1L)) // mock
-    val body = asEntityBody(t.props.asJson.toString)
+    val body = asEntityBody(t.actors.asJson.toString)
     postApiV1(s"/devices/${t.metadata.device}/targets", body)(service).status shouldBe(s)
   }
 
@@ -87,7 +87,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
   private [this] def testATargetReadReturns(
     id: RecordId,
-    t: Target
+    t: Device
   )(
     s: HttpStatus,
     body: Json

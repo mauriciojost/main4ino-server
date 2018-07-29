@@ -5,15 +5,15 @@ import cats.effect.IO
 import doobie.util.transactor.Transactor
 import doobie._
 import doobie.implicits._
-import org.mauritania.botinobe.models.Target.Metadata
+import org.mauritania.botinobe.models.Device.Metadata
 import org.mauritania.botinobe.models._
 import fs2.Stream
 
 // Naming regarding to CRUD
 class Repository(transactor: Transactor[IO]) {
 
-  def createTarget(t: Target): IO[RecordId] = {
-    val taps = t.asProps
+  def createTarget(t: Device): IO[RecordId] = {
+    val taps = t.asActorTups
 
     val transaction = for {
       targetId <- sqlInsertTarget(t)
@@ -22,20 +22,20 @@ class Repository(transactor: Transactor[IO]) {
     transaction.transact(transactor)
   }
 
-  def readTarget(i: RecordId): IO[Target] = {
+  def readTarget(i: RecordId): IO[Device] = {
     val transaction = for {
       t <- sqlReadOneTarget(i)
       p <- sqlReadPropsOfTarget(i)
-    } yield (Target.fromProps(t, p))
+    } yield (Device.fromActorTups(t, p))
     transaction.transact(transactor)
   }
 
-  def readTargetConsume(i: RecordId): IO[Target] = {
+  def readTargetConsume(i: RecordId): IO[Device] = {
     val transaction = for {
       t <- sqlReadOneTarget(i)
       c <- sqlUpdateTargetAsConsumed(i)
       p <- sqlReadPropsOfTarget(i)
-    } yield (Target.fromProps(t, p))
+    } yield (Device.fromActorTups(t, p))
     transaction.transact(transactor)
   }
 
@@ -49,7 +49,7 @@ class Repository(transactor: Transactor[IO]) {
 
 
   // targets table
-  private def sqlInsertTarget(t: Target): ConnectionIO[RecordId] = {
+  private def sqlInsertTarget(t: Device): ConnectionIO[RecordId] = {
     sql"INSERT INTO targets (status, device_name, creation) VALUES (${Status.Created}, ${t.metadata.device}, ${t.metadata.timestamp} )"
       .update.withUniqueGeneratedKeys[RecordId]("id")
   }
@@ -76,14 +76,14 @@ class Repository(transactor: Transactor[IO]) {
 
   // target_props table
 
-  private def sqlInsertTargetActorProps(t: Iterable[Prop], targetId: RecordId): ConnectionIO[Int] = {
+  private def sqlInsertTargetActorProps(t: Iterable[ActorTup], targetId: RecordId): ConnectionIO[Int] = {
     val sql = s"insert into target_props (target_id, actor_name, property_name, property_value) values (?, ?, ?, ?)"
-    Update[(RecordId, Prop)](sql).updateMany(t.toList.map(m => (targetId, m)))
+    Update[(RecordId, ActorTup)](sql).updateMany(t.toList.map(m => (targetId, m)))
   }
 
-  private def sqlReadPropsOfTarget(targetId: RecordId): ConnectionIO[List[Prop]] = {
+  private def sqlReadPropsOfTarget(targetId: RecordId): ConnectionIO[List[ActorTup]] = {
     sql"SELECT actor_name, property_name, property_value from target_props where target_id=$targetId"
-      .query[Prop].accumulate
+      .query[ActorTup].accumulate
   }
 
 }

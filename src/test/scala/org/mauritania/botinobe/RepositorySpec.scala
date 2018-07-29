@@ -1,23 +1,23 @@
 package org.mauritania.botinobe.models
 
 import org.mauritania.botinobe.{DbSuite, Repository}
-import org.mauritania.botinobe.Fixtures.TargetFixture1
+import org.mauritania.botinobe.Fixtures.Device1
 
 class RepositorySpec extends DbSuite {
 
   "The repository" should "create and read a target" in {
     val repo = new Repository(transactor)
 
-    repo.createTarget(TargetFixture1).unsafeRunSync() shouldBe(1L)
-    repo.readTarget(1L).unsafeRunSync() shouldBe(TargetFixture1)
+    repo.createTarget(Device1).unsafeRunSync() shouldBe(1L)
+    repo.readTarget(1L).unsafeRunSync() shouldBe(Device1)
 
   }
 
   it should "read target ids from a device name" in {
     val repo = new Repository(transactor)
 
-    val t1 = TargetFixture1.copy(metadata = TargetFixture1.metadata.copy(device = "device1"))
-    val t2 = TargetFixture1.copy(metadata = TargetFixture1.metadata.copy(device = "device2"))
+    val t1 = Device1.copy(metadata = Device1.metadata.copy(device = "device1"))
+    val t2 = Device1.copy(metadata = Device1.metadata.copy(device = "device2"))
 
     repo.createTarget(t1).unsafeRunSync() shouldBe(1L) // created target for device 1, resulted in id 1
     repo.createTarget(t2).unsafeRunSync() shouldBe(2L) // for device 2, resulted in id 2
@@ -31,10 +31,10 @@ class RepositorySpec extends DbSuite {
   it should "read target ids and update them as consumed" in {
     val repo = new Repository(transactor)
 
-    val t1Created = TargetFixture1.copy(metadata = TargetFixture1.metadata.copy(status = Status.Created))
-    val t1Consumed = TargetFixture1.copy(metadata = TargetFixture1.metadata.copy(status = Status.Consumed))
+    val t1Created = Device1.copy(metadata = Device1.metadata.copy(status = Status.Created))
+    val t1Consumed = Device1.copy(metadata = Device1.metadata.copy(status = Status.Consumed))
 
-    repo.createTarget(TargetFixture1).unsafeRunSync() shouldBe(1L)
+    repo.createTarget(Device1).unsafeRunSync() shouldBe(1L)
 
     repo.readTargetConsume(1L).unsafeRunSync() shouldBe(t1Created)
     repo.readTargetConsume(1L).unsafeRunSync() shouldBe(t1Consumed)

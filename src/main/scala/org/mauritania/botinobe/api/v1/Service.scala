@@ -10,7 +10,7 @@ import org.http4s.dsl.Http4sDsl
 import org.mauritania.botinobe.Repository
 import org.mauritania.botinobe.api.v1.Service.{CountResponse, IdResponse, TargetsResponse}
 import org.mauritania.botinobe.models._
-import org.mauritania.botinobe.models.Target.Metadata
+import org.mauritania.botinobe.models.Device.Metadata
 import org.http4s.headers.`Content-Type`
 import fs2.Stream
 import io.circe.Json
@@ -48,8 +48,8 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
           ExpectationFailed(s"Device name lenght must be at least $MinDeviceNameLength")
         } else {
           for {
-            p <- req.decodeJson[ActorPropsMap]
-            id <- repository.createTarget(Target(Metadata(Status.Created, device, Some(Time.now)), p))
+            p <- req.decodeJson[ActorMap]
+            id <- repository.createTarget(Device(Metadata(Status.Created, device, Some(Time.now)), p))
             resp <- Created(IdResponse(id).asJson)
           } yield (resp)
         }
@@ -85,10 +85,10 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 	) = {
 		val targets = for {
 			id <- targetIds
-			target <- Stream.eval[IO, Target](if (clean) repository.readTargetConsume(id) else repository.readTarget(id))
+			target <- Stream.eval[IO, Device](if (clean) repository.readTargetConsume(id) else repository.readTarget(id))
 		} yield (target)
-		val v = targets.fold(List.empty[Target])(_ :+ _).map(
-			if (merge) Target.merge(device, Status.Created, _) else identity
+		val v = targets.fold(List.empty[Device])(_ :+ _).map(
+			if (merge) Device.merge(device, Status.Created, _) else identity
 		)
 		v.map(TargetsResponse(_).asJson)
 	}
@@ -105,6 +105,6 @@ object Service {
 
   case class IdResponse(id: RecordId)
   case class CountResponse(count: Int)
-  case class TargetsResponse(ts: Seq[Target])
+  case class TargetsResponse(ts: Seq[Device])
 
 }
