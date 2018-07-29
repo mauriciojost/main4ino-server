@@ -13,7 +13,6 @@ import org.mauritania.botinobe.models._
 import org.mauritania.botinobe.models.Device.Metadata
 import org.http4s.headers.`Content-Type`
 import fs2.Stream
-import io.circe.Json
 import org.mauritania.botinobe.helpers.Time
 
 // Guidelines for REST:
