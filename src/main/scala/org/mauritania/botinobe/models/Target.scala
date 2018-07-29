@@ -12,9 +12,9 @@ object Target {
 
 	// TODO: create a dedicated ADT for this
 	type Status = String
-	val Created: Status = "created"
-	val Consumed: Status = "consumed"
-	val Merged: Status = "merged"
+	val Created: Status = "C"
+	val Consumed: Status = "R"
+	val Merged: Status = "M"
 
 	val EmptyActorsPropMap: ActorPropsMap = Map.empty[ActorName, Map[PropName, PropValue]]
 
