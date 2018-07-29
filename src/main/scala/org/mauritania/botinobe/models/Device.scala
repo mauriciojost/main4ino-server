@@ -20,6 +20,7 @@ case class Device(
 	def withId(i: Option[RecordId]): Device = this.copy(metadata = this.metadata.copy(id = i))
 	def withDeviceName(n: DeviceName): Device = this.copy(metadata = this.metadata.copy(device = n))
 	def withStatus(s: Status): Device = this.copy(metadata = this.metadata.copy(status = s))
+	def withTimestamp(t: Option[Timestamp]): Device = this.copy(metadata = this.metadata.copy(timestamp = t))
 
 }
 

@@ -34,7 +34,7 @@ class DeviceSpec extends WordSpec with Matchers {
       val merged = Device.merge(t1.metadata.device, t2.metadata.status, Seq(t1, t2))
 
       merged.size shouldBe(1)
-      merged(0).metadata shouldBe(Device1.metadata.copy(status = Status.Merged, timestamp = None))
+      merged(0).metadata shouldBe(Device1.withStatus(Status.Merged).withTimestamp(None).metadata)
       merged(0).actors("actorx").toSet shouldBe(Device1.actors("actorx").toSet)
       merged(0).actors("actory").toSet shouldBe(Device1.actors("actory").toSet)
     }
