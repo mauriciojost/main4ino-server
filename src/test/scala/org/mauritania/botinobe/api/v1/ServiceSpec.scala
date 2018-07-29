@@ -49,22 +49,22 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
     "returns 201 with empty properties" in {
       val t = Device(Metadata(None, MStatus.Created, "dev1", Some(0L)))
-      testATargetCreationReturns(t)(HttpStatus.Created)(s, r)
+      createATargetAndExpect(t)(HttpStatus.Created)(s, r)
     }
 
     "returns 201 with a regular target" in {
       val t = DeviceFixt
-      testATargetCreationReturns(t)(HttpStatus.Created)(s, r)
+      createATargetAndExpect(t)(HttpStatus.Created)(s, r)
     }
 
     "returns 417 with an empty device name" in {
       val t = Device(Metadata(None, MStatus.Created, "", Some(0L)))
-      testATargetCreationReturns(t)(HttpStatus.ExpectationFailed)(s, r)
+      createATargetAndExpect(t)(HttpStatus.ExpectationFailed)(s, r)
     }
 
   }
 
-  private [this] def testATargetCreationReturns(
+  private [this] def createATargetAndExpect(
     t: Device
   )(
     s: HttpStatus
@@ -81,20 +81,19 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val s = new Service(r)
 
     "returns 200 with an existent target" in {
-      testATargetReadReturns(1L, DeviceFixt)(HttpStatus.Ok, DeviceFixt.asJson)(s, r)
+      readATargetAndExpect(1L)(HttpStatus.Ok, DeviceFixt)(s, r)
     }
   }
 
-  private [this] def testATargetReadReturns(
+  private [this] def readATargetAndExpect(
     id: RecordId,
-    t: Device
   )(
     s: HttpStatus,
-    body: Json
+    t: Device
   )(service: Service, repository: Repository) = {
     (repository.readTarget _).when(id).returns(IO.pure(t)) // mock
     getApiV1("/devices/dev1/targets/1")(service).status shouldBe(HttpStatus.Ok)
-    getApiV1("/devices/dev1/targets/1")(service).as[Json].unsafeRunSync() shouldBe(DeviceFixt.asJson)
+    getApiV1("/devices/dev1/targets/1")(service).as[Json].unsafeRunSync() shouldBe(t.asJson)
   }
 
   // Basic testing utilities
@@ -112,38 +111,5 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
   private [this] def asEntityBody(content: String): EntityBody[IO] = {
     Stream.fromIterator[IO, Byte](content.toCharArray.map(_.toByte).toIterator)
   }
-
-  /*
-  |
-  | // create a 2 targets for dev1 and 1 for dev2
-  | >  POST /v1/devices/<dev1>/targets/  {"actor1":{"prop1": "val1"}}
-  | <    200 {"id": 1}
-  | >  POST /v1/devices/<dev1>/targets/  {"actor1":{"prop2": "val2"}}
-  | <    200 {"id": 2}
-  | >  POST /v1/devices/<dev2>/targets/  {"actor3":{"prop3": "val3"}, "actor4": {"prop4": "val4"}}
-  | <    200 {"id": 3}
-  | >  POST /v1/devices/<dev2>/targets/  {"actor3":{"prop5": "val5"}}
-  | <    200 {"id": 4}
-  |
-  | // existent targets for dev1
-  | >  GET /v1/devices/<dev1>/targets/
-  | <    200 {"targets":[1, 2], "count": 2}
-  |
-  | // get all targets merged dev1 and clean (transactional)
-  | >  GET /v1/devices/<dev1>/targets?merge=true&clean=true
-  | <    200 {"actor1":{"prop1": "val1", "prop2": "val2"}}
-  |
-  | // now there are no remaining targets to be consumed
-  | >  GET /v1/devices/<dev1>/targets/
-  | <    200 {"targets":[], "count": 0}
-  |
-  | // we can retrieve a specific target
-  | >  GET /v1/devices/<dev2>/targets/<3>
-  | <    200 {"actor3": {"prop3": "val3"}, "actor4": {"prop4": "val4"}}
-  |
-  | >  GET /v1/devices/<dev2>/actors/actor3/targets?merge=true&clean=true
-  | <    200 {"prop5": "val5"}
-  |
-  */
 
 }

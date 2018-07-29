@@ -8,7 +8,7 @@ import org.http4s.{HttpService, MediaType, Request, Response}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.botinobe.Repository
-import org.mauritania.botinobe.api.v1.Service.{CountResponse, IdResponse, TargetsResponse}
+import org.mauritania.botinobe.api.v1.Service.{CountResponse, IdResponse, DevicesResponse}
 import org.mauritania.botinobe.models._
 import org.mauritania.botinobe.models.Device.Metadata
 import org.http4s.headers.`Content-Type`
@@ -63,7 +63,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 
       case req@GET -> Root / "devices" / device / "targets" :? CounMatcher(count) +& CleanMatcher(clean) +& MergeMatcher(merge) => {
         val targetIds = repository.readTargetIdsWhereStatus(device, Status.Created)
-        if (count.exists(_ == true)) {
+        if (count.exists(identity)) {
           Ok(readCountTargets(targetIds), `Content-Type`(MediaType.`application/json`))
         } else {
 					Ok(
@@ -90,16 +90,16 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 
       // Reports
 
-      case req@GET -> Root / "devices" / device / "reports" / "last" => {
+      case req@GET -> Root / "devices" / device / "reports" / LongVar(id) => {
         for {
-          r <- repository.readLastReport(device)
+          r <- repository.readReport(id)
           resp <- Ok(r.asJson)
         } yield (resp)
       }
 
-      case req@GET -> Root / "devices" / device / "reports" / LongVar(id) => {
+      case req@GET -> Root / "devices" / device / "reports" / "last" => {
         for {
-          r <- repository.readReport(id)
+          r <- repository.readLastReport(device)
           resp <- Ok(r.asJson)
         } yield (resp)
       }
@@ -132,7 +132,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 		val v = targets.fold(List.empty[Device])(_ :+ _).map(
 			if (merge) Device.merge(device, Status.Created, _) else identity
 		)
-		v.map(TargetsResponse(_).asJson)
+		v.map(DevicesResponse(_).asJson)
 	}
 
 	private def readCountTargets(targetIds: Stream[IO, RecordId]) = {
@@ -147,6 +147,6 @@ object Service {
 
   case class IdResponse(id: RecordId)
   case class CountResponse(count: Int)
-  case class TargetsResponse(ts: Seq[Device])
+  case class DevicesResponse(ts: Seq[Device])
 
 }
