@@ -6,7 +6,7 @@ import org.mauritania.botinobe.models.Device.Metadata
 object Fixtures {
 
   val Device1 = Device(
-    Metadata(Status.Created, "dev1", Some(0L)),
+    Metadata(None, Status.Created, "dev1", Some(0L)),
     Map(
       "actorx" ->
         Map(

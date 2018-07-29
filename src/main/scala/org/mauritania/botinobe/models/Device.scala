@@ -17,6 +17,10 @@ case class Device(
 		this.asActorTups.map(p => (p.actor, p.prop, metadata.timestamp, p.value))
 	}
 
+	def withId(i: Option[RecordId]): Device = this.copy(metadata = this.metadata.copy(id = i))
+	def withDeviceName(n: DeviceName): Device = this.copy(metadata = this.metadata.copy(device = n))
+	def withStatus(s: Status): Device = this.copy(metadata = this.metadata.copy(status = s))
+
 }
 
 object Device {
@@ -24,6 +28,7 @@ object Device {
 	val EmptyAcPropsMap: ActorMap = Map.empty[ActorName, Map[PropName, PropValue]]
 
 	case class Metadata (
+		id: Option[RecordId],
 		status: Status,
 		device: DeviceName,
 		timestamp: Option[Timestamp]
@@ -45,7 +50,7 @@ object Device {
 		if (actorLastProps.isEmpty) {
 			Seq.empty[Device]
 		} else {
-			Seq(Device.fromActorTups(Metadata(Status.Merged, d, None), actorLastProps))
+			Seq(Device.fromActorTups(Metadata(None, Status.Merged, d, None), actorLastProps))
 		}
 	}
 

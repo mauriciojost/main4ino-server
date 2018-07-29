@@ -55,7 +55,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         } else {
           for {
             p <- req.decodeJson[ActorMap]
-            id <- repository.createTarget(Device(Metadata(Status.Created, device, Some(Time.now)), p))
+            id <- repository.createTarget(Device(Metadata(None, Status.Created, device, Some(Time.now)), p))
             resp <- Created(IdResponse(id).asJson)
           } yield (resp)
         }
@@ -77,6 +77,13 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         for {
           t <- repository.readTarget(id)
           resp <- Ok(t.asJson)
+        } yield (resp)
+      }
+
+      case req@GET -> Root / "devices" / device / "targets" / "last" => {
+        for {
+          r <- repository.readLastTarget(device)
+          resp <- Ok(r.asJson)
         } yield (resp)
       }
 
@@ -103,7 +110,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         } else {
           for {
             p <- req.decodeJson[ActorMap]
-            id <- repository.createReport(Device(Metadata(Status.Created, device, Some(Time.now)), p))
+            id <- repository.createReport(Device(Metadata(None, Status.Created, device, Some(Time.now)), p))
             resp <- Created(IdResponse(id).asJson)
           } yield (resp)
         }

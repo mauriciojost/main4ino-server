@@ -24,7 +24,7 @@ import org.scalatest.{Matchers, WordSpec}
 
 class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
-  val TargetTemplate = Device(Metadata(MStatus.Created, "dev1", Some(0L)), Map("actor1" -> Map("prop1" -> "value1")))
+  val DeviceFixt = Device(Metadata(None, MStatus.Created, "dev1", Some(0L)), Map("actor1" -> Map("prop1" -> "value1")))
 
   "Help request" should {
 
@@ -48,17 +48,17 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val s = new Service(r)
 
     "returns 201 with empty properties" in {
-      val t = Device(Metadata(MStatus.Created, "dev1", Some(0L)))
+      val t = Device(Metadata(None, MStatus.Created, "dev1", Some(0L)))
       testATargetCreationReturns(t)(HttpStatus.Created)(s, r)
     }
 
     "returns 201 with a regular target" in {
-      val t = TargetTemplate
+      val t = DeviceFixt
       testATargetCreationReturns(t)(HttpStatus.Created)(s, r)
     }
 
     "returns 417 with an empty device name" in {
-      val t = Device(Metadata(MStatus.Created, "", Some(0L)))
+      val t = Device(Metadata(None, MStatus.Created, "", Some(0L)))
       testATargetCreationReturns(t)(HttpStatus.ExpectationFailed)(s, r)
     }
 
@@ -81,7 +81,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val s = new Service(r)
 
     "returns 200 with an existent target" in {
-      testATargetReadReturns(1L, TargetTemplate)(HttpStatus.Ok, TargetTemplate.asJson)(s, r)
+      testATargetReadReturns(1L, DeviceFixt)(HttpStatus.Ok, DeviceFixt.asJson)(s, r)
     }
   }
 
@@ -94,7 +94,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
   )(service: Service, repository: Repository) = {
     (repository.readTarget _).when(id).returns(IO.pure(t)) // mock
     getApiV1("/devices/dev1/targets/1")(service).status shouldBe(HttpStatus.Ok)
-    getApiV1("/devices/dev1/targets/1")(service).as[Json].unsafeRunSync() shouldBe(TargetTemplate.asJson)
+    getApiV1("/devices/dev1/targets/1")(service).as[Json].unsafeRunSync() shouldBe(DeviceFixt.asJson)
   }
 
   // Basic testing utilities

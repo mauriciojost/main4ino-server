@@ -31,6 +31,16 @@ class Repository(transactor: Transactor[IO]) {
     transaction.transact(transactor)
   }
 
+
+  def readLastTarget(device: DeviceName): IO[Device] = {
+    val transaction = for {
+      i <- sqlIdFromDeviceLast_targets(device)
+      t <- sqlMetadataFromId_targets(i)
+      p <- sqlActorTupsFromId_target_props(i)
+    } yield (Device.fromActorTups(t, p))
+    transaction.transact(transactor)
+  }
+
   def readTargetConsume(i: RecordId): IO[Device] = {
     val transaction = for {
       t <- sqlMetadataFromId_targets(i)
@@ -84,7 +94,7 @@ class Repository(transactor: Transactor[IO]) {
   }
 
   private def sqlMetadataFromId_targets(id: RecordId): ConnectionIO[Metadata] = {
-    sql"SELECT status, device_name, creation from targets where id=$id"
+    sql"SELECT id, status, device_name, creation from targets where id=$id"
       .query[Metadata].unique
   }
 
@@ -100,6 +110,11 @@ class Repository(transactor: Transactor[IO]) {
 
   private def sqlChangeStatus_targets(targetId: RecordId): ConnectionIO[Int] = {
     sql"update targets set status = ${Status.Consumed} where id=$targetId".update.run
+  }
+
+  private def sqlIdFromDeviceLast_targets(device: DeviceName): ConnectionIO[RecordId] = {
+    sql"SELECT MAX(id) from targets where device_name=$device"
+      .query[RecordId].unique
   }
 
 
@@ -123,7 +138,7 @@ class Repository(transactor: Transactor[IO]) {
   }
 
   private def sqlMetadataFromId_reports(id: RecordId): ConnectionIO[Metadata] = {
-    sql"SELECT status, device_name, creation from reports where id=$id"
+    sql"SELECT id, status, device_name, creation from reports where id=$id"
       .query[Metadata].unique
   }
 

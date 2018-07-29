@@ -9,15 +9,15 @@ class RepositorySpec extends DbSuite {
     val repo = new Repository(transactor)
 
     repo.createTarget(Device1).unsafeRunSync() shouldBe(1L)
-    repo.readTarget(1L).unsafeRunSync() shouldBe(Device1)
+    repo.readTarget(1L).unsafeRunSync() shouldBe(Device1.withId(Some(1L)))
 
   }
 
   it should "read target ids from a device name" in {
     val repo = new Repository(transactor)
 
-    val t1 = Device1.copy(metadata = Device1.metadata.copy(device = "device1"))
-    val t2 = Device1.copy(metadata = Device1.metadata.copy(device = "device2"))
+    val t1 = Device1.withDeviceName("device1")
+    val t2 = Device1.withDeviceName("device2")
 
     repo.createTarget(t1).unsafeRunSync() shouldBe(1L) // created target for device 1, resulted in id 1
     repo.createTarget(t2).unsafeRunSync() shouldBe(2L) // for device 2, resulted in id 2
@@ -31,8 +31,8 @@ class RepositorySpec extends DbSuite {
   it should "read target ids and update them as consumed" in {
     val repo = new Repository(transactor)
 
-    val t1Created = Device1.copy(metadata = Device1.metadata.copy(status = Status.Created))
-    val t1Consumed = Device1.copy(metadata = Device1.metadata.copy(status = Status.Consumed))
+    val t1Created = Device1.withStatus(Status.Created).withId(Some(1L))
+    val t1Consumed = Device1.withStatus(Status.Consumed).withId(Some(1L))
 
     repo.createTarget(Device1).unsafeRunSync() shouldBe(1L)
 

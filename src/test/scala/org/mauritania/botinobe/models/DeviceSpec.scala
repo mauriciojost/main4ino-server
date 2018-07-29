@@ -40,17 +40,17 @@ class DeviceSpec extends WordSpec with Matchers {
     }
 
     "merge targets (take last xprop1 and add new xprop2)" in {
-      val t1 = Device(Metadata(Status.Created, "dev1", Some(1L)), // first target request
+      val t1 = Device(Metadata(None, Status.Created, "dev1", Some(1L)), // first target request
         Map("actorx" -> Map("xprop1" -> "xvalue1"))
       )
-      val t2 = Device(Metadata(Status.Created, "dev1", Some(2L)), // second target request
+      val t2 = Device(Metadata(None, Status.Created, "dev1", Some(2L)), // second target request
         Map("actorx" -> Map("xprop1" -> "xvalueU", "xprop2" -> "xvalue2"))
       )
 
       val merged = Device.merge("dev1", Status.Created, Seq(t1, t2))
 
       merged.size shouldBe(1)
-      merged(0).metadata shouldBe(Metadata(Status.Merged, "dev1", None))
+      merged(0).metadata shouldBe(Metadata(None, Status.Merged, "dev1", None))
       merged(0).actors.keys.toSet shouldBe(Set("actorx"))
       merged(0).actors("actorx").toSet shouldBe(
         Set(
