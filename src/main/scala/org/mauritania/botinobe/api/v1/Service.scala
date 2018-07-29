@@ -23,9 +23,9 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 
   val MinDeviceNameLength = 4
 
-  object CountQueryParamMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("count")
-  object MergeQueryParamMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("merge")
-  object CleanQueryParamMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("clean")
+  object CounMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("count")
+  object MergeMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("merge")
+  object CleanMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("clean")
 
   val HelpMsg = // TODO: complete me
     s"""
@@ -55,18 +55,13 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         }
       }
 
-      case req@GET -> Root / "devices" / device / "targets" :? CountQueryParamMatcher(count) +& CleanQueryParamMatcher(clean) +& MergeQueryParamMatcher(merge) => {
+      case req@GET -> Root / "devices" / device / "targets" :? CounMatcher(count) +& CleanMatcher(clean) +& MergeMatcher(merge) => {
         val targetIds = repository.readTargetIdsWhereStatus(device, Target.Created)
         if (count.exists(_ == true)) {
           Ok(readCountTargets(targetIds), `Content-Type`(MediaType.`application/json`))
         } else {
 					Ok(
-						readTargets(
-							device,
-							targetIds,
-							clean.exists(identity),
-              merge.exists(identity)
-						),
+						readTargets(device, targetIds, clean.exists(identity), merge.exists(identity)),
 						`Content-Type`(MediaType.`application/json`)
 					)
 				}
