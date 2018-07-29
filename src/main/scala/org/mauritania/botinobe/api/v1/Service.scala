@@ -1,6 +1,5 @@
 package org.mauritania.botinobe.api.v1
 
-import cats.Monoid
 import cats.effect.IO
 import io.circe.generic.auto._
 import io.circe.syntax._
@@ -8,11 +7,12 @@ import org.http4s.{HttpService, MediaType, Request, Response}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.botinobe.Repository
-import org.mauritania.botinobe.api.v1.Service.{CountResponse, IdResponse, DevicesResponse}
+import org.mauritania.botinobe.api.v1.Service.{CountResponse, DevicesResponse, IdResponse}
 import org.mauritania.botinobe.models._
 import org.mauritania.botinobe.models.Device.Metadata
 import org.http4s.headers.`Content-Type`
 import fs2.Stream
+import org.mauritania.botinobe.api.v1.DeviceU.{ActorMapU, MetadataU}
 import org.mauritania.botinobe.helpers.Time
 
 // Guidelines for REST:
@@ -81,8 +81,8 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
           ExpectationFailed(s"Device name lenght must be at least $MinDeviceNameLength")
         } else {
           for {
-            p <- req.decodeJson[ActorMap]
-            id <- repository.createTarget(Device(Metadata(None, Some(Time.now), device), p))
+            p <- req.decodeJson[ActorMapU]
+            id <- repository.createTarget(DeviceU(MetadataU(None, Some(Time.now), device), p).toBom)
             resp <- Created(IdResponse(id).asJson)
           } yield (resp)
         }
@@ -162,7 +162,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 		val v = targets.fold(List.empty[Device])(_ :+ _).map(
 			if (merge) Device.merge else identity
 		)
-		v.map(DevicesResponse(_).asJson)
+		v.map(i => DevicesResponse(i.map(DeviceU.fromBom)).asJson)
 	}
 
 	private def readCountTargets(ids: Stream[IO, RecordId]) = {
@@ -177,6 +177,6 @@ object Service {
 
   case class IdResponse(id: RecordId)
   case class CountResponse(count: Int)
-  case class DevicesResponse(ts: Seq[Device])
+  case class DevicesResponse(response: Seq[DeviceU])
 
 }
