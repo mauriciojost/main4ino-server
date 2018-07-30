@@ -59,7 +59,7 @@ class Repository(transactor: Transactor[IO]) {
 
   private def sqlInsertActorTup(table: Table, t: Iterable[ActorTup], requestId: RecordId): ConnectionIO[Int] = {
     val sql = s"INSERT INTO ${table.code} (request_id, device_name, actor_name, property_name, property_value, property_status) VALUES (?, ?, ?, ?, ?, ?)"
-    Update[ActorTup](sql).updateMany(t.toList.map(_.withId(Some(requestId))))
+    Update[ActorTup](sql).updateMany(t.toList.map(_.withRequestId(Some(requestId))))
   }
 
   private def sqlInsertMetadata(table: Table, m: Metadata): ConnectionIO[RecordId] = {

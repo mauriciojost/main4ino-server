@@ -39,9 +39,28 @@ class RepositorySpec extends DbSuite {
       val ref = Device1.withId(Some(1L))
       repo.insertDevice(table, Device1).unsafeRunSync() shouldBe 1L
 
+      // Created the device
       repo.selectDeviceWhereRequestId(table, 1L).unsafeRunSync() shouldBe ref.withStatus(Status.Created)
+
+      // Get properties for one actor, and set them to consumed
       repo.selectActorTupChangeStatusWhereDeviceActorStatus(table, Device1.metadata.device, "actorx", Status.Created, Status.Consumed)
-        .compile.toList.unsafeRunSync() shouldBe ref.withStatus(Status.Consumed)
+        .compile.toList.unsafeRunSync().toSet shouldBe ref.asActorTups.map(_.withRequestId(Some(1L))).filter(_.actor == "actorx").toSet
+
+      // Ensure they are consumed
+      repo.selectActorTupWhereDeviceActorStatus(table, Device1.metadata.device, "actorx", Status.Consumed)
+        .compile.toList.unsafeRunSync().toSet shouldBe ref.withStatus(Status.Consumed).asActorTups.map(_.withRequestId(Some(1L))).filter(_.actor == "actorx").toSet
+
+      // Take the other actor and ensure the properties are still not consumed
+      repo.selectActorTupWhereDeviceActorStatus(table, Device1.metadata.device, "actory", Status.Created)
+        .compile.toList.unsafeRunSync().toSet shouldBe ref.withStatus(Status.Created).asActorTups.map(_.withRequestId(Some(1L))).filter(_.actor == "actory").toSet
+
+      // Consume them
+      repo.selectActorTupChangeStatusWhereDeviceActorStatus(table, Device1.metadata.device, "actory", Status.Created, Status.Consumed)
+        .compile.toList.unsafeRunSync().toSet shouldBe ref.asActorTups.map(_.withRequestId(Some(1L))).filter(_.actor == "actory").toSet
+
+      // Ensure they are now consumed
+      repo.selectActorTupWhereDeviceActorStatus(table, Device1.metadata.device, "actory", Status.Consumed)
+        .compile.toList.unsafeRunSync().toSet shouldBe ref.withStatus(Status.Consumed).asActorTups.map(_.withRequestId(Some(1L))).filter(_.actor == "actory").toSet
     }
   }
 

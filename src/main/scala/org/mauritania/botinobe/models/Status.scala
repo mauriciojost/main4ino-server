@@ -3,7 +3,7 @@ package org.mauritania.botinobe.models
 object Status {
 
   val Created: Status = "C"
-  val Consumed: Status = "R"
+  val Consumed: Status = "X"
   val Merged: Status = "M"
 
 }
