@@ -95,16 +95,14 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val r = stub[Repository]
     val s = new Service(r)
 
-    "returns 200 with an existent target" in {
+    "returns the list of associated targets set" in {
 
       (r.selectActorTupWhereDeviceActorStatus _)
         .when(e(Table.Targets), e("dev1"), e("clock"), e(S.Created))
         .returns(Stream.fromIterator[IO, ActorTup](Iterator(
           ActorTup(Some(1), "dev1", "clock", "h", "7", S.Consumed),
-          ActorTup(Some(2), "dev1", "clock", "m", "0", S.Consumed),
-          ActorTup(Some(3), "dev1", "clock", "h", "8", S.Consumed)
-        )))
-
+          ActorTup(Some(2), "dev1", "clock", "h", "8", S.Consumed)
+        ))).once()
 
       val r1 = s.getDeviceActor("dev1", "clock", Table.Targets, created = Some(true), clean = None, merge = None)
       val r1m = r1.compile.toList.unsafeRunSync().head.toSet
@@ -116,13 +114,19 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
         ),
         DeviceU(
           metadata = MetadataU(None, None, "dev1"),
-          actors = Map("clock" -> Map("m" -> "0"))
-        ),
-        DeviceU(
-          metadata = MetadataU(None, None, "dev1"),
           actors = Map("clock" -> Map("h" -> "8"))
         )
       )
+    }
+
+    "returns the merged target (result of all the targets set) for a given actor" in {
+      (r.selectActorTupWhereDeviceActorStatus _)
+        .when(e(Table.Targets), e("dev1"), e("clock"), e(S.Created))
+        .returns(Stream.fromIterator[IO, ActorTup](Iterator(
+          ActorTup(Some(1), "dev1", "clock", "h", "7", S.Consumed),
+          ActorTup(Some(2), "dev1", "clock", "m", "0", S.Consumed),
+          ActorTup(Some(3), "dev1", "clock", "h", "8", S.Consumed)
+        ))).once()
 
       val r2 = s.getDeviceActor("dev1", "clock", Table.Targets, created = Some(true), clean = None, merge = Some(true))
       val r2m = r2.compile.toList.unsafeRunSync().head.toSet
