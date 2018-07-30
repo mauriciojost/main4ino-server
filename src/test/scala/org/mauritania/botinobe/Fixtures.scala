@@ -1,6 +1,8 @@
 package org.mauritania.botinobe
 
-import org.mauritania.botinobe.models.{Status, Device}
+import org.mauritania.botinobe.api.v1.DeviceU
+import org.mauritania.botinobe.api.v1.DeviceU.MetadataU
+import org.mauritania.botinobe.models.{Device, Status}
 import org.mauritania.botinobe.models.Device.Metadata
 
 object Fixtures {
@@ -21,6 +23,27 @@ object Fixtures {
         )
     )
   )
+
+  val Device1InV1 = DeviceU(
+    MetadataU(None, Some(0L), "dev1"),
+    Map(
+      "actorx" ->
+        Map(
+          "xprop1" -> "xvalue1",
+          "xprop2" -> "xvalue2",
+          "xprop3" -> "xvalue3"
+        ),
+      "actory" ->
+        Map(
+          "yprop1" -> "yvalue1",
+          "yprop2" -> "yvalue2"
+        )
+    )
+  )
+
+
+
+
 
 
 }

@@ -26,6 +26,7 @@ import org.scalatest.{Matchers, WordSpec}
 class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
   val Dev1 = Fixtures.Device1
+  val Dev1V1 = Fixtures.Device1InV1
 
   "Help request" should {
 
@@ -84,7 +85,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     "returns 200 with an existent target" in {
       (r.readDevice _).when(*, 1L).returns(IO.pure(Dev1)) // mock
       getApiV1("/devices/dev1/targets/1")(s).status shouldBe(HttpStatus.Ok)
-      getApiV1("/devices/dev1/targets/1")(s).as[Json].unsafeRunSync() shouldBe(Dev1.asJson)
+      getApiV1("/devices/dev1/targets/1")(s).as[Json].unsafeRunSync() shouldBe(Dev1V1.asJson)
     }
   }
 
