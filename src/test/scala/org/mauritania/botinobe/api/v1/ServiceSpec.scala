@@ -52,32 +52,36 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
     "returns 201 with empty properties" in {
       val t = Device(Metadata(None, None, "dev1"))
-      createATargetAndExpect(t)(HttpStatus.Created)(s, r)
+      createADeviceAndExpect(Table.Reports, t)(HttpStatus.Created)(s, r)
+      createADeviceAndExpect(Table.Targets, t)(HttpStatus.Created)(s, r)
     }
 
     "returns 201 with a regular target" in {
       val t = Dev1
-      createATargetAndExpect(t)(HttpStatus.Created)(s, r)
+      createADeviceAndExpect(Table.Reports, t)(HttpStatus.Created)(s, r)
+      createADeviceAndExpect(Table.Targets, t)(HttpStatus.Created)(s, r)
     }
 
     "returns 417 with an empty device name" in {
       val t = Device(Metadata(None, None, ""))
-      createATargetAndExpect(t)(HttpStatus.ExpectationFailed)(s, r)
+      createADeviceAndExpect(Table.Reports, t)(HttpStatus.ExpectationFailed)(s, r)
+      createADeviceAndExpect(Table.Targets, t)(HttpStatus.ExpectationFailed)(s, r)
     }
 
   }
 
-  private [this] def createATargetAndExpect(
+  private [this] def createADeviceAndExpect(
+    t: Table,
     d: Device
   )(
     s: HttpStatus
   )(service: Service, repository: Repository) = {
     (repository.createDevice _).when(
-      argThat[Table]("Addresses target table")(_ == Table.Targets),
+      argThat[Table]("Addresses target table")(_ == t),
       argThat[Device]("Is the expected device")(x => x.withouIdNortTimestamp() == d.withouIdNortTimestamp())
     ).returns(IO.pure(1L)) // mock
     val body = asEntityBody(DeviceU.fromBom(d).actors.asJson.toString)
-    postApiV1(s"/devices/${d.metadata.device}/targets", body)(service).status shouldBe(s)
+    postApiV1(s"/devices/${d.metadata.device}/${t.code}", body)(service).status shouldBe(s)
   }
 
 
@@ -87,9 +91,16 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val s = new Service(r)
 
     "returns 200 with an existent target" in {
-      (r.readDevice _).when(*, 1L).returns(IO.pure(Dev1)) // mock
-      getApiV1("/devices/dev1/targets/1")(s).status shouldBe(HttpStatus.Ok)
-      getApiV1("/devices/dev1/targets/1")(s).as[Json].unsafeRunSync() shouldBe(Dev1V1.asJson)
+      (r.readDevice _).when(Table.Targets, 1L).returns(IO.pure(Dev1)).once // mock
+      (r.readDevice _).when(Table.Reports, 1L).returns(IO.pure(Dev1)).once() // mock
+      val ta = getApiV1("/devices/dev1/targets/1")(s)
+      ta.status shouldBe(HttpStatus.Ok)
+      ta.as[Json].unsafeRunSync() shouldBe(Dev1V1.asJson)
+
+      val re = getApiV1("/devices/dev1/reports/1")(s)
+      re.status shouldBe(HttpStatus.Ok)
+      re.as[Json].unsafeRunSync() shouldBe(Dev1V1.asJson)
+
     }
   }
 
