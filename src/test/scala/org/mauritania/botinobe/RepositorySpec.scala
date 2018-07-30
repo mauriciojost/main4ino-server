@@ -6,15 +6,16 @@ import org.mauritania.botinobe.Repository.Table
 
 class RepositorySpec extends DbSuite {
 
-  "The repository" should "create and read a target/report" in {
+  "The repository" should "create and read a report" in {
     val repo = new Repository(transactor)
-
     repo.insertDevice(Table.Reports, Device1).unsafeRunSync() shouldBe(1L)
     repo.selectDeviceWhereRequestId(Table.Reports, 1L).unsafeRunSync() shouldBe(Device1.withId(Some(1L)))
+  }
 
+  it should "create and read a target" in {
+    val repo = new Repository(transactor)
     repo.insertDevice(Table.Targets, Device1).unsafeRunSync() shouldBe(1L)
     repo.selectDeviceWhereRequestId(Table.Targets, 1L).unsafeRunSync() shouldBe(Device1.withId(Some(1L)))
-
   }
 
   it should "read target/report ids from a device name" in {
