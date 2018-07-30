@@ -21,6 +21,7 @@ case class Device(
 	def withDeviceName(n: DeviceName): Device = this.copy(metadata = this.metadata.copy(device = n))
 	def withStatus(s: Status): Device = Device.fromActorTups(metadata, asActorTups.map(_.copy(status = s)))
 	def withTimestamp(t: Option[Timestamp]): Device = this.copy(metadata = this.metadata.copy(timestamp = t))
+	def withouIdNortTimestamp(): Device = this.copy(metadata = this.metadata.copy(id = None, timestamp = None))
 
 }
 
@@ -28,7 +29,7 @@ object Device {
 
 	val EmptyActorMap: ActorMap = Map.empty[ActorName, Map[PropName, (PropValue, Status)]]
 
-	case class Metadata (
+	case class Metadata ( // TODO metadata information that comes after DB insertion should be put on a wrapper of Device to avoid using .copy
 		id: Option[RecordId],
 		timestamp: Option[Timestamp],
     device: DeviceName
@@ -37,7 +38,10 @@ object Device {
 	def fromActorTups(metadata: Metadata, ps: Iterable[ActorTup]): Device = Device(metadata, ActorTup.asActorMap(ps))
 
 	def fromActorTups(ps: Iterable[ActorTup]): Device = {
-		Device(Metadata(None, None, ps.map(_.device).toList.distinct.mkString), ActorTup.asActorMap(ps))
+		val dNames = ps.map(_.device).toList.distinct
+    assert(dNames.size == 1)
+		val md = Metadata(None, None, dNames.head)
+		Device(md, ActorTup.asActorMap(ps))
 	}
 
 	def merge(ds: Seq[Device]): Seq[Device] = {

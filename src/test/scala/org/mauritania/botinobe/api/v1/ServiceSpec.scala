@@ -17,6 +17,7 @@ import org.http4s.dsl.Http4sDsl._
 import org.http4s.syntax._
 import org.http4s.{Request, Response, Uri, Status => HttpStatus}
 import org.mauritania.botinobe.Repository.Table
+import org.mauritania.botinobe.Repository.Table.Table
 import org.mauritania.botinobe.{Fixtures, Repository}
 import org.mauritania.botinobe.models.Device.Metadata
 import org.mauritania.botinobe.models.{Device, RecordId, Status => MStatus}
@@ -50,7 +51,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val s = new Service(r)
 
     "returns 201 with empty properties" in {
-      val t = Device(Metadata(None, Some(0L), "dev1"))
+      val t = Device(Metadata(None, None, "dev1"))
       createATargetAndExpect(t)(HttpStatus.Created)(s, r)
     }
 
@@ -60,7 +61,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     }
 
     "returns 417 with an empty device name" in {
-      val t = Device(Metadata(None, Some(0L), ""))
+      val t = Device(Metadata(None, None, ""))
       createATargetAndExpect(t)(HttpStatus.ExpectationFailed)(s, r)
     }
 
@@ -71,7 +72,10 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
   )(
     s: HttpStatus
   )(service: Service, repository: Repository) = {
-    (repository.createDevice _).when(*, *).returns(IO.pure(1L)) // mock
+    (repository.createDevice _).when(
+      argThat[Table]("Addresses target table")(_ == Table.Targets),
+      argThat[Device]("Is the expected device")(x => x.withouIdNortTimestamp() == d.withouIdNortTimestamp())
+    ).returns(IO.pure(1L)) // mock
     val body = asEntityBody(DeviceU.fromBom(d).actors.asJson.toString)
     postApiV1(s"/devices/${d.metadata.device}/targets", body)(service).status shouldBe(s)
   }
