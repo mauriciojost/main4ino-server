@@ -73,10 +73,11 @@ class ServiceFuncSpec extends DbSuite {
     // Check the responses
     val clk = get("/devices/dev1/actors/clock/targets?clean=false&merge=true&count=false&created=true")
     val body = get("/devices/dev1/actors/body/targets?clean=false&merge=true&count=false&created=true")
-    clk.\\("response")(0).\\("actors")(0).\\("clock").head.noSpaces shouldBe """{"h":"7","m":"0"}"""
-    clk.\\("response")(0).\\("actors")(0).\\("body").head.noSpaces shouldBe """{}"""
-    body.\\("response")(0).\\("actors")(0).\\("body").head.noSpaces shouldBe """{"mv1":"Zz.","mv0":"Zz."}"""
-    body.\\("response")(0).\\("actors")(0).\\("clock").head.noSpaces shouldBe """{}"""
+
+    clk.asArray.get(0).\\("actors")(0).\\("clock").head.noSpaces shouldBe """{"h":"7","m":"0"}"""
+    clk.asArray.get(0).\\("actors")(0).\\("body").size shouldBe 0
+    body.asArray.get(0).\\("actors")(0).\\("body").head.noSpaces shouldBe """{"mv1":"Zz.","mv0":"Zz."}"""
+    body.asArray.get(0).\\("actors")(0).\\("clock").size shouldBe 0
 
   }
 
