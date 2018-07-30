@@ -3,8 +3,11 @@ package org.mauritania.botinobe.models
 import org.mauritania.botinobe.{DbSuite, Repository}
 import org.mauritania.botinobe.Fixtures.Device1
 import org.mauritania.botinobe.Repository.Table
+import org.scalatest.Sequential
 
 class RepositorySpec extends DbSuite {
+
+  Sequential
 
   "The repository" should "create and read a report" in {
     val repo = new Repository(transactor)

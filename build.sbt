@@ -32,7 +32,8 @@ lazy val root = (project in file("."))
       "ch.qos.logback" % "logback-classic" % LogbackVersion,
       "org.scalatest" %% "scalatest" % ScalaTestVersion % "test",
       "org.scalamock" %% "scalamock" % ScalaMockVersion % "test"
-    )
+    ),
+    parallelExecution in Test := false
   )
 
 

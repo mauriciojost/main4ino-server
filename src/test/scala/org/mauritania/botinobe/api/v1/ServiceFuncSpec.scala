@@ -9,8 +9,11 @@ import org.mauritania.botinobe.api.v1.Service.{CountResponse, IdResponse}
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
+import org.scalatest.Sequential
 
 class ServiceFuncSpec extends DbSuite {
+
+  Sequential
 
   /*
   "The service" should "create and read a target/report" in {
