@@ -44,14 +44,5 @@ object Device {
 		Device(md, ActorTup.asActorMap(ps))
 	}
 
-	def merge(ds: Seq[Device]): Seq[Device] = {
-		val onlyCreated = ds.flatMap(_.asTuples)
-		val byDevActorProp = onlyCreated.groupBy(a => (a.device, a.actor, a.prop)).values
-		val fresherById = byDevActorProp.map(dap => dap.maxBy(_.requestId))
-    fresherById.groupBy(_.device).map{ case (dName, t) =>
-      Device.fromActorTups(Metadata(None, None, dName), t)
-    }.toSeq
-	}
-
 }
 

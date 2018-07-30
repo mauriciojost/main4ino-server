@@ -21,15 +21,26 @@ import org.mauritania.botinobe.helpers.Time
 
 class Service(repository: Repository) extends Http4sDsl[IO] {
 
-  val MinDeviceNameLength = 4
+  final val MinDeviceNameLength = 4
+  final val ContentTypeAppJson = `Content-Type`(MediaType.`application/json`)
+  final val ContentTypeTextPlain = `Content-Type`(MediaType.`text/plain`)
 
-  object CreatedMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("created")
-  object CounMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("count")
-  object MergeMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("merge")
-  object CleanMatcher extends OptionalQueryParamDecoderMatcher[Boolean]("clean")
+  object CreatedMr extends OptionalQueryParamDecoderMatcher[Boolean]("created")
+  object MergeMr extends OptionalQueryParamDecoderMatcher[Boolean]("merge")
+  object CleanMr extends OptionalQueryParamDecoderMatcher[Boolean]("clean")
 
   object TableVar {
     def unapply(str: String): Option[Table] = Table.resolve(str)
+  }
+
+  object StrVar {
+    final val DevRegex = raw"([a-zA-Z0-9_]{4,20})".r
+    def unapply(dev: String): Option[String] = {
+      dev match {
+        case DevRegex(v) => Some(v)
+        case _ => None
+      }
+    }
   }
 
   val HelpMsg = // TODO: complete me
@@ -72,25 +83,13 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
     HttpService[IO] {
 
       // Help
-
-      case GET -> Root / "help" => {
-        Ok(HelpMsg)
-      }
-
+      case GET -> Root / "help" =>
+        Ok(HelpMsg, ContentTypeTextPlain)
 
       // Targets & Reports
 
-      case req@POST -> Root / "devices" / device / TableVar(table) => {
-        if (device.length < MinDeviceNameLength) {
-          ExpectationFailed(s"Device name lenght must be at least $MinDeviceNameLength")
-        } else {
-          for {
-            p <- req.decodeJson[ActorMapU]
-            id <- repository.createDevice(table, DeviceU(MetadataU(None, Some(Time.now), device), p).toBom)
-            resp <- Created(IdResponse(id).asJson)
-          } yield (resp)
-        }
-      }
+      case req@POST -> Root / "devices" / StrVar(device) / TableVar(table) =>
+        Created(postDevice(req, device, table).map(_.asJson), ContentTypeAppJson)
 
       /**
       NOT SUPPORTED
@@ -108,59 +107,71 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
       }
       */
 
-      case req@GET -> Root / "devices" / device / TableVar(table) / LongVar(id) => {
-        for {
-          t <- repository.readDevice(table, id)
-          resp <- Ok(DeviceU.fromBom(t).asJson)
-        } yield (resp)
-      }
+      case req@GET -> Root / "devices" / StrVar(device) / TableVar(table) / LongVar(id) =>
+        Ok(getDevice(table, id).map(_.asJson), ContentTypeAppJson)
 
-      case req@GET -> Root / "devices" / device / TableVar(table) / "last" => {
-        for {
-          r <- repository.readLastDevice(table, device)
-          resp <- Ok(DeviceU.fromBom(r).asJson)
-        } yield (resp)
-      }
+      case req@GET -> Root / "devices" / StrVar(device) / TableVar(table) / "last" =>
+        Ok(getDeviceLast(device, table).map(_.asJson), ContentTypeAppJson)
 
-      case req@GET -> Root / "devices" / device / "actors" / actor / TableVar(table) :? CreatedMatcher(createdOp) +& CounMatcher(countOp) +& CleanMatcher(cleanOp) +& MergeMatcher(mergeOp) => {
-        val created = createdOp.exists(identity)
-        val count = countOp.exists(identity)
-        val clean = cleanOp.exists(identity)
-        val merge = mergeOp.exists(identity)
-        val status = if (created) Status.Created else Status.Consumed
-        val propIds = repository.readDevicePropIdsWhereDeviceActorStatus(table, device, actor, status)
-        if (count) {
-          Ok(readCountIds(propIds), `Content-Type`(MediaType.`application/json`))
-        } else {
-					Ok(readDevicesFromPropIds(table, device, actor, status, propIds, clean, merge), `Content-Type`(MediaType.`application/json`))
-				}
-      }
+      case req@GET -> Root / "devices" / StrVar(device) / "actors" / StrVar(actor) / TableVar(table) / "count" :? CreatedMr(created) +& CleanMr(clean) =>
+        Ok(getDeviceActorCount(device, actor, table, created).map(_.asJson), ContentTypeAppJson)
+
+      case req@GET -> Root / "devices" / StrVar(device) / "actors" / StrVar(actor) / TableVar(table) :? CreatedMr(created) +& CleanMr(clean) +& MergeMr(merge) =>
+        Ok(getDeviceActor(device, actor, table, created, clean, merge).map(_.asJson), ContentTypeAppJson)
 
     }
   }
 
-	private[v1] def readDevicesFromPropIds(
-    table: Repository.Table.Table,
-		device: DeviceName,
-    actor: ActorName,
-    status: Status,
-		propIds: Stream[IO, RecordId],
-		clean: Boolean,
-		merge: Boolean
-	) = {
-		val targets = for {
-      pis <- propIds
-      target <- (if (clean) repository.readPropsConsume(table, device, actor, status) else repository.readProps(table, device, actor, status))
-		} yield (target)
-		val v = targets.fold(List.empty[Device])(_ :+ _).map(
-			if (merge) Device.merge else identity
-		)
-		v.map(i => DevicesResponse(i.map(DeviceU.fromBom)).asJson)
+  private[v1] def getDevice(table: Table, id: Timestamp) = {
+    for {
+      t <- repository.selectDeviceWhereRequestId(table, id)
+      resp <- IO(DeviceU.fromBom(t))
+    } yield (resp)
+  }
+
+  private[v1] def postDevice(req: Request[IO], device: String, table: Table) = {
+    for {
+      p <- req.decodeJson[ActorMapU]
+      id <- repository.insertDevice(table, DeviceU(MetadataU(None, Some(Time.now), device), p).toBom)
+      resp <- IO(IdResponse(id))
+    } yield (resp)
+  }
+
+  private[v1] def getDeviceLast(device: String, table: Table) = {
+    for {
+      r <- repository.selectMaxDevice(table, device)
+      k <- IO(DeviceU.fromBom(r))
+    } yield (k)
+  }
+
+  private[v1] def getDeviceActor(
+    device: String, actor: String, table: Table, created: Option[Boolean], clean: Option[Boolean], merge: Option[Boolean]
+  ) = {
+    val selectStatus = if (created.exists(identity)) Status.Created else Status.Consumed
+    val actorTups = if (clean.exists(identity)) {
+      repository.selectActorTupChangeStatusWhereDeviceActorStatus(table, device, actor, selectStatus, Status.Consumed)
+    } else {
+      repository.selectActorTupWhereDeviceActorStatus(table, device, actor, selectStatus)
+    }
+    consolidateDevActorResponse(actorTups, merge.exists(identity))
+  }
+
+  private[v1] def getDeviceActorCount(device: String, actor: String, table: Table, createdOp: Option[Boolean]) = {
+    val selectStatus = if (createdOp.exists(identity)) Status.Created else Status.Consumed
+    val actorTups= repository.selectActorTupChangeStatusWhereDeviceActorStatus(table, device, actor, selectStatus, Status.Consumed)
+    countRecords(actorTups)
+  }
+
+  private[v1] def consolidateDevActorResponse(tps: Stream[IO, ActorTup], merge: Boolean): Stream[IO, List[DeviceU]] = {
+		val t = tps.fold(List.empty[ActorTup])(_ :+ _)
+    if (merge) {
+      t.map(i => List(DeviceU.fromBom(Device.fromActorTups(i))))
+    } else {
+      t.map(i => i.groupBy(_.requestId).mapValues(Device.fromActorTups).values.map(DeviceU.fromBom).toList)
+    }
 	}
 
-	private[v1] def readCountIds(ids: Stream[IO, RecordId]) = {
-		ids.map(_ => 1).reduce(_ + _).lastOr(0).map(CountResponse(_).asJson)
-	}
+	private[v1] def countRecords[T](ids: Stream[IO, T]) = ids.map(_ => 1).reduce(_ + _).lastOr(0).map(CountResponse(_))
 
 	private[v1] def request(r: Request[IO]): IO[Response[IO]] = service.orNotFound(r)
 
