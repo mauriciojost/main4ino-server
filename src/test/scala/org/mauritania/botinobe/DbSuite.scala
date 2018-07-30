@@ -17,9 +17,11 @@ trait DbSuite extends FlatSpec with Matchers with BeforeAndAfterEach {
   )
 
   override def beforeEach() = {
-    val db = Database.transactor(transactorConfig)
-    transactor = db.unsafeRunSync()
-    Database.initialize(transactor, true).unsafeRunSync()
+    val k = for {
+      t <- Database.transactor(transactorConfig)
+      d <- Database.initialize(t, true)
+    } yield(t)
+    transactor = k.unsafeRunSync
   }
 
   override def afterEach() = {
