@@ -39,8 +39,8 @@ object Device {
 
 	def fromActorTups(ps: Iterable[ActorTup]): Device = {
 		val dNames = ps.map(_.device).toList.distinct
-    assert(dNames.size == 1)
-		val md = Metadata(None, None, dNames.head)
+    assert(dNames.size < 2, s"Found: ${dNames}")
+		val md = Metadata(None, None, dNames.distinct.mkString)
 		Device(md, ActorTup.asActorMap(ps))
 	}
 
