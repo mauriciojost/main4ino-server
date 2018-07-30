@@ -12,7 +12,9 @@ import io.circe.generic.auto._
 
 class ServiceFuncSpec extends DbSuite {
 
-  "The repository" should "create and read a target/report" in {
+  /*
+  "The service" should "create and read a target/report" in {
+
     implicit val s = new Service(new Repository(transactor))
 
     // Add a few targets
@@ -52,6 +54,26 @@ class ServiceFuncSpec extends DbSuite {
 
     val dev1TargetsCountAfterClean = get("/devices/dev1/targets?clean=false&merge=false&count=true&created=true")
     dev1TargetsCountAfterClean.noSpaces shouldBe CountResponse(0).asJson.noSpaces
+
+  }
+  */
+
+  it should "create targets and merge the properties correctly" in {
+
+    implicit val s = new Service(new Repository(transactor))
+
+    // Add a few targets
+    post("/devices/dev1/targets", """{"clock":{"h":"7"},"body":{"mv0":"Zz."}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
+    post("/devices/dev1/targets", """{"clock":{"m":"0"}}""").noSpaces shouldBe IdResponse(2).asJson.noSpaces
+    post("/devices/dev1/targets", """{"body":{"mv1":"Zz."}}""").noSpaces shouldBe IdResponse(3).asJson.noSpaces
+
+    // Check the responses
+    val clk = get("/devices/dev1/actors/clock/targets?clean=false&merge=true&count=false&created=true")
+    val body = get("/devices/dev1/actors/body/targets?clean=false&merge=true&count=false&created=true")
+    clk.\\("response")(0).\\("actors")(0).\\("clock").head.noSpaces shouldBe """{"h":"7","m":"0"}"""
+    clk.\\("response")(0).\\("actors")(0).\\("body").head.noSpaces shouldBe """{}"""
+    body.\\("response")(0).\\("actors")(0).\\("body").head.noSpaces shouldBe """{"mv1":"Zz.","mv0":"Zz."}"""
+    body.\\("response")(0).\\("actors")(0).\\("clock").head.noSpaces shouldBe """{}"""
 
   }
 

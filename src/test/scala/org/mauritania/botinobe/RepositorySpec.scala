@@ -28,8 +28,8 @@ class RepositorySpec extends DbSuite {
       repo.createDevice(table, t2).unsafeRunSync() shouldBe(2L) // for device 2, resulted in id 2
       repo.createDevice(table, t2).unsafeRunSync() shouldBe(3L) // for device 2, resulted in id 3
 
-      repo.readDeviceIds(table, t1.metadata.device).compile.toList.unsafeRunSync() shouldBe(List(1L))
-      repo.readDeviceIds(table, t2.metadata.device).compile.toList.unsafeRunSync() shouldBe(List(2L, 3L))
+      repo.readRequestIds(table, t1.metadata.device).compile.toList.unsafeRunSync() shouldBe(List(1L))
+      repo.readRequestIds(table, t2.metadata.device).compile.toList.unsafeRunSync() shouldBe(List(2L, 3L))
     }
   }
 
@@ -40,7 +40,7 @@ class RepositorySpec extends DbSuite {
       repo.createDevice(table, Device1).unsafeRunSync() shouldBe 1L
 
       repo.readDevice(table, 1L).unsafeRunSync() shouldBe ref.withStatus(Status.Created)
-      repo.readDeviceConsume(table, 1L).unsafeRunSync() shouldBe ref.withStatus(Status.Consumed)
+      repo.readPropsConsume(table, Device1.metadata.device, "actorx", Status.Created).compile.toList.unsafeRunSync() shouldBe ref.withStatus(Status.Consumed)
     }
   }
 

@@ -1,14 +1,14 @@
 package org.mauritania.botinobe.models
 
 case class ActorTup(
-	id: Option[RecordId],
+	requestId: Option[RecordId],
 	device: DeviceName,
 	actor: ActorName,
 	prop: PropName,
 	value: PropValue,
 	status: Status
 ) {
-	def withId(i: Option[RecordId]): ActorTup = this.copy(id = i)
+	def withId(i: Option[RecordId]): ActorTup = this.copy(requestId = i)
 }
 
 object ActorTup {
@@ -18,7 +18,7 @@ object ActorTup {
 		val props = ps.groupBy(_.actor)
 			.mapValues(_.groupBy(_.prop)
 				.mapValues{a => {
-					val mx = a.maxBy(_.id)
+					val mx = a.maxBy(_.requestId)
 					(mx.value, mx.status)
         }})
 		props

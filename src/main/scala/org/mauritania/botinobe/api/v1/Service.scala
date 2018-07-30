@@ -92,6 +92,8 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         }
       }
 
+      /**
+      NOT SUPPORTED
       case req@GET -> Root / "devices" / device / TableVar(table) :? CreatedMatcher(createdOp) +& CounMatcher(countOp) +& CleanMatcher(cleanOp) +& MergeMatcher(mergeOp) => {
         val created = createdOp.exists(identity)
         val count = countOp.exists(identity)
@@ -101,9 +103,10 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         if (count) {
           Ok(readCountIds(propIds), `Content-Type`(MediaType.`application/json`))
         } else {
-					Ok(readDevices(table, device, propIds, clean, merge), `Content-Type`(MediaType.`application/json`))
+					Ok(readDevicesFromPropIds(table, device, actor, status, propIds, clean, merge), `Content-Type`(MediaType.`application/json`))
 				}
       }
+      */
 
       case req@GET -> Root / "devices" / device / TableVar(table) / LongVar(id) => {
         for {
@@ -124,27 +127,30 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         val count = countOp.exists(identity)
         val clean = cleanOp.exists(identity)
         val merge = mergeOp.exists(identity)
-        val propIds = repository.readDevicePropIdsWhereDeviceActorStatus(table, device, actor, if (created) Some(Status.Created) else None)
+        val status = if (created) Status.Created else Status.Consumed
+        val propIds = repository.readDevicePropIdsWhereDeviceActorStatus(table, device, actor, status)
         if (count) {
           Ok(readCountIds(propIds), `Content-Type`(MediaType.`application/json`))
         } else {
-					Ok(readDevices(table, device, propIds, clean, merge), `Content-Type`(MediaType.`application/json`))
+					Ok(readDevicesFromPropIds(table, device, actor, status, propIds, clean, merge), `Content-Type`(MediaType.`application/json`))
 				}
       }
 
     }
   }
 
-	private[v1] def readDevices(
+	private[v1] def readDevicesFromPropIds(
     table: Repository.Table.Table,
-		device: String,
+		device: DeviceName,
+    actor: ActorName,
+    status: Status,
 		propIds: Stream[IO, RecordId],
 		clean: Boolean,
 		merge: Boolean
 	) = {
 		val targets = for {
-      pd <- propIds
-      target <- Stream.eval[IO, Device](if (clean) repository.readDeviceConsume(table, pd) else repository.readDevice(table, pd))
+      pis <- propIds
+      target <- (if (clean) repository.readPropsConsume(table, device, actor, status) else repository.readProps(table, device, actor, status))
 		} yield (target)
 		val v = targets.fold(List.empty[Device])(_ :+ _).map(
 			if (merge) Device.merge else identity

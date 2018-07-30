@@ -17,61 +17,57 @@ class Repository(transactor: Transactor[IO]) {
 
   def createDevice(table: Table, t: Device): IO[RecordId] = {
     val transaction = for {
-      targetId <- sqlDeviceIn_X_requests(table, t)
-      nroTargetActorProps <- sqlActorTupsIn_X(table, t.asActorTups, targetId)
-    } yield (targetId)
+      deviceId <- sqlDeviceIn_X_requests(table, t)
+      nroTargetActorProps <- sqlActorTupsIn_X(table, t.asActorTups, deviceId)
+    } yield (deviceId)
     transaction.transact(transactor)
   }
 
-  def readDevice(table: Table, i: RecordId): IO[Device] = {
+  def readDevice(table: Table, requestId: RecordId): IO[Device] = {
     val transaction = for {
-      t <- sqlMetadataFromId_X_requests(table, i)
-      p <- sqlActorTupsFromId_X(table, i)
+      t <- sqlMetadataFromRequestId_X_requests(table, requestId)
+      p <- sqlActorTupsFromRequestId_X(table, requestId)
     } yield (Device.fromActorTups(t, p))
     transaction.transact(transactor)
   }
-
 
   def readLastDevice(table: Table, device: DeviceName): IO[Device] = {
     val transaction = for {
-      i <- sqlIdFromDeviceLast_X_requests(table, device)
-      t <- sqlMetadataFromId_X_requests(table, i)
-      p <- sqlActorTupsFromId_X(table, i)
+      i <- sqlRequestIdFromDeviceLast_X_requests(table, device)
+      t <- sqlMetadataFromRequestId_X_requests(table, i)
+      p <- sqlActorTupsFromRequestId_X(table, i)
     } yield (Device.fromActorTups(t, p))
     transaction.transact(transactor)
   }
 
-  def readDeviceConsume(table: Table, i: RecordId): IO[Device] = {
+  def readPropsConsume(table: Table, device: DeviceName, actor: ActorName, status: Status): Stream[IO, Device] = {
     val transaction = for {
-      t <- sqlMetadataFromId_X_requests(table, i)
-      c <- sqlChangeStatus_X(table, i)
-      p <- sqlActorTupsFromId_X(table, i)
-    } yield (Device.fromActorTups(t, p))
+      pi <- sqlPropIdsFromDeviceNameActorNameStatus_X(table, device, actor, status)
+      c <- Stream.eval(sqlChangeStatusFromPropId_X(table, pi, Status.Consumed))
+      t <- Stream.eval(sqlActorTupsFromPropId_X(table, pi))
+    } yield (Device.fromActorTups(t))
     transaction.transact(transactor)
   }
 
-  def readDeviceIds(table: Table, device: DeviceName): Stream[IO, RecordId] = {
-    sqlIdFromDeviceName_X_requests(table, device).transact(transactor)
+  def readProps(table: Table, device: DeviceName, actor: ActorName, status: Status): Stream[IO, Device] = {
+    val transaction = for {
+      pi <- sqlPropIdsFromDeviceNameActorNameStatus_X(table, device, actor, status)
+      t <- Stream.eval(sqlActorTupsFromPropId_X(table, pi))
+    } yield (Device.fromActorTups(t))
+    transaction.transact(transactor)
   }
 
-  def readDevicePropIdsWhereDeviceStatus(table: Table, device: DeviceName, status: Option[Status]): Stream[IO, RecordId] = {
-    status match {
-      case Some(s) => sqlIdFromDeviceNameStatus_X(table, device, s).transact (transactor)
-      case None => sqlIdFromDeviceName_X(table, device).transact (transactor)
-    }
+  def readRequestIds(table: Table, deviceName: DeviceName): Stream[IO, RecordId] = {
+    sqlRequestIdFromDeviceName_X_requests(table, deviceName).transact(transactor)
   }
 
-  def readDevicePropIdsWhereDeviceActorStatus(table: Table, device: DeviceName, actor: ActorName, status: Option[Status]): Stream[IO, RecordId] = {
-    status match {
-      case Some(s) => sqlIdFromDeviceNameActorNameStatus_X(table: Table, device, actor, s).transact (transactor)
-      case None => sqlIdFromDeviceNameActorName_X(table: Table, device, actor).transact (transactor)
-    }
+  def readDevicePropIdsWhereDeviceActorStatus(table: Table, device: DeviceName, actor: ActorName, status: Status): Stream[IO, RecordId] = {
+      sqlPropIdsFromDeviceNameActorNameStatus_X(table: Table, device, actor, status).transact (transactor)
   }
 
-
-  private def sqlActorTupsIn_X(table: Table, t: Iterable[ActorTup], targetId: RecordId): ConnectionIO[Int] = {
-    val sql = s"INSERT INTO ${table.code} (target_id, device_name, actor_name, property_name, property_value, property_status) VALUES (?, ?, ?, ?, ?, ?)"
-    Update[ActorTup](sql).updateMany(t.toList.map(_.withId(Some(targetId))))
+  private def sqlActorTupsIn_X(table: Table, t: Iterable[ActorTup], requestId: RecordId): ConnectionIO[Int] = {
+    val sql = s"INSERT INTO ${table.code} (request_id, device_name, actor_name, property_name, property_value, property_status) VALUES (?, ?, ?, ?, ?, ?)"
+    Update[ActorTup](sql).updateMany(t.toList.map(_.withId(Some(requestId))))
   }
 
   private def sqlDeviceIn_X_requests(table: Table, t: Device): ConnectionIO[RecordId] = {
@@ -79,48 +75,53 @@ class Repository(transactor: Transactor[IO]) {
       .update.withUniqueGeneratedKeys[RecordId]("id")
   }
 
-  private def sqlMetadataFromId_X_requests(table: Table, id: RecordId): ConnectionIO[Metadata] = {
+  private def sqlMetadataFromRequestId_X_requests(table: Table, id: RecordId): ConnectionIO[Metadata] = {
     (fr"SELECT id, creation, device_name FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE id=$id")
       .query[Metadata].unique
   }
 
-  private def sqlIdFromDeviceName_X_requests(table: Table, device: DeviceName): Stream[ConnectionIO, RecordId] = {
+  private def sqlRequestIdFromDeviceName_X_requests(table: Table, device: DeviceName): Stream[ConnectionIO, RecordId] = {
     (fr"SELECT id FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE device_name=$device")
       .query[RecordId].stream
   }
 
-  private def sqlIdFromDeviceLast_X_requests(table: Table, device: DeviceName): ConnectionIO[RecordId] = {
+  private def sqlRequestIdFromDeviceLast_X_requests(table: Table, device: DeviceName): ConnectionIO[RecordId] = {
     (fr"SELECT MAX(id) FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE device_name=$device")
       .query[RecordId].unique
   }
 
-  private def sqlActorTupsFromId_X(table: Table, targetId: RecordId): ConnectionIO[List[ActorTup]] = {
-    (fr"SELECT target_id, device_name, actor_name, property_name, property_value, property_status FROM " ++ Fragment.const(table.code) ++ fr" WHERE target_id=$targetId")
+  private def sqlActorTupsFromRequestId_X(table: Table, deviceId: RecordId): ConnectionIO[List[ActorTup]] = {
+    (fr"SELECT request_id, device_name, actor_name, property_name, property_value, property_status FROM " ++ Fragment.const(table.code) ++ fr" WHERE request_id=$deviceId")
       .query[ActorTup].accumulate
   }
 
-  private def sqlChangeStatus_X(table: Table, targetId: RecordId): ConnectionIO[Int] = {
-    (fr"UPDATE " ++ Fragment.const(table.code) ++ fr" SET property_status = ${Status.Consumed} WHERE target_id=$targetId")
+  private def sqlActorTupsFromPropId_X(table: Table, propId: RecordId): ConnectionIO[List[ActorTup]] = {
+    (fr"SELECT request_id, device_name, actor_name, property_name, property_value, property_status FROM " ++ Fragment.const(table.code) ++ fr" WHERE id=$propId")
+      .query[ActorTup].accumulate
+  }
+
+  private def sqlChangeStatusFromPropId_X(table: Table, propId: RecordId, newStatus: Status): ConnectionIO[Int] = {
+    (fr"UPDATE " ++ Fragment.const(table.code) ++ fr" SET property_status = ${newStatus} WHERE id=$propId")
       .update.run
   }
 
-  private def sqlIdFromDeviceNameStatus_X(table: Table, device: DeviceName, status: Status): Stream[ConnectionIO, RecordId] = {
-    (fr"SELECT target_id FROM " ++ Fragment.const(table.code) ++ fr" WHERE property_status=$status and device_name=$device")
+  private def sqlPropIdsFromDeviceNameStatus_X(table: Table, device: DeviceName, status: Status): Stream[ConnectionIO, RecordId] = {
+    (fr"SELECT request_id FROM " ++ Fragment.const(table.code) ++ fr" WHERE property_status=$status and device_name=$device")
       .query[RecordId].stream
   }
 
-  private def sqlIdFromDeviceNameActorNameStatus_X(table: Table, device: DeviceName, actor: ActorName, status: Status): Stream[ConnectionIO, RecordId] = {
-    (fr"SELECT target_id FROM " ++ Fragment.const(table.code) ++ fr" WHERE property_status=$status and device_name=$device AND actorn_name=$actor")
+  private def sqlPropIdsFromDeviceNameActorNameStatus_X(table: Table, device: DeviceName, actor: ActorName, status: Status): Stream[ConnectionIO, RecordId] = {
+    (fr"SELECT request_id FROM " ++ Fragment.const(table.code) ++ fr" WHERE property_status=$status and device_name=$device AND actor_name=$actor")
       .query[RecordId].stream
   }
 
-  private def sqlIdFromDeviceNameActorName_X(table: Table, device: DeviceName, actor: ActorName): Stream[ConnectionIO, RecordId] = {
-    (fr"SELECT DISTINCT target_id FROM " ++ Fragment.const(table.code) ++ fr" WHERE device_name=$device AND actor_name =$actor")
+  private def sqlPropIdsFromDeviceNameActorName_X(table: Table, device: DeviceName, actor: ActorName): Stream[ConnectionIO, RecordId] = {
+    (fr"SELECT DISTINCT request_id FROM " ++ Fragment.const(table.code) ++ fr" WHERE device_name=$device AND actor_name =$actor")
       .query[RecordId].stream
   }
 
-  private def sqlIdFromDeviceName_X(table: Table, device: DeviceName): Stream[ConnectionIO, RecordId] = {
-    (fr"SELECT DISTINCT target_id FROM " ++ Fragment.const(table.code) ++ fr" WHERE device_name=$device")
+  private def sqlPropIdsFromDeviceName_X(table: Table, device: DeviceName): Stream[ConnectionIO, RecordId] = {
+    (fr"SELECT DISTINCT request_id FROM " ++ Fragment.const(table.code) ++ fr" WHERE device_name=$device")
       .query[RecordId].stream
   }
 

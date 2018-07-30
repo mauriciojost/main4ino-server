@@ -16,6 +16,7 @@ import org.http4s.dsl.io._
 import org.http4s.dsl.Http4sDsl._
 import org.http4s.syntax._
 import org.http4s.{Request, Response, Uri, Status => HttpStatus}
+import org.mauritania.botinobe.Repository.Table
 import org.mauritania.botinobe.{Fixtures, Repository}
 import org.mauritania.botinobe.models.Device.Metadata
 import org.mauritania.botinobe.models.{Device, RecordId, Status => MStatus}
