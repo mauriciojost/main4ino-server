@@ -132,8 +132,8 @@ object Repository {
   object Table {
 
     sealed abstract class Table(val code: String)
-    case object Reports extends Table("targets")
-    case object Targets extends Table("reports")
+    case object Reports extends Table("reports")
+    case object Targets extends Table("targets")
 
     val all = List(Reports, Targets)
     def resolve(s: String): Option[Table] = all.find(_.code == s)
