@@ -56,7 +56,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
       createADeviceAndExpect(Table.Targets, t)(HttpStatus.Created)(s, r)
     }
 
-    "returns 201 with a regular target" in {
+    "returns 201 with a regular target/request" in {
       val t = Dev1
       createADeviceAndExpect(Table.Reports, t)(HttpStatus.Created)(s, r)
       createADeviceAndExpect(Table.Targets, t)(HttpStatus.Created)(s, r)
@@ -85,12 +85,12 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
   }
 
 
-  "Read target request" should {
+  "Read target/report request" should {
 
     val r = stub[Repository]
     val s = new Service(r)
 
-    "returns 200 with an existent target" in {
+    "returns 200 with an existent target/request" in {
       (r.readDevice _).when(Table.Targets, 1L).returns(IO.pure(Dev1)).once // mock
       (r.readDevice _).when(Table.Reports, 1L).returns(IO.pure(Dev1)).once() // mock
       val ta = getApiV1("/devices/dev1/targets/1")(s)
