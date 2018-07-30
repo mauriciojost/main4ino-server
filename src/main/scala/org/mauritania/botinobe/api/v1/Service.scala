@@ -91,19 +91,11 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
       case req@POST -> Root / "devices" / StrVar(device) / TableVar(table) =>
         Created(postDevice(req, device, table).map(_.asJson), ContentTypeAppJson)
 
-      /**
-      NOT SUPPORTED
-      case req@GET -> Root / "devices" / device / TableVar(table) :? CreatedMatcher(createdOp) +& CounMatcher(countOp) +& CleanMatcher(cleanOp) +& MergeMatcher(mergeOp) => {
+        /*
+      case req@GET -> Root / "devices" / StrVar(device) / TableVar(table) :? CreatedMr(createdOp) => {
         val created = createdOp.exists(identity)
-        val count = countOp.exists(identity)
-        val clean = cleanOp.exists(identity)
-        val merge = mergeOp.exists(identity)
-        val propIds = repository.readDevicePropIdsWhereDeviceStatus(table, device, if (created) Some(Status.Created) else None)
-        if (count) {
-          Ok(readCountIds(propIds), `Content-Type`(MediaType.`application/json`))
-        } else {
-					Ok(readDevicesFromPropIds(table, device, actor, status, propIds, clean, merge), `Content-Type`(MediaType.`application/json`))
-				}
+        val propIds = repository.selectActorTupWhereDeviceActorStatus(device, status)
+        Ok(readDevicesFromPropIds(table, device, actor, status, propIds, clean, merge), `Content-Type`(MediaType.`application/json`))
       }
       */
 
