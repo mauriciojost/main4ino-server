@@ -35,12 +35,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 
   object StrVar {
     final val DevRegex = raw"([a-zA-Z0-9_]{4,20})".r
-    def unapply(dev: String): Option[String] = {
-      dev match {
-        case DevRegex(v) => Some(v)
-        case _ => None
-      }
-    }
+    def unapply(dev: String): Option[String] = DevRegex.findFirstIn(dev)
   }
 
   val HelpMsg = // TODO: complete me
@@ -79,7 +74,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
        |
     """.stripMargin
 
-  val service = {
+  val service =
     HttpService[IO] {
 
       // Help
@@ -105,14 +100,13 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
       case req@GET -> Root / "devices" / StrVar(device) / TableVar(table) / "last" =>
         Ok(getDeviceLast(device, table).map(_.asJson), ContentTypeAppJson)
 
-      case req@GET -> Root / "devices" / StrVar(device) / "actors" / StrVar(actor) / TableVar(table) / "count" :? CreatedMr(created) +& CleanMr(clean) =>
+      case req@GET -> Root / "devices" / StrVar(device) / "actors" / StrVar(actor) / TableVar(table) / "count" :? CreatedMr(created) =>
         Ok(getDeviceActorCount(device, actor, table, created).map(_.asJson), ContentTypeAppJson)
 
       case req@GET -> Root / "devices" / StrVar(device) / "actors" / StrVar(actor) / TableVar(table) :? CreatedMr(created) +& CleanMr(clean) +& MergeMr(merge) =>
         Ok(getDeviceActor(device, actor, table, created, clean, merge).map(_.asJson), ContentTypeAppJson)
 
     }
-  }
 
   private[v1] def getDevice(table: Table, id: Timestamp) = {
     for {
@@ -150,18 +144,18 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 
   private[v1] def getDeviceActorCount(device: String, actor: String, table: Table, createdOp: Option[Boolean]) = {
     val selectStatus = if (createdOp.exists(identity)) Status.Created else Status.Consumed
-    val actorTups= repository.selectActorTupChangeStatusWhereDeviceActorStatus(table, device, actor, selectStatus, Status.Consumed)
+    val actorTups = repository.selectActorTupChangeStatusWhereDeviceActorStatus(table, device, actor, selectStatus, Status.Consumed)
     countRecords(actorTups)
   }
 
   private[v1] def consolidateDevActorResponse(tps: Stream[IO, ActorTup], merge: Boolean): Stream[IO, List[DeviceU]] = {
-		val t = tps.fold(List.empty[ActorTup])(_ :+ _)
+    val t = tps.fold(List.empty[ActorTup])(_ :+ _)
     if (merge) {
       t.map(i => List(DeviceU.fromBom(Device.fromActorTups(i))))
     } else {
       t.map(i => i.groupBy(_.requestId).mapValues(Device.fromActorTups).values.map(DeviceU.fromBom).toList)
     }
-	}
+  }
 
 	private[v1] def countRecords[T](ids: Stream[IO, T]) = ids.map(_ => 1).reduce(_ + _).lastOr(0).map(CountResponse(_))
 
