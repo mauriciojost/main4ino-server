@@ -98,7 +98,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     "returns the list of associated targets set" in {
 
       (r.selectActorTupWhereDeviceActorStatus _)
-        .when(e(Table.Targets), e("dev1"), e("clock"), e(S.Created))
+        .when(e(Table.Targets), e("dev1"), e(Some("clock")), e(S.Created))
         .returns(Stream.fromIterator[IO, ActorTup](Iterator(
           ActorTup(Some(1), "dev1", "clock", "h", "7", S.Consumed),
           ActorTup(Some(2), "dev1", "clock", "h", "8", S.Consumed)
@@ -121,7 +121,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
     "returns the merged target (result of all the targets set) for a given actor" in {
       (r.selectActorTupWhereDeviceActorStatus _)
-        .when(e(Table.Targets), e("dev1"), e("clock"), e(S.Created))
+        .when(e(Table.Targets), e("dev1"), e(Some("clock")), e(S.Created))
         .returns(Stream.fromIterator[IO, ActorTup](Iterator(
           ActorTup(Some(1), "dev1", "clock", "h", "7", S.Consumed),
           ActorTup(Some(2), "dev1", "clock", "m", "0", S.Consumed),
