@@ -86,14 +86,6 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
       case req@POST -> Root / "devices" / StrVar(device) / TableVar(table) =>
         Created(postDevice(req, device, table).map(_.asJson), ContentTypeAppJson)
 
-        /*
-      case req@GET -> Root / "devices" / StrVar(device) / TableVar(table) :? CreatedMr(createdOp) => {
-        val created = createdOp.exists(identity)
-        val propIds = repository.selectActorTupWhereDeviceActorStatus(device, status)
-        Ok(readDevicesFromPropIds(table, device, actor, status, propIds, clean, merge), `Content-Type`(MediaType.`application/json`))
-      }
-      */
-
       case req@GET -> Root / "devices" / StrVar(device) / TableVar(table) / LongVar(id) =>
         Ok(getDevice(table, id).map(_.asJson), ContentTypeAppJson)
 
