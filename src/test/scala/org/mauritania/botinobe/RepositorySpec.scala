@@ -47,23 +47,23 @@ class RepositorySpec extends DbSuite {
       repo.selectDeviceWhereRequestId(table, 1L).unsafeRunSync() shouldBe ref.withStatus(Status.Created)
 
       // Get properties for one actor, and set them to consumed
-      repo.selectActorTupChangeStatusWhereDeviceActorStatus(table, Device1.metadata.device, Some("actorx"), Status.Created, Status.Consumed)
+      repo.selectActorTupWhereDeviceActorStatus(table, Device1.metadata.device, Some("actorx"), Status.Created, true)
         .compile.toList.unsafeRunSync().toSet shouldBe ref.asActorTups.map(_.withRequestId(Some(1L))).filter(_.actor == "actorx").toSet
 
       // Ensure they are consumed
-      repo.selectActorTupWhereDeviceActorStatus(table, Device1.metadata.device, Some("actorx"), Status.Consumed)
+      repo.selectActorTupWhereDeviceActorStatus(table, Device1.metadata.device, Some("actorx"), Status.Consumed, false)
         .compile.toList.unsafeRunSync().toSet shouldBe ref.withStatus(Status.Consumed).asActorTups.map(_.withRequestId(Some(1L))).filter(_.actor == "actorx").toSet
 
       // Take the other actor and ensure the properties are still not consumed
-      repo.selectActorTupWhereDeviceActorStatus(table, Device1.metadata.device, Some("actory"), Status.Created)
+      repo.selectActorTupWhereDeviceActorStatus(table, Device1.metadata.device, Some("actory"), Status.Created, false)
         .compile.toList.unsafeRunSync().toSet shouldBe ref.withStatus(Status.Created).asActorTups.map(_.withRequestId(Some(1L))).filter(_.actor == "actory").toSet
 
       // Consume them
-      repo.selectActorTupChangeStatusWhereDeviceActorStatus(table, Device1.metadata.device, Some("actory"), Status.Created, Status.Consumed)
+      repo.selectActorTupWhereDeviceActorStatus(table, Device1.metadata.device, Some("actory"), Status.Created, true)
         .compile.toList.unsafeRunSync().toSet shouldBe ref.asActorTups.map(_.withRequestId(Some(1L))).filter(_.actor == "actory").toSet
 
       // Ensure they are now consumed
-      repo.selectActorTupWhereDeviceActorStatus(table, Device1.metadata.device, Some("actory"), Status.Consumed)
+      repo.selectActorTupWhereDeviceActorStatus(table, Device1.metadata.device, Some("actory"), Status.Consumed, false)
         .compile.toList.unsafeRunSync().toSet shouldBe ref.withStatus(Status.Consumed).asActorTups.map(_.withRequestId(Some(1L))).filter(_.actor == "actory").toSet
     }
   }

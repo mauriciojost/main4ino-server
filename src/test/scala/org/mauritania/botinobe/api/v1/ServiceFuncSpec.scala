@@ -71,13 +71,11 @@ class ServiceFuncSpec extends DbSuite {
     post("/devices/dev1/targets", """{"body":{"mv1":"Zz."}}""").noSpaces shouldBe IdResponse(3).asJson.noSpaces
 
     // Check the responses
-    val clk = get("/devices/dev1/actors/clock/targets?clean=false&merge=true&count=false&created=true")
-    val body = get("/devices/dev1/actors/body/targets?clean=false&merge=true&count=false&created=true")
+    val clk = get("/devices/dev1/actors/clock/targets/summary?clean=false&count=false&created=true")
+    val body = get("/devices/dev1/actors/body/targets/summary?clean=false&count=false&created=true")
 
-    clk.asArray.get(0).\\("actors")(0).\\("clock").head.noSpaces shouldBe """{"h":"7","m":"0"}"""
-    clk.asArray.get(0).\\("actors")(0).\\("body").size shouldBe 0
-    body.asArray.get(0).\\("actors")(0).\\("body").head.noSpaces shouldBe """{"mv1":"Zz.","mv0":"Zz."}"""
-    body.asArray.get(0).\\("actors")(0).\\("clock").size shouldBe 0
+    clk.noSpaces shouldBe """{"h":"7","m":"0"}"""
+    body.noSpaces shouldBe """{"mv1":"Zz.","mv0":"Zz."}"""
 
   }
 

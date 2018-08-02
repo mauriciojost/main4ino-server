@@ -38,17 +38,10 @@ class Repository(transactor: Transactor[IO]) {
     transaction.transact(transactor)
   }
 
-  def selectActorTupChangeStatusWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], oldStatus: Status, newStatus: Status): Stream[IO, ActorTup] = {
-    val transaction = for {
-      p <- sqlSelectActorTupWhereDeviceActorStatus(table, device, actor, oldStatus)
-      c <- Stream.eval(sqlUpdateActorTupWhereStatusDeviceActor(table, device, actor, oldStatus, newStatus))
-    } yield (p)
-    transaction.transact(transactor)
-  }
-
-  def selectActorTupWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Status): Stream[IO, ActorTup] = {
+  def selectActorTupWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Status, consume: Boolean): Stream[IO, ActorTup] = {
     val transaction = for {
       p <- sqlSelectActorTupWhereDeviceActorStatus(table, device, actor, status)
+      c <- if (consume) Stream.eval[ConnectionIO, Int](sqlUpdateActorTupWhereStatusDeviceActor(table, device, actor, Status.Created, Status.Consumed)) else Stream.fromIterator[ConnectionIO, Int](Iterator(0))
     } yield (p)
     transaction.transact(transactor)
   }
@@ -78,11 +71,6 @@ class Repository(transactor: Transactor[IO]) {
 
   private def sqlSelectActorTupWhereRequestId(table: Table, requestId: RecordId): ConnectionIO[List[ActorTup]] = {
     (fr"SELECT request_id, device_name, actor_name, property_name, property_value, property_status FROM " ++ Fragment.const(table.code) ++ fr" WHERE request_id=$requestId")
-      .query[ActorTup].accumulate
-  }
-
-  private def sqlSelectActorTupWherePropId(table: Table, propId: RecordId): ConnectionIO[List[ActorTup]] = {
-    (fr"SELECT request_id, device_name, actor_name, property_name, property_value, property_status FROM " ++ Fragment.const(table.code) ++ fr" WHERE id=$propId")
       .query[ActorTup].accumulate
   }
 

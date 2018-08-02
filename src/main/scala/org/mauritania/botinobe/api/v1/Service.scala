@@ -29,11 +29,11 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
   object MergeMr extends OptionalQueryParamDecoderMatcher[Boolean]("merge")
   object CleanMr extends OptionalQueryParamDecoderMatcher[Boolean]("clean")
 
-  object TableVar {
+  object T {
     def unapply(str: String): Option[Table] = Table.resolve(str)
   }
 
-  object StrVar {
+  object S {
     final val DevRegex = raw"([a-zA-Z0-9_]{4,20})".r
     def unapply(dev: String): Option[String] = DevRegex.findFirstIn(dev)
   }
@@ -69,7 +69,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
        |
        | GET  /devices/<device_name>/reports/last
        |
-       | POST /devices/<device_name>/actors/<actor_name>/reports  params: created[boolean], count[boolean], clean[boolean], merge[boolean]
+       | GET  /devices/<device_name>/actors/<actor_name>/reports  params: created[boolean], count[boolean], clean[boolean], merge[boolean]
        | ...
        |
     """.stripMargin
@@ -77,37 +77,61 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
   val service =
     HttpService[IO] {
 
+      /////////////////
       // Help
+
       case GET -> Root / "help" =>
         Ok(HelpMsg, ContentTypeTextPlain)
 
-      // Targets & Reports
+      // Targets & Reports (at device level)
 
-      case req@POST -> Root / "devices" / StrVar(device) / TableVar(table) =>
-        Created(postDevice(req, device, table).map(_.asJson), ContentTypeAppJson)
+      case a@POST -> Root / "devices" / S(device) / T(table) => {
+        val x = postDev(a, device, table)
+        Created(x.map(_.asJson), ContentTypeAppJson)
+      }
 
-      case req@GET -> Root / "devices" / StrVar(device) / TableVar(table) / LongVar(id) =>
-        Ok(getDevice(table, id).map(_.asJson), ContentTypeAppJson)
+      case a@GET -> Root / "devices" / S(device) / T(table) / LongVar(id) => {
+        val x = getDev(table, id)
+        Ok(x.map(_.asJson), ContentTypeAppJson)
+      }
 
-      case req@GET -> Root / "devices" / StrVar(device) / TableVar(table) / "last" =>
-        Ok(getDeviceLast(device, table).map(_.asJson), ContentTypeAppJson)
+      case a@GET -> Root / "devices" / S(device) / T(table) / "last" => {
+        val x = getDevLast(device, table)
+        Ok(x.map(_.asJson), ContentTypeAppJson)
+      }
 
-      case req@GET -> Root / "devices" / StrVar(device) / "actors" / StrVar(actor) / TableVar(table) / "count" :? CreatedMr(created) =>
-        Ok(getDeviceActorCount(device, actor, table, created).map(_.asJson), ContentTypeAppJson)
+      // Targets & Reports (at device-actor level)
 
-      case req@GET -> Root / "devices" / StrVar(device) / "actors" / StrVar(actor) / TableVar(table) :? CreatedMr(created) +& CleanMr(clean) +& MergeMr(merge) =>
-        Ok(getDeviceActor(device, actor, table, created, clean, merge).map(_.asJson), ContentTypeAppJson)
+      case a@POST -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) => {
+        val x = postDevActor(a, device, actor, table)
+        Created(x.map(_.asJson), ContentTypeAppJson)
+      }
+
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "count" :? CreatedMr(created) => {
+        val x = getDevActorCount(device, actor, table, created)
+        Ok(x.map(_.asJson), ContentTypeAppJson)
+      }
+
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) :? CreatedMr(created) +& CleanMr(clean) => {
+        val x = getDevActors(device, actor, table, created, clean)
+        Ok(x.map(_.asJson), ContentTypeAppJson)
+      }
+
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table)/ "summary" :? CreatedMr(created) +& CleanMr(clean) => {
+        val x = getDevActorsSummary(device, actor, table, created, clean)
+        Ok(x.map(_.asJson), ContentTypeAppJson)
+      }
 
     }
 
-  private[v1] def getDevice(table: Table, id: Timestamp) = {
+  private[v1] def getDev(table: Table, id: Timestamp) = {
     for {
       t <- repository.selectDeviceWhereRequestId(table, id)
       resp <- IO(DeviceU.fromBom(t))
     } yield (resp)
   }
 
-  private[v1] def postDevice(req: Request[IO], device: String, table: Table) = {
+  private[v1] def postDev(req: Request[IO], device: DeviceName, table: Table) = {
     for {
       p <- req.decodeJson[ActorMapU]
       id <- repository.insertDevice(table, DeviceU(MetadataU(None, Some(Time.now), device), p).toBom)
@@ -115,41 +139,40 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
     } yield (resp)
   }
 
-  private[v1] def getDeviceLast(device: String, table: Table) = {
+  private[v1] def postDevActor(req: Request[IO], device: DeviceName, actor: ActorName, table: Table) = {
+    for {
+      p <- req.decodeJson[Map[PropName, PropValue]]
+      id <- repository.insertDevice(table, DeviceU(MetadataU(None, Some(Time.now), device), Map(actor -> p)).toBom)
+      resp <- IO(IdResponse(id))
+    } yield (resp)
+  }
+
+  private[v1] def getDevLast(device: DeviceName, table: Table) = {
     for {
       r <- repository.selectMaxDevice(table, device)
       k <- IO(DeviceU.fromBom(r))
     } yield (k)
   }
 
-  private[v1] def getDeviceActor(
-    device: String, actor: String, table: Table, created: Option[Boolean], clean: Option[Boolean], merge: Option[Boolean]
-  ) = {
+  private[v1] def getDevActorsSummary(device: DeviceName, actor: ActorName, table: Table, created: Option[Boolean], clean: Option[Boolean]) = {
     val selectStatus = if (created.exists(identity)) Status.Created else Status.Consumed
-    val actorTups = if (clean.exists(identity)) {
-      repository.selectActorTupChangeStatusWhereDeviceActorStatus(table, device, Some(actor), selectStatus, Status.Consumed)
-    } else {
-      repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), selectStatus)
-    }
-    consolidateDevActorResponse(actorTups, merge.exists(identity))
+    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), selectStatus, clean.exists(identity))
+    val t = actorTups.fold(List.empty[ActorTup])(_ :+ _)
+    t.map(i => DeviceU.fromBom(Device.fromActorTups(i)).actors.apply(actor))
   }
 
-  private[v1] def getDeviceActorCount(device: String, actor: String, table: Table, createdOp: Option[Boolean]) = {
+  private[v1] def getDevActors(device: DeviceName, actor: ActorName, table: Table, created: Option[Boolean], clean: Option[Boolean]) = {
+    val selectStatus = if (created.exists(identity)) Status.Created else Status.Consumed
+    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), selectStatus, clean.exists(identity))
+    val t = actorTups.fold(List.empty[ActorTup])(_ :+ _)
+    t.map(i => i.groupBy(_.requestId).mapValues(Device.fromActorTups).values.map(DeviceU.fromBom(_).actors.apply(actor)).toList)
+  }
+
+  private[v1] def getDevActorCount(device: DeviceName, actor: ActorName, table: Table, createdOp: Option[Boolean]) = {
     val selectStatus = if (createdOp.exists(identity)) Status.Created else Status.Consumed
-    val actorTups = repository.selectActorTupChangeStatusWhereDeviceActorStatus(table, device, Some(actor), selectStatus, Status.Consumed)
-    countRecords(actorTups)
+    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), selectStatus, true)
+    actorTups.map(_ => 1).reduce(_ + _).lastOr(0).map(CountResponse(_))
   }
-
-  private[v1] def consolidateDevActorResponse(tps: Stream[IO, ActorTup], merge: Boolean): Stream[IO, List[DeviceU]] = {
-    val t = tps.fold(List.empty[ActorTup])(_ :+ _)
-    if (merge) {
-      t.map(i => List(DeviceU.fromBom(Device.fromActorTups(i))))
-    } else {
-      t.map(i => i.groupBy(_.requestId).mapValues(Device.fromActorTups).values.map(DeviceU.fromBom).toList)
-    }
-  }
-
-	private[v1] def countRecords[T](ids: Stream[IO, T]) = ids.map(_ => 1).reduce(_ + _).lastOr(0).map(CountResponse(_))
 
 	private[v1] def request(r: Request[IO]): IO[Response[IO]] = service.orNotFound(r)
 
