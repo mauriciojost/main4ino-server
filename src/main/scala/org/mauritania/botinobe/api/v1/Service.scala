@@ -1,5 +1,6 @@
 package org.mauritania.botinobe.api.v1
 
+import cats.data.Validated
 import cats.effect.IO
 import io.circe.syntax._
 import org.http4s.circe._
@@ -11,11 +12,17 @@ import org.mauritania.botinobe.api.v1.Service.{CountResponse, DevicesResponse, I
 import org.mauritania.botinobe.models._
 import org.http4s.headers.`Content-Type`
 import fs2.Stream
+import io.circe._
 import org.mauritania.botinobe.Repository.Table
 import org.mauritania.botinobe.Repository.Table.Table
 import org.mauritania.botinobe.api.v1.ActorMapU.ActorMapU
 import org.mauritania.botinobe.api.v1.DeviceU.MetadataU
+import org.mauritania.botinobe.api.v1.PropsMapU.PropsMapU
 import org.mauritania.botinobe.helpers.Time
+import io.circe._
+import io.circe.generic.semiauto._
+import io.circe.generic.decoding.DerivedDecoder
+import io.circe.generic.encoding.DerivedObjectEncoder
 
 // Guidelines for REST:
 // - https://blog.octo.com/wp-content/uploads/2014/10/RESTful-API-design-OCTO-Quick-Reference-Card-2.2.pdf
@@ -37,6 +44,13 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
   object S {
     final val DevRegex = raw"([a-zA-Z0-9_]{4,20})".r
     def unapply(dev: String): Option[String] = DevRegex.findFirstIn(dev)
+  }
+
+  val decoderString: Decoder[String] = { v =>
+    val s = Decoder[String].tryDecode(v).map(identity)
+    val i = Decoder[Int].tryDecode(v).map(_.toString)
+    val b = Decoder[Boolean].tryDecode(v).map(_.toString)
+    Right[DecodingFailure, String](s.getOrElse(i.getOrElse(b.getOrElse(""))))
   }
 
   val HelpMsg = // TODO: complete me
@@ -133,6 +147,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
   }
 
   private[v1] def postDev(req: Request[IO], device: DeviceName, table: Table, t: Timestamp) = {
+    implicit val x = decoderString
     for {
       p <- req.decodeJson[ActorMapU]
       id <- repository.insertDevice(table, DeviceU(MetadataU(None, Some(t), device), p).toBom)
@@ -141,8 +156,9 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
   }
 
   private[v1] def postDevActor(req: Request[IO], device: DeviceName, actor: ActorName, table: Table, t: Timestamp) = {
+    implicit val x = decoderString
     for {
-      p <- req.decodeJson[Map[PropName, PropValue]]
+      p <- req.decodeJson[PropsMapU]
       id <- repository.insertDevice(table, DeviceU(MetadataU(None, Some(t), device), Map(actor -> p)).toBom)
       resp <- IO(IdResponse(id))
     } yield (resp)
