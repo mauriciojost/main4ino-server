@@ -22,6 +22,7 @@ lazy val root = (project in file("."))
       "org.http4s" %% "http4s-dsl" % Http4sVersion,
       "org.specs2" %% "specs2-core" % Specs2Version % "test",
       "ch.qos.logback" % "logback-classic" % LogbackVersion,
+      "org.reactormonk" %% "cryptobits" % "1.2",
       "org.http4s" %% "http4s-blaze-client" % Http4sVersion % "test",
       "org.tpolecat" %% "doobie-core" % DoobieVersion,
       "org.tpolecat" %% "doobie-h2" % DoobieVersion,

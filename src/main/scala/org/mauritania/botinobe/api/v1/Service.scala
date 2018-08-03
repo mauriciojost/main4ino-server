@@ -23,6 +23,34 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.generic.decoding.DerivedDecoder
 import io.circe.generic.encoding.DerivedObjectEncoder
+import cats.data.{Kleisli, OptionT}
+import cats.effect.IO
+import fs2.StreamApp.ExitCode
+import fs2.{Stream, StreamApp}
+import org.http4s.{AuthedService, Cookie, Request, Response, headers}
+import org.http4s.dsl.Http4sDsl
+import org.http4s.server.AuthMiddleware
+import org.http4s.server.blaze.BlazeBuilder
+import org.mauritania.botinobe.api.v1
+import org.mauritania.botinobe.config.Config
+import org.mauritania.botinobe.db.Database
+import org.reactormonk.{CryptoBits, PrivateKey}
+import java.time._
+
+import org.http4s.util.string._
+import org.http4s.headers.Authorization
+import org.reactormonk.{CryptoBits, PrivateKey}
+import java.time._
+import cats._, cats.effect._, cats.implicits._, cats.data._
+
+import org.http4s.dsl.io._
+
+import org.http4s.implicits._
+
+import org.http4s.server._
+import cats.syntax.either._
+
+import cats.syntax.either._
 
 // Guidelines for REST:
 // - https://blog.octo.com/wp-content/uploads/2014/10/RESTful-API-design-OCTO-Quick-Reference-Card-2.2.pdf
@@ -53,6 +81,43 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
     val b = Decoder[Boolean].tryDecode(v).map(_.toString)
     Right[DecodingFailure, String](s.getOrElse(i.getOrElse(b.getOrElse(""))))
   }
+
+  case class User(id: Long, name: String)
+
+  val key = PrivateKey(scala.io.Codec.toUTF8(scala.util.Random.alphanumeric.take(20).mkString("")))
+
+  val crypto = CryptoBits(key)
+
+  val clock = Clock.systemUTC
+
+  def verifyLogin(request: Request[IO]): IO[Either[String,User]] = ??? // gotta figure out how to do the form
+
+  val logIn: Kleisli[IO, Request[IO], Response[IO]] = Kleisli({ request =>
+    verifyLogin(request: Request[IO]).flatMap(_ match {
+      case Left(error) =>
+        Forbidden(error)
+      case Right(user) => {
+        val message = crypto.signToken(user.id.toString, clock.millis.toString)
+        Ok("Logged in!").map(_.addCookie(Cookie("authcookie", message)))
+      }
+    })
+  })
+
+  def retrieveUser: Kleisli[IO, Long, User] = Kleisli(id => IO(???))
+
+  val authUser: Kleisli[IO, Request[IO], Either[String,User]] = Kleisli({ request =>
+    val message = for {
+      header <- headers.Cookie.from(request.headers).toRight("Cookie parsing error")
+      cookie <- header.values.toList.find(_.name == "authcookie").toRight("Couldn't find the authcookie")
+      token <- crypto.validateSignedToken(cookie.content).toRight("Cookie invalid")
+      message <- new cats.syntax.EitherObjectOps(Either).catchOnly[NumberFormatException](token.toLong).leftMap(_.toString)
+    } yield message
+    message.traverse(retrieveUser.run)
+  })
+
+  val onFailure: AuthedService[String, IO] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
+
+  val middleware = AuthMiddleware(authUser, onFailure)
 
   val HelpMsg = // TODO: complete me
     s"""
@@ -90,55 +155,58 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
        |
     """.stripMargin
 
+
+  val serviceSec: HttpService[IO] = middleware(service)
+
   val service =
-    HttpService[IO] {
+    AuthedService[User, IO] {
 
       /////////////////
       // Help
 
-      case GET -> Root / "help" =>
+      case GET -> Root / "help" as user =>
         Ok(HelpMsg, ContentTypeTextPlain)
 
       // Targets & Reports (at device level)
 
-      case a@POST -> Root / "devices" / S(device) / T(table) => {
-        val x = postDev(a, device, table, Time.now)
+      case a@POST -> Root / "devices" / S(device) / T(table) as user => {
+        val x = postDev(a.req, device, table, Time.now)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / T(table) / LongVar(id) => {
+      case a@GET -> Root / "devices" / S(device) / T(table) / LongVar(id) as user => {
         val x = getDev(table, id)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / T(table) / "last" => {
+      case a@GET -> Root / "devices" / S(device) / T(table) / "last" as user => {
         val x = getDevLast(device, table)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / T(table) => {
+      case a@GET -> Root / "devices" / S(device) / T(table) as user => {
         val x = getDevAll(device, table)
         Ok(Stream("[") ++ x.map(_.asJson.noSpaces).intersperse(",") ++ Stream("]"), ContentTypeAppJson)
       }
 
       // Targets & Reports (at device-actor level)
 
-      case a@POST -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) => {
-        val x = postDevActor(a, device, actor, table, Time.now)
+      case a@POST -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) as user => {
+        val x = postDevActor(a.req, device, actor, table, Time.now)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "count" :? CreatedMr(created) => {
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "count" :? CreatedMr(created) as user => {
         val x = getDevActorCount(device, actor, table, created)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) :? CreatedMr(created) +& CleanMr(clean) => {
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) :? CreatedMr(created) +& CleanMr(clean) as user => {
         val x = getDevActors(device, actor, table, created, clean)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table)/ "summary" :? CreatedMr(created) +& CleanMr(clean) => {
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table)/ "summary" :? CreatedMr(created) +& CleanMr(clean) as user => {
         val x = getDevActorsSummary(device, actor, table, created, clean)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
@@ -203,7 +271,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
     actorTups.map(_ => 1).reduce(_ + _).lastOr(0).map(CountResponse(_))
   }
 
-	private[v1] def request(r: Request[IO]): IO[Response[IO]] = service.orNotFound(r)
+	private[v1] def request(r: Request[IO]): IO[Response[IO]] = serviceSec.orNotFound(r)
 
 }
 
