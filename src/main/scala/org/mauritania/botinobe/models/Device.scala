@@ -1,6 +1,8 @@
 package org.mauritania.botinobe.models
 
+import org.mauritania.botinobe.models.ActorMap.ActorMap
 import org.mauritania.botinobe.models.Device.Metadata
+import org.mauritania.botinobe.models.PropsMap.PropsMap
 
 case class Device(
 	metadata: Metadata,
@@ -27,7 +29,7 @@ case class Device(
 
 object Device {
 
-	val EmptyActorMap: ActorMap = Map.empty[ActorName, Map[PropName, (PropValue, Status)]]
+	val EmptyActorMap: ActorMap = Map.empty[ActorName, PropsMap]
 
 	case class Metadata ( // TODO metadata information that comes after DB insertion should be put on a wrapper of Device to avoid using .copy
 		id: Option[RecordId],
@@ -35,14 +37,7 @@ object Device {
     device: DeviceName
 	)
 
-	def fromActorTups(metadata: Metadata, ps: Iterable[ActorTup]): Device = Device(metadata, ActorTup.asActorMap(ps))
-
-	def fromActorTups(ps: Iterable[ActorTup]): Device = {
-		val dNames = ps.map(_.device).toList.distinct
-    assert(dNames.size < 2, s"Found: ${dNames}")
-		val md = Metadata(None, None, dNames.distinct.mkString)
-		Device(md, ActorTup.asActorMap(ps))
-	}
+	def fromActorTups(metadata: Metadata, ps: Iterable[ActorTup]): Device = Device(metadata, ActorMap.fromTups(ps))
 
 }
 

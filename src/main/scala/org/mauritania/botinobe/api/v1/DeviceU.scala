@@ -1,6 +1,7 @@
 package org.mauritania.botinobe.api.v1
 
-import org.mauritania.botinobe.api.v1.DeviceU.{ActorMapU, MetadataU}
+import org.mauritania.botinobe.api.v1.ActorMapU.ActorMapU
+import org.mauritania.botinobe.api.v1.DeviceU.MetadataU
 import org.mauritania.botinobe.models.Device.Metadata
 import org.mauritania.botinobe.models._
 
@@ -24,8 +25,6 @@ case class DeviceU(
 }
 
 object DeviceU {
-
-  type ActorMapU = Map[ActorName, Map[PropName, PropValue]]
 
   val EmptyActorMapU: ActorMapU = Map.empty[ActorName, Map[PropName, PropValue]]
 

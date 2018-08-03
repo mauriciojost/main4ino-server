@@ -13,7 +13,8 @@ import org.http4s.headers.`Content-Type`
 import fs2.Stream
 import org.mauritania.botinobe.Repository.Table
 import org.mauritania.botinobe.Repository.Table.Table
-import org.mauritania.botinobe.api.v1.DeviceU.{ActorMapU, MetadataU}
+import org.mauritania.botinobe.api.v1.ActorMapU.ActorMapU
+import org.mauritania.botinobe.api.v1.DeviceU.MetadataU
 import org.mauritania.botinobe.helpers.Time
 
 // Guidelines for REST:
@@ -86,7 +87,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
       // Targets & Reports (at device level)
 
       case a@POST -> Root / "devices" / S(device) / T(table) => {
-        val x = postDev(a, device, table)
+        val x = postDev(a, device, table, Time.now)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
@@ -103,7 +104,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
       // Targets & Reports (at device-actor level)
 
       case a@POST -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) => {
-        val x = postDevActor(a, device, actor, table)
+        val x = postDevActor(a, device, actor, table, Time.now)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
@@ -131,18 +132,18 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
     } yield (resp)
   }
 
-  private[v1] def postDev(req: Request[IO], device: DeviceName, table: Table) = {
+  private[v1] def postDev(req: Request[IO], device: DeviceName, table: Table, t: Timestamp) = {
     for {
       p <- req.decodeJson[ActorMapU]
-      id <- repository.insertDevice(table, DeviceU(MetadataU(None, Some(Time.now), device), p).toBom)
+      id <- repository.insertDevice(table, DeviceU(MetadataU(None, Some(t), device), p).toBom)
       resp <- IO(IdResponse(id))
     } yield (resp)
   }
 
-  private[v1] def postDevActor(req: Request[IO], device: DeviceName, actor: ActorName, table: Table) = {
+  private[v1] def postDevActor(req: Request[IO], device: DeviceName, actor: ActorName, table: Table, t: Timestamp) = {
     for {
       p <- req.decodeJson[Map[PropName, PropValue]]
-      id <- repository.insertDevice(table, DeviceU(MetadataU(None, Some(Time.now), device), Map(actor -> p)).toBom)
+      id <- repository.insertDevice(table, DeviceU(MetadataU(None, Some(t), device), Map(actor -> p)).toBom)
       resp <- IO(IdResponse(id))
     } yield (resp)
   }
@@ -158,14 +159,14 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
     val selectStatus = if (created.exists(identity)) Status.Created else Status.Consumed
     val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), selectStatus, clean.exists(identity))
     val t = actorTups.fold(List.empty[ActorTup])(_ :+ _)
-    t.map(i => DeviceU.fromBom(Device.fromActorTups(i)).actors.apply(actor))
+    t.map(i => PropsMapU.fromTups(i))
   }
 
   private[v1] def getDevActors(device: DeviceName, actor: ActorName, table: Table, created: Option[Boolean], clean: Option[Boolean]) = {
     val selectStatus = if (created.exists(identity)) Status.Created else Status.Consumed
     val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), selectStatus, clean.exists(identity))
     val t = actorTups.fold(List.empty[ActorTup])(_ :+ _)
-    t.map(i => i.groupBy(_.requestId).mapValues(Device.fromActorTups).values.map(DeviceU.fromBom(_).actors.apply(actor)).toList)
+    t.map(i => i.groupBy(_.requestId).map(j => PropsMapU.fromTups(j._2)).toList)
   }
 
   private[v1] def getDevActorCount(device: DeviceName, actor: ActorName, table: Table, createdOp: Option[Boolean]) = {

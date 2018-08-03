@@ -12,8 +12,6 @@ package object models {
 	type PropName = String
 	type PropValue = String
 
-	type ActorMap = Map[ActorName, Map[PropName, (PropValue, Status)]]
-
 	type Timestamp = Long
 
 }

@@ -27,7 +27,7 @@ class DeviceSpec extends WordSpec with Matchers {
   "Device" should {
 
     "internal method should create a map from tuples" in {
-      ActorTup.asActorMap(
+      ActorMap.fromTups(
         Iterable(
           ActorTup(Some(1L), "dev1", "actorx", "prop1", "1", Status.Created),
           ActorTup(Some(2L), "dev1", "actorx", "prop1", "2", Status.Created), // an update of the above
