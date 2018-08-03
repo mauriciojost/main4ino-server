@@ -29,6 +29,14 @@ class Repository(transactor: Transactor[IO]) {
     transaction.transact(transactor)
   }
 
+  def selectDevices(table: Table, device: DeviceName): Stream[IO, Device] = {
+    val transaction = for {
+      t <- sqlSelectMetadataWhereDevice(table, device)
+      p <- Stream.eval(sqlSelectActorTupWhereRequestId(table, t.id.get)) // must exist or better fail
+    } yield (Device.fromActorTups(t, p))
+    transaction.transact(transactor)
+  }
+
   def selectMaxDevice(table: Table, device: DeviceName): IO[Device] = {
     val transaction = for {
       i <- sqlSelectLastRequestIdWhereDevice(table, device)
@@ -58,6 +66,11 @@ class Repository(transactor: Transactor[IO]) {
   private def sqlInsertMetadata(table: Table, m: Metadata): ConnectionIO[RecordId] = {
     (fr"INSERT INTO " ++ Fragment.const(table.code + "_requests") ++ fr" (creation, device_name) VALUES (${m.timestamp}, ${m.device})")
       .update.withUniqueGeneratedKeys[RecordId]("id")
+  }
+
+  private def sqlSelectMetadataWhereDevice(table: Table, d: DeviceName): Stream[ConnectionIO, Metadata] = {
+    (fr"SELECT id, creation, device_name FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE device_name=$d")
+      .query[Metadata].stream
   }
 
   private def sqlSelectMetadataWhereRequestId(table: Table, id: RecordId): ConnectionIO[Metadata] = {

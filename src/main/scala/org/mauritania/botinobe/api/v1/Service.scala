@@ -115,6 +115,11 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
+      case a@GET -> Root / "devices" / S(device) / T(table) => {
+        val x = getDevAll(device, table)
+        Ok(Stream("[") ++ x.map(_.asJson.noSpaces).intersperse(",") ++ Stream("]"), ContentTypeAppJson)
+      }
+
       // Targets & Reports (at device-actor level)
 
       case a@POST -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) => {
@@ -169,6 +174,12 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
       r <- repository.selectMaxDevice(table, device)
       k <- IO(DeviceU.fromBom(r))
     } yield (k)
+  }
+
+  private[v1] def getDevAll(device: DeviceName, table: Table) = {
+    for {
+      r <- repository.selectDevices(table, device).map(DeviceU.fromBom)
+    } yield (r)
   }
 
   private[v1] def getDevActorsSummary(device: DeviceName, actor: ActorName, table: Table, created: Option[Boolean], clean: Option[Boolean]) = {
