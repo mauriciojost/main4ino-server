@@ -47,12 +47,12 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
   "Create target request" should {
     val r = stub[Repository]
     val s = new Service(r)
-    "returns 201 with empty properties" in {
+    "return 201 with empty properties" in {
       val t = Device(Metadata(None, None, "dev1"))
       createADeviceAndExpect(Table.Reports, t)(HttpStatus.Created)(s, r)
       createADeviceAndExpect(Table.Targets, t)(HttpStatus.Created)(s, r)
     }
-    "returns 201 with a regular target/request" in {
+    "return 201 with a regular target/request" in {
       val t = Dev1
       createADeviceAndExpect(Table.Reports, t)(HttpStatus.Created)(s, r)
       createADeviceAndExpect(Table.Targets, t)(HttpStatus.Created)(s, r)
@@ -77,7 +77,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
   "Read target/report request" should {
     val r = stub[Repository]
     val s = new Service(r)
-    "returns 200 with an existent target/request" in {
+    "return 200 with an existent target/request" in {
       (r.selectDeviceWhereRequestId _).when(Table.Targets, 1L).returns(IO.pure(Dev1)).once // mock
       (r.selectDeviceWhereRequestId _).when(Table.Reports, 1L).returns(IO.pure(Dev1)).once() // mock
       val ta = getApiV1("/devices/dev1/targets/1")(s)
@@ -95,7 +95,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val r = stub[Repository]
     val s = new Service(r)
 
-    "returns the list of associated targets set" in {
+    "return the list of associated targets set" in {
 
       (r.selectActorTupWhereDeviceActorStatus _)
         .when(e(Table.Targets), e("dev1"), e(Some("clock")), e(S.Created), e(false))
