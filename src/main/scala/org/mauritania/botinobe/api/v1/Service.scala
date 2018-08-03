@@ -41,14 +41,19 @@ import org.http4s.util.string._
 import org.http4s.headers.Authorization
 import org.reactormonk.{CryptoBits, PrivateKey}
 import java.time._
-import cats._, cats.effect._, cats.implicits._, cats.data._
 
+import cats._
+import cats.effect._
+import cats.implicits._
+import cats.data._
+import cats.syntax.EitherObjectOps
 import org.http4s.dsl.io._
-
 import org.http4s.implicits._
-
 import org.http4s.server._
 import cats.syntax.either._
+import org.http4s.util.string._
+import org.http4s.headers.Authorization
+// import org.http4s.headers.Authorization
 
 import cats.syntax.either._
 
@@ -105,13 +110,12 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
 
   def retrieveUser: Kleisli[IO, Long, User] = Kleisli(id => IO(???))
 
-  val authUser: Kleisli[IO, Request[IO], Either[String,User]] = Kleisli({ request =>
+  val authUser: Kleisli[IO, Request[IO], Either[String, User]] = Kleisli({ request =>
     val message = for {
-      header <- headers.Cookie.from(request.headers).toRight("Cookie parsing error")
-      cookie <- header.values.toList.find(_.name == "authcookie").toRight("Couldn't find the authcookie")
-      token <- crypto.validateSignedToken(cookie.content).toRight("Cookie invalid")
-      message <- new cats.syntax.EitherObjectOps(Either).catchOnly[NumberFormatException](token.toLong).leftMap(_.toString)
-    } yield message
+      header <- request.headers.get(Authorization).toRight("Couldn't find an Authorization header")
+      token <- crypto.validateSignedToken(header.value).toRight("Cookie invalid")
+      msg <- new cats.syntax.EitherObjectOps(Either).catchOnly[NumberFormatException](token.toLong).leftMap(_.toString)
+    } yield(msg)
     message.traverse(retrieveUser.run)
   })
 
