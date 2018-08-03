@@ -11,8 +11,6 @@ import org.mauritania.botinobe.Repository
 import org.mauritania.botinobe.api.v1.Service.{CountResponse, DevicesResponse, IdResponse}
 import org.mauritania.botinobe.models._
 import org.http4s.headers.`Content-Type`
-import fs2.Stream
-import io.circe._
 import org.mauritania.botinobe.Repository.Table
 import org.mauritania.botinobe.Repository.Table.Table
 import org.mauritania.botinobe.api.v1.ActorMapU.ActorMapU
@@ -20,9 +18,6 @@ import org.mauritania.botinobe.api.v1.DeviceU.MetadataU
 import org.mauritania.botinobe.api.v1.PropsMapU.PropsMapU
 import org.mauritania.botinobe.helpers.Time
 import io.circe._
-import io.circe.generic.semiauto._
-import io.circe.generic.decoding.DerivedDecoder
-import io.circe.generic.encoding.DerivedObjectEncoder
 import cats.data.{Kleisli, OptionT}
 import cats.effect.IO
 import fs2.StreamApp.ExitCode
@@ -31,11 +26,6 @@ import org.http4s.{AuthedService, Cookie, Request, Response, headers}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.http4s.server.blaze.BlazeBuilder
-import org.mauritania.botinobe.api.v1
-import org.mauritania.botinobe.config.Config
-import org.mauritania.botinobe.db.Database
-import org.reactormonk.{CryptoBits, PrivateKey}
-import java.time._
 
 import org.http4s.util.string._
 import org.http4s.headers.Authorization
