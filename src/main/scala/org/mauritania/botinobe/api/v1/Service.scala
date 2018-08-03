@@ -33,6 +33,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
   final val ContentTypeAppJson = `Content-Type`(MediaType.`application/json`)
   final val ContentTypeTextPlain = `Content-Type`(MediaType.`text/plain`)
 
+  // TODO default status query should be ALL! (not "not created")
   object CreatedMr extends OptionalQueryParamDecoderMatcher[Boolean]("created")
   object MergeMr extends OptionalQueryParamDecoderMatcher[Boolean]("merge")
   object CleanMr extends OptionalQueryParamDecoderMatcher[Boolean]("clean")
