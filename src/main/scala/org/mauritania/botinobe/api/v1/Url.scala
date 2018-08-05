@@ -6,7 +6,7 @@ import org.mauritania.botinobe.Repository.Table.Table
 
 object Url {
   // TODO default status query should be ALL! (not "not created")
-  object CreatedP extends OptionalQueryParamDecoderMatcher[Boolean]("created")
+  object StatusP extends OptionalQueryParamDecoderMatcher[String]("status")
   object MergeP extends OptionalQueryParamDecoderMatcher[Boolean]("merge")
   object CleanP extends OptionalQueryParamDecoderMatcher[Boolean]("clean")
 

@@ -100,18 +100,18 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "count" :? CreatedP(created) as user => {
-        val x = getDevActorCount(device, actor, table, created)
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "count" :? StatusP(status) as user => {
+        val x = getDevActorCount(device, actor, table, status)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) :? CreatedP(created) +& CleanP(clean) as user => {
-        val x = getDevActors(device, actor, table, created, clean)
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) :? StatusP(status) +& CleanP(clean) as user => {
+        val x = getDevActors(device, actor, table, status, clean)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table)/ "summary" :? CreatedP(created) +& CleanP(clean) as user => {
-        val x = getDevActorsSummary(device, actor, table, created, clean)
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table)/ "summary" :? StatusP(status) +& CleanP(clean) as user => {
+        val x = getDevActorsSummary(device, actor, table, status, clean)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
@@ -158,23 +158,20 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
     } yield (r)
   }
 
-  private[v1] def getDevActorsSummary(device: DeviceName, actor: ActorName, table: Table, created: Option[Boolean], clean: Option[Boolean]) = {
-    val selectStatus = if (created.exists(identity)) Status.Created else Status.Consumed
-    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), selectStatus, clean.exists(identity))
+  private[v1] def getDevActorsSummary(device: DeviceName, actor: ActorName, table: Table, status: Option[Status], clean: Option[Boolean]) = {
+    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), status, clean.exists(identity))
     val t = actorTups.fold(List.empty[ActorTup])(_ :+ _)
     t.map(i => PropsMapU.fromTups(i))
   }
 
-  private[v1] def getDevActors(device: DeviceName, actor: ActorName, table: Table, created: Option[Boolean], clean: Option[Boolean]) = {
-    val selectStatus = if (created.exists(identity)) Status.Created else Status.Consumed
-    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), selectStatus, clean.exists(identity))
+  private[v1] def getDevActors(device: DeviceName, actor: ActorName, table: Table, status: Option[Status], clean: Option[Boolean]) = {
+    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), status, clean.exists(identity))
     val t = actorTups.fold(List.empty[ActorTup])(_ :+ _)
     t.map(i => i.groupBy(_.requestId).toList.sortBy(_._1).map(v => PropsMapU.fromTups(v._2)))
   }
 
-  private[v1] def getDevActorCount(device: DeviceName, actor: ActorName, table: Table, createdOp: Option[Boolean]) = {
-    val selectStatus = if (createdOp.exists(identity)) Status.Created else Status.Consumed
-    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), selectStatus, false)
+  private[v1] def getDevActorCount(device: DeviceName, actor: ActorName, table: Table, statusOp: Option[Status]) = {
+    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), statusOp, false)
     actorTups.map(_ => 1).reduce(_ + _).lastOr(0).map(CountResponse(_))
   }
 

@@ -32,34 +32,34 @@ class ServiceFuncSpec extends DbSuite {
     // Check the responses
 
     // Only the count of targets for dev1
-    val dev1TargetsCount = get("/devices/dev1/actors/clock/targets/count?created=true")
+    val dev1TargetsCount = get("/devices/dev1/actors/clock/targets/count?status=C")
     dev1TargetsCount.noSpaces shouldBe CountResponse(4).asJson.noSpaces
 
     // The raw targets list for dev1 / clock
-    val dev1ClockTarget = get("/devices/dev1/actors/clock/targets?created=true&clean=false")
+    val dev1ClockTarget = get("/devices/dev1/actors/clock/targets?status=C&clean=false")
     dev1ClockTarget.asArray.get(0).noSpaces shouldBe("""{"h":"7"}""")
     dev1ClockTarget.asArray.get(1).noSpaces shouldBe("""{"m":"0"}""")
     dev1ClockTarget.asArray.get(2).noSpaces shouldBe("""{"s":"1"}""")
     dev1ClockTarget.asArray.get(3).noSpaces shouldBe("""{"s":"9"}""")
 
-    val dev1ClockBody = get("/devices/dev1/actors/body/targets?created=true&clean=false")
+    val dev1ClockBody = get("/devices/dev1/actors/body/targets?status=C&clean=false")
     dev1ClockBody.asArray.get(0).noSpaces shouldBe("""{"mv0":"Zz."}""")
     dev1ClockBody.asArray.get(1).noSpaces shouldBe("""{"mv0":"ZzY"}""")
 
     // The merged targets for dev1
-    val dev1TargetsSummaryBody = get("/devices/dev1/actors/body/targets/summary?clean=false&created=true")
+    val dev1TargetsSummaryBody = get("/devices/dev1/actors/body/targets/summary?clean=false&status=C")
     dev1TargetsSummaryBody.noSpaces shouldBe """{"mv0":"ZzY"}"""
 
-    val dev1TargetsSummaryClock = get("/devices/dev1/actors/clock/targets/summary?clean=false&created=true")
+    val dev1TargetsSummaryClock = get("/devices/dev1/actors/clock/targets/summary?clean=false&status=C")
     dev1TargetsSummaryClock.noSpaces shouldBe """{"h":"7","s":"9","m":"0"}"""
 
-    val dev1TargetsMergedCleanedBody = get("/devices/dev1/actors/body/targets/summary?clean=true&created=true")
+    val dev1TargetsMergedCleanedBody = get("/devices/dev1/actors/body/targets/summary?clean=true&status=C")
     dev1TargetsMergedCleanedBody.noSpaces shouldBe """{"mv0":"ZzY"}"""
 
-    val dev1TargetsMergedCleanedClock = get("/devices/dev1/actors/clock/targets/summary?clean=true&created=true")
+    val dev1TargetsMergedCleanedClock = get("/devices/dev1/actors/clock/targets/summary?clean=true&status=C")
     dev1TargetsMergedCleanedClock.noSpaces shouldBe """{"h":"7","s":"9","m":"0"}"""
 
-    val dev1TargetsCountAfterClean = get("/devices/dev1/actors/body/targets/count?created=true")
+    val dev1TargetsCountAfterClean = get("/devices/dev1/actors/body/targets/count?status=C")
     dev1TargetsCountAfterClean.noSpaces shouldBe CountResponse(0).asJson.noSpaces
 
   }
@@ -74,8 +74,8 @@ class ServiceFuncSpec extends DbSuite {
     post("/devices/dev1/targets", """{"body":{"mv1":"Zz."}}""").noSpaces shouldBe IdResponse(3).asJson.noSpaces
 
     // Check the responses
-    val clk = get("/devices/dev1/actors/clock/targets/summary?clean=false&count=false&created=true")
-    val body = get("/devices/dev1/actors/body/targets/summary?clean=false&count=false&created=true")
+    val clk = get("/devices/dev1/actors/clock/targets/summary?clean=false&count=false&status=C")
+    val body = get("/devices/dev1/actors/body/targets/summary?clean=false&count=false&status=C")
 
     clk.noSpaces shouldBe """{"h":"7","m":"0"}"""
     body.noSpaces shouldBe """{"mv1":"Zz.","mv0":"Zz."}"""

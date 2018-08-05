@@ -46,10 +46,10 @@ class Repository(transactor: Transactor[IO]) {
     transaction.transact(transactor)
   }
 
-  def selectActorTupWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Status, consume: Boolean): Stream[IO, ActorTup] = {
+  def selectActorTupWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[Status], consume: Boolean): Stream[IO, ActorTup] = {
     val transaction = for {
       p <- sqlSelectActorTupWhereDeviceActorStatus(table, device, actor, status)
-      c <- if (consume) Stream.eval[ConnectionIO, Int](sqlUpdateActorTupWhereStatusDeviceActor(table, device, actor, Status.Created, Status.Consumed)) else Stream.fromIterator[ConnectionIO, Int](Iterator(0))
+      c <- if (consume) Stream.eval[ConnectionIO, Int](sqlUpdateActorTupWhereDeviceActorConsume(table, device, actor)) else Stream.fromIterator[ConnectionIO, Int](Iterator(0))
     } yield (p)
     transaction.transact(transactor)
   }
@@ -87,21 +87,25 @@ class Repository(transactor: Transactor[IO]) {
       .query[ActorTup].accumulate
   }
 
-  private def sqlUpdateActorTupWhereStatusDeviceActor(table: Table, device: DeviceName, actor: Option[ActorName], status: Status, newStatus: Status): ConnectionIO[Int] = {
+  private def sqlUpdateActorTupWhereDeviceActorConsume(table: Table, device: DeviceName, actor: Option[ActorName]): ConnectionIO[Int] = {
     val actorFr = actor match {
       case Some(a) => fr"AND actor_name = $a"
       case None => fr""
     }
-    (fr"UPDATE " ++ Fragment.const(table.code) ++ fr" SET property_status = ${newStatus} WHERE property_status=$status and device_name=$device" ++ actorFr)
+    (fr"UPDATE " ++ Fragment.const(table.code) ++ fr" SET property_status = ${Status.Consumed} WHERE property_status=${Status.Created} and device_name=$device" ++ actorFr)
       .update.run
   }
 
-  private def sqlSelectActorTupWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Status): Stream[ConnectionIO, ActorTup] = {
+  private def sqlSelectActorTupWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[Status]): Stream[ConnectionIO, ActorTup] = {
     val actorFr = actor match {
       case Some(a) => fr"AND actor_name = $a"
       case None => fr""
     }
-    (fr"SELECT request_id, device_name, actor_name, property_name, property_value, property_status FROM " ++ Fragment.const(table.code) ++ fr" WHERE property_status=$status and device_name=$device " ++ actorFr).query[ActorTup].stream
+    val statusFr = status match {
+      case Some(s) => fr"AND property_status = $status"
+      case None => fr""
+    }
+    (fr"SELECT request_id, device_name, actor_name, property_name, property_value, property_status FROM " ++ Fragment.const(table.code) ++ fr" WHERE device_name=$device" ++ actorFr ++ statusFr).query[ActorTup].stream
   }
 
 }
