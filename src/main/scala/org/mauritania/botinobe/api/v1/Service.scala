@@ -169,12 +169,12 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
     val selectStatus = if (created.exists(identity)) Status.Created else Status.Consumed
     val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), selectStatus, clean.exists(identity))
     val t = actorTups.fold(List.empty[ActorTup])(_ :+ _)
-    t.map(i => i.groupBy(_.requestId).map(j => PropsMapU.fromTups(j._2)).toList)
+    t.map(i => i.groupBy(_.requestId).toList.sortBy(_._1).map(v => PropsMapU.fromTups(v._2)))
   }
 
   private[v1] def getDevActorCount(device: DeviceName, actor: ActorName, table: Table, createdOp: Option[Boolean]) = {
     val selectStatus = if (createdOp.exists(identity)) Status.Created else Status.Consumed
-    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), selectStatus, true)
+    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), selectStatus, false)
     actorTups.map(_ => 1).reduce(_ + _).lastOr(0).map(CountResponse(_))
   }
 

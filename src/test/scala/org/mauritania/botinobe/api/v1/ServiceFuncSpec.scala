@@ -16,7 +16,6 @@ class ServiceFuncSpec extends DbSuite {
 
   Sequential
 
-  /*
   "The service" should "create and read a target/report" in {
 
     implicit val s = new Service(new Repository(transactor))
@@ -33,34 +32,37 @@ class ServiceFuncSpec extends DbSuite {
     // Check the responses
 
     // Only the count of targets for dev1
-    val dev1TargetsCount = get("/devices/dev1/targets?clean=false&merge=false&count=true")
-    dev1TargetsCount.noSpaces shouldBe CountResponse(6).asJson.noSpaces
+    val dev1TargetsCount = get("/devices/dev1/actors/clock/targets/count?created=true")
+    dev1TargetsCount.noSpaces shouldBe CountResponse(4).asJson.noSpaces
 
     // The raw targets list for dev1 / clock
-    val dev1ClockTarget = get("/devices/dev1/actors/clock/targets?clean=false&merge=false&count=false")
-    dev1ClockTarget.\\("response")(0).\\("actors")(0).\\("clock").head.noSpaces shouldBe("""{"h":"7"}""")
-    dev1ClockTarget.\\("response")(0).\\("actors")(1).\\("clock").head.noSpaces shouldBe("""{"m":"0"}""")
-    dev1ClockTarget.\\("response")(0).\\("actors")(2).\\("clock").head.noSpaces shouldBe("""{"s":"1"}""")
-    dev1ClockTarget.\\("response")(0).\\("actors")(3).\\("clock").head.noSpaces shouldBe("""{"s":"9"}""")
+    val dev1ClockTarget = get("/devices/dev1/actors/clock/targets?created=true&clean=false")
+    dev1ClockTarget.asArray.get(0).noSpaces shouldBe("""{"h":"7"}""")
+    dev1ClockTarget.asArray.get(1).noSpaces shouldBe("""{"m":"0"}""")
+    dev1ClockTarget.asArray.get(2).noSpaces shouldBe("""{"s":"1"}""")
+    dev1ClockTarget.asArray.get(3).noSpaces shouldBe("""{"s":"9"}""")
 
-    val dev1ClockBody = get("/devices/dev1/actors/body/targets?clean=false&merge=false&count=false")
-    dev1ClockBody.\\("response")(0).\\("actors")(0).\\("body").head.noSpaces shouldBe("""{"mv0":"Zz."}""")
-    dev1ClockBody.\\("response")(0).\\("actors")(1).\\("body").head.noSpaces shouldBe("""{"mv0":"ZzY"}""")
+    val dev1ClockBody = get("/devices/dev1/actors/body/targets?created=true&clean=false")
+    dev1ClockBody.asArray.get(0).noSpaces shouldBe("""{"mv0":"Zz."}""")
+    dev1ClockBody.asArray.get(1).noSpaces shouldBe("""{"mv0":"ZzY"}""")
 
     // The merged targets for dev1
-    val dev1TargetsMerged = get("/devices/dev1/targets?clean=false&merge=true&count=false&created=true")
-    dev1TargetsMerged.\\("response")(0).\\("actors")(0).\\("body").head.noSpaces shouldBe """{"mv0":"ZzY"}"""
-    dev1TargetsMerged.\\("response")(0).\\("actors")(0).\\("clock").head.noSpaces shouldBe """{"h":"7","s":"9","m":"0"}"""
+    val dev1TargetsSummaryBody = get("/devices/dev1/actors/body/targets/summary?clean=false&created=true")
+    dev1TargetsSummaryBody.noSpaces shouldBe """{"mv0":"ZzY"}"""
 
-    val dev1TargetsMergedCleaned = get("/devices/dev1/targets?clean=true&merge=true&count=false&created=true")
-    dev1TargetsMergedCleaned.\\("response")(0).\\("actors")(0).\\("body").head.noSpaces shouldBe """{"mv0":"ZzY"}"""
-    dev1TargetsMergedCleaned.\\("response")(0).\\("actors")(0).\\("clock").head.noSpaces shouldBe """{"h":"7","s":"9","m":"0"}"""
+    val dev1TargetsSummaryClock = get("/devices/dev1/actors/clock/targets/summary?clean=false&created=true")
+    dev1TargetsSummaryClock.noSpaces shouldBe """{"h":"7","s":"9","m":"0"}"""
 
-    val dev1TargetsCountAfterClean = get("/devices/dev1/targets?clean=false&merge=false&count=true&created=true")
+    val dev1TargetsMergedCleanedBody = get("/devices/dev1/actors/body/targets/summary?clean=true&created=true")
+    dev1TargetsMergedCleanedBody.noSpaces shouldBe """{"mv0":"ZzY"}"""
+
+    val dev1TargetsMergedCleanedClock = get("/devices/dev1/actors/clock/targets/summary?clean=true&created=true")
+    dev1TargetsMergedCleanedClock.noSpaces shouldBe """{"h":"7","s":"9","m":"0"}"""
+
+    val dev1TargetsCountAfterClean = get("/devices/dev1/actors/body/targets/count?created=true")
     dev1TargetsCountAfterClean.noSpaces shouldBe CountResponse(0).asJson.noSpaces
 
   }
-  */
 
   it should "create targets and merge the properties correctly" in {
 
