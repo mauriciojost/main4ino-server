@@ -191,6 +191,5 @@ object Service {
 
   case class IdResponse(id: RecordId)
   case class CountResponse(count: Int)
-  case class DevicesResponse(response: Seq[DeviceU])
 
 }
