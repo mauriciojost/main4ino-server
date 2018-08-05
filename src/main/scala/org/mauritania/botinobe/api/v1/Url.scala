@@ -7,8 +7,7 @@ import org.mauritania.botinobe.Repository.Table.Table
 object Url {
   // TODO default status query should be ALL! (not "not created")
   object StatusP extends OptionalQueryParamDecoderMatcher[String]("status")
-  object MergeP extends OptionalQueryParamDecoderMatcher[Boolean]("merge")
-  object CleanP extends OptionalQueryParamDecoderMatcher[Boolean]("clean")
+  object ConsumeP extends OptionalQueryParamDecoderMatcher[Boolean]("consume")
 
   object T {
     def unapply(str: String): Option[Table] = Table.resolve(str)

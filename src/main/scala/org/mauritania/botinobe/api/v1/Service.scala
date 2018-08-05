@@ -105,12 +105,12 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) :? StatusP(status) +& CleanP(clean) as user => {
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) :? StatusP(status) +& ConsumeP(clean) as user => {
         val x = getDevActors(device, actor, table, status, clean)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table)/ "summary" :? StatusP(status) +& CleanP(clean) as user => {
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table)/ "summary" :? StatusP(status) +& ConsumeP(clean) as user => {
         val x = getDevActorsSummary(device, actor, table, status, clean)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
