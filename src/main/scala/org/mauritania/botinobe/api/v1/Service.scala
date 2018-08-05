@@ -5,20 +5,17 @@ import org.http4s.circe._
 import io.circe.generic.auto._
 import org.http4s.{HttpService, MediaType}
 import org.mauritania.botinobe.Repository
-import org.mauritania.botinobe.api.v1.Service.{CountResponse, IdResponse}
 import org.mauritania.botinobe.models._
 import org.http4s.headers.`Content-Type`
-import org.mauritania.botinobe.Repository.Table
 import org.mauritania.botinobe.Repository.Table.Table
 import org.mauritania.botinobe.api.v1.ActorMapU.ActorMapU
 import org.mauritania.botinobe.api.v1.DeviceU.MetadataU
 import org.mauritania.botinobe.api.v1.PropsMapU.PropsMapU
 import org.mauritania.botinobe.helpers.Time
-import io.circe._
 import cats.data.{Kleisli, OptionT}
 import cats.effect.IO
 import fs2.Stream
-import org.http4s.{AuthedService, Cookie, Request, Response}
+import org.http4s.{AuthedService, Request, Response}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.reactormonk.{CryptoBits, PrivateKey}
@@ -26,8 +23,8 @@ import org.reactormonk.{CryptoBits, PrivateKey}
 import cats.syntax.EitherObjectOps
 import org.http4s.headers.Authorization
 import cats.syntax.either._
-import org.mauritania.botinobe.security.Token
-import org.mauritania.botinobe.security.Token.User
+import org.mauritania.botinobe.security.Authentication
+import org.mauritania.botinobe.security.Authentication.User
 
 // Guidelines for REST:
 // - https://blog.octo.com/wp-content/uploads/2014/10/RESTful-API-design-OCTO-Quick-Reference-Card-2.2.pdf
@@ -35,18 +32,18 @@ import org.mauritania.botinobe.security.Token.User
 class Service(repository: Repository) extends Http4sDsl[IO] {
 
   import Service._
-  import Params._
+  import Url._
 
   val key = PrivateKey(scala.io.Codec.toUTF8(scala.util.Random.alphanumeric.take(20).mkString("")))
 
   val crypto = CryptoBits(key)
 
-  def retrieveUser: Kleisli[IO, Long, User] = Kleisli(id => IO(Token.toUser(id)))
+  def retrieveUser: Kleisli[IO, Long, User] = Kleisli(id => IO(Authentication.toUser(id)))
 
   val authUser: Kleisli[IO, Request[IO], Either[String, User]] = Kleisli({ request =>
     val message = for {
       header <- request.headers.get(Authorization).toRight("Couldn't find an Authorization header")
-      token <- Token.validate(header.value).toRight("Invalid token")
+      token <- Authentication.validate(header.value).toRight("Invalid token")
       msg <- new EitherObjectOps(Either).catchOnly[NumberFormatException](token.toLong).leftMap(_.toString)
     } yield(msg)
     message.traverse(retrieveUser.run)
@@ -103,17 +100,17 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "count" :? CreatedMr(created) as user => {
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "count" :? CreatedP(created) as user => {
         val x = getDevActorCount(device, actor, table, created)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) :? CreatedMr(created) +& CleanMr(clean) as user => {
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) :? CreatedP(created) +& CleanP(clean) as user => {
         val x = getDevActors(device, actor, table, created, clean)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table)/ "summary" :? CreatedMr(created) +& CleanMr(clean) as user => {
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table)/ "summary" :? CreatedP(created) +& CleanP(clean) as user => {
         val x = getDevActorsSummary(device, actor, table, created, clean)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }

@@ -22,6 +22,7 @@ import org.mauritania.botinobe.api.v1.DeviceU.MetadataU
 import org.mauritania.botinobe.{Fixtures, Repository}
 import org.mauritania.botinobe.models.Device.Metadata
 import org.mauritania.botinobe.models.{ActorTup, Device, RecordId, Status => S}
+import org.mauritania.botinobe.security.Authentication
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
 
@@ -139,17 +140,19 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
   // Basic testing utilities
 
   private[this] def getApiV1(path: String)(service: Service): Response[IO] = {
-    val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path))
+    val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path), headers = DefaultHeaders)
     service.request(request).unsafeRunSync()
   }
 
   private[this] def postApiV1(path: String, body: EntityBody[IO])(service: Service): Response[IO] = {
-    val request = Request[IO](method = Method.POST, uri = Uri.unsafeFromString(path), body = body)
+    val request = Request[IO](method = Method.POST, uri = Uri.unsafeFromString(path), body = body, headers = DefaultHeaders)
     service.request(request).unsafeRunSync()
   }
 
   private[this] def asEntityBody(content: String): EntityBody[IO] = {
     Stream.fromIterator[IO, Byte](content.toCharArray.map(_.toByte).toIterator)
   }
+
+  final val DefaultHeaders = Headers(Header("Authorization", Authentication.TokenKeyword + " " + Authentication.UniqueValidToken))
 
 }
