@@ -2,13 +2,14 @@ package org.mauritania.botinobe.api.v1
 
 import cats.effect.IO
 import org.mauritania.botinobe.{DbSuite, Repository}
-import org.http4s.{EntityBody, HttpService, MediaType, Method, Request, Response, Uri}
+import org.http4s.{EntityBody, Header, Headers, HttpService, MediaType, Method, Request, Response, Uri}
 import fs2.Stream
 import io.circe.Json
 import org.mauritania.botinobe.api.v1.Service.{CountResponse, IdResponse}
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
+import org.mauritania.botinobe.security.Authentication
 import org.scalatest.Sequential
 
 class ServiceFuncSpec extends DbSuite {
@@ -80,17 +81,19 @@ class ServiceFuncSpec extends DbSuite {
   }
 
   private[this] def get(path: String)(implicit service: Service): Json = {
-    val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path))
+    val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path), headers = DefaultHeaders)
     service.request(request).unsafeRunSync().as[Json].unsafeRunSync()
   }
 
   private[this] def post(path: String, body: String)(implicit service: Service): Json = {
-    val request = Request[IO](method = Method.POST, uri = Uri.unsafeFromString(path), body = asEntityBody(body))
+    val request = Request[IO](method = Method.POST, uri = Uri.unsafeFromString(path), body = asEntityBody(body), headers = DefaultHeaders)
     service.request(request).unsafeRunSync().as[Json].unsafeRunSync()
   }
 
   private [this] def asEntityBody(content: String): EntityBody[IO] = {
     Stream.fromIterator[IO, Byte](content.toCharArray.map(_.toByte).toIterator)
   }
+
+  final val DefaultHeaders = Headers(Header("Authorization", Authentication.TokenKeyword + " " + Authentication.UniqueValidToken))
 
 }
