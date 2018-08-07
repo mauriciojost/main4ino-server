@@ -18,11 +18,6 @@ import fs2.Stream
 import org.http4s.{AuthedService, Request, Response}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
-import org.reactormonk.{CryptoBits, PrivateKey}
-
-import cats.syntax.EitherObjectOps
-import org.http4s.headers.Authorization
-import cats.syntax.either._
 import org.mauritania.botinobe.security.Authentication
 import org.mauritania.botinobe.security.Authentication.User
 
@@ -34,24 +29,8 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
   import Service._
   import Url._
 
-  val key = PrivateKey(scala.io.Codec.toUTF8(scala.util.Random.alphanumeric.take(20).mkString("")))
-
-  val crypto = CryptoBits(key)
-
-  def retrieveUser: Kleisli[IO, Long, User] = Kleisli(id => IO(Authentication.toUser(id)))
-
-  val authUser: Kleisli[IO, Request[IO], Either[String, User]] = Kleisli({ request =>
-    val message = for {
-      header <- request.headers.get(Authorization).toRight("Couldn't find an Authorization header")
-      token <- Authentication.validate(header.value).toRight("Invalid token")
-      msg <- new EitherObjectOps(Either).catchOnly[NumberFormatException](token.toLong).leftMap(_.toString)
-    } yield(msg)
-    message.traverse(retrieveUser.run)
-  })
-
   val onFailure: AuthedService[String, IO] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
-
-  val middleware = AuthMiddleware(authUser, onFailure)
+  val middleware = AuthMiddleware(Authentication.authUser, onFailure)
 
   val HelpMsg = // TODO: complete me
     s"""
