@@ -21,9 +21,6 @@ import org.http4s.server.AuthMiddleware
 import org.mauritania.botinobe.security.Authentication
 import org.mauritania.botinobe.security.Authentication.User
 
-// Guidelines for REST:
-// - https://blog.octo.com/wp-content/uploads/2014/10/RESTful-API-design-OCTO-Quick-Reference-Card-2.2.pdf
-
 class Service(repository: Repository) extends Http4sDsl[IO] {
 
   import Service._
