@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>Botino BE</title>
+        <link rel="stylesheet" href="css/bootstrap.min.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+
+    <body ng-app="webPortalApp">
+
+        <nav class="navbar navbar-inverse" role="navigation">
+            <div class="navbar-header">
+                <a class="navbar-brand" ui-sref="#">Botino BE</a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li><a ui-sref="home">Home</a></li>
+                <li><a ui-sref="insert">Insert</a></li>
+                <li><a ui-sref="search">Search</a></li>
+                <li><a ui-sref="about">About</a></li>
+            </ul>
+        </nav>
+
+        <div class="container">
+            <div ui-view></div>
+        </div>
+
+        <footer class="text-center">
+            <p>Developed by <a href="http://www.github.com/mauriciojost" target="_blank">Mauricio Jost</a></p>
+            <p>2018</a></p>
+        </footer>
+
+        <script src="js/jquery.min.js"></script>
+        <script src="js/angular.min.js"></script>
+        <script src="js/angular-ui-router.js"></script>
+        <script src="js/bootstrap.js"></script>
+        <script src="js/bootstrap-dialog.js"></script>
+        <script src="js/app.js"></script>
+
+    </body>
+
+</html>
