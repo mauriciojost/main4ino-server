@@ -262,9 +262,11 @@ webPortalApp.controller(
                 $log.log('Executing request...');
 
                 $scope.result = '...';
+
                 $http(req).success(
                     function(data) {
-                        $scope.result = 'Requested correctly: ' + JSON.stringify(data);
+                        $log.log('Found: ' + JSON.stringify(data));
+                        $scope.result = data;
                     }
                 ).error(
                     function(data) {
@@ -272,7 +274,7 @@ webPortalApp.controller(
                     }
                 );
 
-                $log.log('Executed request: ' + $scope.result);
+                $log.log('Executed request.');
 
 
 
