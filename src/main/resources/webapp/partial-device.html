@@ -1,0 +1,50 @@
+<div class="page-header">
+  <h2>Device</h2>
+</div>
+
+<div ng-controller="DeviceController">
+ 
+	<div class="panel panel-info">
+		<div class="panel-heading">
+            <h3>1. Specify your device information</h3>
+            <br/>
+            <div class="bs-doc-grid">
+                <div class="col-xs-6 col-sm-2">
+                    <input type="text" name="device" class="form-control" ng-model="device" placeholder="Device Name"/>
+                </div>
+
+                <div class="col-xs-6 col-sm-2">
+                    <input type="text" name="token" class="form-control" ng-model="token" placeholder="Token"/>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <container>
+                <h3>2. Search status</h3>
+                <br/>
+                <div class="text-center">
+                    <button ng-click="search();" type="button" class="btn btn-lg btn-primary">Search</button>
+                </div>
+                <br/>
+            </container>
+        </div>
+    </div>
+
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <container>
+                <h3>3. Check the result</h3>
+                <br/>
+                <div class="text-center">
+                    <label>{{result}}</label>
+                </div>
+                <br/>
+            </container>
+        </div>
+    </div>​
+
+</div>

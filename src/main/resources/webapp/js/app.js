@@ -23,6 +23,11 @@ webPortalApp.config(function($stateProvider, $urlRouterProvider) {
             templateUrl: 'partial-search.html'
         })
 
+        .state('device', {
+            url: '/device',
+            templateUrl: 'partial-device.html'
+        })
+
         .state('about', {
             url: '/about',
             views: {
@@ -233,3 +238,48 @@ webPortalApp.controller(
         }
     
 );
+
+webPortalApp.controller(
+    'DeviceController',
+        function($scope, $http, $log) {
+
+            $log.log('Initializing searcher scope...');
+
+            $scope.search = function() {
+                $log.log('Searching...');
+                $log.log('Using device ' + $scope.device + ' with token ' + $scope.token);
+
+                var req = {
+                    method: 'GET',
+                    url: 'api/v1/devices/' + $scope.device + '/targets',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'token ' + $scope.token
+                    },
+                    data: $scope.request
+                };
+
+                $log.log('Executing request...');
+
+                $scope.result = '...';
+                $http(req).success(
+                    function(data) {
+                        $scope.result = 'Requested correctly: ' + JSON.stringify(data);
+                    }
+                ).error(
+                    function(data) {
+                        $scope.result = 'Problem requesting: ' + JSON.stringify(data);
+                    }
+                );
+
+                $log.log('Executed request: ' + $scope.result);
+
+
+
+
+            };
+
+            $log.log('Initialized searcher scope.');
+        }
+);
+
