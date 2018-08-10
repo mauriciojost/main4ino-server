@@ -42,31 +42,35 @@
                 <div>
                     <table class="table table-striped table-bordered">
                         <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Timestamp</th>
-                            <th>Device</th>
-                            <th>Action</th>
-                            <th>...</th>
-                        </tr>
+                            <tr>
+                                <th>ID</th>
+                                <th>Timestamp</th>
+                                <th>Device</th>
+                                <th>Actors</th>
+                            </tr>
                         </thead>
                         <tbody>
-                        <tr ng-repeat="device in result track by $index">
-                            <td>{{ device.metadata.id }}</td>
-                            <td>{{ device.metadata.timestamp }}</td>
-                            <td>{{ device.metadata.device }}</td>
-                            <td>{{ device.actors[0] }}</td>
-                            <td>
-                                <div>
-                                    <button class="btn btn-xs btn-default" ng-click="show($index);">More...</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr ng-show="result.hasmore">
-                            <td>More events available on next page...</td>
-
-                        </tr>
-
+                            <tr ng-repeat="device in result">
+                                <td>{{ device.metadata.id }}</td>
+                                <td>{{ device.metadata.timestamp }}</td>
+                                <td>{{ device.metadata.device }}</td>
+                                <td>
+                                        <table class="table table-striped table-bordered">
+                                            <thead>
+                                            <tr>
+                                                <th>Actor</th>
+                                                <th>Props</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr ng-repeat="(actor, props) in device.actors">
+                                                <td>{{ actor }}</td>
+                                                <td>{{ props }}</td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
