@@ -9,6 +9,10 @@ Inspiration:
 
 ```
 sbt run
+
+curl -H "Authorization: token 11" -X POST http://localhost:8080/api/v1/devices/dev1/actors/clock/targets -d '{"h":5}'
+
+http://localhost:8080/index.html#/device-history
 ```
 
 Guidelines for REST:

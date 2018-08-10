@@ -18,6 +18,7 @@ import fs2.Stream
 import org.http4s.{AuthedService, Request, Response}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
+import org.mauritania.botinobe.models.Device.Metadata
 import org.mauritania.botinobe.security.Authentication
 import org.mauritania.botinobe.security.Authentication.User
 
@@ -69,6 +70,11 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
         Ok(Stream("[") ++ x.map(_.asJson.noSpaces).intersperse(",") ++ Stream("]"), ContentTypeAppJson)
       }
 
+      case a@GET -> Root / "devices" / S(device) / T(table) / "summary" :? StatusP(status) +& ConsumeP(clean) as user => {
+        val x = getDevActorTups(device, None, table, status, clean)
+        Ok(x.map(t => DeviceU.fromBom(Device.fromActorTups(Metadata(None, None, device), t))).map(_.asJson), ContentTypeAppJson)
+      }
+
       // Targets & Reports (at device-actor level)
 
       case a@POST -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) as user => {
@@ -87,8 +93,8 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
       }
 
       case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table)/ "summary" :? StatusP(status) +& ConsumeP(clean) as user => {
-        val x = getDevActorsSummary(device, actor, table, status, clean)
-        Ok(x.map(_.asJson), ContentTypeAppJson)
+        val x = getDevActorTups(device, Some(actor), table, status, clean)
+        Ok(x.map(PropsMapU.fromTups).map(_.asJson), ContentTypeAppJson)
       }
 
     }
@@ -134,10 +140,9 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
     } yield (r)
   }
 
-  private[v1] def getDevActorsSummary(device: DeviceName, actor: ActorName, table: Table, status: Option[Status], clean: Option[Boolean]) = {
-    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), status, clean.exists(identity))
-    val t = actorTups.fold(List.empty[ActorTup])(_ :+ _)
-    t.map(i => PropsMapU.fromTups(i))
+  private[v1] def getDevActorTups(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status], clean: Option[Boolean]) = {
+    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, clean.exists(identity))
+    actorTups.fold(List.empty[ActorTup])(_ :+ _)
   }
 
   private[v1] def getDevActors(device: DeviceName, actor: ActorName, table: Table, status: Option[Status], clean: Option[Boolean]) = {

@@ -23,9 +23,14 @@ webPortalApp.config(function($stateProvider, $urlRouterProvider) {
             templateUrl: 'partial-search.html'
         })
 
-        .state('device', {
-            url: '/device',
-            templateUrl: 'partial-device.html'
+        .state('device-history', {
+            url: '/device-history',
+            templateUrl: 'partial-device-history.html'
+        })
+
+        .state('device-summary', {
+            url: '/device-summary',
+            templateUrl: 'partial-device-summary.html'
         })
 
         .state('about', {
@@ -240,7 +245,7 @@ webPortalApp.controller(
 );
 
 webPortalApp.controller(
-    'DeviceController',
+    'DeviceHistoryController',
         function($scope, $http, $log) {
 
             $log.log('Initializing searcher scope...');
@@ -252,6 +257,52 @@ webPortalApp.controller(
                 var req = {
                     method: 'GET',
                     url: 'api/v1/devices/' + $scope.device + '/targets',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'token ' + $scope.token
+                    },
+                    data: $scope.request
+                };
+
+                $log.log('Executing request...');
+
+                $scope.result = '...';
+
+                $http(req).success(
+                    function(data) {
+                        $log.log('Found: ' + JSON.stringify(data));
+                        $scope.result = data;
+                    }
+                ).error(
+                    function(data) {
+                        $scope.result = 'Problem requesting: ' + JSON.stringify(data);
+                    }
+                );
+
+                $log.log('Executed request.');
+
+
+
+
+            };
+
+            $log.log('Initialized searcher scope.');
+        }
+);
+
+webPortalApp.controller(
+    'DeviceSummaryController',
+        function($scope, $http, $log) {
+
+            $log.log('Initializing searcher scope...');
+
+            $scope.search = function() {
+                $log.log('Searching...');
+                $log.log('Using device ' + $scope.device + ' with token ' + $scope.token);
+
+                var req = {
+                    method: 'GET',
+                    url: 'api/v1/devices/' + $scope.device + '/targets/summary?status=C&consume=false',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'token ' + $scope.token
