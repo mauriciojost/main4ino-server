@@ -13,7 +13,7 @@ class Authentication(config: Config) {
 
   lazy val UsersByToken = config.users.groupBy(_.token)
 
-  def retrieveUserSimple(token: String, url: String): Either[String, User] = {
+  def retrieveUser(token: String, url: String): Either[String, User] = {
     for {
       u <- UsersByToken.get(token).flatMap(_.headOption).toRight("Could not find user for such token")
       ua <- u.canAccess(url).toRight(s"${u.name} is not authorized to access ${url}")
@@ -30,7 +30,7 @@ class Authentication(config: Config) {
       val u = for {
         header <- request.headers.get(Authorization).toRight("Authorization header not present")
         tkn <- retrieveToken(header.value).toRight("Invalid token")
-        user <- retrieveUserSimple(tkn, request.pathInfo)
+        user <- retrieveUser(tkn, request.pathInfo)
       } yield (user)
       u
     }
