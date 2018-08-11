@@ -2,7 +2,7 @@ package org.mauritania.botinobe.api.v1
 
 import io.circe.{Decoder, DecodingFailure}
 
-object Json {
+object JsonEncoding {
 
   val StringDecoder: Decoder[String] = { v =>
     val s = Decoder[String].tryDecode(v).map(identity)

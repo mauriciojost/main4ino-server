@@ -9,16 +9,17 @@ import org.mauritania.botinobe.api.v1.Service.{CountResponse, IdResponse}
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
-import org.mauritania.botinobe.security.Authentication
+import org.mauritania.botinobe.security.{Authentication, Config, User}
 import org.scalatest.Sequential
 
 class ServiceFuncSpec extends DbSuite {
+  val AuthConfig = Config(List(User(1, "name", "name@gmail.com", List("/"), "abcdefghij")))
 
   Sequential
 
   "The service" should "create and read a target/report" in {
 
-    implicit val s = new Service(new Repository(transactor))
+    implicit val s = new Service(new Authentication(AuthConfig), new Repository(transactor))
 
     // Add a few targets
     post("/devices/dev1/targets", """{"clock": {"h":"7"}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
@@ -66,7 +67,7 @@ class ServiceFuncSpec extends DbSuite {
 
   it should "create targets and merge the properties correctly" in {
 
-    implicit val s = new Service(new Repository(transactor))
+    implicit val s = new Service(new Authentication(AuthConfig), new Repository(transactor))
 
     // Add a few targets
     post("/devices/dev1/targets", """{"clock":{"h":"7"},"body":{"mv0":"Zz."}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
@@ -96,6 +97,6 @@ class ServiceFuncSpec extends DbSuite {
     Stream.fromIterator[IO, Byte](content.toCharArray.map(_.toByte).toIterator)
   }
 
-  final val DefaultHeaders = Headers(Header("Authorization", Authentication.TokenKeyword + " " + Authentication.UniqueValidToken))
+  final val DefaultHeaders = Headers(Header("Authorization", "token abcdefghij"))
 
 }

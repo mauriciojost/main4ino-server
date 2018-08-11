@@ -19,16 +19,15 @@ import org.http4s.{AuthedService, Request, Response}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.mauritania.botinobe.models.Device.Metadata
-import org.mauritania.botinobe.security.Authentication
-import org.mauritania.botinobe.security.Authentication.User
+import org.mauritania.botinobe.security.{Authentication, User}
 
-class Service(repository: Repository) extends Http4sDsl[IO] {
+class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO] {
 
   import Service._
   import Url._
 
   val onFailure: AuthedService[String, IO] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
-  val middleware = AuthMiddleware(Authentication.authUser, onFailure)
+  val middleware = AuthMiddleware(auth.authUser, onFailure)
 
   val HelpMsg = // TODO: complete me
     s"""
@@ -110,7 +109,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
   }
 
   private[v1] def postDev(req: Request[IO], device: DeviceName, table: Table, t: Timestamp) = {
-    implicit val x = Json.StringDecoder
+    implicit val x = JsonEncoding.StringDecoder
     for {
       p <- req.decodeJson[ActorMapU]
       id <- repository.insertDevice(table, DeviceU(MetadataU(None, Some(t), device), p).toBom)
@@ -119,7 +118,7 @@ class Service(repository: Repository) extends Http4sDsl[IO] {
   }
 
   private[v1] def postDevActor(req: Request[IO], device: DeviceName, actor: ActorName, table: Table, t: Timestamp) = {
-    implicit val x = Json.StringDecoder
+    implicit val x = JsonEncoding.StringDecoder
     for {
       p <- req.decodeJson[PropsMapU]
       id <- repository.insertDevice(table, DeviceU(MetadataU(None, Some(t), device), Map(actor -> p)).toBom)
@@ -167,7 +166,6 @@ object Service {
   final val MinDeviceNameLength = 4
   final val ContentTypeAppJson = `Content-Type`(MediaType.`application/json`)
   final val ContentTypeTextPlain = `Content-Type`(MediaType.`text/plain`)
-  final val AuthenticationTokenName = "token"
 
   case class IdResponse(id: RecordId)
   case class CountResponse(count: Int)

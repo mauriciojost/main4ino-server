@@ -22,7 +22,7 @@ import org.mauritania.botinobe.api.v1.DeviceU.MetadataU
 import org.mauritania.botinobe.{Fixtures, Repository}
 import org.mauritania.botinobe.models.Device.Metadata
 import org.mauritania.botinobe.models.{ActorTup, Device, RecordId, Status => S}
-import org.mauritania.botinobe.security.Authentication
+import org.mauritania.botinobe.security.{Authentication, Config, User}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
 
@@ -30,12 +30,13 @@ import scala.reflect.ClassTag
 
 class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
+  val AuthConfig = Config(List(User(1, "name", "name@gmail.com", List("/"), "abcdefghij")))
   val Dev1 = Fixtures.Device1
   val Dev1V1 = Fixtures.Device1InV1
 
   "Help request" should {
     val r = stub[Repository]
-    val s = new Service(r)
+    val s = new Service(new Authentication(AuthConfig), r)
     "return 200" in {
       getApiV1("/help")(s).status shouldBe (HttpStatus.Ok)
     }
@@ -47,7 +48,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
   "Create target request" should {
     val r = stub[Repository]
-    val s = new Service(r)
+    val s = new Service(new Authentication(AuthConfig), r)
     "return 201 with empty properties" in {
       val t = Device(Metadata(None, None, "dev1"))
       createADeviceAndExpect(Table.Reports, t)(HttpStatus.Created)(s, r)
@@ -77,7 +78,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
   "Read target/report request" should {
     val r = stub[Repository]
-    val s = new Service(r)
+    val s = new Service(new Authentication(AuthConfig), r)
     "return 200 with an existent target/request" in {
       (r.selectDeviceWhereRequestId _).when(Table.Targets, 1L).returns(IO.pure(Dev1)).once // mock
       (r.selectDeviceWhereRequestId _).when(Table.Reports, 1L).returns(IO.pure(Dev1)).once() // mock
@@ -94,7 +95,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
   "Merges correctly existent targets" should {
 
     val r = stub[Repository]
-    val s = new Service(r)
+    val s = new Service(new Authentication(AuthConfig), r)
 
     "return the list of associated targets set" in {
 
@@ -151,6 +152,6 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     Stream.fromIterator[IO, Byte](content.toCharArray.map(_.toByte).toIterator)
   }
 
-  final val DefaultHeaders = Headers(Header("Authorization", Authentication.TokenKeyword + " " + Authentication.UniqueValidToken))
+  final val DefaultHeaders = Headers(Header("Authorization", "token abcdefghij"))
 
 }
