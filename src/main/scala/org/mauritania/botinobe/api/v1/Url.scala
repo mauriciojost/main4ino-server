@@ -14,7 +14,7 @@ object Url {
   }
 
   object S {
-    final val DevRegex = raw"([a-zA-Z0-9_]{4,20})".r
+    final val DevRegex = raw"^([a-zA-Z0-9_]{4,20})$$".r
     def unapply(dev: String): Option[String] = DevRegex.findFirstIn(dev)
   }
 
