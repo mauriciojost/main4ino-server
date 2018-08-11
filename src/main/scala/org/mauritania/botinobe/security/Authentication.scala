@@ -9,7 +9,7 @@ import scala.util.Try
 
 class Authentication(config: Config) {
 
-  private final val TokenRegex = "^token ([a-zA-Z0-9]{10})$".r // TODO increase to 20 or 30
+  private final val TokenRegex = "^token ([a-zA-Z0-9]{30})$".r
 
   lazy val UsersByToken = config.users.groupBy(_.token)
 

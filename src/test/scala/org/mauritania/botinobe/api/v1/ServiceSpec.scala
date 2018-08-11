@@ -30,7 +30,8 @@ import scala.reflect.ClassTag
 
 class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
-  val AuthConfig = Config(List(User(1, "name", "name@gmail.com", List("/"), "abcdefghij")))
+  val Token = "012345678901234567890123456789"
+  val AuthConfig = Config(List(User(1, "name", "name@gmail.com", List("/"), Token)))
   val Dev1 = Fixtures.Device1
   val Dev1V1 = Fixtures.Device1InV1
 
@@ -152,6 +153,6 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     Stream.fromIterator[IO, Byte](content.toCharArray.map(_.toByte).toIterator)
   }
 
-  final val DefaultHeaders = Headers(Header("Authorization", "token abcdefghij"))
+  final val DefaultHeaders = Headers(Header("Authorization", "token " + Token))
 
 }
