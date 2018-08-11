@@ -15,8 +15,8 @@ class Authentication(config: Config) {
 
   def retrieveUser(token: String, url: String): Either[String, User] = {
     for {
-      u <- UsersByToken.get(token).flatMap(_.headOption).toRight("Could not find user for such token")
-      ua <- u.canAccess(url).toRight(s"${u.name} is not authorized to access ${url}")
+      u <- UsersByToken.get(token).flatMap(_.headOption).toRight(s"Could not find user for token $token")
+      ua <- u.canAccess(url).toRight(s"User ${u.name} is not authorized to access ${url}")
     } yield(ua)
   }
 
@@ -28,8 +28,8 @@ class Authentication(config: Config) {
   val authUser: Kleisli[IO, Request[IO], Either[String, User]] = Kleisli({ request =>
     IO {
       val u = for {
-        header <- request.headers.get(Authorization).toRight("Authorization header not present")
-        tkn <- retrieveToken(header.value).toRight("Invalid token")
+        header <- request.headers.get(Authorization).toRight("Header 'Authorization' not present")
+        tkn <- retrieveToken(header.value).toRight(s"Invalid token syntax: ${header.value}")
         user <- retrieveUser(tkn, request.pathInfo)
       } yield (user)
       u
