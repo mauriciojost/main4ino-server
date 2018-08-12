@@ -334,6 +334,10 @@ webPortalApp.controller(
                     function(data) {
                         $log.log('Failed reports: ' + data);
                         $scope.reportsSummary = '{}';
+                        BootstrapDialog.show({
+                            title: 'Error',
+                            message: 'Failed to retrieve reports: ' + data
+                        });
                     }
                 );
 
@@ -346,6 +350,10 @@ webPortalApp.controller(
                     function(data) {
                         $log.log('Failed targets: ' + data);
                         $scope.targetsSummary = '{}';
+                        BootstrapDialog.show({
+                            title: 'Error',
+                            message: 'Failed to retrieve targets: ' + data
+                        });
                     }
                 );
 
