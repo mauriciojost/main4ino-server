@@ -11,9 +11,9 @@ class Authentication(config: Config) {
 
   private final val TokenRegex = "^token ([a-zA-Z0-9]{30})$".r
 
-  lazy val UsersByToken = config.users.groupBy(_.token)
+  private lazy val UsersByToken = config.users.groupBy(_.token)
 
-  def retrieveUser(token: String, url: String): Either[String, User] = {
+  private def retrieveUser(token: String, url: String): Either[String, User] = {
     for {
       u <- UsersByToken.get(token).flatMap(_.headOption).toRight(s"Could not find user for token $token")
       ua <- u.canAccess(url).toRight(s"User ${u.name} is not authorized to access ${url}")
