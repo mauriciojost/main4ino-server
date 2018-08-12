@@ -294,7 +294,7 @@ webPortalApp.controller(
     'DeviceSummaryController',
         function($scope, $http, $log) {
 
-            $log.log('Initializing searcher scope...');
+            $log.log('Initializing scope...');
 
             $scope.search = function() {
                 $log.log('Searching...');
@@ -359,10 +359,35 @@ webPortalApp.controller(
 
                 $log.log('Executed requests.');
 
-
-
-
             };
+
+            $scope.change = function(device, actor, pname, pvalue) {
+                $log.log('Changing ' + device + ' ' + actor + ' ' + pname + ' ' + pvalue);
+                var jsn = {};
+                jsn[pname] = pvalue;
+                var req = {
+                    method: 'POST',
+                    url: '/api/v1/devices/' + device + '/actors/' + actor + '/targets',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'token ' + $scope.token
+                    },
+                    data: JSON.stringify(jsn)
+                };
+
+                $http(req).success(
+                    function(data) {
+                        $log.log('Success change');
+                        $scope.search();
+                    }
+                ).error(
+                    function(data) {
+                        $log.log('Failed change');
+                    }
+                );
+
+            }
+
 
             $log.log('Initialized searcher scope.');
         }
