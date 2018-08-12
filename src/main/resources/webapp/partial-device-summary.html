@@ -51,18 +51,16 @@
                                     <table ng-repeat="(actorRep, propsRep) in reportsSummary.actors track by $index" class="table table-bordered">
                                         <thead>
                                             <tr>
-                                                <th>Actor</th>
-                                                <th>Property</th>
-                                                <th>Reported</th>
-                                                <th>Target</th>
+                                                <th> {{ actorRep }} 's properties</th>
+                                                <th>Reported value</th>
+                                                <th>Target value</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                         <tr ng-repeat="(propNameRep, propValueRep) in propsRep track by $index">
-                                            <td class="col-md-4">{{ actorRep }}</td>
-                                            <td class="col-md-4">{{ propNameRep }}</td>
-                                            <td class="col-md-4">{{ propValueRep }}</td>
-                                            <td class="col-md-4">{{ targetsSummary.actors[actorRep][propNameRep] }}</td>
+                                            <td class="col-md-3">{{ propNameRep }}</td>
+                                            <td class="col-md-3">{{ propValueRep }}</td>
+                                            <td class="col-md-3"><p class="text-warning">{{ targetsSummary.actors[actorRep][propNameRep] }}</p> </td>
                                         </tr>
                                         </tbody>
                                     </table>
