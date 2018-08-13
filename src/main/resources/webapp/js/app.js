@@ -365,8 +365,8 @@ webPortalApp.controller(
                 $log.log('Request to change ' + device + ' ' + actor + ' ' + pname + ' ' + pvalue);
 
                 BootstrapDialog.show({
-                    title: 'Change device ' + device + ': actor ' + actor + '/ property ' + pname + " (" + pvalue + ")",
-                    message: 'Change property value to: <input type="text" class="form-control" placeholder="'+pvalue+'">',
+                    title: 'Change device ' + device + '/ actor ' + actor + '/ property ' + pname + " (before: " + pvalue + ")",
+                    message: 'Change property value to: <input type="text" class="form-control" placeholder="new value">',
                     buttons: [{
                         label: 'Change',
                         action: function(dialog) {
