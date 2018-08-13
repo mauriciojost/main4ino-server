@@ -225,7 +225,7 @@ webPortalApp.controller(
                 $.get('../help.conf', function(data) {
                     var lines = data.split('\n');
                     $.each(lines, function(lineNo, line) {
-                        var items = line.split('=');
+                        var items = line.split('===');
                         if ((items[0].length != 0) && ((actor + '.' + pname).search(items[0]) != -1)) {
                             $log.log('Matched line: ' + line);
                             BootstrapDialog.show({
