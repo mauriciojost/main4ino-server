@@ -54,15 +54,16 @@
                                                 <th> {{ actorRep }} 's properties</th>
                                                 <th>Reported value</th>
                                                 <th>Target value</th>
-                                                <th>Change target</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                         <tr ng-repeat="(propNameRep, propValueRep) in propsRep track by $index">
                                             <td class="col-md-3">{{ propNameRep }}</td>
                                             <td class="col-md-3">{{ propValueRep }}</td>
-                                            <td class="col-md-3"><p class="text-warning">{{ targetsSummary.actors[actorRep][propNameRep] }}</p> </td>
-                                            <td><div><button class="btn btn-xs btn-default" ng-click="change(reportsSummary.metadata.device, actorRep, propNameRep, propValueRep);">More...</button></div></td>
+                                            <td class="col-md-3">
+                                                <p class="text-warning">{{ targetsSummary.actors[actorRep][propNameRep] }}</p>
+                                                <div><button class="btn btn-xs btn-default" ng-click="changeRequest(reportsSummary.metadata.device, actorRep, propNameRep, propValueRep);">...</button></div>
+                                            </td>
                                         </tr>
                                         </tbody>
                                     </table>

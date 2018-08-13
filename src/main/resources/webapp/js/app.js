@@ -361,8 +361,34 @@ webPortalApp.controller(
 
             };
 
+            $scope.changeRequest = function(device, actor, pname, pvalue) {
+                $log.log('Request to change ' + device + ' ' + actor + ' ' + pname + ' ' + pvalue);
+
+                BootstrapDialog.show({
+                    title: 'Change device ' + device + ': actor ' + actor + '/ property ' + pname + " (" + pvalue + ")",
+                    message: 'Change property value to: <input type="text" class="form-control" placeholder="'+pvalue+'">',
+                    buttons: [{
+                        label: 'Change',
+                        action: function(dialog) {
+                           var v = dialog.getModalBody().find('input').val();
+                           $scope.change(device, actor, pname, v);
+                           $log.log('Changed to: ' + v);
+                           dialog.close();
+                        }
+                    }, {
+                        label: 'Cancel',
+                        action: function(dialog) {
+                           $log.log('Cancelled');
+                           dialog.close();
+                        }
+                    }]
+                });
+
+            }
+
             $scope.change = function(device, actor, pname, pvalue) {
                 $log.log('Changing ' + device + ' ' + actor + ' ' + pname + ' ' + pvalue);
+
                 var jsn = {};
                 jsn[pname] = pvalue;
                 var req = {
