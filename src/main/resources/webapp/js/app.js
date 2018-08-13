@@ -80,25 +80,17 @@ webPortalApp.controller(
     'DeviceHistoryController',
         function($scope, $http, $log) {
 
-            $log.log('Initializing searcher scope...');
-
             $scope.search = function() {
-                $log.log('Searching...');
-                $log.log('Using device ' + $scope.device + ' with token ' + $scope.token);
+                $log.log('Searching device ' + $scope.device + ' with token ' + $scope.token);
 
                 var req = {
                     method: 'GET',
                     url: 'api/v1/devices/' + $scope.device + '/targets',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'token ' + $scope.token
-                    },
+                    headers: {'Content-Type': 'application/json', 'Authorization': 'token ' + $scope.token},
                     data: $scope.request
                 };
 
                 $log.log('Executing request...');
-
-                $scope.result = '...';
 
                 $http(req).success(
                     function(data) {
@@ -107,18 +99,15 @@ webPortalApp.controller(
                     }
                 ).error(
                     function(data) {
-                        $scope.result = 'Problem requesting: ' + JSON.stringify(data);
+                        $log.log('Problem requesting: ' + JSON.stringify(data));
+                        $scope.result = '[]'
                     }
                 );
 
                 $log.log('Executed request.');
 
-
-
-
             };
 
-            $log.log('Initialized searcher scope.');
         }
 );
 
@@ -126,36 +115,24 @@ webPortalApp.controller(
     'DeviceSummaryController',
         function($scope, $http, $log) {
 
-            $log.log('Initializing scope...');
-
             $scope.search = function() {
-                $log.log('Searching...');
-                $log.log('Using device ' + $scope.device + ' with token ' + $scope.token);
+                $log.log('Searching device ' + $scope.device + ' with token ' + $scope.token);
 
                 var reqReports = {
                     method: 'GET',
                     url: 'api/v1/devices/' + $scope.device + '/reports/summary?consume=false',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'token ' + $scope.token
-                    },
+                    headers: {'Content-Type': 'application/json', 'Authorization': 'token ' + $scope.token},
                     data: $scope.request
                 };
 
                 var reqTargets = {
                     method: 'GET',
                     url: 'api/v1/devices/' + $scope.device + '/targets/summary?status=C&consume=false',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'token ' + $scope.token
-                    },
+                    headers: {'Content-Type': 'application/json', 'Authorization': 'token ' + $scope.token},
                     data: $scope.request
                 };
 
                 $log.log('Executing requests...');
-
-                $scope.reportsSummary = '{}';
-                $scope.targetsSummary = '{}';
 
                 $http(reqReports).success(
                     function(data) {
@@ -226,10 +203,7 @@ webPortalApp.controller(
                 var req = {
                     method: 'POST',
                     url: '/api/v1/devices/' + device + '/actors/' + actor + '/targets',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'token ' + $scope.token
-                    },
+                    headers: {'Content-Type': 'application/json', 'Authorization': 'token ' + $scope.token},
                     data: JSON.stringify(jsn)
                 };
 
@@ -246,8 +220,6 @@ webPortalApp.controller(
 
             }
 
-
-            $log.log('Initialized searcher scope.');
         }
 );
 
