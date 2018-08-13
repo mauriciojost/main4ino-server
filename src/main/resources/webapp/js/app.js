@@ -220,6 +220,22 @@ webPortalApp.controller(
 
             }
 
+            $scope.helpRequest = function(actor, pname) {
+                $log.log('Request for help ' + actor + ' ' + pname);
+                $.get('../help.conf', function(data) {
+                    var lines = data.split('\n');
+                    $.each(lines, function(lineNo, line) {
+                        var items = line.split('=');
+                        if ((items[0].length != 0) && ((actor + '.' + pname).search(items[0]) != -1)) {
+                            $log.log('Matched line: ' + line);
+                            BootstrapDialog.show({
+                                title: 'Help for actor "' + actor + '" property "' + pname + '"',
+                                message: items[1]
+                            });
+                        };
+                    });
+                });
+            }
         }
 );
 
