@@ -14,6 +14,11 @@ pipeline {
         }
       }
     }
+    stage('Coverage') {
+      steps {
+        step([$class: 'ScoveragePublisher', reportDir: 'target/scala-2.12/scoverage-report', reportFile: 'scoverage.xml'])
+      }
+    }
   }
   post {  
     failure {  
