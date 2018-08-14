@@ -16,6 +16,8 @@ pipeline {
     }
     stage('Coverage') {
       steps {
+        sh 'sbt clean "set every coverageEnabled := true" test coverageReport'
+        sh 'sbt coverageAggregate'
         step([$class: 'ScoveragePublisher', reportDir: 'target/scala-2.12/scoverage-report', reportFile: 'scoverage.xml'])
       }
     }
