@@ -163,7 +163,6 @@ object Service {
 
   final val ServicePrefix = "/api/v1"
 
-  final val MinDeviceNameLength = 4
   final val ContentTypeAppJson = `Content-Type`(MediaType.`application/json`)
   final val ContentTypeTextPlain = `Content-Type`(MediaType.`text/plain`)
 
