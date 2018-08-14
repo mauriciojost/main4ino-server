@@ -78,7 +78,12 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     'DeviceHistoryController',
-        function($scope, $http, $log) {
+        function($scope, $http, $log, $location) {
+
+            $scope.device = $location.search().device;
+            $scope.token = $location.search().token;
+            $log.log('Device: ' + $scope.device);
+            $log.log('Token: ' + $scope.token);
 
             $scope.search = function() {
                 $log.log('Searching device ' + $scope.device + ' with token ' + $scope.token);
@@ -113,7 +118,12 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     'DeviceSummaryController',
-        function($scope, $http, $log) {
+        function($scope, $http, $log, $location) {
+
+            $scope.device = $location.search().device;
+            $scope.token = $location.search().token;
+            $log.log('Device: ' + $scope.device);
+            $log.log('Token: ' + $scope.token);
 
             $scope.search = function() {
                 $log.log('Searching device ' + $scope.device + ' with token ' + $scope.token);
