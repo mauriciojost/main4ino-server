@@ -1,5 +1,8 @@
 # README
 
+
+[![Build Status](https://jenkins.martinenhome.com/buildStatus/icon?job=botinobe/master)](https://jenkins.martinenhome.com/job/botinobe/job/master/)
+
 Botino Back-end application. 
 
 Inspiration:
