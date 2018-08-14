@@ -16,8 +16,8 @@ pipeline {
     }
     stage('Coverage') {
       steps {
-        sh 'sbt clean "set every coverageEnabled := true" test coverageReport'
-        sh 'sbt coverageAggregate'
+        sh 'sbt -Dsbt.global.base=.sbt -Dsbt.boot.directory=.sbt -Dsbt.ivy.home=.ivy2 clean "set every coverageEnabled := true" test coverageReport'
+        sh 'sbt -Dsbt.global.base=.sbt -Dsbt.boot.directory=.sbt -Dsbt.ivy.home=.ivy2 coverageAggregate'
         step([$class: 'ScoveragePublisher', reportDir: 'target/scala-2.12/scoverage-report', reportFile: 'scoverage.xml'])
       }
     }
