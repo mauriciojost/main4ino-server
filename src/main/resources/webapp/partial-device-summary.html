@@ -40,8 +40,8 @@
                     <table class="table table-striped table-bordered">
                         <thead>
                             <tr>
-                                <th>Device</th>
-                                <th>Actor</th>
+                                <th style="width: 10%">Device</th>
+                                <th style="width: 90%">Actor</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -51,18 +51,33 @@
                                     <table ng-repeat="(actorRep, propsRep) in reportsSummary.actors track by $index" class="table table-bordered">
                                         <thead>
                                             <tr>
-                                                <th> {{ actorRep }} 's properties</th>
-                                                <th>Reported value</th>
-                                                <th>Target value</th>
+                                                <th style="width: 15%"> {{ actorRep }} 's properties</th>
+                                                <th style="width: 15%">Reported value</th>
+                                                <th style="width: 15%">Target value</th>
+                                                <th style="width: 55%">Set</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                         <tr ng-repeat="(propNameRep, propValueRep) in propsRep track by $index">
-                                            <td class="col-md-3">{{ propNameRep }}</td>
-                                            <td class="col-md-3">{{ propValueRep }}</td>
-                                            <td class="col-md-3">
+                                            <td >{{ propNameRep }}</td>
+                                            <td>{{ propValueRep }}</td>
+                                            <td>
                                                 <p class="text-warning">{{ targetsSummary.actors[actorRep][propNameRep] }}</p>
-                                                <div><button class="btn btn-xs btn-default" ng-click="changeRequest(reportsSummary.metadata.device, actorRep, propNameRep, propValueRep);">...</button></div>
+                                            </td>
+
+                                            <td>
+                                                <form role="form">
+                                                <div><p> {{propHelp(actorRep, propNameRep)}} </p></div>
+                                                <div><a ng-href="{{propLink(actorRep, propNameRep)}}"> More... </a></div>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" ng-model="targetsTemporary.actors[actorRep][propNameRep]" >
+                                                    <div class="input-group-btn">
+                                                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+                                                        <ul id="color-dropdown-menu" class="dropdown-menu dropdown-menu-right" role="menu">
+                                                            <li ng-repeat="x in propExamples(actorRep, propNameRep)" class="input-lg"><a ng-click="changeRequest(reportsSummary.metadata.device, actorRep, propNameRep, valueFromHelp(x))">{{x}}</a></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                         </tbody>

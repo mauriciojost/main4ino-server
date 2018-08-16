@@ -125,6 +125,68 @@ webPortalApp.controller(
             $log.log('Device: ' + $scope.device);
             $log.log('Token: ' + $scope.token);
 
+            $scope.propLegends = [];
+
+            $scope.propLegendDefault = {
+                line: '',
+                lineNo: -1,
+                pattern: '',
+                description: 'No description available',
+                link: 'no link',
+                examples: ['No examples']
+            }
+
+            // Initialize property legends
+            $.get('../conf/proplegends.conf', function(data) {
+                var lines = data.split('\n');
+                $.each(lines, function(lineNo, line) {
+                    var items = line.split('===');
+                    if (items[0].length != 0) {
+                        $log.log('Matched line: ' + line);
+                        var legend = {
+                            line: line,
+                            lineNo: lineNo,
+                            pattern: items[0],
+                            description: items[1],
+                            link: items[2],
+                            examples: items[3].split(',')
+                        }
+                        $scope.propLegends[$scope.propLegends.length] = legend;
+                    };
+                });
+
+                $log.log('Legends: ' + JSON.stringify($scope.propLegends));
+            });
+
+            $scope.propLegend = function(actor, propName) {
+                $log.log('Searching legend for: ' + actor + ' ' + propName);
+                for (x of $scope.propLegends) {
+                    if ((actor + '.' + propName).search(x.pattern) != -1) {
+                        $log.log('Matched pattern: ' + x.pattern);
+                        return x;
+                    };
+                };
+                return $scope.propLegendDefault;
+            }
+
+            $scope.propLink = function(actor, propName) {
+              $log.log('Searching link for: ' + actor + ' ' + propName);
+              var l = $scope.propLegend(actor, propName);
+              return l.link;
+            }
+
+            $scope.propHelp = function(actor, propName) {
+              $log.log('Searching description for: ' + actor + ' ' + propName);
+              var l = $scope.propLegend(actor, propName);
+              return l.description;
+            }
+
+            $scope.propExamples = function(actor, propName) {
+              $log.log('Searching examples for: ' + actor + ' ' + propName);
+              var l = $scope.propLegend(actor, propName);
+              return l.examples;
+            }
+
             $scope.search = function() {
                 $log.log('Searching device ' + $scope.device + ' with token ' + $scope.token);
 
@@ -183,47 +245,29 @@ webPortalApp.controller(
             $scope.changeRequest = function(device, actor, propName, propValue) {
                 $log.log('Request to change ' + device + ' ' + actor + ' ' + propName + ' ' + propValue);
 
-                $.get('../conf/proplegends.conf', function(data) {
-                    var lines = data.split('\n');
-                    var propHelp = '';
-                    var propExamples = [];
-                    $.each(lines, function(lineNo, line) {
-                        var items = line.split('===');
-                        if ((items[0].length != 0) && ((actor + '.' + propName).search(items[0]) != -1)) {
-                            $log.log('Matched line: ' + line);
-                            propHelp = items[1];
-                            propExamples = items[2].split(',');
-                        };
-                    });
-
-                    BootstrapDialog.show({
-                        title: 'Change ' + actor + '.' + propName,
-                        message: function(v) {
-                            var inputField = 'Change property value to: <input type="text" class="form-control" placeholder="new value" value="' + propValue + '">';
-                            var selectField = 'Examples: ' + propExamples;
-                            return propHelp + ' ' + inputField + ' ' + selectField;
-
-                        },
-                        buttons: [{
-                            label: 'Change',
-                            action: function(dialog) {
-                               var v = dialog.getModalBody().find('input').val();
-                               $scope.change(device, actor, propName, v);
-                               $log.log('Changed to: ' + v);
-                               dialog.close();
-                            }
-                        }, {
-                            label: 'Cancel',
-                            action: function(dialog) {
-                               $log.log('Cancelled');
-                               dialog.close();
-                            }
-                        }]
-                    });
-
-
+                BootstrapDialog.show({
+                    title: 'Change ' + actor + '.' + propName,
+                    message: 'Change property value to: <input type="text" class="form-control" placeholder="new value" value="' + propValue + '">',
+                    buttons: [{
+                        label: 'Change',
+                        action: function(dialog) {
+                           var v = dialog.getModalBody().find('input').val();
+                           $scope.change(device, actor, propName, v);
+                           $log.log('Changed to: ' + v);
+                           dialog.close();
+                        }
+                    }, {
+                        label: 'Cancel',
+                        action: function(dialog) {
+                           $log.log('Cancelled');
+                           dialog.close();
+                        }
+                    }]
                 });
+            }
 
+            $scope.valueFromHelp = function(d) {
+                return d.split(' -> ')[0];
             }
 
             $scope.change = function(device, actor, propName, propValue) {
