@@ -180,36 +180,57 @@ webPortalApp.controller(
 
             };
 
-            $scope.changeRequest = function(device, actor, pname, pvalue) {
-                $log.log('Request to change ' + device + ' ' + actor + ' ' + pname + ' ' + pvalue);
+            $scope.changeRequest = function(device, actor, propName, propValue) {
+                $log.log('Request to change ' + device + ' ' + actor + ' ' + propName + ' ' + propValue);
 
-                BootstrapDialog.show({
-                    title: 'Change ' + actor + '.' + pname,
-                    message: 'Change property value to: <input type="text" class="form-control" placeholder="new value" value="' + pvalue + '">',
-                    buttons: [{
-                        label: 'Change',
-                        action: function(dialog) {
-                           var v = dialog.getModalBody().find('input').val();
-                           $scope.change(device, actor, pname, v);
-                           $log.log('Changed to: ' + v);
-                           dialog.close();
-                        }
-                    }, {
-                        label: 'Cancel',
-                        action: function(dialog) {
-                           $log.log('Cancelled');
-                           dialog.close();
-                        }
-                    }]
+                $.get('../conf/proplegends.conf', function(data) {
+                    var lines = data.split('\n');
+                    var propHelp = '';
+                    var propExamples = [];
+                    $.each(lines, function(lineNo, line) {
+                        var items = line.split('===');
+                        if ((items[0].length != 0) && ((actor + '.' + propName).search(items[0]) != -1)) {
+                            $log.log('Matched line: ' + line);
+                            propHelp = items[1];
+                            propExamples = items[2].split(',');
+                        };
+                    });
+
+                    BootstrapDialog.show({
+                        title: 'Change ' + actor + '.' + propName,
+                        message: function(v) {
+                            var inputField = 'Change property value to: <input type="text" class="form-control" placeholder="new value" value="' + propValue + '">';
+                            var selectField = 'Examples: ' + propExamples;
+                            return propHelp + ' ' + inputField + ' ' + selectField;
+
+                        },
+                        buttons: [{
+                            label: 'Change',
+                            action: function(dialog) {
+                               var v = dialog.getModalBody().find('input').val();
+                               $scope.change(device, actor, propName, v);
+                               $log.log('Changed to: ' + v);
+                               dialog.close();
+                            }
+                        }, {
+                            label: 'Cancel',
+                            action: function(dialog) {
+                               $log.log('Cancelled');
+                               dialog.close();
+                            }
+                        }]
+                    });
+
+
                 });
 
             }
 
-            $scope.change = function(device, actor, pname, pvalue) {
-                $log.log('Changing ' + device + ' ' + actor + ' ' + pname + ' ' + pvalue);
+            $scope.change = function(device, actor, propName, propValue) {
+                $log.log('Changing ' + device + ' ' + actor + ' ' + propName + ' ' + propValue);
 
                 var jsn = {};
-                jsn[pname] = pvalue;
+                jsn[propName] = propValue;
                 var req = {
                     method: 'POST',
                     url: '/api/v1/devices/' + device + '/actors/' + actor + '/targets',
@@ -230,22 +251,6 @@ webPortalApp.controller(
 
             }
 
-            $scope.helpRequest = function(actor, pname) {
-                $log.log('Request for help ' + actor + ' ' + pname);
-                $.get('../help.conf', function(data) {
-                    var lines = data.split('\n');
-                    $.each(lines, function(lineNo, line) {
-                        var items = line.split('===');
-                        if ((items[0].length != 0) && ((actor + '.' + pname).search(items[0]) != -1)) {
-                            $log.log('Matched line: ' + line);
-                            BootstrapDialog.show({
-                                title: 'Help for actor "' + actor + '" property "' + pname + '"',
-                                message: items[1]
-                            });
-                        };
-                    });
-                });
-            }
         }
 );
 
