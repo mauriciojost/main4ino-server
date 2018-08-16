@@ -66,11 +66,11 @@
                                             </td>
 
                                             <td>
-                                                <form role="form">
+                                                <form role="form" >
                                                 <div><p> {{propHelp(actorRep, propNameRep)}} </p></div>
                                                 <div><a ng-href="{{propLink(actorRep, propNameRep)}}"> More... </a></div>
                                                 <div class="input-group">
-                                                    <input type="text" class="form-control" ng-model="targetsTemporary.actors[actorRep][propNameRep]" >
+                                                    <input type="text" class="form-control" ng-model="targetsTemporary.actors[actorRep][propNameRep]" readonly>
                                                     <div class="input-group-btn">
                                                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
                                                         <ul id="color-dropdown-menu" class="dropdown-menu dropdown-menu-right" role="menu">
