@@ -90,7 +90,7 @@ webPortalApp.controller(
 
                 var req = {
                     method: 'GET',
-                    url: 'api/v1/devices/' + $scope.device + '/targets',
+                    url: 'api/v1/devices/' + $scope.device + '/' + $scope.table,
                     headers: {'Content-Type': 'application/json', 'Authorization': 'token ' + $scope.token},
                     data: $scope.request
                 };
