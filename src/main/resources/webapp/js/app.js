@@ -143,13 +143,14 @@ webPortalApp.controller(
                     var items = line.split('===');
                     if (items[0].length != 0) {
                         $log.log('Matched line: ' + line);
+                        var exs = items[3].split(',').map(function (i) {return i.trim();});
                         var legend = {
                             line: line,
                             lineNo: lineNo,
                             pattern: items[0],
                             description: items[1],
                             link: items[2],
-                            examples: items[3].split(',')
+                            examples: exs
                         }
                         $scope.propLegends[$scope.propLegends.length] = legend;
                     };
@@ -178,7 +179,7 @@ webPortalApp.controller(
             $scope.propHelp = function(actor, propName) {
               $log.log('Searching description for: ' + actor + ' ' + propName);
               var l = $scope.propLegend(actor, propName);
-              return l.description;
+              return l.description.trim();
             }
 
             $scope.propExamples = function(actor, propName) {
