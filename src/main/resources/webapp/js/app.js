@@ -127,32 +127,22 @@ webPortalApp.controller(
 
             $scope.propLegends = [];
 
-            $scope.propLegendDefault = {
-                line: '',
-                lineNo: -1,
-                pattern: '',
-                description: 'No description available',
-                link: 'no link',
-                examples: ['No examples']
-            }
-
             // Initialize property legends
             $.get('../conf/proplegends.conf', function(data) {
                 var lines = data.split('\n');
-                $.each(lines, function(lineNo, line) {
+                $.each(lines, function(nline, line) {
                     var items = line.split('===');
                     if (items[0].length != 0) {
                         $log.log('Matched line: ' + line);
                         var exs = items[3].split(',').map(function (i) {return i.trim();});
                         var legend = {
-                            line: line,
-                            lineNo: lineNo,
-                            pattern: items[0],
-                            description: items[1],
-                            link: items[2],
+                            lines: [line],
+                            patterns: items[0].split(','),
+                            descriptions: [items[1]],
+                            links: [items[2]],
                             examples: exs
                         }
-                        $scope.propLegends[$scope.propLegends.length] = legend;
+                        $scope.propLegends.push(legend);
                     };
                 });
 
@@ -161,25 +151,37 @@ webPortalApp.controller(
 
             $scope.propLegend = function(actor, propName) {
                 $log.log('Searching legend for: ' + actor + ' ' + propName);
+
+                var acum = {
+                    descriptions: [],
+                    links: [],
+                    examples: []
+                };
+
                 for (x of $scope.propLegends) {
-                    if ((actor + '.' + propName).search(x.pattern) != -1) {
-                        $log.log('Matched pattern: ' + x.pattern);
-                        return x;
+                    for (p of x.patterns) {
+                        if ((actor + '.' + propName).search(p) != -1) {
+                            $log.log('Matched pattern: ' + p + ' with ' + JSON.stringify(x));
+                            acum.descriptions = acum.descriptions.concat(x.descriptions);
+                            acum.links = acum.links.concat(x.links);
+                            acum.examples = acum.examples.concat(x.examples);
+                        };
                     };
                 };
-                return $scope.propLegendDefault;
+                $log.log('Resolved: ' + JSON.stringify(acum));
+                return acum;
             }
 
             $scope.propLink = function(actor, propName) {
               $log.log('Searching link for: ' + actor + ' ' + propName);
               var l = $scope.propLegend(actor, propName);
-              return l.link;
+              return l.links[0]; // only one link allowed
             }
 
             $scope.propHelp = function(actor, propName) {
               $log.log('Searching description for: ' + actor + ' ' + propName);
               var l = $scope.propLegend(actor, propName);
-              return l.description.trim();
+              return l.descriptions.join('. ').trim();
             }
 
             $scope.propExamples = function(actor, propName) {
@@ -268,7 +270,7 @@ webPortalApp.controller(
             }
 
             $scope.valueFromHelp = function(d) {
-                return d.split(' -> ')[0];
+                return d.split(' -> ')[0].trim();
             }
 
             $scope.change = function(device, actor, propName, propValue) {
