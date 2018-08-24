@@ -1,35 +1,69 @@
 # README
 
+[![Build Status](https://jenkins.martinenhome.com/buildStatus/icon?job=main4ino-server/master)](https://jenkins.martinenhome.com/job/main4ino-server/job/master/)
 
-[![Build Status](https://jenkins.martinenhome.com/buildStatus/icon?job=botinobe/master)](https://jenkins.martinenhome.com/job/botinobe/job/master/)
+Main4ino is a very simple framework for the delivery of properties to embedded systems (devices) that support wifi connectivity (like the ESP8266).
 
-Botino Back-end application. 
+There are two parts: 
+- main4ino-server (this project): to be launched somewhere accessible by the devices
+- [main4ino-arduino](https://bitbucket.org/mauriciojost/main4ino-arduino/): to be used by the soft of the devices
 
-The embedded part of the project is [here](https://bitbucket.org/mauriciojost/botino/src).
+One example of a project making use of `main4ino-arduino` is [here](https://github.com/mauriciojost/botino-arduino/src).
+
+## Basics
+
+A `device` is an embedded system (device "alarm"). 
+
+It is made of `actors`/components: a clock, a speaker, a display.
+
+Each actor has `properties` readable and/or writeable: for the speaker could be the volume.
+
+A device can inform of its status (the current value of its properties) by creating `reports`. 
+
+Normally a device can load user-requested values for its properties by reading the `targets`.
 
 ## Run
 
-Run the server:
+Run the server to let it be accessible by your devices:
 
 ```
 sbt run
 ```
 
-Interact with it:
+Interact with it via the webapp:
+
 ```
 http://localhost:8080/index.html#/device-history
-curl -H "Authorization: token 11" -X POST http://localhost:8080/api/v1/devices/dev1/actors/clock/targets -d '{"h":5}'
+```
+
+or via the REST API: 
+
+```
+curl -H "Authorization: token 012345678901234567890123456789" -X POST http://localhost:8080/api/v1/devices/dev1/actors/clock/targets -d '{"h":5}'
 ```
 
 ## Contribute
 
+
 ```
-sbt clean "set every coverageEnabled := true" test coverageReport && sbt coverageAggregate
+# clean
+sbt clean
+# compile
+sbt compile
+# launch tests
+sbt test
+# check coverage
+sbt "set every coverageEnabled := true" test coverageReport
+sbt coverageAggregate
 ```
 
 ## Miscellaneous
 
-- Inspiration: https://github.com/jaspervz/todo-http4s-doobie
+### Inpiration
 
-- Guidelines for REST: https://blog.octo.com/wp-content/uploads/2014/10/RESTful-API-design-OCTO-Quick-Reference-Card-2.2.pdf
+- https://github.com/jaspervz/todo-http4s-doobie
+
+### Guidelines for REST
+
+- https://blog.octo.com/wp-content/uploads/2014/10/RESTful-API-design-OCTO-Quick-Reference-Card-2.2.pdf
 
