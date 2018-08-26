@@ -15,15 +15,19 @@ One example of a project making use of `main4ino-arduino` is [here](https://gith
 
 ## Basics
 
-A `device` is an embedded system (device "alarm"). 
+All the basics below refer to the most simple use case this server has been conceived for.
 
-It is made of `actors`/components: a clock, a speaker, a display.
+A `device` is an embedded system. For instance, a device can be an alarm based on Arduino.
 
-Each actor has `properties` readable and/or writeable: for the speaker could be the volume.
+A device is made of `actors` (components). To follow the above example, for the alarm we can have actors clock, speaker and display.
 
-A device can inform of its status (the current value of its properties) by creating `reports`. 
+Each actor has `properties`, that can be readable and/or writeable: for instance for the actor speaker we could have the volume.
 
-Normally a device can load user-requested values for its properties by reading the `targets`.
+A device normally informs of its status regularly (the current value of the properties of its actors) by creating `reports`.
+
+Normally a device can load recently created user-requested values for its actor's properties, by reading the `targets`. 
+
+Once the device requested targets, they normally become consumed, making them set only once.
 
 ## Run
 
@@ -47,6 +51,7 @@ curl -H "Authorization: token 012345678901234567890123456789" -X POST http://loc
 
 ## Contribute
 
+Contributions can be done via PRs. Broken PRs are not taken into account.
 
 ```
 # clean
