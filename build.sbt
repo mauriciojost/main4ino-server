@@ -33,7 +33,11 @@ lazy val root = (project in file("."))
       "org.scalatest" %% "scalatest" % ScalaTestVersion % "test",
       "org.scalamock" %% "scalamock" % ScalaMockVersion % "test"
     ),
-    parallelExecution in Test := false
+    parallelExecution in Test := false,
+
+    coverageMinimum := 65,
+    coverageFailOnMinimum := true
+
   )
 
 
