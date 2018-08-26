@@ -15,6 +15,7 @@ lazy val root = (project in file("."))
     name := "botinobe",
     version := "0.0.1-SNAPSHOT",
     scalaVersion := "2.12.6",
+    scalacOptions ++= Seq("-Ypartial-unification"),
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
       "org.http4s" %% "http4s-circe" % Http4sVersion,
