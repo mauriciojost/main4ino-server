@@ -35,7 +35,7 @@ lazy val root = (project in file("."))
     ),
     parallelExecution in Test := false,
 
-    coverageMinimum := 65,
+    coverageMinimum := 60,
     coverageFailOnMinimum := true
 
   )
