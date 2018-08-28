@@ -16,7 +16,7 @@ class Authentication(config: Config) {
   private def retrieveUser(token: String, url: String): Either[String, User] = {
     for {
       u <- UsersByToken.get(token).flatMap(_.headOption).toRight(s"Could not find user for token $token")
-      ua <- u.canAccess(url).toRight(s"User ${u.name} is not authorized to access ${url}")
+      ua <- u.allowed(url).toRight(s"User ${u.name} is not authorized to access ${url}")
     } yield(ua)
   }
 

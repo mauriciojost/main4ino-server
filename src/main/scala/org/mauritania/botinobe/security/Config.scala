@@ -18,3 +18,5 @@ object Config {
     }
   }
 }
+
+// TESTS for config and user

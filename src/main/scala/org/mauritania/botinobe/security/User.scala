@@ -7,11 +7,12 @@ case class User(
   permissionPatterns: List[String],
   token: String
 ) {
-  def canAccess(url: String): Option[User] = {
-    permissionPatterns.exists(p => url.startsWith(p)) match {
+  def allowed(url: String): Option[User] = {
+    canAccess(url) match {
       case true => Some(this)
       case false => None
     }
   }
+  def canAccess(url: String): Boolean = permissionPatterns.exists(p => url.startsWith(p))
 }
 
