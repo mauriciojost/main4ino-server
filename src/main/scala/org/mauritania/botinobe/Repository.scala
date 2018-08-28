@@ -24,7 +24,7 @@ class Repository(transactor: Transactor[IO]) {
   def selectDeviceWhereRequestId(table: Table, requestId: RecordId): IO[Device] = {
     val transaction = for {
       t <- sqlSelectMetadataWhereRequestId(table, requestId)
-      p <- sqlSelectActorTupWhereRequestId(table, requestId)
+      p <- sqlSelectActorTupWhereRequestIdActorStatus(table, requestId)
     } yield (Device.fromActorTups(t, p))
     transaction.transact(transactor)
   }
@@ -32,17 +32,27 @@ class Repository(transactor: Transactor[IO]) {
   def selectDevices(table: Table, device: DeviceName): Stream[IO, Device] = {
     val transaction = for {
       t <- sqlSelectMetadataWhereDevice(table, device)
-      p <- Stream.eval(sqlSelectActorTupWhereRequestId(table, t.id.get)) // must exist or better fail
+      p <- Stream.eval(sqlSelectActorTupWhereRequestIdActorStatus(table, t.id.get)) // must exist or better fail
     } yield (Device.fromActorTups(t, p))
     transaction.transact(transactor)
   }
 
   def selectMaxDevice(table: Table, device: DeviceName): IO[Device] = {
     val transaction = for {
-      i <- sqlSelectLastRequestIdWhereDevice(table, device)
+      i <- sqlSelectLastRequestIdWhereDeviceActorStatus(table, device, None, None)
       t <- sqlSelectMetadataWhereRequestId(table, i)
-      p <- sqlSelectActorTupWhereRequestId(table, i)
+      p <- sqlSelectActorTupWhereRequestIdActorStatus(table, i)
     } yield (Device.fromActorTups(t, p))
+    transaction.transact(transactor)
+  }
+
+  def selectMaxActorTupsStatus(table: Table, device: DeviceName, actor: ActorName, status: Option[Status]): IO[List[ActorTup]] = {
+    // TODO investigate if this yields only one sql query in the end, otherwise write it as such
+    val ac = Some(actor)
+    val transaction = for {
+      i <- sqlSelectLastRequestIdWhereDeviceActorStatus(table, device, ac, status)
+      p <- sqlSelectActorTupWhereRequestIdActorStatus(table, i, ac, status)
+    } yield (p)
     transaction.transact(transactor)
   }
 
@@ -78,12 +88,33 @@ class Repository(transactor: Transactor[IO]) {
       .query[Metadata].unique
   }
 
-  private def sqlSelectLastRequestIdWhereDevice(table: Table, device: DeviceName): ConnectionIO[RecordId] = {
-    (fr"SELECT MAX(id) FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE device_name=$device").query[RecordId].unique
+  private def sqlSelectLastRequestIdWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[Status]): ConnectionIO[RecordId] = {
+    val actorFr = actor match {
+      case Some(a) => fr"AND actor_name = $a"
+      case None => fr""
+    }
+    val statusFr = status match {
+      case Some(a) => fr"AND property_status = $a"
+      case None => fr""
+    }
+    (fr"SELECT MAX(request_id) FROM " ++ Fragment.const(table.code) ++ fr" WHERE device_name=$device" ++ actorFr ++ statusFr).query[RecordId].unique
   }
 
-  private def sqlSelectActorTupWhereRequestId(table: Table, requestId: RecordId): ConnectionIO[List[ActorTup]] = {
-    (fr"SELECT request_id, device_name, actor_name, property_name, property_value, property_status FROM " ++ Fragment.const(table.code) ++ fr" WHERE request_id=$requestId")
+  private def sqlSelectActorTupWhereRequestIdActorStatus(
+    table: Table,
+    requestId: RecordId,
+    actor: Option[ActorName] = None,
+    status: Option[Status] = None
+  ): ConnectionIO[List[ActorTup]] = {
+    val actorFr = actor match {
+      case Some(a) => fr"AND actor_name = $a"
+      case None => fr""
+    }
+    val statusFr = status match {
+      case Some(a) => fr"AND property_status = $a"
+      case None => fr""
+    }
+    (fr"SELECT request_id, device_name, actor_name, property_name, property_value, property_status FROM " ++ Fragment.const(table.code) ++ fr" WHERE request_id=$requestId" ++ actorFr ++ statusFr)
       .query[ActorTup].accumulate
   }
 
@@ -96,7 +127,13 @@ class Repository(transactor: Transactor[IO]) {
       .update.run
   }
 
-  private def sqlSelectActorTupWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[Status]): Stream[ConnectionIO, ActorTup] = {
+  private def sqlSelectActorTupWhereDeviceActorStatus(
+    table: Table,
+    device: DeviceName,
+    actor: Option[ActorName],
+    status: Option[Status]
+  ): Stream[ConnectionIO, ActorTup] = {
+
     val actorFr = actor match {
       case Some(a) => fr"AND actor_name = $a"
       case None => fr""

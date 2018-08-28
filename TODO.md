@@ -6,7 +6,7 @@
 - Handle non happy paths too
 - Do not display None keys in the JSON
 - Be able to choose between history of targets or reports
-- Allow pre-filled examples in summary:q
+- Allow pre-filled examples in summary
 
 
 

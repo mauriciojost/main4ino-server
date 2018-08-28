@@ -21,6 +21,32 @@ class RepositorySpec extends DbSuite {
     repo.selectDeviceWhereRequestId(Table.Targets, 1L).unsafeRunSync() shouldBe(Device1.withId(Some(1L)))
   }
 
+  it should "create a target and read the latest image of it" in {
+    val Device1Modified = Device1.copy(actors = Device1.actors.updated("actory", Map("yprop1" -> ("yvalue1updated", Status.Created))))
+    val repo = new Repository(transactor)
+    repo.insertDevice(Table.Targets, Device1).unsafeRunSync() shouldBe(1L)
+    repo.insertDevice(Table.Targets, Device1Modified).unsafeRunSync() shouldBe(2L)
+    repo.selectMaxDevice(Table.Targets, "dev1").unsafeRunSync() shouldBe(Device1Modified.withId(Some(2L)))
+  }
+
+  it should "create a target and read the latest image of its actors" in {
+
+    val snap1 = Device1 // contains actorx and actory properties
+    val snap2 = // contains only actory properties (does not contain any actorx properties)
+      Device1.withId(Some(2L)).copy(actors = Device1.actors.updated("actorx", Map()))
+
+    val repo = new Repository(transactor)
+    repo.insertDevice(Table.Targets, snap1).unsafeRunSync() shouldBe(1L)
+    repo.insertDevice(Table.Targets, snap2).unsafeRunSync() shouldBe(2L)
+
+    repo.selectMaxActorTupsStatus(Table.Targets, "dev1", "actorx", Some(Status.Created)).unsafeRunSync() shouldBe
+      snap1.asActorTups.map(_.withRequestId(Some(1L))).filter(_.actor == "actorx").toList
+
+    repo.selectMaxActorTupsStatus(Table.Targets, "dev1", "actory", Some(Status.Created)).unsafeRunSync() shouldBe
+      snap2.asActorTups.map(_.withRequestId(Some(2L))).filter(_.actor == "actory").toList
+
+  }
+
   it should "read target/report ids from a device name" in {
     val repo = new Repository(transactor)
 

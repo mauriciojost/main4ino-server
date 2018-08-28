@@ -91,8 +91,13 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table)/ "summary" :? StatusP(status) +& ConsumeP(clean) as user => {
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "summary" :? StatusP(status) +& ConsumeP(clean) as user => {
         val x = getDevActorTups(device, Some(actor), table, status, clean)
+        Ok(x.map(PropsMapU.fromTups).map(_.asJson), ContentTypeAppJson)
+      }
+
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "last" :? StatusP(status) as user => {
+        val x = getLastDevActorTups(device, actor, table, status)
         Ok(x.map(PropsMapU.fromTups).map(_.asJson), ContentTypeAppJson)
       }
 
@@ -142,6 +147,10 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
   private[v1] def getDevActorTups(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status], clean: Option[Boolean]) = {
     val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, clean.exists(identity))
     actorTups.fold(List.empty[ActorTup])(_ :+ _)
+  }
+
+  private[v1] def getLastDevActorTups(device: DeviceName, actor: ActorName, table: Table, status: Option[Status]) = {
+    repository.selectMaxActorTupsStatus(table, device, actor, status)
   }
 
   private[v1] def getDevActors(device: DeviceName, actor: ActorName, table: Table, status: Option[Status], clean: Option[Boolean]) = {
