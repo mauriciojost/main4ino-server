@@ -33,7 +33,9 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
   val Token = "012345678901234567890123456789"
   val AuthConfig = Config(List(User(1, "name", "name@gmail.com", List("/"), Token)))
   val Dev1 = Fixtures.Device1
+  val Dev2 = Fixtures.Device1.withId(Some(2L)).withDeviceName("dev2")
   val Dev1V1 = Fixtures.Device1InV1
+  val Dev2V1 = Dev1V1.copy(metadata = Dev1V1.metadata.copy(id = Some(2L), device = "dev2"))
 
   "Help request" should {
     val r = stub[Repository]
@@ -77,10 +79,10 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
   }
 
 
-  "Read target/report request" should {
+  "The service" should {
     val r = stub[Repository]
     val s = new Service(new Authentication(AuthConfig), r)
-    "return 200 with an existent target/request" in {
+    "return 200 with an existent target/request when reading target/report requests" in {
       (r.selectDeviceWhereRequestId _).when(Table.Targets, 1L).returns(IO.pure(Dev1)).once // mock
       (r.selectDeviceWhereRequestId _).when(Table.Reports, 1L).returns(IO.pure(Dev1)).once() // mock
       val ta = getApiV1("/devices/dev1/targets/1")(s)
@@ -93,12 +95,24 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     }
   }
 
-  "Merges correctly existent targets" should {
+  it should {
+    val r = stub[Repository]
+    val s = new Service(new Authentication(AuthConfig), r)
+    "return 200 with a list of existent targets when reading all targets request" in {
+      (r.selectDevices _).when(Table.Targets, "dev1").returns(Stream.fromIterator[IO, Device](Iterator(Dev1, Dev2))).once // mock
+
+      val ta = getApiV1("/devices/dev1/targets")(s)
+      ta.status shouldBe (HttpStatus.Ok)
+      ta.as[Json].unsafeRunSync() shouldBe (List(Dev1V1, Dev2V1).asJson)
+    }
+  }
+
+  it should {
 
     val r = stub[Repository]
     val s = new Service(new Authentication(AuthConfig), r)
 
-    "return the list of associated targets set" in {
+    "return the list of associated targets set when merging correctly existent targets" in {
 
       (r.selectActorTupWhereDeviceActorStatus _)
         .when(e(Table.Targets), e("dev1"), e(Some("clock")), e(Some(S.Created)), e(false))
