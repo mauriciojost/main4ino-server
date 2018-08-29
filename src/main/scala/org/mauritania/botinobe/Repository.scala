@@ -68,6 +68,8 @@ class Repository(transactor: Transactor[IO]) {
     (fr"SELECT id FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE device_name=$d").query[RecordId].stream.transact(transactor)
   }
 
+  // SQL queries (private)
+
   private def sqlInsertActorTup(table: Table, t: Iterable[ActorTup], requestId: RecordId): ConnectionIO[Int] = {
     val sql = s"INSERT INTO ${table.code} (request_id, device_name, actor_name, property_name, property_value, property_status) VALUES (?, ?, ?, ?, ?, ?)"
     Update[ActorTup](sql).updateMany(t.toList.map(_.withRequestId(Some(requestId))))
@@ -139,7 +141,7 @@ class Repository(transactor: Transactor[IO]) {
       case None => fr""
     }
     val statusFr = status match {
-      case Some(s) => fr"AND property_status = $status"
+      case Some(a) => fr"AND property_status = $a"
       case None => fr""
     }
     (fr"SELECT request_id, device_name, actor_name, property_name, property_value, property_status FROM " ++ Fragment.const(table.code) ++ fr" WHERE device_name=$device" ++ actorFr ++ statusFr).query[ActorTup].stream
