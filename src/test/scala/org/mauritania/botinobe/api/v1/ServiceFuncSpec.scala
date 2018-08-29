@@ -85,6 +85,42 @@ class ServiceFuncSpec extends DbSuite {
 
   }
 
+  it should "retrieve correctly last device and actor views per status" in {
+
+    implicit val s = new Service(new Authentication(AuthConfig), new Repository(transactor))
+
+    // Add a few targets
+    post("/devices/dev1/targets", """{"clock":{"h":"7"},"body":{"mv0":"Zz."}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
+    post("/devices/dev1/targets", """{"clock":{"m":"0"}}""").noSpaces shouldBe IdResponse(2).asJson.noSpaces
+    post("/devices/dev1/targets", """{"body":{"mv1":"Zz."}}""").noSpaces shouldBe IdResponse(3).asJson.noSpaces
+
+    // Check the responses
+    val clk = get("/devices/dev1/actors/clock/targets/last?status=C")
+    val body = get("/devices/dev1/actors/body/targets/last?status=C")
+    val dev1 = get("/devices/dev1/targets/last?status=C")
+
+    clk.noSpaces shouldBe """{"m":"0"}"""
+    body.noSpaces shouldBe """{"mv1":"Zz."}"""
+    dev1.\\("actors")(0).noSpaces shouldBe """{"body":{"mv1":"Zz."}}"""
+
+  }
+
+  it should "create targets properties and merge them correctly" in {
+
+    implicit val s = new Service(new Authentication(AuthConfig), new Repository(transactor))
+
+    // Add a few targets
+    post("/devices/dev1/actors/body/targets", """{"mv0":"Zz."}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
+    post("/devices/dev1/actors/body/targets", """{"mv1":"0"}""").noSpaces shouldBe IdResponse(2).asJson.noSpaces
+    post("/devices/dev1/actors/body/targets", """{"mv1":"Zz.","mv2":"Da2"}""").noSpaces shouldBe IdResponse(3).asJson.noSpaces
+
+    // Check the responses
+    val body = get("/devices/dev1/actors/body/targets/summary?status=C")
+
+    body.noSpaces shouldBe """{"mv2":"Da2","mv1":"Zz.","mv0":"Zz."}"""
+
+  }
+
   private[this] def get(path: String)(implicit service: Service): Json = {
     val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path), headers = DefaultHeaders)
     service.request(request).unsafeRunSync().as[Json].unsafeRunSync()
