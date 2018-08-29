@@ -48,6 +48,34 @@ class RepositorySpec extends DbSuite {
 
   }
 
+  it should "read devices respecting from and to criteria" in {
+
+    val snap1 = Device1.withId(Some(1L)).withTimestamp(Some(1L))
+    val snap2 = Device1.withId(Some(2L)).withTimestamp(Some(2L))
+    val snap3 = Device1.withId(Some(3L)).withTimestamp(Some(3L))
+
+    val repo = new Repository(transactor)
+    repo.insertDevice(Table.Targets, snap1).unsafeRunSync() shouldBe(1L)
+    repo.insertDevice(Table.Targets, snap2).unsafeRunSync() shouldBe(2L)
+    repo.insertDevice(Table.Targets, snap3).unsafeRunSync() shouldBe(3L)
+
+    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = Some(1L), to = None)
+      .compile.toList.unsafeRunSync() shouldBe List(snap1, snap2, snap3)
+
+    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = Some(2L), to = None)
+      .compile.toList.unsafeRunSync() shouldBe List(snap2, snap3)
+
+    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = None, to = Some(2L))
+      .compile.toList.unsafeRunSync() shouldBe List(snap1, snap2)
+
+    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = None, to = Some(1L))
+      .compile.toList.unsafeRunSync() shouldBe List(snap1)
+
+    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = Some(2L), to = Some(2L))
+      .compile.toList.unsafeRunSync() shouldBe List(snap2)
+
+  }
+
   it should "read target/report ids from a device name" in {
     val repo = new Repository(transactor)
 

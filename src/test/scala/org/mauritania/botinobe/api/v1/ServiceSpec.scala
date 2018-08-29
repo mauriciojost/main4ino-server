@@ -100,7 +100,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     val r = stub[Repository]
     val s = new Service(new Authentication(AuthConfig), r)
     "return 200 with a list of existent targets when reading all targets request" in {
-      (r.selectDevices _).when(Table.Targets, "dev1").returns(Stream.fromIterator[IO, Device](Iterator(Dev1, Dev2))).once // mock
+      (r.selectDevicesWhereTimestamp _).when(Table.Targets, "dev1", None, None).returns(Stream.fromIterator[IO, Device](Iterator(Dev1, Dev2))).once // mock
 
       val ta = getApiV1("/devices/dev1/targets")(s)
       ta.status shouldBe (HttpStatus.Ok)

@@ -64,8 +64,8 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / T(table) as user => {
-        val x = getDevAll(device, table)
+      case a@GET -> Root / "devices" / S(device) / T(table) :? FromP(from) +& ToP(to) as user => {
+        val x = getDevAll(device, table, from, to)
         Ok(Stream("[") ++ x.map(_.asJson.noSpaces).intersperse(",") ++ Stream("]"), ContentTypeAppJson)
       }
 
@@ -138,9 +138,9 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
     } yield (k)
   }
 
-  private[v1] def getDevAll(device: DeviceName, table: Table) = {
+  private[v1] def getDevAll(device: DeviceName, table: Table, from: Option[Timestamp], to: Option[Timestamp]) = {
     for {
-      r <- repository.selectDevices(table, device).map(DeviceU.fromBom)
+      r <- repository.selectDevicesWhereTimestamp(table, device, from, to).map(DeviceU.fromBom)
     } yield (r)
   }
 

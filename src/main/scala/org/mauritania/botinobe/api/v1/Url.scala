@@ -3,11 +3,15 @@ package org.mauritania.botinobe.api.v1
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import org.mauritania.botinobe.Repository.Table
 import org.mauritania.botinobe.Repository.Table.Table
+import org.mauritania.botinobe.models.{Status, Timestamp}
 
 object Url {
   // TODO default status query should be ALL! (not "not created")
-  object StatusP extends OptionalQueryParamDecoderMatcher[String]("status")
+  object StatusP extends OptionalQueryParamDecoderMatcher[Status]("status")
   object ConsumeP extends OptionalQueryParamDecoderMatcher[Boolean]("consume")
+
+  object FromP extends OptionalQueryParamDecoderMatcher[Timestamp]("from")
+  object ToP extends OptionalQueryParamDecoderMatcher[Timestamp]("to")
 
   object T {
     def unapply(str: String): Option[Table] = Table.resolve(str)

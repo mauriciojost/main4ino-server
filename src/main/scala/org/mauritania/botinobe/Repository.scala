@@ -29,9 +29,9 @@ class Repository(transactor: Transactor[IO]) {
     transaction.transact(transactor)
   }
 
-  def selectDevices(table: Table, device: DeviceName): Stream[IO, Device] = {
+  def selectDevicesWhereTimestamp(table: Table, device: DeviceName, from: Option[Timestamp], to: Option[Timestamp]): Stream[IO, Device] = {
     val transaction = for {
-      t <- sqlSelectMetadataWhereDevice(table, device)
+      t <- sqlSelectMetadataWhereDevice(table, device, from, to)
       p <- Stream.eval(sqlSelectActorTupWhereRequestIdActorStatus(table, t.id.get)) // must exist or better fail
     } yield (Device.fromActorTups(t, p))
     transaction.transact(transactor)
@@ -80,8 +80,16 @@ class Repository(transactor: Transactor[IO]) {
       .update.withUniqueGeneratedKeys[RecordId]("id")
   }
 
-  private def sqlSelectMetadataWhereDevice(table: Table, d: DeviceName): Stream[ConnectionIO, Metadata] = {
-    (fr"SELECT id, creation, device_name FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE device_name=$d")
+  private def sqlSelectMetadataWhereDevice(table: Table, d: DeviceName, from: Option[Timestamp], to: Option[Timestamp]): Stream[ConnectionIO, Metadata] = {
+    val fromFr = from match {
+      case Some(a) => fr"AND creation >= $a"
+      case None => fr""
+    }
+    val toFr = to match {
+      case Some(a) => fr"AND creation <= $a"
+      case None => fr""
+    }
+    (fr"SELECT id, creation, device_name FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE device_name=$d" ++ fromFr ++ toFr)
       .query[Metadata].stream
   }
 
