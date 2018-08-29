@@ -29,7 +29,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
   val onFailure: AuthedService[String, IO] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
   val middleware = AuthMiddleware(auth.authUser, onFailure)
 
-  val HelpMsg = // TODO: complete me
+  val HelpMsg = // TODO: complete me in scaladoc and expose
     s"""
        | API HELP
        | --- ----
