@@ -25,6 +25,7 @@ import org.mauritania.botinobe.models.{ActorTup, Device, RecordId, Status => S}
 import org.mauritania.botinobe.security.{Authentication, Config, User}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
+import org.mauritania.botinobe.models.RicherBom._
 
 import scala.reflect.ClassTag
 

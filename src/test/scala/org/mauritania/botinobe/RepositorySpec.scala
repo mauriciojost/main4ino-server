@@ -4,6 +4,7 @@ import org.mauritania.botinobe.{DbSuite, Repository}
 import org.mauritania.botinobe.Fixtures.Device1
 import org.mauritania.botinobe.Repository.Table
 import org.scalatest.Sequential
+import org.mauritania.botinobe.models.RicherBom._
 
 class RepositorySpec extends DbSuite {
 

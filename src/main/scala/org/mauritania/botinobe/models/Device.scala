@@ -15,16 +15,6 @@ case class Device(
 			(propName, (propValue, status)) <- ps.toSeq
 		} yield (ActorTup(None, metadata.device, actor, propName, propValue, status))
 
-	def asTuples: Iterable[ActorTup] = {
-		this.asActorTups.map(p => ActorTup(metadata.id, metadata.device, p.actor, p.prop, p.value, p.status))
-	}
-
-	def withId(i: Option[RecordId]): Device = this.copy(metadata = this.metadata.copy(id = i))
-	def withDeviceName(n: DeviceName): Device = this.copy(metadata = this.metadata.copy(device = n))
-	def withStatus(s: Status): Device = Device.fromActorTups(metadata, asActorTups.map(_.copy(status = s)))
-	def withTimestamp(t: Option[Timestamp]): Device = this.copy(metadata = this.metadata.copy(timestamp = t))
-	def withouIdNortTimestamp(): Device = this.copy(metadata = this.metadata.copy(id = None, timestamp = None))
-
 }
 
 object Device {
