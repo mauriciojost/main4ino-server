@@ -146,7 +146,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
 
   private[v1] def getDevActorTups(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status], clean: Option[Boolean]) = {
     val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, clean.exists(identity))
-    actorTups.fold(List.empty[ActorTup])(_ :+ _)
+    actorTups.compile.toList
   }
 
   private[v1] def getLastDevActorTups(device: DeviceName, actor: ActorName, table: Table, status: Option[Status]) = {
@@ -161,7 +161,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
 
   private[v1] def getDevActorCount(device: DeviceName, actor: ActorName, table: Table, statusOp: Option[Status]) = {
     val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), statusOp, false)
-    actorTups.map(_ => 1).reduce(_ + _).lastOr(0).map(CountResponse(_))
+    actorTups.compile.toList.map(_.size).map(CountResponse(_))
   }
 
 	private[v1] def request(r: Request[IO]): IO[Response[IO]] = serviceWithAuthentication.orNotFound(r)

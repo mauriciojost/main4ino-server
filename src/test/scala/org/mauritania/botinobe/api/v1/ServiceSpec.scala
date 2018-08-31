@@ -142,7 +142,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
         .returns(Stream.fromIterator[IO, ActorTup](tups.toIterator)).once()
 
       val r2 = s.getDevActorTups("dev1", Some("clock"), Table.Targets, Some(S.Created), None)
-      val r2m = r2.compile.toList.unsafeRunSync().head.toSet
+      val r2m = r2.unsafeRunSync().toSet
 
       r2m shouldBe tups.toSet
 
