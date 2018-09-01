@@ -87,10 +87,13 @@ webPortalApp.controller(
 
             $scope.search = function() {
                 $log.log('Searching device ' + $scope.device + ' with token ' + $scope.token);
+                var date = new Date();
+                var msAgo = 1000 * 3600 * 24; // 1 day
+                var from = date.getTime() - msAgo;
 
                 var req = {
                     method: 'GET',
-                    url: 'api/v1/devices/' + $scope.device + '/' + $scope.table,
+                    url: 'api/v1/devices/' + $scope.device + '/' + $scope.table + '?from=' + from,
                     headers: {'Content-Type': 'application/json', 'Authorization': 'token ' + $scope.token},
                     data: $scope.request
                 };
