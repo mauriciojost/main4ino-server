@@ -8,10 +8,10 @@
 Main4ino is a very simple framework for the delivery of properties to embedded systems (devices) that support wifi connectivity (like the ESP8266).
 
 There are two parts: 
-- main4ino-server (this project): to be launched somewhere accessible by the devices
+- **main4ino-server** (this project): to be launched somewhere accessible by the devices
 - [main4ino-arduino](https://bitbucket.org/mauriciojost/main4ino-arduino/): to be used by the soft of the devices
 
-One example of a project making use of `main4ino-arduino` is [here](https://github.com/mauriciojost/botino-arduino/src).
+One example of a project making use of `main4ino-arduino` is [here](https://github.com/mauriciojost/botino-arduino).
 
 ## Basics
 
