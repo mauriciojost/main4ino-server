@@ -29,7 +29,7 @@ class Authentication(config: Config) {
     IO {
       val u = for {
         header <- request.headers.get(Authorization).toRight("Header 'Authorization' not present")
-        tkn <- retrieveToken(header.value).toRight(s"Invalid token syntax: ${header.value}")
+        tkn <- retrieveToken(header.value).toRight(s"Invalid token syntax")
         user <- retrieveUser(tkn, request.pathInfo)
       } yield (user)
       u
