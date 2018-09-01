@@ -56,12 +56,24 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
 
       case a@GET -> Root / "devices" / S(device) / T(table) / LongVar(id) as user => {
         val x = getDev(table, id)
-        Ok(x.map(_.asJson), ContentTypeAppJson)
+        x.flatMap { m =>
+          if (m.actors.isEmpty) {
+            NoContent()
+          } else {
+            Ok(m.asJson, ContentTypeAppJson)
+          }
+        }
       }
 
       case a@GET -> Root / "devices" / S(device) / T(table) / "last" as user => {
         val x = getDevLast(device, table)
-        Ok(x.map(_.asJson), ContentTypeAppJson)
+        x.flatMap { m =>
+          if (m.actors.isEmpty) {
+            NoContent()
+          } else {
+            Ok(m.asJson, ContentTypeAppJson)
+          }
+        }
       }
 
       case a@GET -> Root / "devices" / S(device) / T(table) :? FromP(from) +& ToP(to) as user => {
@@ -70,8 +82,14 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
       }
 
       case a@GET -> Root / "devices" / S(device) / T(table) / "summary" :? StatusP(status) +& ConsumeP(clean) as user => {
-        val x = getDevActorTups(device, None, table, status, clean)
-        Ok(x.map(t => DeviceU.fromBom(Device.fromActorTups(Metadata(None, None, device), t))).map(_.asJson), ContentTypeAppJson)
+        val x = getDevActorTups(device, None, table, status, clean).map(t => DeviceU.fromBom(Device.fromActorTups(Metadata(None, None, device), t)))
+        x.flatMap { m =>
+          if (m.actors.isEmpty) {
+            NoContent()
+          } else {
+            Ok(m.asJson, ContentTypeAppJson)
+          }
+        }
       }
 
       // Targets & Reports (at device-actor level)
@@ -92,13 +110,25 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
       }
 
       case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "summary" :? StatusP(status) +& ConsumeP(clean) as user => {
-        val x = getDevActorTups(device, Some(actor), table, status, clean)
-        Ok(x.map(PropsMapU.fromTups).map(_.asJson), ContentTypeAppJson)
+        val x = getDevActorTups(device, Some(actor), table, status, clean).map(PropsMapU.fromTups)
+        x.flatMap { m =>
+          if (m.isEmpty) {
+            NoContent()
+          } else {
+            Ok(m.asJson, ContentTypeAppJson)
+          }
+        }
       }
 
       case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "last" :? StatusP(status) as user => {
-        val x = getLastDevActorTups(device, actor, table, status)
-        Ok(x.map(PropsMapU.fromTups).map(_.asJson), ContentTypeAppJson)
+        val x = getLastDevActorTups(device, actor, table, status).map(PropsMapU.fromTups)
+        x.flatMap { m =>
+          if (m.isEmpty) {
+            NoContent()
+          } else {
+            Ok(m.asJson, ContentTypeAppJson)
+          }
+        }
       }
 
     }
