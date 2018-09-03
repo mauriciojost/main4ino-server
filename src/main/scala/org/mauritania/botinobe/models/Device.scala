@@ -15,13 +15,15 @@ case class Device(
 			(propName, (propValue, status)) <- ps.toSeq
 		} yield (ActorTup(None, metadata.device, actor, propName, propValue, status))
 
+  def hasNoProperties: Boolean = actors.isEmpty
+
 }
 
 object Device {
 
 	val EmptyActorMap: ActorMap = Map.empty[ActorName, PropsMap]
 
-	case class Metadata ( // TODO metadata information that comes after DB insertion should be put on a wrapper of Device to avoid using .copy
+	case class Metadata (
 		id: Option[RecordId],
 		timestamp: Option[Timestamp],
     device: DeviceName

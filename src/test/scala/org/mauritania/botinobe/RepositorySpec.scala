@@ -13,13 +13,13 @@ class RepositorySpec extends DbSuite {
   "The repository" should "create and read a report" in {
     val repo = new Repository(transactor)
     repo.insertDevice(Table.Reports, Device1).unsafeRunSync() shouldBe(1L)
-    repo.selectDeviceWhereRequestId(Table.Reports, 1L).unsafeRunSync() shouldBe(Device1.withId(Some(1L)))
+    repo.selectDeviceWhereRequestId(Table.Reports, 1L).unsafeRunSync() shouldBe(Some(Device1.withId(Some(1L))))
   }
 
   it should "create and read a target" in {
     val repo = new Repository(transactor)
     repo.insertDevice(Table.Targets, Device1).unsafeRunSync() shouldBe(1L)
-    repo.selectDeviceWhereRequestId(Table.Targets, 1L).unsafeRunSync() shouldBe(Device1.withId(Some(1L)))
+    repo.selectDeviceWhereRequestId(Table.Targets, 1L).unsafeRunSync() shouldBe(Some(Device1.withId(Some(1L))))
   }
 
   it should "create a target and read the latest image of it" in {
@@ -27,7 +27,7 @@ class RepositorySpec extends DbSuite {
     val repo = new Repository(transactor)
     repo.insertDevice(Table.Targets, Device1).unsafeRunSync() shouldBe(1L)
     repo.insertDevice(Table.Targets, Device1Modified).unsafeRunSync() shouldBe(2L)
-    repo.selectMaxDevice(Table.Targets, "dev1").unsafeRunSync() shouldBe(Device1Modified.withId(Some(2L)))
+    repo.selectMaxDevice(Table.Targets, "dev1").unsafeRunSync() shouldBe(Some(Device1Modified.withId(Some(2L))))
   }
 
   it should "create a target and read the latest image of its actors" in {
@@ -99,7 +99,7 @@ class RepositorySpec extends DbSuite {
       repo.insertDevice(table, Device1).unsafeRunSync() shouldBe 1L
 
       // Created the device
-      repo.selectDeviceWhereRequestId(table, 1L).unsafeRunSync() shouldBe ref.withStatus(Status.Created)
+      repo.selectDeviceWhereRequestId(table, 1L).unsafeRunSync() shouldBe Some(ref.withStatus(Status.Created))
 
       // Get properties for one actor, and set them to consumed
       repo.selectActorTupWhereDeviceActorStatus(table, Device1.metadata.device, Some("actorx"), Some(Status.Created), true)

@@ -56,23 +56,17 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
 
       case a@GET -> Root / "devices" / S(device) / T(table) / LongVar(id) as user => {
         val x = getDev(table, id)
-        x.flatMap { m =>
-          if (m.actors.isEmpty) {
-            NoContent()
-          } else {
-            Ok(m.asJson, ContentTypeAppJson)
-          }
+        x.flatMap {
+          case Some(v) => Ok(v.asJson, ContentTypeAppJson)
+          case _ => NoContent()
         }
       }
 
       case a@GET -> Root / "devices" / S(device) / T(table) / "last" as user => {
         val x = getDevLast(device, table)
-        x.flatMap { m =>
-          if (m.actors.isEmpty) {
-            NoContent()
-          } else {
-            Ok(m.asJson, ContentTypeAppJson)
-          }
+        x.flatMap {
+          case Some(v) => Ok(v.asJson, ContentTypeAppJson)
+          case None => NoContent()
         }
       }
 
@@ -139,7 +133,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
   private[v1] def getDev(table: Table, id: Timestamp) = {
     for {
       t <- repository.selectDeviceWhereRequestId(table, id)
-      resp <- IO(DeviceU.fromBom(t))
+      resp <- IO(t.map(DeviceU.fromBom))
     } yield (resp)
   }
 
@@ -164,7 +158,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
   private[v1] def getDevLast(device: DeviceName, table: Table) = {
     for {
       r <- repository.selectMaxDevice(table, device)
-      k <- IO(DeviceU.fromBom(r))
+      k <- IO(r.map(DeviceU.fromBom))
     } yield (k)
   }
 

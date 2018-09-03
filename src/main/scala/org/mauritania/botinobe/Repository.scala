@@ -22,11 +22,11 @@ class Repository(transactor: Transactor[IO]) {
     transaction.transact(transactor)
   }
 
-  def selectDeviceWhereRequestId(table: Table, requestId: RecordId): IO[Device] = {
+  def selectDeviceWhereRequestId(table: Table, requestId: RecordId): IO[Option[Device]] = {
     val transaction = for {
       t <- sqlSelectMetadataWhereRequestId(table, requestId)
       p <- sqlSelectActorTupWhereRequestIdActorStatus(table, requestId)
-    } yield (Device.fromActorTups(t, p))
+    } yield (t.map(Device.fromActorTups(_, p)))
     transaction.transact(transactor)
   }
 
@@ -38,12 +38,18 @@ class Repository(transactor: Transactor[IO]) {
     transaction.transact(transactor)
   }
 
-  def selectMaxDevice(table: Table, device: DeviceName): IO[Device] = {
+  def selectMaxDevice(table: Table, device: DeviceName): IO[Option[Device]] = {
     val transaction = for {
       i <- sqlSelectLastRequestIdWhereDeviceActorStatus(table, device, None, None)
-      t <- i.map(sqlSelectMetadataWhereRequestId(table, _)).getOrElse(raw[Metadata](x => Metadata(None, None, device)))
+      t <- i.map(sqlSelectMetadataWhereRequestId(table, _)).getOrElse(raw[Option[Metadata]](x => None))
       p <- i.map(sqlSelectActorTupWhereRequestIdActorStatus(table, _)).getOrElse(raw[List[ActorTup]](x => List.empty[ActorTup]))
-    } yield (Device.fromActorTups(t, p))
+    } yield {
+      (t, p) match {
+        case (Some(m), l) => Some(Device.fromActorTups(m, l))
+        case _ => None
+
+      }
+    }
     transaction.transact(transactor)
   }
 
@@ -94,9 +100,9 @@ class Repository(transactor: Transactor[IO]) {
       .query[Metadata].stream
   }
 
-  private def sqlSelectMetadataWhereRequestId(table: Table, id: RecordId): ConnectionIO[Metadata] = {
+  private def sqlSelectMetadataWhereRequestId(table: Table, id: RecordId): ConnectionIO[Option[Metadata]] = {
     (fr"SELECT id, creation, device_name FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE id=$id")
-      .query[Metadata].unique
+      .query[Option[Metadata]].unique
   }
 
   private def sqlSelectLastRequestIdWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[Status]): ConnectionIO[Option[RecordId]] = {

@@ -8,7 +8,7 @@ case class ActorTup(
 	value: PropValue,
 	status: Status
 ) {
-	def withRequestId(i: Option[RecordId]): ActorTup = this.copy(requestId = i)
+	def withRequestId(i: Option[RecordId]): ActorTup = this.copy(requestId = i) // TODO get rid of this .copy by using composition of ActorTupIdless
 }
 
 
