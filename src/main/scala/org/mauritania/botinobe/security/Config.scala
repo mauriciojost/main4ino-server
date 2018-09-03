@@ -9,7 +9,7 @@ case class Config(users: List[User])
 object Config {
   import pureconfig._
 
-  def load(configFile: String = "users.conf"): IO[Config] = {
+  def load(configFile: String): IO[Config] = {
     IO {
       loadConfig[Config](ConfigFactory.load(configFile))
     }.flatMap {

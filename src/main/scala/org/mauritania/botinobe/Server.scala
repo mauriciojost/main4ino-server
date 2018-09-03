@@ -16,8 +16,8 @@ object Server extends StreamApp[IO] with Http4sDsl[IO] {
 
   def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
     for {
-      configApp <- Stream.eval(config.Config.load())
-      configUsers <- Stream.eval(security.Config.load())
+      configApp <- Stream.eval(config.Config.load("application.conf"))
+      configUsers <- Stream.eval(security.Config.load("users.conf"))
       transactor <- Stream.eval(Database.transactor(configApp.database))
       _ <- Stream.eval(Database.initialize(transactor))
       exitCode <- BlazeBuilder[IO]

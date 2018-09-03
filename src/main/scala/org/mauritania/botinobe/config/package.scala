@@ -12,7 +12,7 @@ package object config {
   object Config {
     import pureconfig._
 
-    def load(configFile: String = "application.conf"): IO[Config] = {
+    def load(configFile: String): IO[Config] = {
       IO {
         loadConfig[Config](ConfigFactory.load(configFile))
       }.flatMap {
