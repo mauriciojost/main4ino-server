@@ -5,6 +5,7 @@ import cats.effect.IO
 import doobie.util.transactor.Transactor
 import doobie._
 import doobie.implicits._
+import doobie.free.connection.raw
 import org.mauritania.botinobe.models.Device.Metadata
 import org.mauritania.botinobe.models._
 import fs2.Stream
@@ -40,8 +41,8 @@ class Repository(transactor: Transactor[IO]) {
   def selectMaxDevice(table: Table, device: DeviceName): IO[Device] = {
     val transaction = for {
       i <- sqlSelectLastRequestIdWhereDeviceActorStatus(table, device, None, None)
-      t <- sqlSelectMetadataWhereRequestId(table, i)
-      p <- sqlSelectActorTupWhereRequestIdActorStatus(table, i)
+      t <- i.map(sqlSelectMetadataWhereRequestId(table, _)).getOrElse(raw[Metadata](x => Metadata(None, None, device)))
+      p <- i.map(sqlSelectActorTupWhereRequestIdActorStatus(table, _)).getOrElse(raw[List[ActorTup]](x => List.empty[ActorTup]))
     } yield (Device.fromActorTups(t, p))
     transaction.transact(transactor)
   }
@@ -51,7 +52,7 @@ class Repository(transactor: Transactor[IO]) {
     val ac = Some(actor)
     val transaction = for {
       i <- sqlSelectLastRequestIdWhereDeviceActorStatus(table, device, ac, status)
-      p <- sqlSelectActorTupWhereRequestIdActorStatus(table, i, ac, status)
+      p <- i.map(sqlSelectActorTupWhereRequestIdActorStatus(table, _, ac, status)).getOrElse(raw[List[ActorTup]](x => List.empty[ActorTup]))
     } yield (p)
     transaction.transact(transactor)
   }
@@ -98,7 +99,7 @@ class Repository(transactor: Transactor[IO]) {
       .query[Metadata].unique
   }
 
-  private def sqlSelectLastRequestIdWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[Status]): ConnectionIO[RecordId] = {
+  private def sqlSelectLastRequestIdWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[Status]): ConnectionIO[Option[RecordId]] = {
     val actorFr = actor match {
       case Some(a) => fr"AND actor_name = $a"
       case None => fr""
@@ -107,7 +108,7 @@ class Repository(transactor: Transactor[IO]) {
       case Some(a) => fr"AND property_status = $a"
       case None => fr""
     }
-    (fr"SELECT MAX(request_id) FROM " ++ Fragment.const(table.code) ++ fr" WHERE device_name=$device" ++ actorFr ++ statusFr).query[RecordId].unique
+    (fr"SELECT MAX(request_id) FROM " ++ Fragment.const(table.code) ++ fr" WHERE device_name=$device" ++ actorFr ++ statusFr).query[Option[RecordId]].unique
   }
 
   private def sqlSelectActorTupWhereRequestIdActorStatus(
