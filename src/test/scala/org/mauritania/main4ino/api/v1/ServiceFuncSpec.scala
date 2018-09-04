@@ -111,13 +111,12 @@ class ServiceFuncSpec extends DbSuite {
 
     implicit val s = new Service(new Authentication(AuthConfig), new Repository(transactor))
 
-    val dev1 = get("/devices/dev1/targets/last")
-    val clk = get("/devices/dev1/actors/clock/targets/last")
-    val body = get("/devices/dev1/actors/body/targets/last")
-
-    dev1.status shouldBe  Status.ExpectationFailed
-    clk.status shouldBe Status.ExpectationFailed
-    body.status shouldBe Status.ExpectationFailed
+    get("/devices/dev1/targets/1").status shouldBe Status.ExpectationFailed
+    get("/devices/dev1/targets/last").status shouldBe Status.ExpectationFailed
+    get("/devices/dev1/targets/summary").status shouldBe Status.ExpectationFailed
+    get("/devices/dev1/actors/clock/targets/last") shouldBe Status.ExpectationFailed
+    get("/devices/dev1/actors/body/targets/last") shouldBe Status.ExpectationFailed
+    get("/devices/dev1/actors/body/targets/summary").status shouldBe Status.ExpectationFailed
 
   }
 
