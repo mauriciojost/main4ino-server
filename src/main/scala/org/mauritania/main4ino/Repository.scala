@@ -102,7 +102,7 @@ class Repository(transactor: Transactor[IO]) {
 
   private def sqlSelectMetadataWhereRequestId(table: Table, id: RecordId): ConnectionIO[Option[Metadata]] = {
     (fr"SELECT id, creation, device_name FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE id=$id")
-      .query[Option[Metadata]].unique
+      .query[Metadata].option
   }
 
   private def sqlSelectLastRequestIdWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[Status]): ConnectionIO[Option[RecordId]] = {
