@@ -33,15 +33,97 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
     s"""
        | API HELP
        | --- ----
-       | // About help
        | GET /help
+       |
+       |    Display this help
+       |
+       |    Returns: OK
+       |
+       |
+       | POST /devices/<dev>/targets/
+       |
+       |    Create a target
+       |
+       |    Returns: CREATED
+       |
+       |
+       | GET /devices/<dev>/targets/<id>
+       |
+       |    Retrieve a target by its id
+       |
+       |    Returns: OK | NO_CONTENT
+       |
+       |
+       | GET /devices/<dev>/targets/last
+       |
+       |    Retrieve the last target created
+       |
+       |    Returns: OK | NO_CONTENT
+       |
+       |
+       | GET /devices/<dev>/targets?from=<timestamp>&to=<timestamp>
+       |
+       |    Retrieve the list of the targets that where created in between the range provided (timestamp in [ms] since the epoch)
+       |
+       |    Returns: OK
+       |
+       |
+       | GET /devices/<dev>/targets/summary?status=<status>&consume=<consume>
+       |
+       |    Retrieve the list of the targets summarized for the device (most recent actor-prop value wins)
+       |
+       |    The summarized target is generated only using properties that have the given status.
+       |    The flag consume tells if the status of the matching properties should be changed from C (created) to X (consumed).
+       |
+       |    Returns: OK | NO_CONTENT
+       |
+       |
+       | POST /devices/<dev>/actors/<actor>/targets
+       |
+       |    Create a new target
+       |
+       |    Returns: CREATED
+       |
+       |
+       | GET /devices/<dev>/actors/<actor>/targets/count?status=<status>
+       |
+       |    Count the amount of target-properties with the given status
+       |
+       |    Returns: OK
+       |
+       |
+       | GET /devices/<dev>/actors/<actor>/targets?status=<status>&consume=<consume>
+       |
+       |    Retrieve the list of the targets for the device-actor (most recent actor-prop value wins)
+       |
+       |    The list is generated only using properties that have the given status.
+       |    The flag consume tells if the status of the matching properties should be changed from C (created) to X (consumed).
+       |
+       |    Returns: OK
+       |
+       |
+       | GET /devices/<dev>/actors/<actor>/targets/summary?status=<status>&consume=<consume>
+       |
+       |    Retrieve the summary of the targets for the device-actor (most recent actor-prop value wins)
+       |
+       |    The summarized target is generated only using properties that have the given status.
+       |    The flag consume tells if the status of the matching properties should be changed from C (created) to X (consumed).
+       |
+       |    Returns: OK | NO_CONTENT
+       |
+       |
+       | GET /devices/<dev>/actors/<actor>/targets/last?status=<status>
+       |
+       |    Retrieve the last target created for such actor with such status
+       |
+       |    Returns: OK | NO_CONTENT
+       |
        |
     """.stripMargin
 
 
   val service = AuthedService[User, IO] {
 
-      /////////////////
       // Help
 
       case GET -> Root / "help" as user =>
@@ -75,8 +157,8 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         Ok(Stream("[") ++ x.map(_.asJson.noSpaces).intersperse(",") ++ Stream("]"), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / T(table) / "summary" :? StatusP(status) +& ConsumeP(clean) as user => {
-        val x = getDevActorTups(device, None, table, status, clean).map(t => ActorMapU.fromTups(t))
+      case a@GET -> Root / "devices" / S(device) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as user => {
+        val x = getDevActorTups(device, None, table, status, consume).map(t => ActorMapU.fromTups(t))
         x.flatMap { m =>
           if (m.isEmpty) {
             NoContent()
@@ -98,13 +180,13 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) :? StatusP(status) +& ConsumeP(clean) as user => {
-        val x = getDevActors(device, actor, table, status, clean)
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) :? StatusP(status) +& ConsumeP(consume) as user => {
+        val x = getDevActors(device, actor, table, status, consume)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "summary" :? StatusP(status) +& ConsumeP(clean) as user => {
-        val x = getDevActorTups(device, Some(actor), table, status, clean).map(PropsMapU.fromTups)
+      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as user => {
+        val x = getDevActorTups(device, Some(actor), table, status, consume).map(PropsMapU.fromTups)
         x.flatMap { m =>
           if (m.isEmpty) {
             NoContent()

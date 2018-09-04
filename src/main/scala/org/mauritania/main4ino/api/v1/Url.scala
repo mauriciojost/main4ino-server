@@ -6,7 +6,7 @@ import org.mauritania.main4ino.Repository.Table.Table
 import org.mauritania.main4ino.models.{Status, Timestamp}
 
 object Url {
-  // TODO default status query should be ALL! (not "not created")
+
   object StatusP extends OptionalQueryParamDecoderMatcher[Status]("status")
   object ConsumeP extends OptionalQueryParamDecoderMatcher[Boolean]("consume")
 
