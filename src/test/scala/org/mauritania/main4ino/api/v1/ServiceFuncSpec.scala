@@ -114,8 +114,8 @@ class ServiceFuncSpec extends DbSuite {
     get("/devices/dev1/targets/1").status shouldBe Status.ExpectationFailed
     get("/devices/dev1/targets/last").status shouldBe Status.ExpectationFailed
     get("/devices/dev1/targets/summary").status shouldBe Status.ExpectationFailed
-    get("/devices/dev1/actors/clock/targets/last") shouldBe Status.ExpectationFailed
-    get("/devices/dev1/actors/body/targets/last") shouldBe Status.ExpectationFailed
+    get("/devices/dev1/actors/clock/targets/last").status shouldBe Status.ExpectationFailed
+    get("/devices/dev1/actors/body/targets/last").status shouldBe Status.ExpectationFailed
     get("/devices/dev1/actors/body/targets/summary").status shouldBe Status.ExpectationFailed
 
   }
