@@ -107,7 +107,7 @@ class ServiceFuncSpec extends DbSuite {
 
   }
 
-  it should "respond with no content when no records are found" in {
+  it should "respond with no expectation failed when no records are found" in {
 
     implicit val s = new Service(new Authentication(AuthConfig), new Repository(transactor))
 
