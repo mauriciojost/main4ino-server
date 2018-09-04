@@ -115,9 +115,9 @@ class ServiceFuncSpec extends DbSuite {
     val clk = get("/devices/dev1/actors/clock/targets/last")
     val body = get("/devices/dev1/actors/body/targets/last")
 
-    dev1.status shouldBe  Status.NoContent
-    clk.status shouldBe Status.NoContent
-    body.status shouldBe Status.NoContent
+    dev1.status shouldBe  Status.ExpectationFailed
+    clk.status shouldBe Status.ExpectationFailed
+    body.status shouldBe Status.ExpectationFailed
 
   }
 

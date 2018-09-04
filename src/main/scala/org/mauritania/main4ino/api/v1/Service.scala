@@ -37,35 +37,35 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
        |
        |    Display this help
        |
-       |    Returns: OK
+       |    Returns: OK (200)
        |
        |
        | POST /devices/<dev>/targets/
        |
        |    Create a target
        |
-       |    Returns: CREATED
+       |    Returns: CREATED (201)
        |
        |
        | GET /devices/<dev>/targets/<id>
        |
        |    Retrieve a target by its id
        |
-       |    Returns: OK | NO_CONTENT
+       |    Returns: OK (200) | EXPECTATION_FAILED (417)
        |
        |
        | GET /devices/<dev>/targets/last
        |
        |    Retrieve the last target created
        |
-       |    Returns: OK | NO_CONTENT
+       |    Returns: OK (200) | EXPECTATION_FAILED (417)
        |
        |
        | GET /devices/<dev>/targets?from=<timestamp>&to=<timestamp>
        |
        |    Retrieve the list of the targets that where created in between the range provided (timestamp in [ms] since the epoch)
        |
-       |    Returns: OK
+       |    Returns: OK (200)
        |
        |
        | GET /devices/<dev>/targets/summary?status=<status>&consume=<consume>
@@ -75,21 +75,21 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
        |    The summarized target is generated only using properties that have the given status.
        |    The flag consume tells if the status of the matching properties should be changed from C (created) to X (consumed).
        |
-       |    Returns: OK | NO_CONTENT
+       |    Returns: OK (200) | EXPECTATION_FAILED (417)
        |
        |
        | POST /devices/<dev>/actors/<actor>/targets
        |
        |    Create a new target
        |
-       |    Returns: CREATED
+       |    Returns: CREATED (201)
        |
        |
        | GET /devices/<dev>/actors/<actor>/targets/count?status=<status>
        |
        |    Count the amount of target-properties with the given status
        |
-       |    Returns: OK
+       |    Returns: OK (200)
        |
        |
        | GET /devices/<dev>/actors/<actor>/targets?status=<status>&consume=<consume>
@@ -99,7 +99,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
        |    The list is generated only using properties that have the given status.
        |    The flag consume tells if the status of the matching properties should be changed from C (created) to X (consumed).
        |
-       |    Returns: OK
+       |    Returns: OK (200)
        |
        |
        | GET /devices/<dev>/actors/<actor>/targets/summary?status=<status>&consume=<consume>
@@ -109,14 +109,14 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
        |    The summarized target is generated only using properties that have the given status.
        |    The flag consume tells if the status of the matching properties should be changed from C (created) to X (consumed).
        |
-       |    Returns: OK | NO_CONTENT
+       |    Returns: OK (200) | EXPECTATION_FAILED (417)
        |
        |
        | GET /devices/<dev>/actors/<actor>/targets/last?status=<status>
        |
        |    Retrieve the last target created for such actor with such status
        |
-       |    Returns: OK | NO_CONTENT
+       |    Returns: OK (200) | EXPECTATION_FAILED (417)
        |
        |
     """.stripMargin
@@ -140,7 +140,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         val x = getDev(table, id)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
-          case _ => NoContent()
+          case _ => ExpectationFailed()
         }
       }
 
@@ -148,7 +148,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         val x = getDevLast(device, table)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
-          case None => NoContent()
+          case None => ExpectationFailed()
         }
       }
 
@@ -161,7 +161,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         val x = getDevActorTups(device, None, table, status, consume).map(t => ActorMapU.fromTups(t))
         x.flatMap { m =>
           if (m.isEmpty) {
-            NoContent()
+            ExpectationFailed()
           } else {
             Ok(m.asJson, ContentTypeAppJson)
           }
@@ -189,7 +189,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         val x = getDevActorTups(device, Some(actor), table, status, consume).map(PropsMapU.fromTups)
         x.flatMap { m =>
           if (m.isEmpty) {
-            NoContent()
+            ExpectationFailed()
           } else {
             Ok(m.asJson, ContentTypeAppJson)
           }
@@ -200,7 +200,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         val x = getLastDevActorTups(device, actor, table, status).map(PropsMapU.fromTups)
         x.flatMap { m =>
           if (m.isEmpty) {
-            NoContent()
+            ExpectationFailed()
           } else {
             Ok(m.asJson, ContentTypeAppJson)
           }
