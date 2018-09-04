@@ -212,7 +212,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
   val serviceWithAuthentication: HttpService[IO] = middleware(service)
 
 
-  private[v1] def getDev(table: Table, id: Timestamp) = {
+  private[v1] def getDev(table: Table, id: RecordId) = {
     for {
       t <- repository.selectDeviceWhereRequestId(table, id)
       resp <- IO(t.map(DeviceU.fromBom))
