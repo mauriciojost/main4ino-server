@@ -76,9 +76,9 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
       }
 
       case a@GET -> Root / "devices" / S(device) / T(table) / "summary" :? StatusP(status) +& ConsumeP(clean) as user => {
-        val x = getDevActorTups(device, None, table, status, clean).map(t => DeviceU.fromBom(Device.fromActorTups(Metadata(None, None, device), t)))
+        val x = getDevActorTups(device, None, table, status, clean).map(t => ActorMapU.fromTups(t))
         x.flatMap { m =>
-          if (m.actors.isEmpty) {
+          if (m.isEmpty) {
             NoContent()
           } else {
             Ok(m.asJson, ContentTypeAppJson)
