@@ -10,7 +10,7 @@ case class Config(
   def deduplicateTokens: Config = {
     val byToken = users.groupBy(_.token)
     val withSingleUser = byToken.collect {
-      case (token, users) if users.length == 1 => users.head
+      case (_, users) if users.length == 1 => users.head
     }
     Config(withSingleUser.toList)
   }
