@@ -46,9 +46,9 @@
                         </thead>
                         <tbody>
                         <tr>
-                            <td>{{ reportsSummary.metadata.device }}</td>
+                            <td>{{ device }}</td>
                             <td>
-                                <table ng-repeat="(actorRep, propsRep) in reportsSummary.actors track by $index"
+                                <table ng-repeat="(actorRep, propsRep) in reportsSummary track by $index"
                                        class="table table-bordered">
                                     <thead>
                                     <tr>
@@ -63,7 +63,7 @@
                                         <td>{{ propNameRep }}</td>
                                         <td>{{ propValueRep }}</td>
                                         <td>
-                                            <p class="text-warning">{{ targetsSummary.actors[actorRep][propNameRep]
+                                            <p class="text-warning">{{ targetsSummary[actorRep][propNameRep]
                                                 }}</p>
                                         </td>
 
@@ -72,7 +72,7 @@
                                                 <div><p> {{propHelp(actorRep, propNameRep)}} </p></div>
                                                 <div class="input-group">
                                                     <input type="text" class="form-control"
-                                                           ng-model="targetsTemporary.actors[actorRep][propNameRep]"
+                                                           ng-model="targetsTemporary[actorRep][propNameRep]"
                                                            readonly>
                                                     <div class="input-group-btn">
                                                         <button type="button" class="btn btn-default dropdown-toggle"
@@ -82,7 +82,7 @@
                                                             class="dropdown-menu dropdown-menu-right" role="menu">
                                                             <li ng-repeat="x in propExamples(actorRep, propNameRep)"
                                                                 class="input-lg"><a
-                                                                    ng-click="changeRequest(reportsSummary.metadata.device, actorRep, propNameRep, valueFromHelp(x))">{{x}}</a>
+                                                                    ng-click="changeRequest(device, actorRep, propNameRep, valueFromHelp(x))">{{x}}</a>
                                                             </li>
                                                         </ul>
                                                     </div>
