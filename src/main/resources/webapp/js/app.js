@@ -25,59 +25,18 @@ webPortalApp.config(function($stateProvider, $urlRouterProvider) {
 
         .state('device-history', {
             url: '/device-history',
-            templateUrl: 'partial-device-history.html'
+            templateUrl: 'partial-history.html'
         })
 
         .state('device-summary', {
             url: '/device-summary',
-            templateUrl: 'partial-device-summary.html'
+            templateUrl: 'partial-summary.html'
         })
 
-        .state('about', {
-            url: '/about',
-            views: {
-                    '': { templateUrl: 'partial-about.html' },
-                    'columnProperties@about': { 
-                                templateUrl: 'partial-about-table.html',
-                                controller: 'AboutController'
-                            }
-                    }
-            
-        });
-        
 });
 
 webPortalApp.controller(
-    'AboutController', 
-    function($scope, $log, $http) {
-    
-
-        $log.log('Creating version request...'); 
-
-        var req = {
-            method: 'GET',
-            url: '/api/v1/app/properties/'
-        };
-
-        $log.log('Executing version request...');
-
-        $http(req).success(
-            function(data) {
-                $scope.properties = data;
-            }
-        ).error(
-            function(data) {
-                $scope.properties = 'unknown';
-            }
-        );
-
-        $log.log('Executed version request.');
-    
-    }
-);
-
-webPortalApp.controller(
-    'DeviceHistoryController',
+    'HistoryController',
         function($scope, $http, $log, $location) {
 
             $scope.device = $location.search().device;
@@ -120,7 +79,7 @@ webPortalApp.controller(
 );
 
 webPortalApp.controller(
-    'DeviceSummaryController',
+    'SummaryController',
         function($scope, $http, $log, $location) {
 
             $scope.device = $location.search().device;
