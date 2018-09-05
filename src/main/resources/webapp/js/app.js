@@ -211,10 +211,10 @@ webPortalApp.controller(
                 ).error(
                     function(data) {
                         $log.log('Failed reports: ' + data);
-                        $scope.reportsSummary = '{}';
+                        $scope.reportsSummary = {};
                         BootstrapDialog.show({
                             title: 'Error',
-                            message: 'Failed to retrieve reports: ' + data
+                            message: 'Failed to retrieve reports needed to perform a query: ' + data
                         });
                     }
                 );
@@ -226,12 +226,8 @@ webPortalApp.controller(
                     }
                 ).error(
                     function(data) {
-                        $log.log('Failed targets: ' + data);
-                        $scope.targetsSummary = '{}';
-                        BootstrapDialog.show({
-                            title: 'Error',
-                            message: 'Failed to retrieve targets: ' + data
-                        });
+                        $log.log('Failed to retrieve targets: ' + data);
+                        $scope.targetsSummary = {};
                     }
                 );
 

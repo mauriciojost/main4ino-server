@@ -140,7 +140,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         val x = getDev(table, id)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
-          case _ => ExpectationFailed()
+          case None => ExpectationFailed(s"No $device properties found in ${table.code} with id $id")
         }
       }
 
@@ -148,7 +148,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         val x = getDevLast(device, table)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
-          case None => ExpectationFailed()
+          case None => ExpectationFailed(s"No $device properties found in ${table.code}")
         }
       }
 
@@ -161,7 +161,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         val x = getDevActorTups(device, None, table, status, consume).map(t => ActorMapU.fromTups(t))
         x.flatMap { m =>
           if (m.isEmpty) {
-            ExpectationFailed()
+            ExpectationFailed(s"No $device properties found in ${table.code}" + status.map(" with status " + _).mkString(""))
           } else {
             Ok(m.asJson, ContentTypeAppJson)
           }
@@ -189,7 +189,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         val x = getDevActorTups(device, Some(actor), table, status, consume).map(PropsMapU.fromTups)
         x.flatMap { m =>
           if (m.isEmpty) {
-            ExpectationFailed()
+            ExpectationFailed(s"No $device/$actor properties found in ${table.code}" + status.map(" with status " + _).mkString(""))
           } else {
             Ok(m.asJson, ContentTypeAppJson)
           }
@@ -200,7 +200,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         val x = getLastDevActorTups(device, actor, table, status).map(PropsMapU.fromTups)
         x.flatMap { m =>
           if (m.isEmpty) {
-            ExpectationFailed()
+            ExpectationFailed(s"No $device/$actor properties found in ${table.code}" + status.map(" with status " + _).mkString(""))
           } else {
             Ok(m.asJson, ContentTypeAppJson)
           }
