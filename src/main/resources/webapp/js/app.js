@@ -13,23 +13,13 @@ webPortalApp.config(function($stateProvider, $urlRouterProvider) {
             templateUrl: 'partial-home.html'
         })
         
-        .state('insert', {
-            url: '/insert',
-            templateUrl: 'partial-insert.html'
-        })
-        
-        .state('search', {
-            url: '/search',
-            templateUrl: 'partial-search.html'
-        })
-
-        .state('device-history', {
-            url: '/device-history',
+        .state('history', {
+            url: '/history',
             templateUrl: 'partial-history.html'
         })
 
-        .state('device-summary', {
-            url: '/device-summary',
+        .state('summary', {
+            url: '/summary',
             templateUrl: 'partial-summary.html'
         })
 
