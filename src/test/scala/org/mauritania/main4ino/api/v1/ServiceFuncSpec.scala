@@ -67,6 +67,19 @@ class ServiceFuncSpec extends DbSuite {
 
   }
 
+  it should "create and read a target/report in different value formats (string, int, bool)" in {
+
+    implicit val s = new Service(new Authentication(AuthConfig), new Repository(transactor))
+
+    // Add a target
+    postExpectCreated("/devices/dev1/targets", """{"act":{"i":7,"b":true,"s":"str"}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
+
+    // Check the responses
+    val dev1 = getExpectOk("/devices/dev1/targets/1")
+    dev1.\\("actors")(0).noSpaces shouldBe("""{"act":{"b":"true","s":"str","i":"7"}}""")
+
+  }
+
   it should "create targets and merge the properties correctly" in {
 
     implicit val s = new Service(new Authentication(AuthConfig), new Repository(transactor))
