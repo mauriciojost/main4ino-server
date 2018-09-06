@@ -31,14 +31,16 @@ webPortalApp.controller(
 
             $scope.device = $location.search().device;
             $scope.token = $location.search().token;
-            $scope.tabl = 'reports';
+            $scope.tabl = 'reports'; // table to get records from
+            $scope.from = 24; // in hours, lower-bound to filter history records
+
             $log.log('Device: ' + $scope.device);
             $log.log('Token: ' + $scope.token);
 
             $scope.search = function() {
                 $log.log('Searching device ' + $scope.device + ' in ' + $scope.tabl + ' with token ' + $scope.token);
                 var date = new Date();
-                var msAgo = 1000 * 3600 * 24; // 1 day
+                var msAgo = 1000 * 3600 * $scope.from;
                 var from = date.getTime() - msAgo;
 
                 var req = {
