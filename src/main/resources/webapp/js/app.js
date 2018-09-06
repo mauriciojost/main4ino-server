@@ -9,21 +9,49 @@ webPortalApp.config(function($stateProvider, $urlRouterProvider) {
     $stateProvider
         
         .state('home', {
-            url: '/home',
+            url: '/home?device&token',
             templateUrl: 'partial-home.html'
         })
         
         .state('history', {
-            url: '/history',
+            url: '/history?device&token',
             templateUrl: 'partial-history.html'
         })
 
         .state('summary', {
-            url: '/summary',
+            url: '/summary?device&token',
             templateUrl: 'partial-summary.html'
         })
 
 });
+
+webPortalApp.controller(
+    'HomeController',
+        function($scope, $http, $log, $location, $state) {
+
+            $scope.device = $location.search().device;
+            $scope.token = $location.search().token;
+
+            $log.log('Home Device: ' + $scope.device);
+            $log.log('Home Token: ' + $scope.token);
+
+            $scope.goHome = function() {
+              $log.log('Going home');
+              $state.go('home', {device: $scope.device, token: $scope.token})
+            }
+
+            $scope.goHistory = function() {
+              $log.log('Going to history');
+              $state.go('history', {device: $scope.device, token: $scope.token})
+            }
+
+            $scope.goSummary = function() {
+              $log.log('Going to summary');
+              $state.go('summary', {device: $scope.device, token: $scope.token})
+            }
+
+        }
+);
 
 webPortalApp.controller(
     'HistoryController',

@@ -9,14 +9,14 @@
 
 <body ng-app="webPortalApp">
 
-<nav class="navbar navbar-inverse" role="navigation">
+<nav ng-controller="HomeController" class="navbar navbar-inverse" role="navigation">
     <div class="navbar-header">
         <a class="navbar-brand" ui-sref="#">Botino BE</a>
     </div>
     <ul class="nav navbar-nav">
-        <li><a ui-sref="home">Home</a></li>
-        <li><a ui-sref="history">History</a></li>
-        <li><a ui-sref="summary">Summary</a></li>
+        <li><a ng-click="goHome()">Home</a></li>
+        <li><a ng-click="goHistory()">History</a></li>
+        <li><a ng-click="goSummary()">Summary</a></li>
     </ul>
 </nav>
 
