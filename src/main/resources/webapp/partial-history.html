@@ -12,18 +12,11 @@
                 <div>
                     <input type="text" name="device" class="form-control" ng-model="device" placeholder="Device Name"/>
                     <input type="password" name="token" class="form-control" ng-model="token" placeholder="Token"/>
-                    <select name="table" ng-model="table">
-                        <option value="reports">Reports</option>
-                        <option value="targets">Targets</option>
-                    </select>
-                </div>
-                <div class="btn-group">
-                    <label class="btn btn-success" ng-model="table" uib-btn-radio="'reports'" uncheckable>Reports</label>
-                    <label class="btn btn-success" ng-model="table" uib-btn-radio="'targets'" uncheckable>Targets</label>
+                    <div class="radio"><label><input type="radio" ng-model="tabl" value="targets" checked>Targets</label></div>
+                    <div class="radio"><label><input type="radio" ng-model="tabl" value="reports">Records</label></div>
                 </div>
             </container>
         </div>
-
     </div>
 
     <div class="panel panel-info">

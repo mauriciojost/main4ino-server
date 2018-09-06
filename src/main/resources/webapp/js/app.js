@@ -31,18 +31,19 @@ webPortalApp.controller(
 
             $scope.device = $location.search().device;
             $scope.token = $location.search().token;
+            $scope.tabl = 'reports';
             $log.log('Device: ' + $scope.device);
             $log.log('Token: ' + $scope.token);
 
             $scope.search = function() {
-                $log.log('Searching device ' + $scope.device + ' with token ' + $scope.token);
+                $log.log('Searching device ' + $scope.device + ' in ' + $scope.tabl + ' with token ' + $scope.token);
                 var date = new Date();
                 var msAgo = 1000 * 3600 * 24; // 1 day
                 var from = date.getTime() - msAgo;
 
                 var req = {
                     method: 'GET',
-                    url: 'api/v1/devices/' + $scope.device + '/' + $scope.table + '?from=' + from,
+                    url: 'api/v1/devices/' + $scope.device + '/' + $scope.tabl + '?from=' + from,
                     headers: {'Content-Type': 'application/json', 'Authorization': 'token ' + $scope.token},
                     data: $scope.request
                 };
