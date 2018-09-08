@@ -78,6 +78,13 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
        |    Returns: OK (200) | EXPECTATION_FAILED (417)
        |
        |
+       | GET /devices/<dev>/targets/count?status=<status>
+       |
+       |    Count the amount of target-properties with the given status for the device
+       |
+       |    Returns: OK (200)
+       |
+       |
        | POST /devices/<dev>/actors/<actor>/targets
        |
        |    Create a new target
@@ -168,6 +175,11 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         }
       }
 
+      case a@GET -> Root / "devices" / S(device) / T(table) / "count" :? StatusP(status) as user => {
+        val x = getDevActorCount(device, None, table, status)
+        Ok(x.map(_.asJson), ContentTypeAppJson)
+      }
+
       // Targets & Reports (at device-actor level)
 
       case a@POST -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) as user => {
@@ -176,7 +188,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
       }
 
       case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "count" :? StatusP(status) as user => {
-        val x = getDevActorCount(device, actor, table, status)
+        val x = getDevActorCount(device, Some(actor), table, status)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
@@ -265,8 +277,8 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
     t.map(i => i.groupBy(_.requestId).toList.sortBy(_._1).map(v => PropsMapU.fromTups(v._2)))
   }
 
-  private[v1] def getDevActorCount(device: DeviceName, actor: ActorName, table: Table, statusOp: Option[Status]) = {
-    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), statusOp, false)
+  private[v1] def getDevActorCount(device: DeviceName, actor: Option[ActorName], table: Table, statusOp: Option[Status]) = {
+    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, actor, statusOp, false)
     actorTups.compile.toList.map(_.size).map(CountResponse(_))
   }
 
