@@ -31,6 +31,7 @@ class Repository(transactor: Transactor[IO]) {
   }
 
   def selectDevicesWhereTimestamp(table: Table, device: DeviceName, from: Option[Timestamp], to: Option[Timestamp]): Stream[IO, Device] = {
+    // TODO really requires an optimization, ultra slow
     val transaction = for {
       t <- sqlSelectMetadataWhereDevice(table, device, from, to)
       p <- Stream.eval(sqlSelectActorTupWhereRequestIdActorStatus(table, t.id.get)) // must exist or better fail
