@@ -40,13 +40,17 @@ sbt run
 Interact with it via the webapp:
 
 ```
-http://localhost:8080/index.html#/device-history
+http://localhost:8080/
 ```
 
 or via the REST API: 
 
 ```
+# pass credentials via header
 curl -H "Authorization: token 012345678901234567890123456789" -X POST http://localhost:8080/api/v1/devices/dev1/actors/clock/targets -d '{"h":5}'
+# or via uri
+curl -X POST http://localhost:8080/api/v1/token/012345678901234567890123456789/devices/dev1/actors/clock/targets -d '{"h":5}'
+
 ```
 
 ## Contribute

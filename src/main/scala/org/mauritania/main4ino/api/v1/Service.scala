@@ -65,6 +65,8 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
        |
        |    Retrieve the list of the targets that where created in between the range provided (timestamp in [ms] since the epoch)
        |
+       |    The size of the list retrieved is limited to 100.
+       |
        |    Returns: OK (200)
        |
        |
@@ -133,17 +135,17 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
 
       // Help
 
-      case GET -> Root / "help" as user =>
+      case GET -> _ / "help" as user =>
         Ok(HelpMsg, ContentTypeTextPlain)
 
       // Targets & Reports (at device level)
 
-      case a@POST -> Root / "devices" / S(device) / T(table) as user => {
+      case a@POST -> _ / "devices" / S(device) / T(table) as user => {
         val x = postDev(a.req, device, table, Time.now)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / T(table) / LongVar(id) as user => {
+      case a@GET -> _ / "devices" / S(device) / T(table) / LongVar(id) as user => {
         val x = getDev(table, id)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -151,7 +153,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         }
       }
 
-      case a@GET -> Root / "devices" / S(device) / T(table) / "last" as user => {
+      case a@GET -> _ / "devices" / S(device) / T(table) / "last" as user => {
         val x = getDevLast(device, table)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -159,12 +161,12 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         }
       }
 
-      case a@GET -> Root / "devices" / S(device) / T(table) :? FromP(from) +& ToP(to) as user => {
-        val x = getDevAll(device, table, from, to)
+      case a@GET -> _ / "devices" / S(device) / T(table) :? FromP(from) +& ToP(to) as user => {
+        val x = getDevAll(device, table, from, to).take(MaximumDevicesSnapshotsHistory)
         Ok(Stream("[") ++ x.map(_.asJson.noSpaces).intersperse(",") ++ Stream("]"), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as user => {
+      case a@GET -> _ / "devices" / S(device) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as user => {
         val x = getDevActorTups(device, None, table, status, consume).map(t => ActorMapU.fromTups(t))
         x.flatMap { m =>
           if (m.isEmpty) {
@@ -175,29 +177,29 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         }
       }
 
-      case a@GET -> Root / "devices" / S(device) / T(table) / "count" :? StatusP(status) as user => {
+      case a@GET -> _ / "devices" / S(device) / T(table) / "count" :? StatusP(status) as user => {
         val x = getDevActorCount(device, None, table, status)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
       // Targets & Reports (at device-actor level)
 
-      case a@POST -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) as user => {
+      case a@POST -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) as user => {
         val x = postDevActor(a.req, device, actor, table, Time.now)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "count" :? StatusP(status) as user => {
+      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) / "count" :? StatusP(status) as user => {
         val x = getDevActorCount(device, Some(actor), table, status)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) :? StatusP(status) +& ConsumeP(consume) as user => {
+      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) :? StatusP(status) +& ConsumeP(consume) as user => {
         val x = getDevActors(device, actor, table, status, consume)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as user => {
+      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as user => {
         val x = getDevActorTups(device, Some(actor), table, status, consume).map(PropsMapU.fromTups)
         x.flatMap { m =>
           if (m.isEmpty) {
@@ -208,7 +210,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         }
       }
 
-      case a@GET -> Root / "devices" / S(device) / "actors" / S(actor) / T(table) / "last" :? StatusP(status) as user => {
+      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) / "last" :? StatusP(status) as user => {
         val x = getLastDevActorTups(device, actor, table, status).map(PropsMapU.fromTups)
         x.flatMap { m =>
           if (m.isEmpty) {
@@ -288,6 +290,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
 
 object Service {
 
+  final val MaximumDevicesSnapshotsHistory = 100
   final val ServicePrefix = "/api/v1"
 
   final val ContentTypeAppJson = `Content-Type`(MediaType.`application/json`)

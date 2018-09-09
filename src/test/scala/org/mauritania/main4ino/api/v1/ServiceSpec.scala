@@ -31,8 +31,10 @@ import scala.reflect.ClassTag
 
 class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
-  val Token = "012345678901234567890123456789"
-  val AuthConfig = Config(List(User(1, "name", "name@gmail.com", List("/"), Token)))
+  val ValidToken = "012345678901234567890123456789"
+  val WrongToken = "01234567890123456789012345xxxx"
+  val InvalidToken = "01"
+  val AuthConfig = Config(List(User(1, "name", "name@gmail.com", List("/"), ValidToken)))
   val Dev1 = Fixtures.Device1
   val Dev2 = Fixtures.Device1.withId(Some(2L)).withDeviceName("dev2")
   val Dev1V1 = Fixtures.Device1InV1
@@ -148,19 +150,43 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
 
     }
 
+    "Reject requests when invalid token" should {
+      val r = stub[Repository]
+      val s = new Service(new Authentication(AuthConfig), r)
+
+      "return 403 (forbidden) if invalid credentials" in {
+        getApiV1("/help", HeadersTokenInvalid)(s).status shouldBe (HttpStatus.NotFound)
+      }
+      "return 403 (forbidden) if no credentials" in {
+        getApiV1("/help", HeadersNoToken)(s).status shouldBe (HttpStatus.Forbidden)
+      }
+      "return 403 (forbidden) if wrong credentials" in {
+        getApiV1("/help", HeadersTokenWrong)(s).status shouldBe (HttpStatus.Forbidden)
+      }
+      "return 403 (forbidden) if invalid credentials" in {
+        getApiV1("/help", HeadersTokenWrong)(s).status shouldBe (HttpStatus.Forbidden)
+      }
+      "return 200 if correct credentials (via headers)" in {
+        getApiV1("/help", HeadersTokenOk)(s).status shouldBe (HttpStatus.Ok)
+      }
+      "return 200 if correct credentials (via uri)" in {
+        getApiV1("/token/" + ValidToken + "/help", HeadersNoToken)(s).status shouldBe (HttpStatus.Ok)
+      }
+    }
+
   }
 
   def e[T: ClassTag](v: T) = argThat[T](s"Expected value $v")(_ == v)
 
   // Basic testing utilities
 
-  private[this] def getApiV1(path: String)(service: Service): Response[IO] = {
-    val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path), headers = DefaultHeaders)
+  private[this] def getApiV1(path: String, h: Headers = HeadersTokenOk)(service: Service): Response[IO] = {
+    val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path), headers = h)
     service.request(request).unsafeRunSync()
   }
 
-  private[this] def postApiV1(path: String, body: EntityBody[IO])(service: Service): Response[IO] = {
-    val request = Request[IO](method = Method.POST, uri = Uri.unsafeFromString(path), body = body, headers = DefaultHeaders)
+  private[this] def postApiV1(path: String, body: EntityBody[IO], h: Headers = HeadersTokenOk)(service: Service): Response[IO] = {
+    val request = Request[IO](method = Method.POST, uri = Uri.unsafeFromString(path), body = body, headers = h)
     service.request(request).unsafeRunSync()
   }
 
@@ -168,6 +194,9 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
     Stream.fromIterator[IO, Byte](content.toCharArray.map(_.toByte).toIterator)
   }
 
-  final val DefaultHeaders = Headers(Header("Authorization", "token " + Token))
+  final val HeadersNoToken = Headers()
+  final val HeadersTokenOk = Headers(Header("Authorization", "token " + ValidToken))
+  final val HeadersTokenWrong = Headers(Header("Authorization", "token " + WrongToken))
+  final val HeadersTokenInvalid = Headers(Header("Authorization", "token " + InvalidToken))
 
 }
