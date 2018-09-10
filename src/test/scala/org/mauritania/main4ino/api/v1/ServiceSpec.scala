@@ -155,15 +155,12 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
       val s = new Service(new Authentication(AuthConfig), r)
 
       "return 403 (forbidden) if invalid credentials" in {
-        getApiV1("/help", HeadersTokenInvalid)(s).status shouldBe (HttpStatus.NotFound)
+        getApiV1("/help", HeadersTokenInvalid)(s).status shouldBe (HttpStatus.Forbidden)
       }
       "return 403 (forbidden) if no credentials" in {
         getApiV1("/help", HeadersNoToken)(s).status shouldBe (HttpStatus.Forbidden)
       }
       "return 403 (forbidden) if wrong credentials" in {
-        getApiV1("/help", HeadersTokenWrong)(s).status shouldBe (HttpStatus.Forbidden)
-      }
-      "return 403 (forbidden) if invalid credentials" in {
         getApiV1("/help", HeadersTokenWrong)(s).status shouldBe (HttpStatus.Forbidden)
       }
       "return 200 if correct credentials (via headers)" in {
