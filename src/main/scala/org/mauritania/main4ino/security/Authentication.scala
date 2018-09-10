@@ -3,6 +3,7 @@ package org.mauritania.main4ino.security
 import cats.data.Kleisli
 import cats.effect.IO
 import org.http4s.Request
+import org.http4s.Uri.Path
 import org.http4s.headers.Authorization
 import org.mauritania.main4ino.security.Authentication.Token
 
@@ -10,9 +11,9 @@ import scala.util.Try
 
 class Authentication(config: Config) {
 
-  private final val HeaderTokenRegex = ("^token (.*)$").r
-  private final val UriTokenRegex = ("^/token/(.*)/(.*)").r
-  private final val TokenRegex = "([a-zA-Z0-9]{30})".r
+  private final val TokenExpr = "[a-zA-Z0-9]{30}"
+  private final val HeaderTokenRegex = ("^token (" + TokenExpr + ")$").r
+  private final val UriTokenRegex = ("^(.*)/token/(" + TokenExpr + ")/(.*)$").r
 
   private lazy val UsersByToken: Map[Token, List[User]] = config.users.groupBy(_.token)
 
@@ -23,32 +24,28 @@ class Authentication(config: Config) {
     } yield(ua)
   }
 
-  private def retrieveToken(v: String): Option[Token] = {
-    val m = TokenRegex.findFirstMatchIn(v)
-    m.flatMap(i => Try(i.group(1)).toOption)
-  }
-
-  private def getToken(request: Request[IO]) = {
-    val fromHeader = request.headers.get(Authorization).flatMap(v => HeaderTokenRegex.findFirstIn(v.value))
-    val fromUri = UriTokenRegex.findFirstIn(request.uri.path)
+  private def retrieveToken(request: Request[IO]): Either[String, Token] = {
+    val fromHeader =
+      request.headers.get(Authorization).flatMap(v => HeaderTokenRegex.findFirstMatchIn(v.value)).flatMap(a => Try(a.group(1)).toOption)
+    val fromUri =
+      UriTokenRegex.findFirstMatchIn(request.uri.path).flatMap(a => Try(a.group(2)).toOption)
     fromHeader.orElse(fromUri).toRight("Header 'Authorization' not present and no .../token/<token>/... in uri")
   }
 
-  def withoutToken(pathInfo: String): String = {
-    UriTokenRegex.findFirstMatchIn(pathInfo) match {
-      case Some(m) => "/" + m.group(2)
-      case None => pathInfo
+  def withoutToken(path: Path): Path = {
+    UriTokenRegex.findFirstMatchIn(path) match {
+      case Some(m) =>  m.group(1) + "/" + m.group(3)
+      case None => path
     }
   }
 
   val authUser: Kleisli[IO, Request[IO], Either[String, User]] = Kleisli({ request =>
     IO {
-      val u = for {
-        tknStr <- getToken(request)
-        tkn <- retrieveToken(tknStr).toRight(s"Invalid token syntax")
-        user <- retrieveUser(tkn, withoutToken(request.pathInfo))
+      val user = for {
+        tkn <- retrieveToken(request)
+        user <- retrieveUser(tkn, withoutToken(request.uri.path))
       } yield (user)
-      u
+      user
     }
   })
 
