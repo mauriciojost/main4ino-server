@@ -17,7 +17,7 @@ class Authentication(config: Config) {
 
   private lazy val UsersByToken: Map[Token, List[User]] = config.users.groupBy(_.token)
 
-  private def retrieveUser(token: Token, url: String): Either[String, User] = {
+  private def retrieveUser(token: Token, url: Path): Either[String, User] = {
     for {
       u <- UsersByToken.get(token).flatMap(_.headOption).toRight(s"Could not find user for token $token")
       ua <- u.allowed(url).toRight(s"User ${u.name} is not authorized to access ${url}")
@@ -32,18 +32,15 @@ class Authentication(config: Config) {
     fromHeader.orElse(fromUri).toRight("Header 'Authorization' not present and no .../token/<token>/... in uri")
   }
 
-  def withoutToken(path: Path): Path = {
-    UriTokenRegex.findFirstMatchIn(path) match {
-      case Some(m) =>  m.group(1) + "/" + m.group(3)
-      case None => path
-    }
+  def discardToken(path: Path): Path = {
+    UriTokenRegex.findFirstMatchIn(path).map(m => m.group(1) + "/" + m.group(3)).getOrElse(path)
   }
 
   val authUser: Kleisli[IO, Request[IO], Either[String, User]] = Kleisli({ request =>
     IO {
       val user = for {
         tkn <- retrieveToken(request)
-        user <- retrieveUser(tkn, withoutToken(request.uri.path))
+        user <- retrieveUser(tkn, discardToken(request.uri.path))
       } yield (user)
       user
     }
