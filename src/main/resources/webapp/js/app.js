@@ -60,6 +60,7 @@ webPortalApp.controller(
             $scope.device = $location.search().device;
             $scope.token = $location.search().token;
             $scope.tabl = 'reports'; // table to get records from
+            $scope.limt = 10; // maximum amount of elements to retrieve
             $scope.from = 24; // in hours, lower-bound to filter history records
 
             $log.log('Device: ' + $scope.device);
@@ -73,7 +74,7 @@ webPortalApp.controller(
 
                 var req = {
                     method: 'GET',
-                    url: 'api/v1/devices/' + $scope.device + '/' + $scope.tabl + '?from=' + from,
+                    url: 'api/v1/devices/' + $scope.device + '/' + $scope.tabl + '?from=' + from + '?limit=' + $scope.limt,
                     headers: {'Content-Type': 'application/json', 'Authorization': 'token ' + $scope.token},
                     data: $scope.request
                 };

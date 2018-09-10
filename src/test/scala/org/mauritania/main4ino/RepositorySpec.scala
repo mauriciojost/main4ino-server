@@ -59,19 +59,22 @@ class RepositorySpec extends DbSuite {
     repo.insertDevice(Table.Targets, snap2).unsafeRunSync() shouldBe(2L)
     repo.insertDevice(Table.Targets, snap3).unsafeRunSync() shouldBe(3L)
 
-    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = Some(1L), to = None)
-      .compile.toList.unsafeRunSync() shouldBe List(snap1, snap2, snap3)
-
-    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = Some(2L), to = None)
-      .compile.toList.unsafeRunSync() shouldBe List(snap2, snap3)
-
-    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = None, to = Some(2L))
-      .compile.toList.unsafeRunSync() shouldBe List(snap1, snap2)
-
-    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = None, to = Some(1L))
+    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = Some(1L), to = None, limit = Some(1))
       .compile.toList.unsafeRunSync() shouldBe List(snap1)
 
-    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = Some(2L), to = Some(2L))
+    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = Some(1L), to = None, limit = None)
+      .compile.toList.unsafeRunSync() shouldBe List(snap1, snap2, snap3)
+
+    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = Some(2L), to = None, limit = None)
+      .compile.toList.unsafeRunSync() shouldBe List(snap2, snap3)
+
+    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = None, to = Some(2L), limit = None)
+      .compile.toList.unsafeRunSync() shouldBe List(snap1, snap2)
+
+    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = None, to = Some(1L), limit = None)
+      .compile.toList.unsafeRunSync() shouldBe List(snap1)
+
+    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = Some(2L), to = Some(2L), limit = None)
       .compile.toList.unsafeRunSync() shouldBe List(snap2)
 
   }
