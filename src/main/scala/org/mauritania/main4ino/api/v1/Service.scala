@@ -61,11 +61,9 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
        |    Returns: OK (200) | EXPECTATION_FAILED (417)
        |
        |
-       | GET /devices/<dev>/targets?from=<timestamp>&to=<timestamp>&limit=<limit>
+       | GET /devices/<dev>/targets?from=<timestamp>&to=<timestamp>
        |
        |    Retrieve the list of the targets that where created in between the range provided (timestamp in [ms] since the epoch)
-       |
-       |    The size of the list retrieved is limited to <limit>.
        |
        |    Returns: OK (200)
        |
@@ -161,9 +159,9 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         }
       }
 
-      case a@GET -> _ / "devices" / S(device) / T(table) :? FromP(from) +& ToP(to) +& LimitP(limit) as user => {
-        val x = getDevAll(device, table, from, to, limit)
-        Ok(Stream("[") ++ x.map(_.asJson.noSpaces).intersperse(",") ++ Stream("]"), ContentTypeAppJson)
+      case a@GET -> _ / "devices" / S(device) / T(table) :? FromP(from) +& ToP(to) as user => {
+        val x = getDevAll(device, table, from, to)
+        Ok(x.map(_.asJson.noSpaces), ContentTypeAppJson)
       }
 
       case a@GET -> _ / "devices" / S(device) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as user => {
@@ -258,9 +256,9 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
     } yield (k)
   }
 
-  private[v1] def getDevAll(device: DeviceName, table: Table, from: Option[Timestamp], to: Option[Timestamp], limit: Option[Int]) = {
+  private[v1] def getDevAll(device: DeviceName, table: Table, from: Option[Timestamp], to: Option[Timestamp]) = {
     for {
-      r <- repository.selectDevicesWhereTimestamp(table, device, from, to, limit).map(DeviceU.fromBom)
+      r <- repository.selectDevicesWhereTimestamp(table, device, from, to).map(_.map(DeviceU.fromBom))
     } yield (r)
   }
 

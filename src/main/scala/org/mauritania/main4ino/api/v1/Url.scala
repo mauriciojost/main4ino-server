@@ -12,7 +12,6 @@ object Url {
 
   object FromP extends OptionalQueryParamDecoderMatcher[Timestamp]("from")
   object ToP extends OptionalQueryParamDecoderMatcher[Timestamp]("to")
-  object LimitP extends OptionalQueryParamDecoderMatcher[Int]("limit")
 
   object T {
     def unapply(str: String): Option[Table] = Table.resolve(str)

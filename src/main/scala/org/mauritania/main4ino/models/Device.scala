@@ -29,7 +29,19 @@ object Device {
     device: DeviceName
 	)
 
+	case class Device1(
+		metadata: Metadata,
+		actorTuple: ActorTup
+	)
+
 	def fromActorTups(metadata: Metadata, ps: Iterable[ActorTup]): Device = Device(metadata, ActorMap.fromTups(ps))
+
+  def fromDevice1s(s: Iterable[Device1]): Iterable[Device] = {
+		val g = s.groupBy(_.metadata)
+    val ds = g.map{ case (md, d1s) => Device(md, ActorMap.fromTups(d1s.map(_.actorTuple)))}
+    ds
+	}
+
 
 }
 

@@ -30,13 +30,13 @@ class Repository(transactor: Transactor[IO]) {
     transaction.transact(transactor)
   }
 
-  def selectDevicesWhereTimestamp(table: Table, device: DeviceName, from: Option[Timestamp], to: Option[Timestamp], limit: Option[Int]): Stream[IO, Device] = {
-    // TODO really requires an optimization, ultra slow
+  def selectDevicesWhereTimestamp(table: Table, device: DeviceName, from: Option[Timestamp], to: Option[Timestamp]): IO[Iterable[Device]] = {
     val transaction = for {
-      t <- sqlSelectMetadataWhereDevice(table, device, from, to, limit)
-      p <- Stream.eval(sqlSelectActorTupWhereRequestIdActorStatus(table, t.id.get)) // must exist or better fail
-    } yield (Device.fromActorTups(t, p))
-    transaction.transact(transactor)
+      d <- sqlSelectMetadataActorTupWhereDevice(table, device, from, to)
+    } yield (d)
+    val s = transaction.transact(transactor)
+    val iol = s.compile.toList
+    iol.map(l => Device.fromDevice1s(l))
   }
 
   def selectMaxDevice(table: Table, device: DeviceName): IO[Option[Device]] = {
@@ -103,6 +103,22 @@ class Repository(transactor: Transactor[IO]) {
     }
     (fr"SELECT id, creation, device_name FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE device_name=$d" ++ fromFr ++ toFr ++ limitFr)
       .query[Metadata].stream
+  }
+
+  private def sqlSelectMetadataActorTupWhereDevice(table: Table, d: DeviceName, from: Option[Timestamp], to: Option[Timestamp]): Stream[ConnectionIO, Device.Device1] = {
+    val fromFr = from match {
+      case Some(a) => fr"AND r.creation >= $a"
+      case None => fr""
+    }
+    val toFr = to match {
+      case Some(a) => fr"AND r.creation <= $a"
+      case None => fr""
+    }
+    (fr"SELECT r.id, r.creation, r.device_name, t.request_id, t.device_name, t.actor_name, t.property_name, t.property_value, t.property_status" ++
+      fr"FROM" ++ Fragment.const(table.code + "_requests") ++ fr"as r JOIN" ++ Fragment.const(table.code) ++ fr"as t" ++
+      fr"ON r.id = t.request_id" ++
+      fr"WHERE r.device_name=$d" ++ fromFr ++ toFr)
+      .query[Device.Device1].stream
   }
 
   private def sqlSelectMetadataWhereRequestId(table: Table, id: RecordId): ConnectionIO[Option[Metadata]] = {
