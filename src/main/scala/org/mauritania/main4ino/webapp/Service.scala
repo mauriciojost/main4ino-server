@@ -27,8 +27,3 @@ class Service extends Http4sDsl[IO] {
 
 }
 
-object Service {
-
-  final val ServicePrefix = "/"
-
-}

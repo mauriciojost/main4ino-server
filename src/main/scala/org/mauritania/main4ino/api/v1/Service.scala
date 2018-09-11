@@ -288,8 +288,6 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
 
 object Service {
 
-  final val ServicePrefix = "/api/v1"
-
   final val ContentTypeAppJson = `Content-Type`(MediaType.`application/json`)
   final val ContentTypeTextPlain = `Content-Type`(MediaType.`text/plain`)
 
