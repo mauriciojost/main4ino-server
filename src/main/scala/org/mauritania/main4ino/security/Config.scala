@@ -16,6 +16,7 @@ case class Config(
   }
 }
 
+// TODO this can be abstracted (and de-duplicated): see repeated config.Config
 object Config {
   import pureconfig._
 
