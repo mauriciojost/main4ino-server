@@ -6,7 +6,6 @@ import fs2.{Stream, StreamApp}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.blaze.BlazeBuilder
 import org.mauritania.main4ino.api.v1
-import org.mauritania.main4ino.config.Config
 import org.mauritania.main4ino.db.Database
 import org.mauritania.main4ino.security.Authentication
 
@@ -14,6 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object Server extends StreamApp[IO] with Http4sDsl[IO] {
 
+  // TODO use better IOApp as StreamApp is being removed from fs2
   def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
     for {
       configApp <- Stream.eval(config.Config.load("application.conf"))
