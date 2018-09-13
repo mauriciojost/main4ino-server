@@ -1,7 +1,5 @@
 package org.mauritania.main4ino.webapp
 
-import java.io.File
-
 import cats.effect.IO
 import org.http4s.{HttpService, Request, Response, StaticFile}
 import org.http4s.dsl.Http4sDsl

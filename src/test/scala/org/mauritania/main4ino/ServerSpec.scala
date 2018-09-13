@@ -1,7 +1,6 @@
 package org.mauritania.main4ino
 
 import cats.effect.IO
-import org.http4s.{InvalidBodyException, Status}
 import org.http4s.client.{Client, UnexpectedStatus}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, Sequential}
 import org.http4s.client.blaze.Http1Client
