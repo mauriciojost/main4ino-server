@@ -132,8 +132,6 @@ webPortalApp.controller(
             });
 
             $scope.propLegend = function(actor, propName) {
-                $log.log('Searching legend for: ' + actor + ' ' + propName);
-
                 var acum = {
                     descriptions: [],
                     examples: []
@@ -151,13 +149,11 @@ webPortalApp.controller(
             }
 
             $scope.propHelp = function(actor, propName) {
-              $log.log('Searching description for: ' + actor + ' ' + propName);
               var l = $scope.propLegend(actor, propName);
               return l.descriptions.join('. ').trim();
             }
 
             $scope.propExamples = function(actor, propName) {
-              $log.log('Searching examples for: ' + actor + ' ' + propName);
               var l = $scope.propLegend(actor, propName);
               return l.examples;
             }
