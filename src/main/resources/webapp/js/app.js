@@ -106,6 +106,7 @@ webPortalApp.controller(
 
             $scope.device = $location.search().device;
             $scope.token = $location.search().token;
+
             $log.log('Device: ' + $scope.device);
             $log.log('Token: ' + $scope.token);
 
@@ -117,7 +118,6 @@ webPortalApp.controller(
                 $.each(lines, function(nline, line) {
                     var items = line.split('===');
                     if (items[0].length != 0) {
-                        $log.log('Matched line: ' + line);
                         var exs = items[2].split(',').map(function (i) {return i.trim();});
                         var legend = {
                             lines: [line],
@@ -129,7 +129,6 @@ webPortalApp.controller(
                     };
                 });
 
-                $log.log('Legends: ' + JSON.stringify($scope.propLegends));
             });
 
             $scope.propLegend = function(actor, propName) {
@@ -143,13 +142,11 @@ webPortalApp.controller(
                 for (x of $scope.propLegends) {
                     for (p of x.patterns) {
                         if ((actor + '.' + propName).search(p) != -1) {
-                            $log.log('Matched pattern: ' + p + ' with ' + JSON.stringify(x));
                             acum.descriptions = acum.descriptions.concat(x.descriptions);
                             acum.examples = acum.examples.concat(x.examples);
                         };
                     };
                 };
-                $log.log('Resolved: ' + JSON.stringify(acum));
                 return acum;
             }
 
