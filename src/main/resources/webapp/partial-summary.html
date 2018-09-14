@@ -63,8 +63,7 @@
                                         <td>{{ propNameRep }}</td>
                                         <td>{{ propValueRep }}</td>
                                         <td>
-                                            <p class="text-warning">{{ targetsSummary[actorRep][propNameRep]
-                                                }}</p>
+                                            <p class="text-warning">{{ targetsSummary[actorRep][propNameRep] }}</p>
                                         </td>
 
                                         <td>
@@ -80,6 +79,7 @@
                                                         </button>
                                                         <ul id="color-dropdown-menu"
                                                             class="dropdown-menu dropdown-menu-right" role="menu">
+                                                            <li class="input-lg"><a ng-click="changeRequest(device, actorRep, propNameRep, propValueRep)">{{propValueRep}} -> Current value</a></li>
                                                             <li ng-repeat="x in propExamples(actorRep, propNameRep)"
                                                                 class="input-lg"><a
                                                                     ng-click="changeRequest(device, actorRep, propNameRep, valueFromHelp(x))">{{x}}</a>

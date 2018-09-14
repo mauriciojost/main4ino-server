@@ -188,6 +188,7 @@ webPortalApp.controller(
                     function(data) {
                         $log.log('Success reports: ' + JSON.stringify(data));
                         $scope.reportsSummary = data;
+                        $scope.targetsTemporary = data;
                     }
                 ).error(
                     function(data) {
