@@ -32,8 +32,8 @@ webPortalApp.controller(
             $scope.device = $location.search().device;
             $scope.token = $location.search().token;
 
-            $log.log('Home Device: ' + $scope.device);
-            $log.log('Home Token: ' + $scope.token);
+            $log.log('Device: ' + $scope.device);
+            $log.log('Token: ' + $scope.token);
 
             $scope.goHome = function() {
               $log.log('Going home');
@@ -59,6 +59,10 @@ webPortalApp.controller(
 
             $scope.device = $location.search().device;
             $scope.token = $location.search().token;
+
+            $log.log('Device: ' + $scope.device);
+            $log.log('Token: ' + $scope.token);
+
             $scope.tabl = 'reports'; // table to get records from
             $scope.from = 24; // in hours, lower-bound to filter history records
 
