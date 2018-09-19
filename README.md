@@ -29,6 +29,8 @@ Normally a device can load recently created user-requested values for its actor'
 
 Once the device requested targets, they normally become consumed, making them set only once.
 
+The corresponding REST API is [here](/src/main/scala/org/mauritania/main4ino/api/v1/Service.scala).
+
 ## Run
 
 Run the server to let it be accessible by your devices:
