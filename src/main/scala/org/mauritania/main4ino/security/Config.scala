@@ -1,8 +1,7 @@
 package org.mauritania.main4ino.security
 
 import cats.effect.IO
-import com.typesafe.config.ConfigFactory
-import pureconfig.error.ConfigReaderException
+import org.mauritania.main4ino.config.Loadable
 
 case class Config(
   users: List[User]
@@ -16,17 +15,9 @@ case class Config(
   }
 }
 
-// TODO this can be abstracted (and de-duplicated): see repeated config.Config
-object Config {
-  import pureconfig._
+object Config extends Loadable[Config] {
 
-  def load(configFile: String): IO[Config] = {
-    IO {
-      loadConfig[Config](ConfigFactory.load(configFile))
-    }.flatMap {
-      case Left(e) => IO.raiseError[Config](new ConfigReaderException[Config](e))
-      case Right(config) => IO.pure(config.deduplicateTokens)
-    }
-  }
+  def load(configFile: String): IO[Config] = load(configFile, _.deduplicateTokens)
+
 }
 
