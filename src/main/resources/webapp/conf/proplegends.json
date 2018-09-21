@@ -12,6 +12,16 @@
     ]
   },
   {
+    "patterns": ["^clocksync\\.zone$"],
+    "descriptions": ["Zone to pick up the current date-time from. See <a href=\"https://timezonedb.com/\" target=\"_blank\">here</a>."],
+    "examples": [
+      "Europe/Paris",
+      "America/Argentina",
+      "Asia/Shanghai",
+      "Africa/Freetown"
+    ]
+  },
+  {
     "patterns": ["^.*\\.freq$"],
     "descriptions": ["Frequency at which the actor will act and perform its duty. See <a href=\"https://bitbucket.org/mauriciojost/main4ino-arduino/src/master/README.m\" target=\"_blank\">here</a>."],
     "examples": [
