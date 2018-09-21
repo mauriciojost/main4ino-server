@@ -1,4 +1,4 @@
-var webPortalApp = angular.module('webPortalApp', ['ui.router']);
+var webPortalApp = angular.module('webPortalApp', ['ui.router', 'ngSanitize']);
 
 webPortalApp.config(function($stateProvider, $urlRouterProvider) {
     
@@ -112,24 +112,19 @@ webPortalApp.controller(
 
             $scope.propLegends = [];
 
-            // Initialize property legends
-            $.get('../conf/proplegends.conf', function(data) {
-                var lines = data.split('\n');
-                $.each(lines, function(nline, line) {
-                    var items = line.split('===');
-                    if (items[0].length != 0) {
-                        var exs = items[2].split(',').map(function (i) {return i.trim();});
-                        var legend = {
-                            lines: [line],
-                            patterns: items[0].split(','),
-                            descriptions: [items[1]],
-                            examples: exs
-                        }
-                        $scope.propLegends.push(legend);
+            $log.log('Initialize property legends');
+            $.get('/conf/proplegends.json', function(data) {
+                for(var i in data) {
+                    var o = data[i];
+                    var legend = {
+                        patterns: o["patterns"],
+                        descriptions: o["descriptions"],
+                        examples: o["examples"]
                     };
-                });
-
-            });
+                    $log.log('Element proplegend parsed: ' + JSON.stringify(legend));
+                    $scope.propLegends.push(legend);
+                };
+            }, "json");
 
             $scope.propLegend = function(actor, propName) {
                 var acum = {
@@ -148,7 +143,7 @@ webPortalApp.controller(
                 return acum;
             }
 
-            $scope.propHelp = function(actor, propName) {
+            $scope.propDescriptions = function(actor, propName) {
               var l = $scope.propLegend(actor, propName);
               return l.descriptions.join('. ').trim();
             }
