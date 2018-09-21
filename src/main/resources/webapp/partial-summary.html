@@ -69,7 +69,9 @@
                                         <td>
                                             <form role="form">
 
-                                                <div><p> {{ propDescriptions(actorRep, propNameRep) }} </p></div>
+                                                <div>
+                                                    <p ng-bind-html="propDescriptions(actorRep, propNameRep)"></p>
+                                                </div>
                                                 <div class="input-group">
                                                     <input type="text" class="form-control"
                                                            ng-model="targetsTemporary[actorRep][propNameRep]"

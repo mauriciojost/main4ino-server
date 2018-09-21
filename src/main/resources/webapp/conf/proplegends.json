@@ -1,7 +1,7 @@
 [
   {
     "patterns": ["^body\\.r\\d{1,2}$"],
-    "descriptions": ["Routine i-th of the body. See https://bitbucket.org/mauriciojost/botino/src/master/src/actors/Body.h"],
+    "descriptions": ["Routine i-th of the body. See <a href=\"https://bitbucket.org/mauriciojost/botino/src/master/src/actors/Body.h\">here</a>"],
     "examples": [
       "177120000:M2Lunch!.A99. -> Tell message 'Lunch!' at 12 every day and put arms up quickly",
       "177080000:M2Wake up!.Da0.Da0. -> Tell message 'Wake up!' at 8 every day and dance",
@@ -13,7 +13,7 @@
   },
   {
     "patterns": ["^.*\\.freq$"],
-    "descriptions": ["Frequency at which the actor will act and perform its duty. See https://bitbucket.org/mauriciojost/main4ino-arduino/src/master/README.m"],
+    "descriptions": ["Frequency at which the actor will act and perform its duty. See <a href=\"https://bitbucket.org/mauriciojost/main4ino-arduino/src/master/README.m\">here</a>."],
     "examples": [
       "000000000 -> never",
       "1DDHHMMSS -> fixed month-day/hour/minute/second",

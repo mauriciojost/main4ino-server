@@ -102,7 +102,7 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     'SummaryController',
-        function($scope, $http, $log, $location) {
+        function($scope, $http, $log, $location, $sanitize) {
 
             $scope.device = $location.search().device;
             $scope.token = $location.search().token;
