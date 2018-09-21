@@ -51,14 +51,14 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
        |
        |    Retrieve a target by its id
        |
-       |    Returns: OK (200) | EXPECTATION_FAILED (417)
+       |    Returns: OK (200) | NO_CONTENT (204)
        |
        |
        | GET /devices/<dev>/targets/last
        |
        |    Retrieve the last target created
        |
-       |    Returns: OK (200) | EXPECTATION_FAILED (417)
+       |    Returns: OK (200) | NO_CONTENT (204)
        |
        |
        | GET /devices/<dev>/targets?from=<timestamp>&to=<timestamp>
@@ -75,7 +75,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
        |    The summarized target is generated only using properties that have the given status.
        |    The flag consume tells if the status of the matching properties should be changed from C (created) to X (consumed).
        |
-       |    Returns: OK (200) | EXPECTATION_FAILED (417)
+       |    Returns: OK (200) | NO_CONTENT (204)
        |
        |
        | GET /devices/<dev>/targets/count?status=<status>
@@ -116,14 +116,14 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
        |    The summarized target is generated only using properties that have the given status.
        |    The flag consume tells if the status of the matching properties should be changed from C (created) to X (consumed).
        |
-       |    Returns: OK (200) | EXPECTATION_FAILED (417)
+       |    Returns: OK (200) | NO_CONTENT (204)
        |
        |
        | GET /devices/<dev>/actors/<actor>/targets/last?status=<status>
        |
        |    Retrieve the last target created for such actor with such status
        |
-       |    Returns: OK (200) | EXPECTATION_FAILED (417)
+       |    Returns: OK (200) | NO_CONTENT (204)
        |
        |
     """.stripMargin
@@ -147,7 +147,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         val x = getDev(table, id)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
-          case None => ExpectationFailed(s"No $device properties found in ${table.code} with id $id")
+          case None => NoContent()
         }
       }
 
@@ -155,7 +155,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         val x = getDevLast(device, table)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
-          case None => ExpectationFailed(s"No $device properties found in ${table.code}")
+          case None => NoContent()
         }
       }
 
@@ -168,7 +168,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         val x = getDevActorTups(device, None, table, status, consume).map(t => ActorMapU.fromTups(t))
         x.flatMap { m =>
           if (m.isEmpty) {
-            ExpectationFailed(s"No $device properties found in ${table.code}" + status.map(" with status " + _).mkString(""))
+            NoContent()
           } else {
             Ok(m.asJson, ContentTypeAppJson)
           }
@@ -201,7 +201,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         val x = getDevActorTups(device, Some(actor), table, status, consume).map(PropsMapU.fromTups)
         x.flatMap { m =>
           if (m.isEmpty) {
-            ExpectationFailed(s"No $device/$actor properties found in ${table.code}" + status.map(" with status " + _).mkString(""))
+            NoContent()
           } else {
             Ok(m.asJson, ContentTypeAppJson)
           }
@@ -212,7 +212,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         val x = getLastDevActorTups(device, actor, table, status).map(PropsMapU.fromTups)
         x.flatMap { m =>
           if (m.isEmpty) {
-            ExpectationFailed(s"No $device/$actor properties found in ${table.code}" + status.map(" with status " + _).mkString(""))
+            NoContent()
           } else {
             Ok(m.asJson, ContentTypeAppJson)
           }
