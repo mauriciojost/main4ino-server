@@ -88,23 +88,6 @@ class Repository(transactor: Transactor[IO]) {
       .update.withUniqueGeneratedKeys[RecordId]("id")
   }
 
-  private def sqlSelectMetadataWhereDevice(table: Table, d: DeviceName, from: Option[Timestamp], to: Option[Timestamp], limit: Option[Int]): Stream[ConnectionIO, Metadata] = {
-    val fromFr = from match {
-      case Some(a) => fr"AND creation >= $a"
-      case None => fr""
-    }
-    val toFr = to match {
-      case Some(a) => fr"AND creation <= $a"
-      case None => fr""
-    }
-    val limitFr = limit match {
-      case Some(a) => fr"limit $a"
-      case None => fr""
-    }
-    (fr"SELECT id, creation, device_name FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE device_name=$d" ++ fromFr ++ toFr ++ limitFr)
-      .query[Metadata].stream
-  }
-
   private def sqlSelectMetadataActorTupWhereDevice(table: Table, d: DeviceName, from: Option[Timestamp], to: Option[Timestamp]): Stream[ConnectionIO, Device.Device1] = {
     val fromFr = from match {
       case Some(a) => fr"AND r.creation >= $a"

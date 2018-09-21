@@ -15,8 +15,6 @@ case class Device(
 			(propName, (propValue, status)) <- ps.toSeq
 		} yield (ActorTup(None, metadata.device, actor, propName, propValue, status))
 
-  def hasNoProperties: Boolean = actors.isEmpty
-
 }
 
 object Device {

@@ -35,8 +35,12 @@ class ServiceFuncSpec extends DbSuite {
     // Check the responses
 
     // Only the count of targets for dev1
-    val dev1TargetsCount = getExpectOk("/devices/dev1/actors/clock/targets/count?status=C")
-    dev1TargetsCount.noSpaces shouldBe CountResponse(4).asJson.noSpaces
+    val dev1TargetsCount = getExpectOk("/devices/dev1/targets/count?status=C")
+    dev1TargetsCount.noSpaces shouldBe CountResponse(6).asJson.noSpaces
+
+    // Only the count of targets for dev1 clock
+    val dev1ClockTargetsCount = getExpectOk("/devices/dev1/actors/clock/targets/count?status=C")
+    dev1ClockTargetsCount.noSpaces shouldBe CountResponse(4).asJson.noSpaces
 
     // The raw targets list for dev1 / clock
     val dev1ClockTarget = getExpectOk("/devices/dev1/actors/clock/targets?status=C&consume=false")
