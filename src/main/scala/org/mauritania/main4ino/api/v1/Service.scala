@@ -276,8 +276,11 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
   }
 
   private[v1] def getDevActorTups(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status], clean: Option[Boolean]) = {
-    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, clean.exists(identity))
-    actorTups.compile.toList
+    for {
+      logger <- Slf4jLogger.create[IO]
+      actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, clean.exists(identity)).compile.toList
+      _ <- logger.debug(s"GET actor tups of device $device actor $actor from table $table with status $status cleaning $clean: $actorTups")
+    } yield (actorTups)
   }
 
   private[v1] def getLastDevActorTups(device: DeviceName, actor: ActorName, table: Table, status: Option[Status]) = {
@@ -290,9 +293,12 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
     t.map(i => i.groupBy(_.requestId).toList.sortBy(_._1).map(v => PropsMapU.fromTups(v._2)))
   }
 
-  private[v1] def getDevActorCount(device: DeviceName, actor: Option[ActorName], table: Table, statusOp: Option[Status]) = {
-    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, actor, statusOp, false)
-    actorTups.compile.toList.map(_.size).map(CountResponse(_))
+  private[v1] def getDevActorCount(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status]) = {
+    for {
+      logger <- Slf4jLogger.create[IO]
+      count <- repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, false).compile.toList.map(_.size).map(CountResponse(_))
+      _ <- logger.debug(s"GET count of device $device actor $actor from table $table with status $status: $count")
+    } yield (count)
   }
 
 	private[v1] def request(r: Request[IO]): IO[Response[IO]] = serviceWithAuthentication.orNotFound(r)
