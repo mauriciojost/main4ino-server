@@ -6,8 +6,10 @@ val H2Version = "1.4.192"
 val FlywayVersion = "4.2.0"
 val CirceVersion = "0.6.1"
 val PureConfigVersion = "0.9.1"
-lazy val ScalaTestVersion = "3.0.4"
-lazy val ScalaMockVersion = "4.0.0"
+val ScalaTestVersion = "3.0.4"
+val ScalaMockVersion = "4.0.0"
+val log4CatsSlf4jVersion = "0.1.1"
+val slf4jLog4j12Version = "1.8.0-beta2"
 
 lazy val root = (project in file("."))
   .settings(
@@ -20,6 +22,8 @@ lazy val root = (project in file("."))
       "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
       "org.http4s" %% "http4s-circe" % Http4sVersion,
       "io.circe" %% "circe-generic" % CirceVersion,
+      "io.chrisdavenport" %% "log4cats-slf4j" % log4CatsSlf4jVersion,
+      "org.slf4j" % "slf4j-log4j12" % slf4jLog4j12Version,
       "org.http4s" %% "http4s-dsl" % Http4sVersion,
       "org.specs2" %% "specs2-core" % Specs2Version % "test",
       "org.http4s" %% "http4s-blaze-client" % Http4sVersion % "test",
@@ -29,7 +33,6 @@ lazy val root = (project in file("."))
       "com.h2database" % "h2" % H2Version,
       "org.flywaydb" % "flyway-core" % FlywayVersion,
       "com.github.pureconfig" %% "pureconfig" % PureConfigVersion,
-      "ch.qos.logback" % "logback-classic" % LogbackVersion,
       "org.scalatest" %% "scalatest" % ScalaTestVersion % "test",
       "org.scalamock" %% "scalamock" % ScalaMockVersion % "test"
     ),

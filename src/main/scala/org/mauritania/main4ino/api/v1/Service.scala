@@ -15,6 +15,7 @@ import org.mauritania.main4ino.helpers.Time
 import cats.data.{Kleisli, OptionT}
 import cats.effect.IO
 import fs2.Stream
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.{AuthedService, Request, Response}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
@@ -226,16 +227,21 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
 
   private[v1] def getDev(table: Table, id: RecordId) = {
     for {
-      t <- repository.selectDeviceWhereRequestId(table, id)
-      resp <- IO(t.map(DeviceU.fromBom))
-    } yield (resp)
+      logger <- Slf4jLogger.create[IO]
+      device <- repository.selectDeviceWhereRequestId(table, id)
+      deviceU <- IO.pure(device.map(DeviceU.fromBom))
+      _ <- logger.debug(s"GET device $id from table $table: $deviceU")
+    } yield (deviceU)
   }
 
   private[v1] def postDev(req: Request[IO], device: DeviceName, table: Table, t: Timestamp) = {
     implicit val x = JsonEncoding.StringDecoder
     for {
-      p <- req.decodeJson[ActorMapU]
-      id <- repository.insertDevice(table, DeviceU(MetadataU(None, Some(t), device), p).toBom)
+      logger <- Slf4jLogger.create[IO]
+      actorMapU <- req.decodeJson[ActorMapU]
+      deviceBom = DeviceU(MetadataU(None, Some(t), device), actorMapU).toBom
+      id <- repository.insertDevice(table, deviceBom)
+      _ <- logger.debug(s"POST device $device into table $table: $deviceBom / $id")
       resp <- IO(IdResponse(id))
     } yield (resp)
   }
@@ -243,23 +249,30 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
   private[v1] def postDevActor(req: Request[IO], device: DeviceName, actor: ActorName, table: Table, t: Timestamp) = {
     implicit val x = JsonEncoding.StringDecoder
     for {
+      logger <- Slf4jLogger.create[IO]
       p <- req.decodeJson[PropsMapU]
-      id <- repository.insertDevice(table, DeviceU(MetadataU(None, Some(t), device), Map(actor -> p)).toBom)
+      deviceBom = DeviceU(MetadataU(None, Some(t), device), Map(actor -> p)).toBom
+      id <- repository.insertDevice(table, deviceBom)
+      _ <- logger.debug(s"POST device $device (actor $actor) into table $table: $deviceBom / $id")
       resp <- IO(IdResponse(id))
     } yield (resp)
   }
 
   private[v1] def getDevLast(device: DeviceName, table: Table) = {
     for {
+      logger <- Slf4jLogger.create[IO]
       r <- repository.selectMaxDevice(table, device)
-      k <- IO(r.map(DeviceU.fromBom))
-    } yield (k)
+      deviceBom <- IO.pure(r.map(DeviceU.fromBom))
+      _ <- logger.debug(s"GET last device $device from table $table: $deviceBom")
+    } yield (deviceBom)
   }
 
   private[v1] def getDevAll(device: DeviceName, table: Table, from: Option[Timestamp], to: Option[Timestamp]) = {
     for {
-      r <- repository.selectDevicesWhereTimestamp(table, device, from, to).map(_.map(DeviceU.fromBom))
-    } yield (r)
+      logger <- Slf4jLogger.create[IO]
+      deviceBoms <- repository.selectDevicesWhereTimestamp(table, device, from, to).map(_.map(DeviceU.fromBom))
+      _ <- logger.debug(s"GET all devices $device from table $table from $from to $to: $deviceBoms")
+    } yield (deviceBoms)
   }
 
   private[v1] def getDevActorTups(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status], clean: Option[Boolean]) = {
