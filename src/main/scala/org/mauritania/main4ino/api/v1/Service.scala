@@ -227,7 +227,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
 
   private[v1] def getDev(table: Table, id: RecordId) = {
     for {
-      logger <- Slf4jLogger.create[IO]
+      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
       device <- repository.selectDeviceWhereRequestId(table, id)
       deviceU <- IO.pure(device.map(DeviceU.fromBom))
       _ <- logger.debug(s"GET device $id from table $table: $deviceU")
@@ -237,7 +237,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
   private[v1] def postDev(req: Request[IO], device: DeviceName, table: Table, t: Timestamp) = {
     implicit val x = JsonEncoding.StringDecoder
     for {
-      logger <- Slf4jLogger.create[IO]
+      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
       actorMapU <- req.decodeJson[ActorMapU]
       deviceBom = DeviceU(MetadataU(None, Some(t), device), actorMapU).toBom
       id <- repository.insertDevice(table, deviceBom)
@@ -249,7 +249,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
   private[v1] def postDevActor(req: Request[IO], device: DeviceName, actor: ActorName, table: Table, t: Timestamp) = {
     implicit val x = JsonEncoding.StringDecoder
     for {
-      logger <- Slf4jLogger.create[IO]
+      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
       p <- req.decodeJson[PropsMapU]
       deviceBom = DeviceU(MetadataU(None, Some(t), device), Map(actor -> p)).toBom
       id <- repository.insertDevice(table, deviceBom)
@@ -260,7 +260,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
 
   private[v1] def getDevLast(device: DeviceName, table: Table) = {
     for {
-      logger <- Slf4jLogger.create[IO]
+      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
       r <- repository.selectMaxDevice(table, device)
       deviceBom <- IO.pure(r.map(DeviceU.fromBom))
       _ <- logger.debug(s"GET last device $device from table $table: $deviceBom")
@@ -269,7 +269,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
 
   private[v1] def getDevAll(device: DeviceName, table: Table, from: Option[Timestamp], to: Option[Timestamp]) = {
     for {
-      logger <- Slf4jLogger.create[IO]
+      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
       deviceBoms <- repository.selectDevicesWhereTimestamp(table, device, from, to).map(_.map(DeviceU.fromBom))
       _ <- logger.debug(s"GET all devices $device from table $table from $from to $to: $deviceBoms")
     } yield (deviceBoms)
@@ -277,7 +277,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
 
   private[v1] def getDevActorTups(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status], clean: Option[Boolean]) = {
     for {
-      logger <- Slf4jLogger.create[IO]
+      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
       actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, clean.exists(identity)).compile.toList
       _ <- logger.debug(s"GET actor tups of device $device actor $actor from table $table with status $status cleaning $clean: $actorTups")
     } yield (actorTups)
@@ -295,7 +295,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
 
   private[v1] def getDevActorCount(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status]) = {
     for {
-      logger <- Slf4jLogger.create[IO]
+      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
       count <- repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, false).compile.toList.map(_.size).map(CountResponse(_))
       _ <- logger.debug(s"GET count of device $device actor $actor from table $table with status $status: $count")
     } yield (count)
