@@ -28,14 +28,19 @@
     "patterns": ["^.*\\.freq$"],
     "descriptions": ["Frequency at which the actor will act and perform its duty. See <a href=\"https://bitbucket.org/mauriciojost/main4ino-arduino/src/master/README.m\" target=\"_blank\">here</a>."],
     "examples": [
-      "000000000 -> never",
-      "1DDHHMMSS -> fixed month-day/hour/minute/second",
-      "177120000 -> any day at midday",
-      "2DDHHMMSS -> modulo frequency",
-      "201012260 -> match every 22 minutes",
-      "3xxxxxxxx -> match every given period in seconds",
-      "300000099 -> match every 99 seconds",
-      "400000000 -> match once and go back to previous configuration"
+      "never     -> Never",
+      "000000000 -> Never",
+      "at08h00   -> At 08h00 every day",
+      "1DDHHMMSS -> Fixed month-day/hour/minute/second",
+      "177120000 -> Any day at midday",
+      "2DDHHMMSS -> Modulo frequency",
+      "201012260 -> Every 22 minutes",
+      "every30m  -> Every 30 minutes",
+      "every10s  -> Every 10 seconds",
+      "3xxxxxxxx -> Every given period in seconds",
+      "300000099 -> Every 99 seconds",
+      "oneoff    -> Once and go back to previous configuration",
+      "400000000 -> Once and go back to previous configuration"
     ]
   },
   {
