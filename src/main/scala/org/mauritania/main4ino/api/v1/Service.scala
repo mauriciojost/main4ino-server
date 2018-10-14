@@ -296,8 +296,9 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
   private[v1] def getDevActorCount(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status]) = {
     for {
       logger <- Slf4jLogger.fromClass[IO](Service.getClass)
-      count <- repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, false).compile.toList.map(_.size).map(CountResponse(_))
-      _ <- logger.debug(s"GET count of device $device actor $actor from table $table with status $status: $count")
+      actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, false).compile.toList
+      count <- IO.pure(CountResponse(actorTups.size))
+      _ <- logger.debug(s"GET count of device $device actor $actor from table $table with status $status: $count ($actorTups)")
     } yield (count)
   }
 
