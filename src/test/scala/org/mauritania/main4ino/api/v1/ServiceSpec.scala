@@ -125,7 +125,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers {
         ))).once()
 
       val r1 = s.getDevActors("dev1", "clock", Table.Targets, Some(S.Created), None)
-      val r1m = r1.compile.toList.unsafeRunSync().head.toSet
+      val r1m = r1.unsafeRunSync().toSet
 
       r1m shouldBe Set(
         Map("h" -> "7"),

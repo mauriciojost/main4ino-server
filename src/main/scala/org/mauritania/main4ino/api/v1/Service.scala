@@ -225,7 +225,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
   val serviceWithAuthentication: HttpService[IO] = middleware(service)
 
 
-  private[v1] def getDev(table: Table, id: RecordId) = {
+  private[v1] def getDev(table: Table, id: RecordId): IO[Option[DeviceU]] = {
     for {
       logger <- Slf4jLogger.fromClass[IO](Service.getClass)
       device <- repository.selectDeviceWhereRequestId(table, id)
@@ -234,7 +234,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
     } yield (deviceU)
   }
 
-  private[v1] def postDev(req: Request[IO], device: DeviceName, table: Table, t: Timestamp) = {
+  private[v1] def postDev(req: Request[IO], device: DeviceName, table: Table, t: Timestamp): IO[IdResponse] = {
     implicit val x = JsonEncoding.StringDecoder
     for {
       logger <- Slf4jLogger.fromClass[IO](Service.getClass)
@@ -246,7 +246,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
     } yield (resp)
   }
 
-  private[v1] def postDevActor(req: Request[IO], device: DeviceName, actor: ActorName, table: Table, t: Timestamp) = {
+  private[v1] def postDevActor(req: Request[IO], device: DeviceName, actor: ActorName, table: Table, t: Timestamp): IO[IdResponse] = {
     implicit val x = JsonEncoding.StringDecoder
     for {
       logger <- Slf4jLogger.fromClass[IO](Service.getClass)
@@ -258,7 +258,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
     } yield (resp)
   }
 
-  private[v1] def getDevLast(device: DeviceName, table: Table) = {
+  private[v1] def getDevLast(device: DeviceName, table: Table): IO[Option[DeviceU]] = {
     for {
       logger <- Slf4jLogger.fromClass[IO](Service.getClass)
       r <- repository.selectMaxDevice(table, device)
@@ -267,7 +267,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
     } yield (deviceBom)
   }
 
-  private[v1] def getDevAll(device: DeviceName, table: Table, from: Option[Timestamp], to: Option[Timestamp]) = {
+  private[v1] def getDevAll(device: DeviceName, table: Table, from: Option[Timestamp], to: Option[Timestamp]): IO[Iterable[DeviceU]] = {
     for {
       logger <- Slf4jLogger.fromClass[IO](Service.getClass)
       deviceBoms <- repository.selectDevicesWhereTimestamp(table, device, from, to).map(_.map(DeviceU.fromBom))
@@ -275,7 +275,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
     } yield (deviceBoms)
   }
 
-  private[v1] def getDevActorTups(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status], clean: Option[Boolean]) = {
+  private[v1] def getDevActorTups(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status], clean: Option[Boolean]): IO[Iterable[ActorTup]] = {
     for {
       logger <- Slf4jLogger.fromClass[IO](Service.getClass)
       actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, clean.exists(identity)).compile.toList
@@ -287,13 +287,18 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
     repository.selectMaxActorTupsStatus(table, device, actor, status)
   }
 
-  private[v1] def getDevActors(device: DeviceName, actor: ActorName, table: Table, status: Option[Status], clean: Option[Boolean]) = {
-    val actorTups = repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), status, clean.exists(identity))
-    val t = actorTups.fold(List.empty[ActorTup])(_ :+ _)
-    t.map(i => i.groupBy(_.requestId).toList.sortBy(_._1).map(v => PropsMapU.fromTups(v._2)))
+  private[v1] def getDevActors(device: DeviceName, actor: ActorName, table: Table, status: Option[Status], clean: Option[Boolean]): IO[Iterable[PropsMapU]] = {
+    for {
+      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
+      actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), status, clean.exists(identity)).compile.toList
+      propsMaps <- IO.pure(actorTups.groupBy(_.requestId).toList.sortBy(_._1))
+      propsMapsU <- IO.pure(propsMaps.map(v => PropsMapU.fromTups(v._2)))
+      _ <- logger.debug(s"GET device actors device $device actor $actor from table $table with status $status and clean $clean: $propsMaps ($actorTups)")
+    } yield (propsMapsU)
   }
 
-  private[v1] def getDevActorCount(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status]) = {
+
+  private[v1] def getDevActorCount(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status]): IO[CountResponse] = {
     for {
       logger <- Slf4jLogger.fromClass[IO](Service.getClass)
       actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, false).compile.toList
