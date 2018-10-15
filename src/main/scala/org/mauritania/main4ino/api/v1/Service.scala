@@ -14,12 +14,10 @@ import org.mauritania.main4ino.api.v1.PropsMapU.PropsMapU
 import org.mauritania.main4ino.helpers.Time
 import cats.data.{Kleisli, OptionT}
 import cats.effect.IO
-import fs2.Stream
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.{AuthedService, Request, Response}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
-import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.security.{Authentication, User}
 
 class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO] {
@@ -27,10 +25,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
   import Service._
   import Url._
 
-  val onFailure: AuthedService[String, IO] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
-  val middleware = AuthMiddleware(auth.authUser, onFailure)
-
-  val HelpMsg =
+  private val HelpMsg =
     s"""
        | API HELP
        | --- ----
@@ -129,22 +124,21 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
        |
     """.stripMargin
 
-
-  val service = AuthedService[User, IO] {
+  private[v1] val service = AuthedService[User, IO] {
 
       // Help
 
-      case GET -> _ / "help" as user =>
+      case GET -> _ / "help" as _ =>
         Ok(HelpMsg, ContentTypeTextPlain)
 
       // Targets & Reports (at device level)
 
-      case a@POST -> _ / "devices" / S(device) / T(table) as user => {
+      case a@POST -> _ / "devices" / S(device) / T(table) as _ => {
         val x = postDev(a.req, device, table, Time.now)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / S(device) / T(table) / LongVar(id) as user => {
+      case a@GET -> _ / "devices" / S(device) / T(table) / LongVar(id) as _ => {
         val x = getDev(table, id)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -152,7 +146,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         }
       }
 
-      case a@GET -> _ / "devices" / S(device) / T(table) / "last" as user => {
+      case a@GET -> _ / "devices" / S(device) / T(table) / "last" as _ => {
         val x = getDevLast(device, table)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -160,12 +154,12 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         }
       }
 
-      case a@GET -> _ / "devices" / S(device) / T(table) :? FromP(from) +& ToP(to) as user => {
+      case a@GET -> _ / "devices" / S(device) / T(table) :? FromP(from) +& ToP(to) as _ => {
         val x = getDevAll(device, table, from, to)
         Ok(x.map(_.asJson.noSpaces), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / S(device) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as user => {
+      case a@GET -> _ / "devices" / S(device) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as _ => {
         val x = getDevActorTups(device, None, table, status, consume).map(t => ActorMapU.fromTups(t))
         x.flatMap { m =>
           if (m.isEmpty) {
@@ -176,29 +170,29 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         }
       }
 
-      case a@GET -> _ / "devices" / S(device) / T(table) / "count" :? StatusP(status) as user => {
+      case a@GET -> _ / "devices" / S(device) / T(table) / "count" :? StatusP(status) as _ => {
         val x = getDevActorCount(device, None, table, status)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
       // Targets & Reports (at device-actor level)
 
-      case a@POST -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) as user => {
+      case a@POST -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) as _ => {
         val x = postDevActor(a.req, device, actor, table, Time.now)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) / "count" :? StatusP(status) as user => {
+      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) / "count" :? StatusP(status) as _ => {
         val x = getDevActorCount(device, Some(actor), table, status)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) :? StatusP(status) +& ConsumeP(consume) as user => {
+      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) :? StatusP(status) +& ConsumeP(consume) as _ => {
         val x = getDevActors(device, actor, table, status, consume)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as user => {
+      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as _ => {
         val x = getDevActorTups(device, Some(actor), table, status, consume).map(PropsMapU.fromTups)
         x.flatMap { m =>
           if (m.isEmpty) {
@@ -209,7 +203,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
         }
       }
 
-      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) / "last" :? StatusP(status) as user => {
+      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) / "last" :? StatusP(status) as _ => {
         val x = getLastDevActorTups(device, actor, table, status).map(PropsMapU.fromTups)
         x.flatMap { m =>
           if (m.isEmpty) {
@@ -221,9 +215,6 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
       }
 
     }
-
-  val serviceWithAuthentication: HttpService[IO] = middleware(service)
-
 
   private[v1] def getDev(table: Table, id: RecordId): IO[Option[DeviceU]] = {
     for {
@@ -307,7 +298,11 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
     } yield (count)
   }
 
-	private[v1] def request(r: Request[IO]): IO[Response[IO]] = serviceWithAuthentication.orNotFound(r)
+
+  private[v1] val onFailure: AuthedService[String, IO] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
+  private[v1] val customAuthMiddleware: AuthMiddleware[IO, User] = AuthMiddleware(auth.authUserFromRequest, onFailure)
+  val serviceWithAuthentication: HttpService[IO] = customAuthMiddleware(service)
+  private[v1] def request(r: Request[IO]): IO[Response[IO]] = serviceWithAuthentication.orNotFound(r)
 
 }
 
@@ -320,3 +315,4 @@ object Service {
   case class CountResponse(count: Int)
 
 }
+

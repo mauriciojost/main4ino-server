@@ -32,11 +32,11 @@ class Authentication(config: Config) {
     fromHeader.orElse(fromUri).toRight("Header 'Authorization' not present and no .../token/<token>/... in uri")
   }
 
-  def discardToken(path: Path): Path = {
+  private def discardToken(path: Path): Path = {
     UriTokenRegex.findFirstMatchIn(path).map(m => m.group(1) + "/" + m.group(3)).getOrElse(path)
   }
 
-  val authUser: Kleisli[IO, Request[IO], Either[String, User]] = Kleisli({ request =>
+  val authUserFromRequest: Kleisli[IO, Request[IO], Either[String, User]] = Kleisli({ request =>
     IO {
       val user = for {
         tkn <- retrieveToken(request)
