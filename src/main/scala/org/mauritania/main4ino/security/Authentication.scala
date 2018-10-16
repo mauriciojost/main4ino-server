@@ -38,7 +38,7 @@ class Authentication(config: Config) {
 
   val authUserFromRequest: Kleisli[IO, Request[IO], Either[String, User]] = Kleisli({ request =>
     IO {
-      val user = for {
+      val user: Either[String, User] = for {
         tkn <- retrieveToken(request)
         user <- retrieveUser(tkn, discardToken(request.uri.path))
       } yield (user)

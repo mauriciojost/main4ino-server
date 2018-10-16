@@ -134,7 +134,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
       // Targets & Reports (at device level)
 
       case a@POST -> _ / "devices" / S(device) / T(table) as _ => {
-        val x = postDev(a.req, device, table, Time.now)
+        val x = postDev(a.req, device, table, Time.nowTimestamp)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
@@ -178,7 +178,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
       // Targets & Reports (at device-actor level)
 
       case a@POST -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) as _ => {
-        val x = postDevActor(a.req, device, actor, table, Time.now)
+        val x = postDevActor(a.req, device, actor, table, Time.nowTimestamp)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
