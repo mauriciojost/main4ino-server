@@ -1,5 +1,6 @@
 package org.mauritania.main4ino.models
 
+import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.ActorMap.ActorMap
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.PropsMap.PropsMap
@@ -15,6 +16,14 @@ case class Device(
 			(propName, (propValue, status)) <- ps.toSeq
 		} yield (ActorTup(None, metadata.device, actor, propName, propValue, status))
 
+	override def toString(): String = {
+		this.getClass.getSimpleName + "(\n" +
+      "  id       : " + metadata.id.mkString + "\n" +
+      "  device   : " + metadata.device + "\n" +
+      "  timestamp: " + metadata.timestamp.map(Time.toString).mkString + "\n" +
+      "  actors   : \n" + actors.map{case (a, p) => s"    - $a: ${p.map{case (k, (v, s)) => s"$k=$v($s)"}.mkString(", ")} \n"}.mkString +
+		")"
+	}
 }
 
 object Device {
