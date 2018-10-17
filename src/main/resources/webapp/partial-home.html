@@ -1,9 +1,33 @@
-<div class="jumbotron text-center">
+<div class="page-header">
+    <h2>Home</h2>
+</div>
 
-    <h1>Botino BE</h1>
+<div ng-controller="HomeController">
 
-    <p>Welcome to the web portal of Botino Back-End</p>
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <container>
+                <h3>1. Specify your token</h3>
+                <br/>
+                <div>
+                    <input type="password" name="token" class="form-control" ng-model="token" placeholder="Token"/>
+                </div>
+            </container>
+        </div>
+    </div>
+
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <container>
+                <h3>2. Login</h3>
+                <br/>
+                <div class="text-center">
+                    <button ng-click="login();" type="button" class="btn btn-lg btn-primary">Search</button>
+                </div>
+                <br/>
+            </container>
+        </div>
+    </div>
 
 </div>
 
-<div ui-view></div>

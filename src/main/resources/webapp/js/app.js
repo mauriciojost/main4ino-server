@@ -1,5 +1,30 @@
 var webPortalApp = angular.module('webPortalApp', ['ui.router', 'ngSanitize']);
 
+function setCookie(name,value,days) {
+    var expires = "";
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days*24*60*60*1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+}
+
+function getCookie(name) {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0;i < ca.length;i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+}
+
+function eraseCookie(name) {
+    document.cookie = name+'=; Max-Age=-99999999;';
+}
+
 webPortalApp.config(function($stateProvider, $urlRouterProvider) {
     
     $urlRouterProvider.otherwise('/home');
@@ -9,17 +34,17 @@ webPortalApp.config(function($stateProvider, $urlRouterProvider) {
     $stateProvider
         
         .state('home', {
-            url: '/home?device&token',
+            url: '/home?device',
             templateUrl: 'partial-home.html'
         })
         
         .state('history', {
-            url: '/history?device&token',
+            url: '/history?device',
             templateUrl: 'partial-history.html'
         })
 
         .state('summary', {
-            url: '/summary?device&token',
+            url: '/summary?device',
             templateUrl: 'partial-summary.html'
         })
 
@@ -29,25 +54,27 @@ webPortalApp.controller(
     'HomeController',
         function($scope, $http, $log, $location, $state) {
 
-            $scope.device = $location.search().device;
-            $scope.token = $location.search().token;
-
-            $log.log('Device: ' + $scope.device);
+            $scope.token = getCookie("authcookie");
             $log.log('Token: ' + $scope.token);
+
+            $scope.login = function() {
+              $log.log('Login: ' + $scope.token);
+              setCookie("authcookie", $scope.token, 100);
+            }
 
             $scope.goHome = function() {
               $log.log('Going home');
-              $state.go('home', {device: $scope.device, token: $scope.token})
+              $state.go('home', {device: $scope.device})
             }
 
             $scope.goHistory = function() {
               $log.log('Going to history');
-              $state.go('history', {device: $scope.device, token: $scope.token})
+              $state.go('history', {device: $scope.device})
             }
 
             $scope.goSummary = function() {
               $log.log('Going to summary');
-              $state.go('summary', {device: $scope.device, token: $scope.token})
+              $state.go('summary', {device: $scope.device})
             }
 
         }
@@ -58,7 +85,7 @@ webPortalApp.controller(
         function($scope, $http, $log, $location) {
 
             $scope.device = $location.search().device;
-            $scope.token = $location.search().token;
+            $scope.token = getCookie("authcookie");
 
             $log.log('Device: ' + $scope.device);
             $log.log('Token: ' + $scope.token);
@@ -105,7 +132,7 @@ webPortalApp.controller(
         function($scope, $http, $log, $location, $sanitize) {
 
             $scope.device = $location.search().device;
-            $scope.token = $location.search().token;
+            $scope.token = getCookie("authcookie");
 
             $log.log('Device: ' + $scope.device);
             $log.log('Token: ' + $scope.token);

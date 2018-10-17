@@ -2,7 +2,7 @@ package org.mauritania.main4ino.security
 
 import cats.data.Kleisli
 import cats.effect.IO
-import org.http4s.Request
+import org.http4s.{Request, headers}
 import org.http4s.Uri.Path
 import org.http4s.headers.Authorization
 import org.mauritania.main4ino.security.Authentication.Token
@@ -29,7 +29,9 @@ class Authentication(config: Config) {
       request.headers.get(Authorization).flatMap(v => HeaderTokenRegex.findFirstMatchIn(v.value)).flatMap(a => Try(a.group(1)).toOption)
     val fromUri =
       UriTokenRegex.findFirstMatchIn(request.uri.path).flatMap(a => Try(a.group(2)).toOption)
-    fromHeader.orElse(fromUri).toRight("Header 'Authorization' not present and no .../token/<token>/... in uri")
+    val fromCookie =
+      headers.Cookie.from(request.headers).flatMap(_.values.toList.find(_.name == "authcookie").map(_.content))
+    fromHeader.orElse(fromUri).orElse(fromCookie).toRight("Header 'Authorization' not present, no .../token/<token>/... in uri, no authcookie")
   }
 
   private def discardToken(path: Path): Path = {
