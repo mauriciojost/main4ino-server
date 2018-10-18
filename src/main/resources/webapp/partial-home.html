@@ -7,9 +7,10 @@
     <div class="panel panel-info">
         <div class="panel-heading">
             <container>
-                <h3>1. Specify your token</h3>
+                <h3>1. Specify your default settings</h3>
                 <br/>
                 <div>
+                    <input type="text" name="device" class="form-control" ng-model="device" placeholder="Device"/>
                     <input type="password" name="token" class="form-control" ng-model="token" placeholder="Token"/>
                 </div>
             </container>
@@ -19,10 +20,10 @@
     <div class="panel panel-info">
         <div class="panel-heading">
             <container>
-                <h3>2. Login</h3>
+                <h3>2. Remember settings</h3>
                 <br/>
                 <div class="text-center">
-                    <button ng-click="login();" type="button" class="btn btn-lg btn-primary">Search</button>
+                    <button ng-click="rememberCredentials();" type="button" class="btn btn-lg btn-primary">Remember</button>
                 </div>
                 <br/>
             </container>

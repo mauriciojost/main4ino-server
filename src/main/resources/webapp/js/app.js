@@ -54,12 +54,20 @@ webPortalApp.controller(
     'HomeController',
         function($scope, $http, $log, $location, $state) {
 
+            $scope.device = getCookie("device");
             $scope.token = getCookie("authcookie");
+            $log.log('Device: ' + $scope.device);
             $log.log('Token: ' + $scope.token);
 
-            $scope.login = function() {
+            $scope.rememberCredentials = function() {
               $log.log('Login: ' + $scope.token);
               setCookie("authcookie", $scope.token, 100);
+              $log.log('Device: ' + $scope.device);
+              setCookie("device", $scope.device, 100);
+              BootstrapDialog.show({
+                  title: 'Settings',
+                  message: 'Your preferences are now stored in your browser.'
+              });
             }
 
             $scope.goHome = function() {
@@ -82,9 +90,9 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     'HistoryController',
-        function($scope, $http, $log, $location) {
+        function($scope, $http, $log) {
 
-            $scope.device = $location.search().device;
+            $scope.device = getCookie("device");
             $scope.token = getCookie("authcookie");
 
             $log.log('Device: ' + $scope.device);
@@ -133,9 +141,9 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     'SummaryController',
-        function($scope, $http, $log, $location, $sanitize) {
+        function($scope, $http, $log) {
 
-            $scope.device = $location.search().device;
+            $scope.device = getCookie("device");
             $scope.token = getCookie("authcookie");
 
             $log.log('Device: ' + $scope.device);
