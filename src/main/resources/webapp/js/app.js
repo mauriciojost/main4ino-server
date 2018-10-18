@@ -117,6 +117,10 @@ webPortalApp.controller(
                     function(data) {
                         $log.log('Problem requesting: ' + JSON.stringify(data));
                         $scope.result = '[]'
+                        BootstrapDialog.show({
+                            title: 'Error',
+                            message: 'Failed to retrieve history: ' + data
+                        });
                     }
                 );
 
