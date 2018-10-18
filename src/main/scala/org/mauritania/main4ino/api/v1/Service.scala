@@ -14,10 +14,12 @@ import org.mauritania.main4ino.api.v1.PropsMapU.PropsMapU
 import org.mauritania.main4ino.helpers.Time
 import cats.data.{Kleisli, OptionT}
 import cats.effect.IO
+import cats.implicits._
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.{AuthedService, Request, Response}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
+import org.mauritania.main4ino.security.Authentication.AuthAttempt
 import org.mauritania.main4ino.security.{Authentication, User}
 
 class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO] {
@@ -262,7 +264,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
     for {
       logger <- Slf4jLogger.fromClass[IO](Service.getClass)
       deviceBoms <- repository.selectDevicesWhereTimestamp(table, device, from, to).map(_.map(DeviceU.fromBom))
-      _ <- logger.debug(s"GET all devices $device from table $table from $from to $to: $deviceBoms")
+      _ <- logger.debug(s"GET all devices $device from table $table from time $from until $to: $deviceBoms")
     } yield (deviceBoms)
   }
 
@@ -299,8 +301,20 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
   }
 
 
+  val logAuth: Kleisli[IO, AuthAttempt, AuthAttempt] = Kleisli({ user =>
+    for {
+      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
+      msg = user match {
+        case Right(i) => s">>> Authenticated: ${i.name} ${i.email}"
+        case Left(m) => s">>> Failed to authenticate: $m"
+      }
+      _ <- logger.debug(msg)
+    } yield (user)
+  })
+
   private[v1] val onFailure: AuthedService[String, IO] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
-  private[v1] val customAuthMiddleware: AuthMiddleware[IO, User] = AuthMiddleware(auth.authUserFromRequest, onFailure)
+  private[v1] val customAuthMiddleware: AuthMiddleware[IO, User] =
+    AuthMiddleware(auth.authUser andThen logAuth, onFailure)
   val serviceWithAuthentication: HttpService[IO] = customAuthMiddleware(service)
   private[v1] def request(r: Request[IO]): IO[Response[IO]] = serviceWithAuthentication.orNotFound(r)
 
