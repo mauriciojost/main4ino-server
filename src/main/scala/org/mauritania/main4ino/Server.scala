@@ -11,7 +11,7 @@ import org.mauritania.main4ino.security.Authentication
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object Server extends StreamApp[IO] with Http4sDsl[IO] {
+object Server extends StreamApp[IO] {
 
   // TODO use better IOApp as StreamApp is being removed from fs2
   def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
