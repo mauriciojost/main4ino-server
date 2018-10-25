@@ -1,10 +1,11 @@
 package org.mauritania.main4ino.api.v1
 
+import cats.Monad
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
 import org.http4s.{HttpService, MediaType}
-import org.mauritania.main4ino.Repository
+import org.mauritania.main4ino.{Repository, RepositoryT}
 import org.mauritania.main4ino.models._
 import org.http4s.headers.`Content-Type`
 import org.mauritania.main4ino.Repository.Table.Table
@@ -13,16 +14,16 @@ import org.mauritania.main4ino.api.v1.DeviceU.MetadataU
 import org.mauritania.main4ino.api.v1.PropsMapU.PropsMapU
 import org.mauritania.main4ino.helpers.Time
 import cats.data.{Kleisli, OptionT}
-import cats.effect.IO
+import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.{AuthedService, Request, Response}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.mauritania.main4ino.security.Authentication.AuthAttempt
-import org.mauritania.main4ino.security.{Authentication, User}
+import org.mauritania.main4ino.security.{Authentication, AuthenticationT, User}
 
-class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO] {
+class Service[F[_]: Sync](auth: AuthenticationT[F], repository: RepositoryT[F]) extends Http4sDsl[F] {
 
   import Service._
   import Url._
@@ -126,7 +127,7 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
        |
     """.stripMargin
 
-  private[v1] val service = AuthedService[User, IO] {
+  private[v1] val service = AuthedService[User, F] {
 
       // Help
 
@@ -218,59 +219,59 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
 
     }
 
-  private[v1] def getDev(table: Table, id: RecordId): IO[Option[DeviceU]] = {
+  private[v1] def getDev(table: Table, id: RecordId): F[Option[DeviceU]] = {
     for {
-      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
+      logger <- Slf4jLogger.fromClass[F](Service.getClass)
       device <- repository.selectDeviceWhereRequestId(table, id)
-      deviceU <- IO.pure(device.map(DeviceU.fromBom))
+      deviceU = device.map(DeviceU.fromBom)
       _ <- logger.debug(s"GET device $id from table $table: $deviceU")
     } yield (deviceU)
   }
 
-  private[v1] def postDev(req: Request[IO], device: DeviceName, table: Table, t: Timestamp): IO[IdResponse] = {
+  private[v1] def postDev(req: Request[F], device: DeviceName, table: Table, t: Timestamp): F[IdResponse] = {
     implicit val x = JsonEncoding.StringDecoder
     for {
-      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
+      logger <- Slf4jLogger.fromClass[F](Service.getClass)
       actorMapU <- req.decodeJson[ActorMapU]
       deviceBom = DeviceU(MetadataU(None, Some(t), device), actorMapU).toBom
       id <- repository.insertDevice(table, deviceBom)
       _ <- logger.debug(s"POST device $device into table $table: $deviceBom / $id")
-      resp <- IO(IdResponse(id))
+      resp = IdResponse(id)
     } yield (resp)
   }
 
-  private[v1] def postDevActor(req: Request[IO], device: DeviceName, actor: ActorName, table: Table, t: Timestamp): IO[IdResponse] = {
+  private[v1] def postDevActor(req: Request[F], device: DeviceName, actor: ActorName, table: Table, t: Timestamp): F[IdResponse] = {
     implicit val x = JsonEncoding.StringDecoder
     for {
-      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
+      logger <- Slf4jLogger.fromClass[F](Service.getClass)
       p <- req.decodeJson[PropsMapU]
       deviceBom = DeviceU(MetadataU(None, Some(t), device), Map(actor -> p)).toBom
       id <- repository.insertDevice(table, deviceBom)
       _ <- logger.debug(s"POST device $device (actor $actor) into table $table: $deviceBom / $id")
-      resp <- IO(IdResponse(id))
+      resp = IdResponse(id)
     } yield (resp)
   }
 
-  private[v1] def getDevLast(device: DeviceName, table: Table): IO[Option[DeviceU]] = {
+  private[v1] def getDevLast(device: DeviceName, table: Table): F[Option[DeviceU]] = {
     for {
-      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
+      logger <- Slf4jLogger.fromClass[F](Service.getClass)
       r <- repository.selectMaxDevice(table, device)
-      deviceBom <- IO.pure(r.map(DeviceU.fromBom))
+      deviceBom = r.map(DeviceU.fromBom)
       _ <- logger.debug(s"GET last device $device from table $table: $deviceBom")
     } yield (deviceBom)
   }
 
-  private[v1] def getDevAll(device: DeviceName, table: Table, from: Option[Timestamp], to: Option[Timestamp]): IO[Iterable[DeviceU]] = {
+  private[v1] def getDevAll(device: DeviceName, table: Table, from: Option[Timestamp], to: Option[Timestamp]): F[Iterable[DeviceU]] = {
     for {
-      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
+      logger <- Slf4jLogger.fromClass[F](Service.getClass)
       deviceBoms <- repository.selectDevicesWhereTimestamp(table, device, from, to).map(_.map(DeviceU.fromBom))
       _ <- logger.debug(s"GET all devices $device from table $table from time $from until $to: $deviceBoms")
     } yield (deviceBoms)
   }
 
-  private[v1] def getDevActorTups(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status], clean: Option[Boolean]): IO[Iterable[ActorTup]] = {
+  private[v1] def getDevActorTups(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status], clean: Option[Boolean]): F[Iterable[ActorTup]] = {
     for {
-      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
+      logger <- Slf4jLogger.fromClass[F](Service.getClass)
       actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, clean.exists(identity)).compile.toList
       _ <- logger.debug(s"GET actor tups of device $device actor $actor from table $table with status $status cleaning $clean: $actorTups")
     } yield (actorTups)
@@ -280,43 +281,43 @@ class Service(auth: Authentication, repository: Repository) extends Http4sDsl[IO
     repository.selectMaxActorTupsStatus(table, device, actor, status)
   }
 
-  private[v1] def getDevActors(device: DeviceName, actor: ActorName, table: Table, status: Option[Status], clean: Option[Boolean]): IO[Iterable[PropsMapU]] = {
+  private[v1] def getDevActors(device: DeviceName, actor: ActorName, table: Table, status: Option[Status], clean: Option[Boolean]): F[Iterable[PropsMapU]] = {
     for {
-      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
+      logger <- Slf4jLogger.fromClass[F](Service.getClass)
       actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), status, clean.exists(identity)).compile.toList
-      propsMaps <- IO.pure(actorTups.groupBy(_.requestId).toList.sortBy(_._1))
-      propsMapsU <- IO.pure(propsMaps.map(v => PropsMapU.fromTups(v._2)))
+      propsMaps = actorTups.groupBy(_.requestId).toList.sortBy(_._1)
+      propsMapsU = propsMaps.map(v => PropsMapU.fromTups(v._2))
       _ <- logger.debug(s"GET device actors device $device actor $actor from table $table with status $status and clean $clean: $propsMaps ($actorTups)")
     } yield (propsMapsU)
   }
 
 
-  private[v1] def getDevActorCount(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status]): IO[CountResponse] = {
+  private[v1] def getDevActorCount(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status]): F[CountResponse] = {
     for {
-      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
+      logger <- Slf4jLogger.fromClass[F](Service.getClass)
       actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, false).compile.toList
-      count <- IO.pure(CountResponse(actorTups.size))
+      count = CountResponse(actorTups.size)
       _ <- logger.debug(s"GET count of device $device actor $actor from table $table with status $status: $count ($actorTups)")
     } yield (count)
   }
 
 
-  val logAuth: Kleisli[IO, AuthAttempt, AuthAttempt] = Kleisli({ user =>
+  def logAuthentication(user: AuthAttempt): F[AuthAttempt] = {
     for {
-      logger <- Slf4jLogger.fromClass[IO](Service.getClass)
+      logger <- Slf4jLogger.fromClass[F](Service.getClass)
       msg = user match {
         case Right(i) => s">>> Authenticated: ${i.name} ${i.email}"
         case Left(m) => s">>> Failed to authenticate: $m"
       }
       _ <- logger.debug(msg)
     } yield (user)
-  })
+  }
 
-  private[v1] val onFailure: AuthedService[String, IO] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
-  private[v1] val customAuthMiddleware: AuthMiddleware[IO, User] =
-    AuthMiddleware(auth.authUser andThen logAuth, onFailure)
-  val serviceWithAuthentication: HttpService[IO] = customAuthMiddleware(service)
-  private[v1] def request(r: Request[IO]): IO[Response[IO]] = serviceWithAuthentication.orNotFound(r)
+  private[v1] val onFailure: AuthedService[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
+  private[v1] val customAuthMiddleware: AuthMiddleware[F, User] =
+    AuthMiddleware(Kleisli(auth.authenticateUser) andThen Kleisli(logAuthentication), onFailure)
+  val serviceWithAuthentication: HttpService[F] = customAuthMiddleware(service)
+  private[v1] def request(r: Request[F]): F[Response[F]] = serviceWithAuthentication.orNotFound(r)
 
 }
 

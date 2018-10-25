@@ -11,8 +11,20 @@ import org.mauritania.main4ino.models._
 import fs2.Stream
 import org.mauritania.main4ino.Repository.Table.Table
 
+trait RepositoryT[F[_]] {
+
+  def insertDevice(table: Table, t: Device): F[RecordId]
+  def selectDeviceWhereRequestId(table: Table, requestId: RecordId): F[Option[Device]]
+  def selectDevicesWhereTimestamp(table: Table, device: DeviceName, from: Option[Timestamp], to: Option[Timestamp]): F[Iterable[Device]]
+  def selectMaxDevice(table: Table, device: DeviceName): F[Option[Device]]
+  def selectMaxActorTupsStatus(table: Table, device: DeviceName, actor: ActorName, status: Option[Status]): F[List[ActorTup]]
+  def selectActorTupWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[Status], consume: Boolean): Stream[F, ActorTup]
+  def selectRequestIdsWhereDevice(table: Table, d: DeviceName): Stream[F, RecordId]
+
+}
+
 // Naming regarding to SQL
-class Repository(transactor: Transactor[IO]) {
+class Repository(transactor: Transactor[IO]) extends RepositoryT[IO] {
 
   def insertDevice(table: Table, t: Device): IO[RecordId] = {
     val transaction = for {

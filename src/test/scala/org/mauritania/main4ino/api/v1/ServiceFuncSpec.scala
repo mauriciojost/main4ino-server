@@ -153,24 +153,24 @@ class ServiceFuncSpec extends DbSuite {
 
   }
 
-  private[this] def getExpectOk(path: String)(implicit service: Service): Json = {
+  private[this] def getExpectOk(path: String)(implicit service: Service[IO]): Json = {
     val r = get(path)
     r.status shouldBe Status.Ok
     r.as[Json].unsafeRunSync()
   }
 
-  private[this] def get(path: String)(implicit service: Service): Response[IO] = {
+  private[this] def get(path: String)(implicit service: Service[IO]): Response[IO] = {
     val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path), headers = DefaultHeaders)
     service.request(request).unsafeRunSync()
   }
 
-  private[this] def postExpectCreated(path: String, body: String)(implicit service: Service): Json = {
+  private[this] def postExpectCreated(path: String, body: String)(implicit service: Service[IO]): Json = {
     val r = post(path, body)
     r.status shouldBe Status.Created
     r.as[Json].unsafeRunSync()
   }
 
-  private[this] def post(path: String, body: String)(implicit service: Service): Response[IO] = {
+  private[this] def post(path: String, body: String)(implicit service: Service[IO]): Response[IO] = {
     val request = Request[IO](method = Method.POST, uri = Uri.unsafeFromString(path), body = asEntityBody(body), headers = DefaultHeaders)
     service.request(request).unsafeRunSync()
   }
