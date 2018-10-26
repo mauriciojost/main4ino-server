@@ -1,30 +1,30 @@
 package org.mauritania.main4ino.models
 
-import org.mauritania.main4ino.{DbSuite, Repository}
+import org.mauritania.main4ino.{DbSuite, RepositoryIO}
 import org.mauritania.main4ino.Fixtures.Device1
-import org.mauritania.main4ino.Repository.Table
+import org.mauritania.main4ino.RepositoryIO.Table
 import org.scalatest.Sequential
 import org.mauritania.main4ino.models.RicherBom._
 
-class RepositorySpec extends DbSuite {
+class RepositoryIOSpec extends DbSuite {
 
   Sequential
 
   "The repository" should "create and read a report" in {
-    val repo = new Repository(transactor)
+    val repo = new RepositoryIO(transactor)
     repo.insertDevice(Table.Reports, Device1).unsafeRunSync() shouldBe(1L)
     repo.selectDeviceWhereRequestId(Table.Reports, 1L).unsafeRunSync() shouldBe(Some(Device1.withId(Some(1L))))
   }
 
   it should "create and read a target" in {
-    val repo = new Repository(transactor)
+    val repo = new RepositoryIO(transactor)
     repo.insertDevice(Table.Targets, Device1).unsafeRunSync() shouldBe(1L)
     repo.selectDeviceWhereRequestId(Table.Targets, 1L).unsafeRunSync() shouldBe(Some(Device1.withId(Some(1L))))
   }
 
   it should "create a target and read the latest image of it" in {
     val Device1Modified = Device1.copy(actors = Device1.actors.updated("actory", Map("yprop1" -> ("yvalue1updated", Status.Created))))
-    val repo = new Repository(transactor)
+    val repo = new RepositoryIO(transactor)
     repo.insertDevice(Table.Targets, Device1).unsafeRunSync() shouldBe(1L)
     repo.insertDevice(Table.Targets, Device1Modified).unsafeRunSync() shouldBe(2L)
     repo.selectMaxDevice(Table.Targets, "dev1").unsafeRunSync() shouldBe(Some(Device1Modified.withId(Some(2L))))
@@ -36,7 +36,7 @@ class RepositorySpec extends DbSuite {
     val snap2 = // contains only actory properties (does not contain any actorx properties)
       Device1.withId(Some(2L)).copy(actors = Device1.actors.updated("actorx", Map()))
 
-    val repo = new Repository(transactor)
+    val repo = new RepositoryIO(transactor)
     repo.insertDevice(Table.Targets, snap1).unsafeRunSync() shouldBe(1L)
     repo.insertDevice(Table.Targets, snap2).unsafeRunSync() shouldBe(2L)
 
@@ -54,7 +54,7 @@ class RepositorySpec extends DbSuite {
     val snap2 = Device1.withId(Some(2L)).withTimestamp(Some(2L))
     val snap3 = Device1.withId(Some(3L)).withTimestamp(Some(3L))
 
-    val repo = new Repository(transactor)
+    val repo = new RepositoryIO(transactor)
     repo.insertDevice(Table.Targets, snap1).unsafeRunSync() shouldBe(1L)
     repo.insertDevice(Table.Targets, snap2).unsafeRunSync() shouldBe(2L)
     repo.insertDevice(Table.Targets, snap3).unsafeRunSync() shouldBe(3L)
@@ -77,7 +77,7 @@ class RepositorySpec extends DbSuite {
   }
 
   it should "read target/report ids from a device name" in {
-    val repo = new Repository(transactor)
+    val repo = new RepositoryIO(transactor)
 
     val t1 = Device1.withDeviceName("device1")
     val t2 = Device1.withDeviceName("device2")
@@ -93,7 +93,7 @@ class RepositorySpec extends DbSuite {
   }
 
   it should "read target/report ids and update them as consumed" in {
-    val repo = new Repository(transactor)
+    val repo = new RepositoryIO(transactor)
     Table.all.foreach { table =>
       val ref = Device1.withId(Some(1L))
       repo.insertDevice(table, Device1).unsafeRunSync() shouldBe 1L

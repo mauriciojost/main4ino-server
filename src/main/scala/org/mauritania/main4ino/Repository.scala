@@ -9,9 +9,9 @@ import doobie.free.connection.raw
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models._
 import fs2.Stream
-import org.mauritania.main4ino.Repository.Table.Table
+import org.mauritania.main4ino.RepositoryIO.Table.Table
 
-trait RepositoryT[F[_]] {
+trait Repository[F[_]] {
 
   def insertDevice(table: Table, t: Device): F[RecordId]
   def selectDeviceWhereRequestId(table: Table, requestId: RecordId): F[Option[Device]]
@@ -24,7 +24,7 @@ trait RepositoryT[F[_]] {
 }
 
 // Naming regarding to SQL
-class Repository(transactor: Transactor[IO]) extends RepositoryT[IO] {
+class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
 
   def insertDevice(table: Table, t: Device): IO[RecordId] = {
     val transaction = for {
@@ -180,7 +180,7 @@ class Repository(transactor: Transactor[IO]) extends RepositoryT[IO] {
 
 }
 
-object Repository {
+object RepositoryIO {
 
   object Table {
 

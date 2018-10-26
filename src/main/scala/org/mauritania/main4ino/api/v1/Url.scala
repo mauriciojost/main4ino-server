@@ -1,8 +1,8 @@
 package org.mauritania.main4ino.api.v1
 
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
-import org.mauritania.main4ino.Repository.Table
-import org.mauritania.main4ino.Repository.Table.Table
+import org.mauritania.main4ino.RepositoryIO.Table
+import org.mauritania.main4ino.RepositoryIO.Table.Table
 import org.mauritania.main4ino.models.{Status, Timestamp}
 
 object Url {

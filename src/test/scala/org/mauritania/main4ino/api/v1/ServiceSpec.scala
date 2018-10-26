@@ -10,14 +10,14 @@ import io.circe.syntax._
 import org.http4s.dsl.io._
 import org.http4s.circe._
 import org.http4s.{Request, Response, Uri, Status => HttpStatus, _}
-import org.mauritania.main4ino.Repository.Table
-import org.mauritania.main4ino.Repository.Table.Table
+import org.mauritania.main4ino.RepositoryIO.Table
+import org.mauritania.main4ino.RepositoryIO.Table.Table
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.RicherBom._
 import org.mauritania.main4ino.models.{ActorTup, Device, Status => S}
 import org.mauritania.main4ino.security.Authentication.AuthAttempt
-import org.mauritania.main4ino.security.{Authentication, AuthenticationT, Config, User}
-import org.mauritania.main4ino.{Fixtures, RepositoryT}
+import org.mauritania.main4ino.security.{AuthenticationIO, Authentication, Config, User}
+import org.mauritania.main4ino.{Fixtures, Repository}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
 
@@ -37,7 +37,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   val Dev2V1 = Dev1V1.copy(metadata = Dev1V1.metadata.copy(id = Some(2L), device = "dev2"))
 
   "Help request" should {
-    val r = stub[RepositoryT[Id]]
+    val r = stub[Repository[Id]]
     val s = new Service(new AuthenticationId(AuthConfig), r)(SyncId)
     "return 200" in {
       getApiV1("/help")(s).status shouldBe (HttpStatus.Ok)
@@ -47,7 +47,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     }
   }
 
-  class AuthenticationId(config: Config) extends AuthenticationT[Id] {
+  class AuthenticationId(config: Config) extends Authentication[Id] {
     val UsersByToken = config.users.groupBy(_.token)
 
     def authenticateUser(request: Request[Id]): Id[AuthAttempt] =
@@ -56,7 +56,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
 
 
   "Create target request" should {
-    val r = stub[RepositoryT[Id]]
+    val r = stub[Repository[Id]]
     val s = new Service(new AuthenticationId(AuthConfig), r)
     "return 201 with empty properties" in {
       val t = Device(Metadata(None, None, "dev1"))
@@ -75,7 +75,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     d: Device
   )(
     s: HttpStatus
-  )(service: Service[Id], repository: RepositoryT[Id]) = {
+  )(service: Service[Id], repository: Repository[Id]) = {
     (repository.insertDevice _).when(
       argThat[Table]("Addresses target table")(_ == t),
       argThat[Device]("Is the expected device")(x => x.withouIdNortTimestamp() == d.withouIdNortTimestamp())
@@ -86,7 +86,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
 
 
   "The service" should {
-    val r = stub[RepositoryT[Id]]
+    val r = stub[Repository[Id]]
     val s = new Service(new AuthenticationId(AuthConfig), r)
     "return 200 with an existent target/request when reading target/report requests" in {
       (r.selectDeviceWhereRequestId _).when(Table.Targets, 1L).returns(Some(Dev1)).once // mock
@@ -102,7 +102,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   }
 
   it should {
-    val r = stub[RepositoryT[Id]]
+    val r = stub[Repository[Id]]
     val s = new Service(new AuthenticationId(AuthConfig), r)
     "return 200 with a list of existent targets when reading all targets request" in {
       (r.selectDevicesWhereTimestamp _).when(Table.Targets, "dev1", None, None).returns(Iterable(Dev1, Dev2)).once // mock
@@ -115,7 +115,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
 
   it should {
 
-    val r = stub[RepositoryT[Id]]
+    val r = stub[Repository[Id]]
     val s = new Service(new AuthenticationId(AuthConfig), r)
 
     "return the list of associated targets set when merging correctly existent targets" in {
@@ -154,7 +154,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     }
 
     "Reject requests when invalid token" should {
-      val r = stub[RepositoryT[Id]]
+      val r = stub[Repository[Id]]
       val s = new Service(new AuthenticationId(AuthConfig), r)
 
       "return 403 (forbidden) if invalid credentials" in {

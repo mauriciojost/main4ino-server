@@ -8,7 +8,7 @@ import org.mauritania.main4ino.security.Authentication.{AuthAttempt, Token}
 
 import scala.util.Try
 
-trait AuthenticationT[F[_]] {
+trait Authentication[F[_]] {
 
   /**
     * Authenticate the user given a request.
@@ -21,7 +21,7 @@ trait AuthenticationT[F[_]] {
 
 }
 
-class Authentication(config: Config) extends AuthenticationT[IO] {
+class AuthenticationIO(config: Config) extends Authentication[IO] {
   val UsersByToken = config.users.groupBy(_.token)
   def authenticateUser(request: Request[IO]): IO[AuthAttempt] =
     IO.pure(Authentication.userFromRequest(UsersByToken, request.headers, request.uri))
@@ -36,6 +36,7 @@ object Authentication {
   private final val TokenExpr = "[a-zA-Z0-9]{30}"
   private final val HeaderTokenRegex = ("^token (" + TokenExpr + ")$").r
   private final val UriTokenRegex = ("^(.*)/token/(" + TokenExpr + ")/(.*)$").r
+  final val InvalidTokenMsg = "Header 'Authorization' not present, no .../token/<token>/... in uri, no authcookie"
 
   def userFromRequest(usersByToken: Map[Token, List[User]], headers: Headers, uri: Uri): AuthAttempt = {
     val user: AuthAttempt = for {
@@ -59,7 +60,7 @@ object Authentication {
       UriTokenRegex.findFirstMatchIn(uri.path).flatMap(a => Try(a.group(2)).toOption)
     val fromCookie =
       http4sHeaders.Cookie.from(headers).flatMap(_.values.toList.find(_.name == "authcookie").map(_.content))
-    fromHeader.orElse(fromUri).orElse(fromCookie).toRight("Header 'Authorization' not present, no .../token/<token>/... in uri, no authcookie")
+    fromHeader.orElse(fromUri).orElse(fromCookie).toRight(InvalidTokenMsg)
   }
 
   def discardToken(path: Path): Path = {

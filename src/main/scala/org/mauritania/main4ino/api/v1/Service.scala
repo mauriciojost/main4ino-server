@@ -5,10 +5,10 @@ import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
 import org.http4s.{HttpService, MediaType}
-import org.mauritania.main4ino.{Repository, RepositoryT}
+import org.mauritania.main4ino.{RepositoryIO, Repository}
 import org.mauritania.main4ino.models._
 import org.http4s.headers.`Content-Type`
-import org.mauritania.main4ino.Repository.Table.Table
+import org.mauritania.main4ino.RepositoryIO.Table.Table
 import org.mauritania.main4ino.api.v1.ActorMapU.ActorMapU
 import org.mauritania.main4ino.api.v1.DeviceU.MetadataU
 import org.mauritania.main4ino.api.v1.PropsMapU.PropsMapU
@@ -21,9 +21,9 @@ import org.http4s.{AuthedService, Request, Response}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.mauritania.main4ino.security.Authentication.AuthAttempt
-import org.mauritania.main4ino.security.{Authentication, AuthenticationT, User}
+import org.mauritania.main4ino.security.{Authentication, User}
 
-class Service[F[_]: Sync](auth: AuthenticationT[F], repository: RepositoryT[F]) extends Http4sDsl[F] {
+class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) extends Http4sDsl[F] {
 
   import Service._
   import Url._

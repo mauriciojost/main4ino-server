@@ -7,7 +7,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.server.blaze.BlazeBuilder
 import org.mauritania.main4ino.api.v1
 import org.mauritania.main4ino.db.Database
-import org.mauritania.main4ino.security.Authentication
+import org.mauritania.main4ino.security.AuthenticationIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -23,7 +23,7 @@ object Server extends StreamApp[IO] {
       exitCode <- BlazeBuilder[IO]
         .bindHttp(configApp.server.port, configApp.server.host)
         .mountService(new webapp.Service().service, "/")
-        .mountService(new v1.Service(new Authentication(configUsers), new Repository(transactor)).serviceWithAuthentication, "/api/v1")
+        .mountService(new v1.Service(new AuthenticationIO(configUsers), new RepositoryIO(transactor)).serviceWithAuthentication, "/api/v1")
         .serve
     } yield exitCode
   }
