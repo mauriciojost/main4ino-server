@@ -24,7 +24,7 @@ trait Authentication[F[_]] {
 class AuthenticationIO(config: Config) extends Authentication[IO] {
   val UsersByToken = config.users.groupBy(_.token)
   def authenticateUser(request: Request[IO]): IO[AuthAttempt] =
-    IO.pure(Authentication.userFromRequest(UsersByToken, request.headers, request.uri))
+    IO.pure(Authentication.authorizedUserFromRequest(UsersByToken, request.headers, request.uri))
 }
 
 object Authentication {
@@ -33,23 +33,24 @@ object Authentication {
   type AuthAttempt = Either[AuthErrorMsg, User]
   type Token = String
 
+  private final val AuthCookieName = "authcookie"
   private final val TokenExpr = "[a-zA-Z0-9]{30}"
   private final val HeaderTokenRegex = ("^token (" + TokenExpr + ")$").r
   private final val UriTokenRegex = ("^(.*)/token/(" + TokenExpr + ")/(.*)$").r
-  final val InvalidTokenMsg = "Header 'Authorization' not present, no .../token/<token>/... in uri, no authcookie"
+  private [security] final val TokenNotProvidedMsg = "Header 'Authorization' not present, no .../token/<token>/... in uri, no authcookie"
 
-  def userFromRequest(usersByToken: Map[Token, List[User]], headers: Headers, uri: Uri): AuthAttempt = {
+  def authorizedUserFromRequest(usersByToken: Map[Token, List[User]], headers: Headers, uri: Uri): AuthAttempt = {
     val user: AuthAttempt = for {
       tkn <- tokenFromRequest(headers, uri)
-      user <- userFromToken(usersByToken, tkn, discardToken(uri.path))
+      user <- authorizedUserFromToken(usersByToken, tkn, discardToken(uri.path))
     } yield (user)
     user
   }
 
-  def userFromToken(usersByToken: Map[Token, List[User]], token: Token, url: Path): AuthAttempt = {
+  def authorizedUserFromToken(usersByToken: Map[Token, List[User]], token: Token, uriPath: Path): AuthAttempt = {
     for {
       u <- usersByToken.get(token).flatMap(_.headOption).toRight(s"Could not find user for token $token")
-      ua <- u.allowed(url).toRight(s"User ${u.name} is not authorized to access ${url}")
+      ua <- u.authorized(uriPath).toRight(s"User ${u.name} is not authorized to access ${uriPath}")
     } yield(ua)
   }
 
@@ -59,8 +60,8 @@ object Authentication {
     val fromUri =
       UriTokenRegex.findFirstMatchIn(uri.path).flatMap(a => Try(a.group(2)).toOption)
     val fromCookie =
-      http4sHeaders.Cookie.from(headers).flatMap(_.values.toList.find(_.name == "authcookie").map(_.content))
-    fromHeader.orElse(fromUri).orElse(fromCookie).toRight(InvalidTokenMsg)
+      http4sHeaders.Cookie.from(headers).flatMap(_.values.toList.find(_.name == AuthCookieName).map(_.content))
+    fromHeader.orElse(fromUri).orElse(fromCookie).toRight(TokenNotProvidedMsg)
   }
 
   def discardToken(path: Path): Path = {

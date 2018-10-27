@@ -51,7 +51,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     val UsersByToken = config.users.groupBy(_.token)
 
     def authenticateUser(request: Request[Id]): Id[AuthAttempt] =
-      Authentication.userFromRequest(UsersByToken, request.headers, request.uri)
+      Authentication.authorizedUserFromRequest(UsersByToken, request.headers, request.uri)
   }
 
 
