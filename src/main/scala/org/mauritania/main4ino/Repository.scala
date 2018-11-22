@@ -26,7 +26,7 @@ trait Repository[F[_]] {
 // Naming regarding to SQL
 class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
 
-  def insertDevice(table: Table, t: Device): IO[RecordId] = {
+  def insertDevice(table: Table, t: Device): IO[RecordId] = { // TODO can't it be done all in one single sql query?
     val transaction = for {
       deviceId <- sqlInsertMetadata(table, t.metadata)
       nroTargetActorProps <- sqlInsertActorTup(table, t.asActorTups, deviceId)

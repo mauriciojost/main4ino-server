@@ -17,7 +17,7 @@ object Server extends StreamApp[IO] {
   def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
     for {
       configApp <- Stream.eval(config.Config.load("application.conf"))
-      configUsers <- Stream.eval(security.Config.load("users.conf"))
+      configUsers <- Stream.eval(security.Config.load("security.conf"))
       transactor <- Stream.eval(Database.transactor(configApp.database))
       _ <- Stream.eval(Database.initialize(transactor))
       exitCode <- BlazeBuilder[IO]

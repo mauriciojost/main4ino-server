@@ -4,8 +4,8 @@ import cats.Monad
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
-import org.http4s.{HttpService, MediaType}
-import org.mauritania.main4ino.{RepositoryIO, Repository}
+import org.http4s.{AuthedService, Cookie, HttpService, MediaType, Request, Response}
+import org.mauritania.main4ino.{Repository, RepositoryIO}
 import org.mauritania.main4ino.models._
 import org.http4s.headers.`Content-Type`
 import org.mauritania.main4ino.RepositoryIO.Table.Table
@@ -17,7 +17,6 @@ import cats.data.{Kleisli, OptionT}
 import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.http4s.{AuthedService, Request, Response}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.mauritania.main4ino.security.Authentication.AuthAttempt
@@ -214,6 +213,13 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) ex
           } else {
             Ok(m.asJson, ContentTypeAppJson)
           }
+        }
+      }
+
+      case a@POST -> _ / "session" as user => {
+        val session = auth.sessionUser(user)
+        session.flatMap { s =>
+          Ok("Logged in!").map(_.addCookie(Cookie(Authentication.AuthCookieSessionName, s)))
         }
       }
 

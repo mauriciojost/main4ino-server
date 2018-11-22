@@ -1,5 +1,7 @@
 package org.mauritania.main4ino.api.v1
 
+import java.time.{Clock, Instant, ZoneId}
+
 import cats._
 import cats.effect.Sync
 import cats.implicits._
@@ -16,21 +18,23 @@ import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.RicherBom._
 import org.mauritania.main4ino.models.{ActorTup, Device, Status => S}
 import org.mauritania.main4ino.security.Authentication.AuthAttempt
-import org.mauritania.main4ino.security.{AuthenticationIO, Authentication, Config, User}
+import org.mauritania.main4ino.security.Authentication.Session
+import org.mauritania.main4ino.security.{Authentication, AuthenticationIO, Config, User}
 import org.mauritania.main4ino.{Fixtures, Repository}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
 
 import scala.reflect.ClassTag
-
 import org.mauritania.main4ino.SyncId
+import org.reactormonk.{CryptoBits, PrivateKey}
 
 class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
 
   val ValidToken = "012345678901234567890123456789"
   val WrongToken = "01234567890123456789012345xxxx"
   val InvalidToken = "01"
-  val AuthConfig = Config(List(User(1, "name", "name@gmail.com", List("/"), ValidToken)))
+  val PrivateKey = "0123456789abcdef0123"
+  val AuthConfig = Config(List(User(1, "name", "name@gmail.com", List("/"), ValidToken)), PrivateKey)
   val Dev1 = Fixtures.Device1
   val Dev2 = Fixtures.Device1.withId(Some(2L)).withDeviceName("dev2")
   val Dev1V1 = Fixtures.Device1InV1
@@ -48,10 +52,10 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   }
 
   class AuthenticationId(config: Config) extends Authentication[Id] {
-    val UsersByToken = config.users.groupBy(_.token)
-
     def authenticateUser(request: Request[Id]): Id[AuthAttempt] =
-      Authentication.authorizedUserFromRequest(UsersByToken, request.headers, request.uri)
+      Authentication.authorizedUserFromRequest(config.usersByToken, config.privateKeyBits, request.headers, request.uri)
+    def sessionUser(user: User): Id[Session] =
+      Authentication.sessionFromUser(user, config.privateKeyBits, config.time)
   }
 
 

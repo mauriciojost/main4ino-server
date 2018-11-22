@@ -10,6 +10,7 @@ val ScalaTestVersion = "3.0.4"
 val ScalaMockVersion = "4.0.0"
 val log4CatsSlf4jVersion = "0.1.1"
 val slf4jLog4j12Version = "1.8.0-beta2"
+val CryptobitsVersion = "1.2"
 
 lazy val root = (project in file("."))
   .settings(
@@ -19,6 +20,7 @@ lazy val root = (project in file("."))
     scalaVersion := "2.12.6",
     scalacOptions ++= Seq("-Ypartial-unification"),
     libraryDependencies ++= Seq(
+      "org.reactormonk" %% "cryptobits" % CryptobitsVersion,
       "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
       "org.http4s" %% "http4s-circe" % Http4sVersion,
       "io.circe" %% "circe-generic" % CirceVersion,
