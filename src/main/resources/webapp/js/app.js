@@ -34,17 +34,17 @@ webPortalApp.config(function($stateProvider, $urlRouterProvider) {
     $stateProvider
         
         .state('home', {
-            url: '/home?device',
+            url: '/home?device&token',
             templateUrl: 'partial-home.html'
         })
         
         .state('history', {
-            url: '/history?device',
+            url: '/history?device&token',
             templateUrl: 'partial-history.html'
         })
 
         .state('summary', {
-            url: '/summary?device',
+            url: '/summary?device&token',
             templateUrl: 'partial-summary.html'
         })
 
@@ -54,8 +54,8 @@ webPortalApp.controller(
     'HomeController',
         function($scope, $http, $log, $location, $state) {
 
-            $scope.device = getCookie("device");
-            $scope.token = getCookie("authcookie");
+            $scope.device = getCookie("device") || $location.search().device;
+            $scope.token = getCookie("authcookie") || $location.search().token;
             $log.log('Device: ' + $scope.device);
             $log.log('Token: ' + $scope.token);
 
@@ -72,17 +72,17 @@ webPortalApp.controller(
 
             $scope.goHome = function() {
               $log.log('Going home');
-              $state.go('home', {device: $scope.device})
+              $state.go('home', {device: $scope.device, token: $scope.token})
             }
 
             $scope.goHistory = function() {
               $log.log('Going to history');
-              $state.go('history', {device: $scope.device})
+              $state.go('history', {device: $scope.device, token: $scope.token})
             }
 
             $scope.goSummary = function() {
               $log.log('Going to summary');
-              $state.go('summary', {device: $scope.device})
+              $state.go('summary', {device: $scope.device, token: $scope.token})
             }
 
         }
@@ -92,8 +92,8 @@ webPortalApp.controller(
     'HistoryController',
         function($scope, $http, $log) {
 
-            $scope.device = getCookie("device");
-            $scope.token = getCookie("authcookie");
+            $scope.device = getCookie("device") || $location.search().device;
+            $scope.token = getCookie("authcookie") || $location.search().token;
 
             $log.log('Device: ' + $scope.device);
             $log.log('Token: ' + $scope.token);
@@ -143,8 +143,8 @@ webPortalApp.controller(
     'SummaryController',
         function($scope, $http, $log) {
 
-            $scope.device = getCookie("device");
-            $scope.token = getCookie("authcookie");
+            $scope.device = getCookie("device") || $location.search().device;
+            $scope.token = getCookie("authcookie") || $location.search().token;
 
             $log.log('Device: ' + $scope.device);
             $log.log('Token: ' + $scope.token);
