@@ -16,7 +16,7 @@ class ServiceFuncSpec extends DbSuite {
 
   val Token = "012345678901234567890123456789"
   val PrivateKey = "0123456789abcdef0123"
-  val AuthConfig = Config(List(User(1, "name", "name@gmail.com", List("/"), Token)), PrivateKey)
+  val AuthConfig = Config(List(User("name", "name@gmail.com", List("/"), Token)), PrivateKey)
 
   Sequential
 

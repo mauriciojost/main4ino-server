@@ -34,7 +34,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   val WrongToken = "01234567890123456789012345xxxx"
   val InvalidToken = "01"
   val PrivateKey = "0123456789abcdef0123"
-  val AuthConfig = Config(List(User(1, "name", "name@gmail.com", List("/"), ValidToken)), PrivateKey)
+  val AuthConfig = Config(List(User("name", "name@gmail.com", List("/"), ValidToken)), PrivateKey)
   val Dev1 = Fixtures.Device1
   val Dev2 = Fixtures.Device1.withId(Some(2L)).withDeviceName("dev2")
   val Dev1V1 = Fixtures.Device1InV1

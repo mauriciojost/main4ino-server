@@ -3,7 +3,6 @@ package org.mauritania.main4ino.security
 import org.http4s.Uri.Path
 
 case class User(
-  id: Long,
   name: String,
   email: String,
   permissionPatterns: List[String],

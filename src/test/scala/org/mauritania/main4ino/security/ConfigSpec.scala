@@ -9,7 +9,7 @@ class ConfigSpec extends FlatSpec with Matchers {
   "The security config" should "load correctly a configuration file" in {
     val c = Config.load("security-users-single.conf").unsafeRunSync()
     c.users shouldBe List(
-      User(1L, "mjost", "mauriciojost@gmail.com", List("/"), "012345678901234567890123456789")
+      User("mjost", "mauriciojost@gmail.com", List("/"), "012345678901234567890123456789")
     )
   }
 
