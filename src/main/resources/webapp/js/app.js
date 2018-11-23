@@ -210,12 +210,15 @@ webPortalApp.controller(
                 };
 
                 $log.log('Executing requests...');
+                $scope.queriedDevice = $scope.device;
+                $scope.reportsSummary = {};
+                $scope.summarySummary = {};
 
                 $http(reqReports).success(
                     function(data) {
                         $log.log('Success reports: ' + JSON.stringify(data));
                         $scope.reportsSummary = data;
-                        $scope.targetsTemporary = data;
+                        $scope.targetsSummaryUserInput = data;
                     }
                 ).error(
                     function(data) {

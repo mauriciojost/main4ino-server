@@ -23,7 +23,7 @@
                 <h3>2. Get summary</h3>
                 <br/>
                 <div class="text-center">
-                    <button ng-click="search();" type="button" class="btn btn-lg btn-primary">Search</button>
+                    <button ng-click="search();" type="button" class="btn btn-lg btn-primary">Get</button>
                 </div>
                 <br/>
             </container>
@@ -45,7 +45,7 @@
                         </thead>
                         <tbody>
                         <tr>
-                            <td>{{ device }}</td>
+                            <td>{{ queriedDevice }}</td>
                             <td>
                                 <table ng-repeat="(actorRep, propsRep) in reportsSummary track by $index"
                                        class="table table-bordered">
@@ -73,7 +73,7 @@
                                                 </div>
                                                 <div class="input-group">
                                                     <input type="text" class="form-control"
-                                                           ng-model="targetsTemporary[actorRep][propNameRep]"
+                                                           ng-model="targetsSummaryUserInput[actorRep][propNameRep]"
                                                            readonly>
                                                     <div class="input-group-btn">
                                                         <button type="button" class="btn btn-default dropdown-toggle"
