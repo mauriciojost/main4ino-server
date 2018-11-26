@@ -9,14 +9,16 @@ import org.mauritania.main4ino.api.v1.Service.{CountResponse, IdResponse}
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
-import org.mauritania.main4ino.security.{AuthenticationIO, Config, User}
+import org.mauritania.main4ino.security._
 import org.scalatest.Sequential
 
 class ServiceFuncSpec extends DbSuite {
 
-  val Token = "012345678901234567890123456789"
   val PrivateKey = "0123456789abcdef0123"
-  val AuthConfig = Config(List(User("name", "name@gmail.com", List("/"), Token)), PrivateKey)
+  val User1 = Fixtures.User1
+  val User1Pass = Fixtures.User1Pass
+  val Salt = Fixtures.Salt
+  val AuthConfig = Config(List(User1), PrivateKey, Salt)
 
   Sequential
 
@@ -180,6 +182,6 @@ class ServiceFuncSpec extends DbSuite {
     Stream.fromIterator[IO, Byte](content.toCharArray.map(_.toByte).toIterator)
   }
 
-  final val DefaultHeaders = Headers(Header("Authorization", "token " + Token))
+  final val DefaultHeaders = Headers(Header(Authentication.HeaderUserIdPass.value, Authentication.headerUserId(User1.id, User1Pass)))
 
 }

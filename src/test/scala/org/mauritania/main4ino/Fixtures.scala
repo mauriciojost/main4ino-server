@@ -5,6 +5,8 @@ import org.mauritania.main4ino.api.v1.DeviceU.MetadataU
 import org.mauritania.main4ino.models.{Device, Status}
 import org.mauritania.main4ino.models.Device.Metadata
 
+import org.mauritania.main4ino.security.{Fixtures => FixturesSecurity}
+
 object Fixtures {
 
   val Device1 = Device(
@@ -41,9 +43,8 @@ object Fixtures {
     )
   )
 
-
-
-
-
+  val User1 = FixturesSecurity.User1
+  val User1Pass = FixturesSecurity.User1Pass
+  val Salt = FixturesSecurity.Salt
 
 }

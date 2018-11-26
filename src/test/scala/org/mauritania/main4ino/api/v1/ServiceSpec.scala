@@ -17,8 +17,8 @@ import org.mauritania.main4ino.RepositoryIO.Table.Table
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.RicherBom._
 import org.mauritania.main4ino.models.{ActorTup, Device, Status => S}
-import org.mauritania.main4ino.security.Authentication.AuthAttempt
-import org.mauritania.main4ino.security.Authentication.Session
+import org.mauritania.main4ino.security.Authentication.AccessAttempt
+import org.mauritania.main4ino.security.Authentication.UserSession
 import org.mauritania.main4ino.security.{Authentication, AuthenticationIO, Config, User}
 import org.mauritania.main4ino.{Fixtures, Repository}
 import org.scalamock.scalatest.MockFactory
@@ -30,11 +30,12 @@ import org.reactormonk.{CryptoBits, PrivateKey}
 
 class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
 
+  val User1 = Fixtures.User1
+  val User1Pass = Fixtures.User1Pass
+  val Salt = Fixtures.Salt
   val ValidToken = "012345678901234567890123456789"
-  val WrongToken = "01234567890123456789012345xxxx"
-  val InvalidToken = "01"
   val PrivateKey = "0123456789abcdef0123"
-  val AuthConfig = Config(List(User("name", "name@gmail.com", List("/"), ValidToken)), PrivateKey)
+  val AuthConfig = Config(List(User1), PrivateKey, Salt)
   val Dev1 = Fixtures.Device1
   val Dev2 = Fixtures.Device1.withId(Some(2L)).withDeviceName("dev2")
   val Dev1V1 = Fixtures.Device1InV1
@@ -52,12 +53,11 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   }
 
   class AuthenticationId(config: Config) extends Authentication[Id] {
-    def authenticateUser(request: Request[Id]): Id[AuthAttempt] =
-      Authentication.authorizedUserFromRequest(config.usersByToken, config.privateKeyBits, request.headers, request.uri)
-    def sessionUser(user: User): Id[Session] =
-      Authentication.sessionFromUser(user, config.privateKeyBits, config.time)
+    def authUserFromRequest(request: Request[Id]): Id[AccessAttempt] =
+      Authentication.authenticateUser(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path)
+    def generateUserSession(user: User): Id[UserSession] =
+      Authentication.sessionFromUser(user, config.privateKeyBits, config.nonceStartupTime)
   }
-
 
   "Create target request" should {
     val r = stub[Repository[Id]]
@@ -160,21 +160,20 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     "Reject requests when invalid token" should {
       val r = stub[Repository[Id]]
       val s = new Service(new AuthenticationId(AuthConfig), r)
-
       "return 403 (forbidden) if invalid credentials" in {
-        getApiV1("/help", HeadersTokenInvalid)(s).status shouldBe (HttpStatus.Forbidden)
+        getApiV1("/help", HeadersCredsInvalid)(s).status shouldBe (HttpStatus.Forbidden)
       }
       "return 403 (forbidden) if no credentials" in {
-        getApiV1("/help", HeadersNoToken)(s).status shouldBe (HttpStatus.Forbidden)
+        getApiV1("/help", HeadersNoCreds)(s).status shouldBe (HttpStatus.Forbidden)
       }
       "return 403 (forbidden) if wrong credentials" in {
-        getApiV1("/help", HeadersTokenWrong)(s).status shouldBe (HttpStatus.Forbidden)
+        getApiV1("/help", HeadersCredsWrong)(s).status shouldBe (HttpStatus.Forbidden)
       }
       "return 200 if correct credentials (via headers)" in {
-        getApiV1("/help", HeadersTokenOk)(s).status shouldBe (HttpStatus.Ok)
+        getApiV1("/help", HeadersCredsOk)(s).status shouldBe (HttpStatus.Ok)
       }
       "return 200 if correct credentials (via uri)" in {
-        getApiV1("/token/" + ValidToken + "/help", HeadersNoToken)(s).status shouldBe (HttpStatus.Ok)
+        getApiV1("http://name:password@localhost:3030/help", HeadersNoCreds)(s).status shouldBe (HttpStatus.Ok)
       }
     }
 
@@ -184,12 +183,12 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
 
   // Basic testing utilities
 
-  private[this] def getApiV1(path: String, h: Headers = HeadersTokenOk)(service: Service[Id]): Response[Id] = {
+  private[this] def getApiV1(path: String, h: Headers = HeadersCredsOk)(service: Service[Id]): Response[Id] = {
     val request = Request[Id](method = Method.GET, uri = Uri.unsafeFromString(path), headers = h)
     service.request(request)
   }
 
-  private[this] def postApiV1(path: String, body: EntityBody[Id], h: Headers = HeadersTokenOk)(service: Service[Id]): Response[Id] = {
+  private[this] def postApiV1(path: String, body: EntityBody[Id], h: Headers = HeadersCredsOk)(service: Service[Id]): Response[Id] = {
     val request = Request[Id](method = Method.POST, uri = Uri.unsafeFromString(path), body = body, headers = h)
     service.request(request)
   }
@@ -198,9 +197,9 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     Stream.fromIterator[Id, Byte](content.toCharArray.map(_.toByte).toIterator)
   }
 
-  final val HeadersNoToken = Headers()
-  final val HeadersTokenOk = Headers(Header("Authorization", "token " + ValidToken))
-  final val HeadersTokenWrong = Headers(Header("Authorization", "token " + WrongToken))
-  final val HeadersTokenInvalid = Headers(Header("Authorization", "token " + InvalidToken))
+  final val HeadersNoCreds = Headers()
+  final val HeadersCredsOk = Headers(Header(Authentication.HeaderUserIdPass.value, Authentication.headerUserId(User1.id, User1Pass)))
+  final val HeadersCredsWrong = Headers(Header(Authentication.HeaderUserIdPass.value, Authentication.headerUserId(User1.id, "incorrectpassword")))
+  final val HeadersCredsInvalid = Headers(Header(Authentication.HeaderUserIdPass.value, Authentication.headerUserId(User1.id, "short")))
 
 }

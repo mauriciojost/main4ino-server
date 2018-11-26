@@ -5,23 +5,21 @@ import org.mauritania.main4ino.config.Loadable
 import org.reactormonk.{CryptoBits, PrivateKey}
 import java.time.Clock
 
+import org.mauritania.main4ino.security.Authentication.{EncryptionConfig, UsersBy}
+
+import scala.io.Codec
+
 
 case class Config(
   users: List[User],
-  privateKey: String
+  privateKey: String,
+  salt: String
 ) {
-  private def validatedUsers: Iterable[User] = {
-    val byToken = users.groupBy(_.token)
-    val withSingleUser = byToken.collect {
-      case (_, users) if users.length == 1 => users.head
-      case (_, users) if users.length != 1 => throw new IllegalArgumentException(s"Multiple with similar token: $users")
-    }
-    withSingleUser
-  }
 
-  val usersByToken = validatedUsers.groupBy(_.token).map { case (t, us) => (t, us.head) }
-  val privateKeyBits = CryptoBits(PrivateKey(scala.io.Codec.toUTF8(privateKey)))
-  val time = Clock.systemUTC()
+  val usersBy = UsersBy(users)
+  val privateKeyBits = CryptoBits(PrivateKey(Codec.toUTF8(privateKey)))
+  val nonceStartupTime = Clock.systemUTC()
+  val encryptionConfig = EncryptionConfig(privateKeyBits, salt)
 }
 
 object Config extends Loadable[Config] {

@@ -1,10 +1,16 @@
 package org.mauritania.main4ino.security
 
-import org.mauritania.main4ino.security.Authentication.Token
-
 object Fixtures {
 
-  val ValidToken: Token = "012345678901234567890123456789"
-  val User1 = User("name", "user@zzz.com", List("/"), ValidToken)
+  val Salt = "$2a$10$TxnbkbAGirLy3Rdgt3xPiu"
+
+  val User1Pass = "password"
+
+  val User1 = User(
+    name = "name",
+    hashedPass = Authentication.passHash(User1Pass, Salt),
+    email = "user@zzz.com",
+    permissionPatterns = List("/")
+  )
 
 }

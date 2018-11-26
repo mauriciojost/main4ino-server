@@ -19,7 +19,7 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
-import org.mauritania.main4ino.security.Authentication.AuthAttempt
+import org.mauritania.main4ino.security.Authentication.AccessAttempt
 import org.mauritania.main4ino.security.{Authentication, User}
 
 class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) extends Http4sDsl[F] {
@@ -217,10 +217,12 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) ex
       }
 
       case a@POST -> _ / "session" as user => {
-        val session = auth.sessionUser(user)
-        session.flatMap { s =>
-          Ok("Logged in!").map(_.addCookie(Cookie(Authentication.AuthCookieSessionName, s)))
-        }
+        val session = auth.generateUserSession(user)
+        session.flatMap(s => Ok(s))
+      }
+
+      case a@GET -> _ / "user" as user => {
+        Ok(user.name)
       }
 
     }
@@ -308,7 +310,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) ex
   }
 
 
-  def logAuthentication(user: AuthAttempt): F[AuthAttempt] = {
+  def logAuthentication(user: AccessAttempt): F[AccessAttempt] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
       msg = user match {
@@ -321,7 +323,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) ex
 
   private[v1] val onFailure: AuthedService[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
   private[v1] val customAuthMiddleware: AuthMiddleware[F, User] =
-    AuthMiddleware(Kleisli(auth.authenticateUser) andThen Kleisli(logAuthentication), onFailure)
+    AuthMiddleware(Kleisli(auth.authUserFromRequest) andThen Kleisli(logAuthentication), onFailure)
   val serviceWithAuthentication: HttpService[F] = customAuthMiddleware(service)
   private[v1] def request(r: Request[F]): F[Response[F]] = serviceWithAuthentication.orNotFound(r)
 
