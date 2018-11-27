@@ -54,9 +54,9 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   }
 
   class AuthenticationId(config: Config) extends Authentication[Id] {
-    def authUserFromRequest(request: Request[Id]): Id[AccessAttempt] =
-      Authentication.authenticateUser(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path)
-    def generateUserSession(user: User): Id[UserSession] =
+    def authenticateAndCheckAccessFromRequest(request: Request[Id]): Id[AccessAttempt] =
+      Authentication.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path)
+    def generateSession(user: User): Id[UserSession] =
       Authentication.sessionFromUser(user, config.privateKeyBits, config.nonceStartupTime)
   }
 

@@ -8,7 +8,7 @@ object Fixtures {
 
   val User1 = User(
     name = "name",
-    hashedPass = Authentication.passHash(User1Pass, Salt),
+    hashedPass = Authentication.hashPassword(User1Pass, Salt),
     email = "user@zzz.com",
     permissionPatterns = List("/")
   )

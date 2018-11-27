@@ -11,14 +11,12 @@ import org.http4s.circe._
 import io.circe.generic.auto._
 import org.http4s.headers.Authorization
 import org.mauritania.main4ino.security._
+import org.mauritania.main4ino.security.Fixtures._
 import org.scalatest.Sequential
 
 class ServiceFuncSpec extends DbSuite {
 
   val PrivateKey = "0123456789abcdef0123"
-  val User1 = Fixtures.User1
-  val User1Pass = Fixtures.User1Pass
-  val Salt = Fixtures.Salt
   val AuthConfig = Config(List(User1), PrivateKey, Salt)
 
   Sequential

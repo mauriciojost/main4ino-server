@@ -217,7 +217,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) ex
       }
 
       case a@POST -> _ / "session" as user => {
-        val session = auth.generateUserSession(user)
+        val session = auth.generateSession(user)
         session.flatMap(s => Ok(s))
       }
 
@@ -323,7 +323,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) ex
 
   private[v1] val onFailure: AuthedService[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
   private[v1] val customAuthMiddleware: AuthMiddleware[F, User] =
-    AuthMiddleware(Kleisli(auth.authUserFromRequest) andThen Kleisli(logAuthentication), onFailure)
+    AuthMiddleware(Kleisli(auth.authenticateAndCheckAccessFromRequest) andThen Kleisli(logAuthentication), onFailure)
   val serviceWithAuthentication: HttpService[F] = customAuthMiddleware(service)
   private[v1] def request(r: Request[F]): F[Response[F]] = serviceWithAuthentication.orNotFound(r)
 
