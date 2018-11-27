@@ -11,6 +11,7 @@ import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.dsl.io._
 import org.http4s.circe._
+import org.http4s.headers.Authorization
 import org.http4s.{Request, Response, Uri, Status => HttpStatus, _}
 import org.mauritania.main4ino.RepositoryIO.Table
 import org.mauritania.main4ino.RepositoryIO.Table.Table
@@ -173,7 +174,8 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
         getApiV1("/help", HeadersCredsOk)(s).status shouldBe (HttpStatus.Ok)
       }
       "return 200 if correct credentials (via uri)" in {
-        getApiV1("http://name:password@localhost:3030/help", HeadersNoCreds)(s).status shouldBe (HttpStatus.Ok)
+        val token = BasicCredsOk.token
+        getApiV1(s"http://localhost:3030/token/$token/help", HeadersNoCreds)(s).status shouldBe (HttpStatus.Ok)
       }
     }
 
@@ -198,8 +200,9 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   }
 
   final val HeadersNoCreds = Headers()
-  final val HeadersCredsOk = Headers(Header(Authentication.HeaderUserIdPass.value, Authentication.headerUserId(User1.id, User1Pass)))
-  final val HeadersCredsWrong = Headers(Header(Authentication.HeaderUserIdPass.value, Authentication.headerUserId(User1.id, "incorrectpassword")))
-  final val HeadersCredsInvalid = Headers(Header(Authentication.HeaderUserIdPass.value, Authentication.headerUserId(User1.id, "short")))
+  final val BasicCredsOk = BasicCredentials(User1.id, User1Pass)
+  final val HeadersCredsOk = Headers(Authorization(BasicCredsOk))
+  final val HeadersCredsWrong = Headers(Authorization(BasicCredentials(User1.id, "incorrectpassword")))
+  final val HeadersCredsInvalid = Headers(Authorization(BasicCredentials(User1.id, "short")))
 
 }

@@ -3,7 +3,6 @@ package org.mauritania.main4ino
 import cats.effect.IO
 import fs2.StreamApp.ExitCode
 import fs2.{Stream, StreamApp}
-import org.http4s.dsl.Http4sDsl
 import org.http4s.server.blaze.BlazeBuilder
 import org.mauritania.main4ino.api.v1
 import org.mauritania.main4ino.db.Database

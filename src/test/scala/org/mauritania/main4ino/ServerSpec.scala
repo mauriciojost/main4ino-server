@@ -1,7 +1,7 @@
 package org.mauritania.main4ino
 
 import cats.effect.IO
-import org.http4s.Uri
+import org.http4s.{BasicCredentials, Uri}
 import org.http4s.client.{Client, UnexpectedStatus}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, Sequential}
 import org.http4s.client.blaze.Http1Client
@@ -12,7 +12,7 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
   Sequential
   var appThread: Thread = _
   var httpClient: Client[IO] = _
-  val UserPass = Authentication.headerUserId(Fixtures.User1.id, Fixtures.User1Pass)
+  val UserPass = BasicCredentials(Fixtures.User1.id, Fixtures.User1Pass)
 
   override def beforeAll(): Unit = {
     appThread = launchAsync(Array())
@@ -26,8 +26,7 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   "The server" should "start and expose rest the api (v1)" in {
-    //val help = httpClient.expect[String](s"http://$UserPass@localhost:8080/api/v1/help")
-    val help = httpClient.expect[String](Uri.unsafeFromString("http://127.0.0.1:8080/api/v1/help"))
+    val help = httpClient.expect[String](s"http://localhost:8080/api/v1/token/${UserPass.token}/help")
     help.unsafeRunSync() should include("HELP")
 
     assertThrows[UnexpectedStatus]{

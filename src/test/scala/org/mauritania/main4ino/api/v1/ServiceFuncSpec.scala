@@ -2,13 +2,14 @@ package org.mauritania.main4ino.api.v1
 
 import cats.effect.IO
 import org.mauritania.main4ino.{DbSuite, RepositoryIO}
-import org.http4s.{EntityBody, Header, Headers, HttpService, MediaType, Method, Request, Response, Status, Uri}
+import org.http4s.{BasicCredentials, EntityBody, Header, Headers, HttpService, MediaType, Method, Request, Response, Status, Uri}
 import fs2.Stream
 import io.circe.Json
 import org.mauritania.main4ino.api.v1.Service.{CountResponse, IdResponse}
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
+import org.http4s.headers.Authorization
 import org.mauritania.main4ino.security._
 import org.scalatest.Sequential
 
@@ -182,6 +183,6 @@ class ServiceFuncSpec extends DbSuite {
     Stream.fromIterator[IO, Byte](content.toCharArray.map(_.toByte).toIterator)
   }
 
-  final val DefaultHeaders = Headers(Header(Authentication.HeaderUserIdPass.value, Authentication.headerUserId(User1.id, User1Pass)))
+  final val DefaultHeaders = Headers(Authorization(BasicCredentials(User1.id, User1Pass)))
 
 }
