@@ -1,7 +1,7 @@
 package org.mauritania.main4ino.security
 
 import org.http4s.headers.Authorization
-import org.http4s.{BasicCredentials, Header, Headers, Uri}
+import org.http4s.{BasicCredentials, Headers, Uri}
 import org.mauritania.main4ino.security.Authentication.EncryptionConfig
 import org.mauritania.main4ino.security.Fixtures._
 import org.reactormonk.{CryptoBits, PrivateKey}
@@ -10,6 +10,7 @@ import org.scalatest.{Matchers, WordSpec}
 class AuthenticationSpec extends WordSpec with Matchers {
 
   def Crypto = CryptoBits(PrivateKey(scala.io.Codec.toUTF8(" " * 20)))
+
   val encConfig = EncryptionConfig(Crypto, Salt)
   val User1Token = BasicCredentials(User1.id, User1Pass).token
 
