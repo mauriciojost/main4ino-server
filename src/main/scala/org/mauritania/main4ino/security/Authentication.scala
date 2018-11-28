@@ -72,10 +72,10 @@ object Authentication {
   /**
     * Create a session for a given user given a private key and a timestamp
     *
-    * @param user
-    * @param privateKey
-    * @param time
-    * @return
+    * @param user user for whom we want to create a session
+    * @param privateKey private key used for encryption of the session id to be generated
+    * @param time time used to generate the session id
+    * @return a user session id
     */
   def sessionFromUser(user: User, privateKey: CryptoBits, time: Clock): UserSession =
     privateKey.signToken(user.id, time.millis.toString())
@@ -83,12 +83,15 @@ object Authentication {
   def authenticatedUserFromSessionOrCredentials(encry: EncryptionConfig, usersBy: UsersBy, session: Option[UserSession], creds: Option[(UserId, UserHashedPass)]): AuthenticationAttempt = {
     creds.flatMap(usersBy.byIdPass.get)
       .orElse(session.flatMap(v => encry.pkey.validateSignedToken(v)).flatMap(usersBy.byId.get))
-      .toRight(s"Could not find user for session $session or credentials $creds")
+      .toRight(s"Could not find related user (session ${session.getOrElse('?')}, credentials ${creds.getOrElse('?')})")
   }
 
+  /**
+    * Check if a user can acces a given resource
+    */
   def checkAccess(user: User, resourceUriPath: Path): AccessAttempt = {
     user.authorized(dropTokenFromPath(resourceUriPath))
-      .toRight(s"User ${user.name} is not authorized to access resource ${resourceUriPath}")
+      .toRight(s"User '${user.name}' is not authorized to access resource '${resourceUriPath}'")
   }
 
   def userCredentialsFromRequest(encry: EncryptionConfig, headers: Headers, uri: Uri): Option[(UserId, UserHashedPass)] = {
@@ -98,9 +101,12 @@ object Authentication {
     }
     // URI auth: .../token/<token>/... authentication (some services like IFTTT do not support yet headers, only URI credentials...)
     val tokenFromUri = UriTokenRegex.findFirstMatchIn(uri.path).flatMap(a => Try(a.group(2)).toOption)
-    val validCredsFromUri = tokenFromUri.map(t => BasicCredentials(t)).map(c => (c.username, hashPassword(c.password, encry.salt)))
+    val validCredsFromUri = tokenFromUri
+      .map(t => BasicCredentials(t))
+      .map(c => (c.username, hashPassword(c.password, encry.salt)))
 
-    credsFromHeader.orElse(validCredsFromUri)
+    credsFromHeader
+      .orElse(validCredsFromUri)
   }
 
   def sessionFromRequest(headers: Headers): Option[UserSession] = headers.get(HeaderSession).map(_.value)
