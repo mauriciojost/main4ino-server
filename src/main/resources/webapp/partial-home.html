@@ -7,11 +7,18 @@
     <div class="panel panel-info">
         <div class="panel-heading">
             <container>
-                <h3>1. Specify your default settings</h3>
+                <h3>1.1. Specify your credentials</h3>
                 <br/>
                 <div>
-                    <input type="text" name="device" class="form-control" ng-model="device" placeholder="Device"/>
-                    <input type="password" name="token" class="form-control" ng-model="token" placeholder="Token"/>
+                    <input type="text" name="username" class="form-control" ng-disabled="logged != null" ng-model="username" placeholder="Username"/>
+                    <input type="password" name="password" class="form-control" ng-disabled="logged != null" ng-model="password" placeholder="Password"/>
+                </div>
+            </container>
+            <container>
+                <h3>1.2. Specify your preferences</h3>
+                <br/>
+                <div>
+                    <input type="text" name="device" class="form-control" ng-disabled="logged != null" ng-model="device" placeholder="Default device"/>
                 </div>
             </container>
         </div>
@@ -20,10 +27,10 @@
     <div class="panel panel-info">
         <div class="panel-heading">
             <container>
-                <h3>2. Remember settings</h3>
+                <h3>2. Login</h3>
                 <br/>
                 <div class="text-center">
-                    <button ng-click="rememberCredentials();" type="button" class="btn btn-lg btn-primary">Log in</button>
+                    <button ng-click="rememberCredentials();" ng-disabled="logged != null" type="button" class="btn btn-lg btn-primary">Log in</button>
                 </div>
                 <br/>
             </container>
@@ -36,7 +43,7 @@
                 <h3>3. Log out</h3>
                 <br/>
                 <div class="text-center">
-                    <button ng-click="removeCredentials();" type="button" class="btn btn-lg btn-primary">Log out</button>
+                    <button ng-click="removeCredentials();" ng-disabled="logged == null" type="button" class="btn btn-lg btn-primary">Log out '{{logged}}' </button>
                 </div>
                 <br/>
             </container>

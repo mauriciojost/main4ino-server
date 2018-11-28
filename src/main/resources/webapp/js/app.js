@@ -34,17 +34,17 @@ webPortalApp.config(function($stateProvider, $urlRouterProvider) {
     $stateProvider
         
         .state('home', {
-            url: '/home?device&token&session',
+            url: '/home?device',
             templateUrl: 'partial-home.html'
         })
         
         .state('history', {
-            url: '/history?device&token&session',
+            url: '/history?device',
             templateUrl: 'partial-history.html'
         })
 
         .state('summary', {
-            url: '/summary?device&token&session',
+            url: '/summary?device',
             templateUrl: 'partial-summary.html'
         })
 
@@ -55,102 +55,80 @@ webPortalApp.controller(
         function($scope, $http, $log, $location, $state) {
 
             $scope.device = getCookie("device") || $location.search().device;
-            $scope.token = getCookie("authcookie") || $location.search().token;
-            $scope.session = getCookie("session") || $location.search().session;
+            $scope.logged = null;
 
-            $log.log('Device: ' + $scope.device);
-            $log.log('Token: ' + $scope.token);
-            $log.log('Session: ' + $scope.session);
-
-            var requs = {
-                method: 'GET',
-                url: 'api/v1/user',
-                headers: {'Session': $scope.session}
-            };
-
-            $http(requs).success(
-                function(usname) {
-                    $log.log('Found: ' + usname);
-                    BootstrapDialog.show({
-                        title: 'Settings',
-                        message: 'You are logged in ' + usname + '!'
-                    });
-                }
-            ).error(
-                function(data) {
-                    BootstrapDialog.show({
-                        title: 'Settings',
-                        message: 'You are NOT logged in!'
-                    });
-                    $log.log('Not logged in: ' + data);
-                }
-            );
-
-            $scope.rememberCredentials = function() {
-              $log.log('Device: ' + $scope.device);
-              $log.log('Token: ' + $scope.token);
-              $log.log('Session: ' + $scope.session);
-                var req = {
-                    method: 'POST',
-                    url: 'api/v1/session',
-                    headers: {'Authorization': 'token ' + $scope.token},
-                    data: ''
+            $scope.loginUsingSession = function() {
+              $log.log('Login with session');
+                $scope.session = getCookie("session");
+                var requs = {
+                    method: 'GET',
+                    url: 'api/v1/user',
+                    headers: {'Session': $scope.session}
                 };
-
-                $log.log('Executing request...');
-
-                $http(req).success(
-                    function(sessn) {
-                        $log.log('Found: ' + sessn);
-
-                        setCookie("device", $scope.device, 100);
-                        //setCookie("authcookie", $scope.token, 100);
-                        setCookie("session", sessn, 100);
-                        $scope.session = sessn;
-
-                        BootstrapDialog.show({
-                            title: 'Settings',
-                            message: 'You are logged in!'
-                        });
-
+                $http(requs).success(
+                    function(usname) {
+                        $log.log('Found: ' + usname);
+                        $scope.logged = usname;
                     }
                 ).error(
                     function(data) {
-                        $log.log('Problem requesting session: ' + data);
+                        $log.log('Not logged in: ' + data);
+                    }
+                );
+            }
+
+            $scope.rememberCredentials = function() {
+              $log.log('Remember credentials');
+              $log.log('User: ' + $scope.username);
+              $log.log('Session: ' + $scope.session);
+              $log.log('Device: ' + $scope.device);
+                var req = {
+                    method: 'POST',
+                    url: 'api/v1/session',
+                    headers: {'Authorization': 'Basic ' + btoa($scope.username + ":" + $scope.password)}
+                };
+                $http(req).success(
+                    function(sessn) {
+                        $log.log('Logged in correctly: ' + sessn);
+                        setCookie("device", $scope.device, 100);
+                        setCookie("session", sessn, 100);
+                        $scope.loginUsingSession();
+                    }
+                ).error(
+                    function(data) {
+                        $log.log('Invalid session: ' + data);
                         BootstrapDialog.show({
                             title: 'Error',
                             message: 'Failed to log in: ' + data
                         });
                     }
                 );
-
-                $log.log('Executed request.');
-
             }
 
             $scope.removeCredentials = function() {
-                eraseCookie("session");
-                BootstrapDialog.show({
-                    title: 'Log off',
-                    message: 'You have been logged off'
-                });
-                $log.log('Executed request.');
+              $log.log('Removed credentials');
+              eraseCookie("session");
+              $scope.logged = null;
             }
 
             $scope.goHome = function() {
               $log.log('Going home');
-              $state.go('home', {device: $scope.device, token: $scope.token, session: $scope.session})
+              $state.go('home', {device: $scope.device, session: $scope.session})
             }
 
             $scope.goHistory = function() {
               $log.log('Going to history');
-              $state.go('history', {device: $scope.device, token: $scope.token, session: $scope.session})
+              $state.go('history', {device: $scope.device, session: $scope.session})
             }
 
             $scope.goSummary = function() {
               $log.log('Going to summary');
-              $state.go('summary', {device: $scope.device, token: $scope.token, session: $scope.session})
+              $state.go('summary', {device: $scope.device, session: $scope.session})
             }
+
+            $log.log('Device: ' + $scope.device);
+
+            $scope.loginUsingSession();
 
         }
 );
@@ -159,19 +137,14 @@ webPortalApp.controller(
     'HistoryController',
         function($scope, $http, $log, $location) {
 
+            $scope.session = getCookie("session");
             $scope.device = getCookie("device") || $location.search().device;
-            //$scope.token = getCookie("authcookie") || $location.search().token;
-            $scope.session = getCookie("session") || $location.search().session;
-
-            $log.log('Device: ' + $scope.device);
-            $log.log('Token: ' + $scope.token);
-            $log.log('Session: ' + $scope.session);
 
             $scope.tabl = 'reports'; // table to get records from
             $scope.from = 2; // in days, lower-bound to filter history records
 
             $scope.search = function() {
-                $log.log('Searching device ' + $scope.device + ' in ' + $scope.tabl + ' with token ' + $scope.token);
+                $log.log('Searching device ' + $scope.device + ' in ' + $scope.tabl);
                 var date = new Date();
                 var msAgo = 1000 * 3600 * 24 * $scope.from;
                 var from = date.getTime() - msAgo;
@@ -179,7 +152,6 @@ webPortalApp.controller(
                 var req = {
                     method: 'GET',
                     url: 'api/v1/devices/' + $scope.device + '/' + $scope.tabl + '?from=' + from,
-                    //headers: {'Content-Type': 'application/json', 'Authorization': 'token ' + $scope.token},
                     headers: {'Content-Type': 'application/json', 'Session': $scope.session},
                     data: $scope.request
                 };
@@ -213,15 +185,12 @@ webPortalApp.controller(
     'SummaryController',
         function($scope, $http, $log, $location) {
 
+            $scope.session = getCookie("session");
             $scope.device = getCookie("device") || $location.search().device;
-            //$scope.token = getCookie("authcookie") || $location.search().token;
-            $scope.session = getCookie("session") || $location.search().session;
 
             $scope.queriedDevice = '';
 
             $log.log('Device: ' + $scope.device);
-            $log.log('Token: ' + $scope.token);
-            $log.log('Session: ' + $scope.session);
 
             $scope.propLegends = [];
 
@@ -267,12 +236,11 @@ webPortalApp.controller(
             }
 
             $scope.search = function() {
-                $log.log('Searching device ' + $scope.device + ' with token ' + $scope.token);
+                $log.log('Searching device ' + $scope.device);
 
                 var reqReports = {
                     method: 'GET',
                     url: 'api/v1/devices/' + $scope.device + '/reports/summary?consume=false',
-                    //headers: {'Content-Type': 'application/json', 'Authorization': 'token ' + $scope.token},
                     headers: {'Content-Type': 'application/json', 'Session': $scope.session},
                     data: $scope.request
                 };
@@ -280,7 +248,6 @@ webPortalApp.controller(
                 var reqTargets = {
                     method: 'GET',
                     url: 'api/v1/devices/' + $scope.device + '/targets/summary?status=C&consume=false',
-                    //headers: {'Content-Type': 'application/json', 'Authorization': 'token ' + $scope.token},
                     headers: {'Content-Type': 'application/json', 'Session': $scope.session},
                     data: $scope.request
                 };
@@ -359,7 +326,6 @@ webPortalApp.controller(
                 var req = {
                     method: 'POST',
                     url: '/api/v1/devices/' + device + '/actors/' + actor + '/targets',
-                    //headers: {'Content-Type': 'application/json', 'Authorization': 'token ' + $scope.token},
                     headers: {'Content-Type': 'application/json', 'Session': $scope.session},
                     data: JSON.stringify(jsn)
                 };
