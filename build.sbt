@@ -17,7 +17,7 @@ lazy val root = (project in file("."))
   .settings(
     organization := "org.mauritania",
     name := "botinobe",
-    version := "0.0.1-SNAPSHOT",
+    version := "0.1.0-SNAPSHOT",
     scalaVersion := "2.12.6",
     scalacOptions ++= Seq("-Ypartial-unification"),
     libraryDependencies ++= Seq(
