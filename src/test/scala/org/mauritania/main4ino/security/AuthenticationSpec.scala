@@ -41,7 +41,9 @@ class AuthenticationSpec extends WordSpec with Matchers {
       val user = User1.copy(permissionPatterns = List("/api/v1/"))
       val uriPath = "/admin"
       val authorizationAttempt = Authentication.checkAccess(user, uriPath)
-      authorizationAttempt shouldBe Left(s"User ${user.id} is not authorized to access resource /admin")
+      authorizationAttempt.isLeft shouldBe(true)
+      authorizationAttempt.left.get should include(user.id)
+      authorizationAttempt.left.get should include(uriPath)
     }
 
     "correctly identify allowed users to certain uris" in {
