@@ -4,9 +4,9 @@ import org.http4s.Uri.Path
 
 case class User(
   name: String,
-  hashedPass: String,
+  hashedpass: String,
   email: String,
-  permissionPatterns: List[String]
+  granted: List[String]
 ) {
   def authorized(uriPath: Path): Option[User] = {
     canAccess(uriPath) match {
@@ -15,6 +15,6 @@ case class User(
     }
   }
   val id = name
-  private [security] def canAccess(uriPath: Path): Boolean = permissionPatterns.exists(p => uriPath.startsWith(p))
+  private [security] def canAccess(uriPath: Path): Boolean = granted.exists(p => uriPath.startsWith(p))
 }
 

@@ -12,14 +12,14 @@ import scala.io.Codec
 
 case class Config(
   users: List[User],
-  privateKey: String,
+  privatekey: String,
   salt: String
 ) {
 
   import Config._
 
   val usersBy = UsersBy(users)
-  val privateKeyBits = CryptoBits(PrivateKey(Codec.toUTF8(privateKey)))
+  val privateKeyBits = CryptoBits(PrivateKey(Codec.toUTF8(privatekey)))
   val nonceStartupTime = Clock.systemUTC()
   val encryptionConfig = EncryptionConfig(privateKeyBits, salt)
 }
@@ -37,7 +37,7 @@ object Config extends Loadable[Config] {
     def apply(u: List[User]): UsersBy = {
       UsersBy(
         byId = u.groupBy(_.name).map { case (t, us) => (t, us.last) },
-        byIdPass = u.groupBy(i => (i.name, i.hashedPass)).map { case (t, us) => (t, us.last) }
+        byIdPass = u.groupBy(i => (i.name, i.hashedpass)).map { case (t, us) => (t, us.last) }
       )
     }
   }

@@ -27,18 +27,18 @@ class AuthenticationSpec extends WordSpec with Matchers {
       val headers = Headers(Authorization(BasicCredentials(User1.id, User1Pass)))
       val uri = Uri.unsafeFromString("http://main4ino.com/api/v1/device/...")
       val creds = Authentication.userCredentialsFromRequest(encConfig, headers, uri)
-      creds shouldBe Some((User1.id, User1.hashedPass))
+      creds shouldBe Some((User1.id, User1.hashedpass))
     }
 
     "retrieve token from uri as .../token/<token/..." in {
       val headers = Headers()
       val uri = Uri.unsafeFromString(s"http://main4ino.com/api/v1/token/${User1Token}/device/...")
       val creds = Authentication.userCredentialsFromRequest(encConfig, headers, uri)
-      creds shouldBe Some((User1.id, User1.hashedPass))
+      creds shouldBe Some((User1.id, User1.hashedpass))
     }
 
     "correctly identify not allowed users to certain uris" in {
-      val user = User1.copy(permissionPatterns = List("/api/v1/"))
+      val user = User1.copy(granted = List("/api/v1/"))
       val uriPath = "/admin"
       val authorizationAttempt = Authentication.checkAccess(user, uriPath)
       authorizationAttempt.isLeft shouldBe(true)
@@ -47,7 +47,7 @@ class AuthenticationSpec extends WordSpec with Matchers {
     }
 
     "correctly identify allowed users to certain uris" in {
-      val user = User1.copy(permissionPatterns = List("/api/v1/"))
+      val user = User1.copy(granted = List("/api/v1/"))
       val uriPath = "/api/v1/smth"
       val authorizationAttempt = Authentication.checkAccess(user, uriPath)
       authorizationAttempt shouldBe Right(user)
