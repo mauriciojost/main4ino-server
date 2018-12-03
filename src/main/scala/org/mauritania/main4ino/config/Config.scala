@@ -6,9 +6,9 @@ import org.mauritania.main4ino.db.{Config => DbConfig}
 
 case class Config(server: ServerConfig, database: DbConfig)
 
-object Config extends Loadable[Config] {
+object Config extends Loadable {
 
-  def load(configFile: String): IO[Config] = load(configFile, identity)
+  def load(configFile: String): IO[Config] = loadFromFile[Config](configFile)
   case class ServerConfig(host: String ,port: Int)
 
 }

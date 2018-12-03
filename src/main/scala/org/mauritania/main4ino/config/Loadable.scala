@@ -6,15 +6,15 @@ import pureconfig.error.ConfigReaderException
 
 import scala.reflect.ClassTag
 
-abstract class Loadable[T: ClassTag] {
+trait Loadable {
   import pureconfig._
 
-  protected def load(configFile: String, f: T => T)(implicit reader: Derivation[ConfigReader[T]]): IO[T] = {
+  def loadFromFile[T: ClassTag](configFile: String)(implicit reader: Derivation[ConfigReader[T]]): IO[T] = {
     IO {
       loadConfig[T](ConfigFactory.load(configFile))
     }.flatMap {
       case Left(e) => IO.raiseError[T](new ConfigReaderException[T](e))
-      case Right(config) => IO.pure(f(config))
+      case Right(config) => IO.pure(config)
     }
   }
 

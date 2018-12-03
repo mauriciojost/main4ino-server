@@ -24,9 +24,9 @@ case class Config(
   val encryptionConfig = EncryptionConfig(privateKeyBits, salt)
 }
 
-object Config extends Loadable[Config] {
+object Config extends Loadable {
 
-  def load(configFile: String): IO[Config] = load(configFile, identity)
+  def load(configFile: String): IO[Config] = loadFromFile[Config](configFile)
 
   case class UsersBy(
     byId: Map[UserId, User],
