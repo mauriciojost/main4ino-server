@@ -51,27 +51,27 @@
                                        class="table table-bordered">
                                     <thead>
                                     <tr>
-                                        <th style="width: 15%"> {{ actorRep }} 's properties</th>
-                                        <th style="width: 15%">Reported value</th>
-                                        <th style="width: 15%">Target value</th>
-                                        <th style="width: 55%">Set</th>
+                                        <th style="width: 10%">Property of {{ actorRep }}</th>
+                                        <th style="width: 40%">Description</th>
+                                        <th style="width: 30%">Value</th>
+                                        <th style="width: 30%">Target</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     <tr ng-repeat="(propNameRep, propValueRep) in propsRep track by $index">
                                         <td>{{ propNameRep }}</td>
+                                        <td>
+                                            <div>
+                                                <p ng-bind-html="propDescriptions(actorRep, propNameRep)"></p>
+                                            </div>
+                                        </td>
                                         <td>{{ propValueRep }}</td>
                                         <td>
                                             <p class="text-warning">{{ targetsSummary[actorRep][propNameRep] }}</p>
-                                        </td>
-
-                                        <td>
+                                            <p>
                                             <form role="form">
 
-                                                <div>
-                                                    <p ng-bind-html="propDescriptions(actorRep, propNameRep)"></p>
-                                                </div>
-                                                <div class="input-group">
+                                                <div  class="input-group">
                                                     <input type="text" class="form-control"
                                                            ng-model="targetsSummaryUserInput[actorRep][propNameRep]"
                                                            readonly>
@@ -89,6 +89,8 @@
                                                         </ul>
                                                     </div>
                                                 </div>
+                                            </form>
+                                            </p>
                                         </td>
                                     </tr>
                                     </tbody>
