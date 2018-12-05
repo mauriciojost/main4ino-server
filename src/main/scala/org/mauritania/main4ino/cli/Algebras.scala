@@ -7,8 +7,9 @@ import org.mauritania.main4ino.security.Config
 
 object Algebras {
 
-  trait Cli[F[_]]  {
-    def readLine(msg: String): F[String]
+  trait Console[F[_]]  {
+    def readLine(): F[String]
+    def writeLine(msg: String): F[Unit]
   }
 
   trait Users[F[_]] {
