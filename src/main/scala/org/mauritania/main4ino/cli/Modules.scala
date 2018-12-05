@@ -3,30 +3,36 @@ package org.mauritania.main4ino.cli
 import java.io.{BufferedWriter, FileWriter}
 import java.nio.file.Path
 
+import cats.ApplicativeError
 import cats.effect.Sync
 import com.typesafe.config.ConfigFactory
-
-import scala.io.StdIn
+import io.circe.generic.auto._
+import io.circe.syntax._
 import org.mauritania.main4ino.cli.Algebras._
 import org.mauritania.main4ino.cli.Data.RawUser
 import org.mauritania.main4ino.config.Loadable
 import org.mauritania.main4ino.security.{Authentication, Config, User}
 import pureconfig.error.ConfigReaderException
-import io.circe.syntax._
-import io.circe.generic.auto._
+
+import scala.io.StdIn
+import scala.util.Try
 
 object Modules {
 
-  class CliSync[F[_]: Sync] extends Cli[F]  {
-    def readLine(msg: String): F[String] = {
+  class ConsoleSync[F[_] : Sync] extends Console[F] {
+    def readLine(): F[String] = {
+      Sync[F].delay {
+        StdIn.readLine()
+      }
+    }
+    def writeLine(msg: String): F[Unit] = {
       Sync[F].delay {
         println(msg)
-        StdIn.readLine()
       }
     }
   }
 
-  class UsersSync[F[_]: Sync] extends Users[F] {
+  class UsersSync[F[_] : Sync] extends Users[F] {
     def readRawUser(s: String): F[RawUser] = {
       Sync[F].delay {
         s.split(" ").toList match {
@@ -38,10 +44,10 @@ object Modules {
     }
   }
 
-  class ConfigsSync[F[_]: Sync] extends Configs[F] with Loadable {
-    import pureconfig._
+  class ConfigsSync[F[_]](implicit A: ApplicativeError[F, Throwable]) extends Configs[F] with Loadable {
+
     def addUser(c: Config, u: RawUser): F[Config] = {
-      Sync[F].delay {
+      A.pure {
         val hashed = Authentication.hashPassword(u.pass, c.salt)
         val nUser = User(u.name, hashed, u.email, u.granted)
         val nConf = c.copy(users = nUser :: c.users)
@@ -50,19 +56,22 @@ object Modules {
     }
 
     def readConfig(p: Path): F[Config] = {
-      Sync[F].delay {
-        implicit val ph = ProductHint[Config](ConfigFieldMapping(CamelCase, CamelCase))
-        loadConfig[Config](ConfigFactory.load(p.toAbsolutePath.toString)) match {
-          case Left(e) => throw new ConfigReaderException[Config](e)
-          case Right(config) => config
-        }
+      import pureconfig._
+      //implicit val ph: ProductHint[Config] = ProductHint[Config](ConfigFieldMapping(CamelCase, CamelCase))
+      val absPath = p.toFile
+      val c = ConfigFactory.parseFile(absPath)
+      loadConfig[Config](c) match {
+        case Left(e) => A.raiseError(new ConfigReaderException[Config](e))
+        case Right(config) => A.pure(config)
       }
     }
 
     def writeConfig(c: Config, p: Path): F[Unit] = {
-      Sync[F].delay {
-        val bw = new BufferedWriter(new FileWriter(p.toFile))
-        try bw.write(c.asJson.noSpaces) finally bw.close()
+      A.fromTry[Unit] {
+        Try {
+          val bw = new BufferedWriter(new FileWriter(p.toFile))
+          try bw.write(c.asJson.noSpaces) finally bw.close()
+        }
       }
     }
   }
