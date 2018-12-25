@@ -12,14 +12,19 @@ object Algebras {
     def writeLine(msg: String): F[Unit]
   }
 
+  trait Filesystem[F[_]]  {
+    def readFile(p: Path): F[String]
+    def writeFile(p: Path, b: String): F[Unit]
+  }
+
   trait Users[F[_]] {
     def readRawUser(s: String): F[RawUser]
   }
 
   trait Configs[F[_]]  {
     def addUser(c: Config, u: RawUser): F[Config]
-    def readConfig(p: Path): F[Config]
-    def writeConfig(c: Config, p: Path): F[Unit]
+    def fromString(b: String): F[Config]
+    def asString(c: Config): F[String]
   }
 
 }
