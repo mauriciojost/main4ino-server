@@ -11,6 +11,8 @@
       "at08h00:D1. -> Dance 1 at 8h00",
       "at20h00:Lry. -> Turn on RED led at 20h00",
       "every30m:M1Drink%20water!. -> Tell to 'Drink/water!' every 30 minutes",
+      "smTWtfsevery30mfrom6to18:M1Drink%20water!. -> Tell to 'Drink/water!' every 30 minutes from 6 until 18 on Tuesdays and Wednesdays",
+      "SMtwtfsat15h00:NBaby%eats!. -> Notify 'Baby eats!' at 15h00 on Sundays and Mondays",
       "every10s:L?. -> Turn randomly all leds every 10 seconds"
     ]
   },
@@ -25,22 +27,16 @@
     ]
   },
   {
-    "patterns": ["^.*\\.freq$"],
+    "patterns": ["^.*\\.freq$", "^body\\.r\\d{1,2}$"],
     "descriptions": ["Frequency at which the actor will act and perform its duty. See <a href=\"https://bitbucket.org/mauriciojost/main4ino-arduino/src/master/README.m\" target=\"_blank\">here</a>."],
     "examples": [
       "never     -> Never",
-      "000000000 -> Never",
       "at08h00   -> At 08h00 every day",
-      "1DDHHMMSS -> Fixed month-day/hour/minute/second",
-      "177120000 -> Any day at midday",
-      "2DDHHMMSS -> Modulo frequency",
-      "201012260 -> Every 22 minutes",
       "every30m  -> Every 30 minutes",
       "every10s  -> Every 10 seconds",
-      "3xxxxxxxx -> Every given period in seconds",
-      "300000099 -> Every 99 seconds",
-      "oneoff    -> Once and go back to previous configuration",
-      "400000000 -> Once and go back to previous configuration"
+      "smTWtfsevery30mfrom6to18 -> Every 30 minutes from 06h until 18h on Tuesdays and Wednesdays",
+      "SMtwtfsat15h00 -> At 15h00 on Sundays and Mondays",
+      "oneoff    -> Once and go back to previous configuration"
     ]
   },
   {
@@ -53,11 +49,31 @@
       "standup_started"
     ]
   },
-
   {
     "patterns": ["^images\\.im\\d{1,2}"],
     "descriptions": ["Bitmap of custom image i-th, represented in base 64. See <a href=\"https://docs.google.com/spreadsheets/d/1jXa9mFxeiN_bUji_WiCPKO_gB6pxQUeQ5QxgoSINqdc/edit\" target=\"_blank\">here</a>."],
     "examples": ["00002814100828140000000003C00000 -> dead"]
+  },
+  {
+    "patterns": ["^notifier\\.n\\d{1,2}"],
+    "descriptions": ["Notification item i-th."],
+    "examples": ["Drink water"]
+  },
+  {
+    "patterns": ["^settings\\.deepsleep$"],
+    "descriptions": ["Flag telling if deep sleep mode is on (to reduce power consumption)."],
+    "examples": [
+      "true -> deep sleep enabled",
+      "false -> deep sleep disabled"
+    ]
+  },
+  {
+    "patterns": ["^settings\\.periodms$"],
+    "descriptions": ["Period (in ms) of wakeup."],
+    "examples": [
+      "10000 -> every 10 seconds",
+      "60000 -> every 60 seconds"
+    ]
   },
   {
     "patterns": ["^settings\\.btnrout$"],
