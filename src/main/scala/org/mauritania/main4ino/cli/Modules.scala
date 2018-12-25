@@ -3,18 +3,18 @@ package org.mauritania.main4ino.cli
 import java.io.{BufferedWriter, FileWriter}
 import java.nio.file.Path
 
-import cats.ApplicativeError
 import cats.effect.Sync
-import com.typesafe.config.ConfigFactory
+import cats.{ApplicativeError, Monad}
+import com.typesafe.config.{ConfigFactory, Config => TypeSafeConfig}
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.mauritania.main4ino.cli.Algebras._
 import org.mauritania.main4ino.cli.Data.RawUser
-import org.mauritania.main4ino.config.Loadable
 import org.mauritania.main4ino.security.{Authentication, Config, User}
-import pureconfig.error.ConfigReaderException
+import cats.syntax.flatMap._
+import cats.syntax.functor._
 
-import scala.io.StdIn
+import scala.io.{Source, StdIn}
 import scala.util.Try
 
 object Modules {
@@ -44,7 +44,7 @@ object Modules {
     }
   }
 
-  class ConfigsSync[F[_]](implicit A: ApplicativeError[F, Throwable]) extends Configs[F] with Loadable {
+  class ConfigsAppErr[F[_]: Monad](implicit A: ApplicativeError[F, Throwable]) extends Configs[F] {
 
     def addUser(c: Config, u: RawUser): F[Config] = {
       A.pure {
@@ -55,24 +55,29 @@ object Modules {
       }
     }
 
-    def readConfig(p: Path): F[Config] = {
-      import pureconfig._
-      //implicit val ph: ProductHint[Config] = ProductHint[Config](ConfigFieldMapping(CamelCase, CamelCase))
-      val absPath = p.toFile
-      val c = ConfigFactory.parseFile(absPath)
-      loadConfig[Config](c) match {
-        case Left(e) => A.raiseError(new ConfigReaderException[Config](e))
-        case Right(config) => A.pure(config)
+    def fromString(s: String): F[Config] = {
+      val c = ConfigFactory.parseString(s)
+      val c1 = pureconfig.loadConfig[Config](c: TypeSafeConfig)
+      c1 match {
+        case Right(v) => A.pure(v)
+        case Left(e) => A.raiseError(new IllegalArgumentException(e.toList.map(_.description).mkString(". ")))
       }
     }
 
-    def writeConfig(c: Config, p: Path): F[Unit] = {
-      A.fromTry[Unit] {
+    def asString(c: Config): F[String] = A.pure(c.asJson.noSpaces)
+  }
+
+  class FilesystemSync[F[_]](implicit S: Sync[F]) extends Filesystem[F]  {
+    def readFile(p: Path): F[String] = S.fromTry[String](Try(Source.fromFile(p.toFile).mkString))
+
+    def writeFile(p: Path, b: String): F[Unit] = {
+      S.fromTry[Unit] {
         Try {
           val bw = new BufferedWriter(new FileWriter(p.toFile))
-          try bw.write(c.asJson.noSpaces) finally bw.close()
+          try bw.write(b) finally bw.close()
         }
       }
+
     }
   }
 
