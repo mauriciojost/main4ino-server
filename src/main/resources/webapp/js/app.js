@@ -253,24 +253,20 @@ webPortalApp.controller(
                 };
 
                 $log.log('Executing requests...');
-                $scope.queriedDevice = $scope.device;
-                $scope.reportsSummary = {};
-                $scope.summarySummary = {};
+                $scope.queriedDevice = $scope.device + " (in progress)";
 
                 $http(reqReports).success(
                     function(data) {
                         $log.log('Success reports: ' + JSON.stringify(data));
                         $scope.reportsSummary = data;
                         $scope.targetsSummaryUserInput = data;
+                        $scope.queriedDevice = $scope.device;
                     }
                 ).error(
                     function(data) {
                         $log.log('Failed reports: ' + data);
                         $scope.reportsSummary = {};
-                        BootstrapDialog.show({
-                            title: 'Error',
-                            message: 'Failed to retrieve reports needed to perform a query: ' + data
-                        });
+                        $scope.queriedDevice = $scope.device + " (failed: " + data + ")";
                     }
                 );
 
@@ -278,11 +274,13 @@ webPortalApp.controller(
                     function(data) {
                         $log.log('Success targets: ' + JSON.stringify(data));
                         $scope.targetsSummary = data;
+                        $scope.queriedDevice = $scope.device;
                     }
                 ).error(
                     function(data) {
                         $log.log('Failed to retrieve targets: ' + data);
                         $scope.targetsSummary = {};
+                        $scope.queriedDevice = $scope.device + " (failed: " + data + ")";
                     }
                 );
 
