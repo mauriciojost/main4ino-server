@@ -54,7 +54,7 @@ webPortalApp.controller(
     'HomeController',
         function($scope, $http, $log, $location, $state) {
 
-            $scope.device = getCookie("device") || $location.search().device;
+            $scope.device = $location.search().device || getCookie("device");
             $scope.logged = null;
 
             $scope.loginUsingSession = function() {
@@ -138,7 +138,7 @@ webPortalApp.controller(
         function($scope, $http, $log, $location) {
 
             $scope.session = getCookie("session");
-            $scope.device = getCookie("device") || $location.search().device;
+            $scope.device = $location.search().device || getCookie("device");
 
             $scope.tabl = 'reports'; // table to get records from
             $scope.from = 2; // in days, lower-bound to filter history records
@@ -186,7 +186,7 @@ webPortalApp.controller(
         function($scope, $http, $log, $location) {
 
             $scope.session = getCookie("session");
-            $scope.device = getCookie("device") || $location.search().device;
+            $scope.device = $location.search().device || getCookie("device");
 
             $scope.queriedDevice = '';
 
