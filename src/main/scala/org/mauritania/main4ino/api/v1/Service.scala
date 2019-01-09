@@ -34,12 +34,46 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
     s"""
        | API HELP
        | --- ----
+       |
+       | HELP
+       | ----
+       |
        | GET /help
        |
        |    Display this help
        |
        |    Returns: OK (200)
        |
+       |
+       | TIME
+       | ----
+       |
+       | GET /time?timezone=<tz>
+       |
+       |    Return the formatted time at a given timezone (example: UTC, Europe/Paris, etc.)
+       |
+       |    Returns: OK (200)
+       |
+       |
+       | USER
+       | ----
+       |
+       | POST /session (with standard basic auth)
+       |
+       |    Return the session id
+       |
+       |    Returns: OK (200)
+       |
+       |
+       | GET /user
+       |
+       |    Return the user id (if logged in)
+       |
+       |    Returns: OK (200)
+       |
+       |
+       | DEVICES
+       | -------
        |
        | POST /devices/<dev>/targets/
        |
