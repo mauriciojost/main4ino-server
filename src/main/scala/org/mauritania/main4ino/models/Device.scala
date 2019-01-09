@@ -20,7 +20,7 @@ case class Device(
 		this.getClass.getSimpleName + "(\n" +
       "  id       : " + metadata.id.mkString + "\n" +
       "  device   : " + metadata.device + "\n" +
-      "  timestamp: " + metadata.timestamp.map(Time.toString).mkString + "\n" +
+      "  timestamp: " + metadata.timestamp.map(Time.asString).mkString + "\n" +
       "  actors   : \n" + actors.map{case (a, p) => s"    - $a: ${p.map{case (k, (v, s)) => s"$k=$v($s)"}.mkString(", ")} \n"}.mkString +
 		")"
 	}

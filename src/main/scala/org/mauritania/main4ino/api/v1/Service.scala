@@ -1,5 +1,8 @@
 package org.mauritania.main4ino.api.v1
 
+import java.time.{ZoneId, ZonedDateTime}
+import java.time.format.DateTimeFormatter
+
 import cats.Monad
 import io.circe.syntax._
 import org.http4s.circe._
@@ -22,7 +25,7 @@ import org.http4s.server.AuthMiddleware
 import org.mauritania.main4ino.security.Authentication.AccessAttempt
 import org.mauritania.main4ino.security.{Authentication, User}
 
-class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) extends Http4sDsl[F] {
+class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], time: Time[F]) extends Http4sDsl[F] {
 
   import Service._
   import Url._
@@ -133,14 +136,20 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) ex
       case GET -> _ / "help" as _ =>
         Ok(HelpMsg, ContentTypeTextPlain)
 
+      // Date/Time
+
+      case GET -> _ / "time" :? TimezoneP(tz) as _ => {
+        Ok(nowAtTimezone(tz.getOrElse("UTC")).map(_.asJson), ContentTypeTextPlain)
+      }
+
       // Targets & Reports (at device level)
 
-      case a@POST -> _ / "devices" / S(device) / T(table) as _ => {
-        val x = postDev(a.req, device, table, Time.nowTimestamp)
+      case a@POST -> _ / "devices" / D(device) / T(table) as _ => {
+        val x = postDev(a.req, device, table, time.nowUtc)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / S(device) / T(table) / LongVar(id) as _ => {
+      case a@GET -> _ / "devices" / D(device) / T(table) / LongVar(id) as _ => {
         val x = getDev(table, id)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -148,7 +157,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) ex
         }
       }
 
-      case a@GET -> _ / "devices" / S(device) / T(table) / "last" as _ => {
+      case a@GET -> _ / "devices" / D(device) / T(table) / "last" as _ => {
         val x = getDevLast(device, table)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -156,12 +165,12 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) ex
         }
       }
 
-      case a@GET -> _ / "devices" / S(device) / T(table) :? FromP(from) +& ToP(to) as _ => {
+      case a@GET -> _ / "devices" / D(device) / T(table) :? FromP(from) +& ToP(to) as _ => {
         val x = getDevAll(device, table, from, to)
         Ok(x.map(_.asJson.noSpaces), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / S(device) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as _ => {
+      case a@GET -> _ / "devices" / D(device) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as _ => {
         val x = getDevActorTups(device, None, table, status, consume).map(t => ActorMapU.fromTups(t))
         x.flatMap { m =>
           if (m.isEmpty) {
@@ -172,29 +181,29 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) ex
         }
       }
 
-      case a@GET -> _ / "devices" / S(device) / T(table) / "count" :? StatusP(status) as _ => {
+      case a@GET -> _ / "devices" / D(device) / T(table) / "count" :? StatusP(status) as _ => {
         val x = getDevActorCount(device, None, table, status)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
       // Targets & Reports (at device-actor level)
 
-      case a@POST -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) as _ => {
-        val x = postDevActor(a.req, device, actor, table, Time.nowTimestamp)
+      case a@POST -> _ / "devices" / D(device) / "actors" / D(actor) / T(table) as _ => {
+        val x = postDevActor(a.req, device, actor, table, time.nowUtc)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) / "count" :? StatusP(status) as _ => {
+      case a@GET -> _ / "devices" / D(device) / "actors" / D(actor) / T(table) / "count" :? StatusP(status) as _ => {
         val x = getDevActorCount(device, Some(actor), table, status)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) :? StatusP(status) +& ConsumeP(consume) as _ => {
+      case a@GET -> _ / "devices" / D(device) / "actors" / D(actor) / T(table) :? StatusP(status) +& ConsumeP(consume) as _ => {
         val x = getDevActors(device, actor, table, status, consume)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as _ => {
+      case a@GET -> _ / "devices" / D(device) / "actors" / D(actor) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as _ => {
         val x = getDevActorTups(device, Some(actor), table, status, consume).map(PropsMapU.fromTups)
         x.flatMap { m =>
           if (m.isEmpty) {
@@ -205,7 +214,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) ex
         }
       }
 
-      case a@GET -> _ / "devices" / S(device) / "actors" / S(actor) / T(table) / "last" :? StatusP(status) as _ => {
+      case a@GET -> _ / "devices" / D(device) / "actors" / D(actor) / T(table) / "last" :? StatusP(status) as _ => {
         val x = getLastDevActorTups(device, actor, table, status).map(PropsMapU.fromTups)
         x.flatMap { m =>
           if (m.isEmpty) {
@@ -236,24 +245,28 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) ex
     } yield (deviceU)
   }
 
-  private[v1] def postDev(req: Request[F], device: DeviceName, table: Table, t: Timestamp): F[IdResponse] = {
+  private[v1] def postDev(req: Request[F], device: DeviceName, table: Table, dt: F[ZonedDateTime]): F[IdResponse] = {
     implicit val x = JsonEncoding.StringDecoder
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
+      t <- dt
+      ts = Time.asTimestamp(t)
       actorMapU <- req.decodeJson[ActorMapU]
-      deviceBom = DeviceU(MetadataU(None, Some(t), device), actorMapU).toBom
+      deviceBom = DeviceU(MetadataU(None, Some(ts), device), actorMapU).toBom
       id <- repository.insertDevice(table, deviceBom)
       _ <- logger.debug(s"POST device $device into table $table: $deviceBom / $id")
       resp = IdResponse(id)
     } yield (resp)
   }
 
-  private[v1] def postDevActor(req: Request[F], device: DeviceName, actor: ActorName, table: Table, t: Timestamp): F[IdResponse] = {
+  private[v1] def postDevActor(req: Request[F], device: DeviceName, actor: ActorName, table: Table, dt: F[ZonedDateTime]): F[IdResponse] = {
     implicit val x = JsonEncoding.StringDecoder
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
+      t <- dt
+      ts = Time.asTimestamp(t)
       p <- req.decodeJson[PropsMapU]
-      deviceBom = DeviceU(MetadataU(None, Some(t), device), Map(actor -> p)).toBom
+      deviceBom = DeviceU(MetadataU(None, Some(ts), device), Map(actor -> p)).toBom
       id <- repository.insertDevice(table, deviceBom)
       _ <- logger.debug(s"POST device $device (actor $actor) into table $table: $deviceBom / $id")
       resp = IdResponse(id)
@@ -327,6 +340,11 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F]) ex
   val serviceWithAuthentication: HttpService[F] = customAuthMiddleware(service)
   private[v1] def request(r: Request[F]): F[Response[F]] = serviceWithAuthentication.orNotFound(r)
 
+  private def nowAtTimezone(tz: String): F[TimeResponse] = {
+    val tutc = time.nowUtc.map(_.withZoneSameInstant(ZoneId.of(tz)))
+    tutc.map(t => TimeResponse(tz, Time.asTimestamp(t), Time.asString(t)))
+  }
+
 }
 
 object Service {
@@ -335,7 +353,10 @@ object Service {
   final val ContentTypeTextPlain = `Content-Type`(MediaType.`text/plain`)
 
   case class IdResponse(id: RecordId)
+
   case class CountResponse(count: Int)
+
+  case class TimeResponse(zoneName: String, timestamp: Long, formatted: String) //"zoneName":"Europe\/Paris","timestamp":1547019039,"formatted":"2019-01-09 07:30:39"}
 
 }
 

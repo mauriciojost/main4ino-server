@@ -1,6 +1,6 @@
 package org.mauritania.main4ino.api.v1
 
-import java.time.{Clock, Instant, ZoneId}
+import java.time._
 
 import cats._
 import cats.effect.Sync
@@ -27,6 +27,8 @@ import org.scalatest.{Matchers, WordSpec}
 
 import scala.reflect.ClassTag
 import org.mauritania.main4ino.SyncId
+import org.mauritania.main4ino.api.v1.Service.TimeResponse
+import org.mauritania.main4ino.helpers.{Time, TimeIO}
 import org.reactormonk.{CryptoBits, PrivateKey}
 
 class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
@@ -44,7 +46,8 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
 
   "Help request" should {
     val r = stub[Repository[Id]]
-    val s = new Service(new AuthenticationId(AuthConfig), r)(SyncId)
+    val t = stub[Time[Id]]
+    val s = new Service(new AuthenticationId(AuthConfig), r, t)(SyncId)
     "return 200" in {
       getApiV1("/help")(s).status shouldBe (HttpStatus.Ok)
     }
@@ -56,22 +59,26 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   class AuthenticationId(config: Config) extends Authentication[Id] {
     def authenticateAndCheckAccessFromRequest(request: Request[Id]): Id[AccessAttempt] =
       Authentication.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path)
+
     def generateSession(user: User): Id[UserSession] =
       Authentication.sessionFromUser(user, config.privateKeyBits, config.nonceStartupTime)
   }
 
   "Create target request" should {
     val r = stub[Repository[Id]]
-    val s = new Service(new AuthenticationId(AuthConfig), r)
+    val t = stub[Time[Id]]
+    val s = new Service(new AuthenticationId(AuthConfig), r, t)
     "return 201 with empty properties" in {
-      val t = Device(Metadata(None, None, "dev1"))
-      createADeviceAndExpect(Table.Reports, t)(HttpStatus.Created)(s, r)
-      createADeviceAndExpect(Table.Targets, t)(HttpStatus.Created)(s, r)
+      (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).twice // mock
+      val d = Device(Metadata(None, None, "dev1"))
+      createADeviceAndExpect(Table.Reports, d)(HttpStatus.Created)(s, r)
+      createADeviceAndExpect(Table.Targets, d)(HttpStatus.Created)(s, r)
     }
     "return 201 with a regular target/request" in {
-      val t = Dev1
-      createADeviceAndExpect(Table.Reports, t)(HttpStatus.Created)(s, r)
-      createADeviceAndExpect(Table.Targets, t)(HttpStatus.Created)(s, r)
+      (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).twice // mock
+      val d = Dev1
+      createADeviceAndExpect(Table.Reports, d)(HttpStatus.Created)(s, r)
+      createADeviceAndExpect(Table.Targets, d)(HttpStatus.Created)(s, r)
     }
   }
 
@@ -92,7 +99,8 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
 
   "The service" should {
     val r = stub[Repository[Id]]
-    val s = new Service(new AuthenticationId(AuthConfig), r)
+    val t = stub[Time[Id]]
+    val s = new Service(new AuthenticationId(AuthConfig), r, t)
     "return 200 with an existent target/request when reading target/report requests" in {
       (r.selectDeviceWhereRequestId _).when(Table.Targets, 1L).returns(Some(Dev1)).once // mock
       (r.selectDeviceWhereRequestId _).when(Table.Reports, 1L).returns(Some(Dev1)).once() // mock
@@ -108,7 +116,8 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
 
   it should {
     val r = stub[Repository[Id]]
-    val s = new Service(new AuthenticationId(AuthConfig), r)
+    val t = stub[Time[Id]]
+    val s = new Service(new AuthenticationId(AuthConfig), r, t)
     "return 200 with a list of existent targets when reading all targets request" in {
       (r.selectDevicesWhereTimestamp _).when(Table.Targets, "dev1", None, None).returns(Iterable(Dev1, Dev2)).once // mock
 
@@ -119,9 +128,30 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   }
 
   it should {
+    val r = stub[Repository[Id]]
+    val t = stub[Time[Id]]
+    val s = new Service(new AuthenticationId(AuthConfig), r, t)
+    "return 200 with the time (default UTC timezone)" in {
+      (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).once // mock
+
+      val ta = getApiV1("/time")(s)
+      ta.status shouldBe (HttpStatus.Ok)
+      ta.as[Json](SyncId, DecoderIdJson) shouldBe (TimeResponse("UTC", 0L, "1970-01-01T00:00:00").asJson)
+    }
+    "return 200 with the time (custom timezone)" in {
+      (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).once // mock
+
+      val ta = getApiV1("/time?timezone=Europe/Paris")(s)
+      ta.status shouldBe (HttpStatus.Ok)
+      ta.as[Json](SyncId, DecoderIdJson) shouldBe (TimeResponse("Europe/Paris", 0, "1970-01-01T01:00:00").asJson)
+    }
+  }
+
+  it should {
 
     val r = stub[Repository[Id]]
-    val s = new Service(new AuthenticationId(AuthConfig), r)
+    val t = stub[Time[Id]]
+    val s = new Service(new AuthenticationId(AuthConfig), r, t)
 
     "return the list of associated targets set when merging correctly existent targets" in {
 
@@ -158,9 +188,10 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
 
     }
 
-    "Reject requests when invalid token" should {
+    "when invalid token" should {
       val r = stub[Repository[Id]]
-      val s = new Service(new AuthenticationId(AuthConfig), r)
+      val t = stub[Time[Id]]
+      val s = new Service(new AuthenticationId(AuthConfig), r, t)
       "return 403 (forbidden) if invalid credentials" in {
         getApiV1("/help", HeadersCredsInvalid)(s).status shouldBe (HttpStatus.Forbidden)
       }
