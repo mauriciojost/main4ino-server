@@ -148,7 +148,7 @@ webPortalApp.controller(
                 var date = new Date();
                 var msAgo = 1000 * 3600 * 24 * $scope.from;
                 var fromMs = date.getTime() - msAgo;
-                var from = fromMs / 1000;
+                var from = (fromMs / 1000) | 0; // take to seconds and cast to int
 
                 var req = {
                     method: 'GET',
