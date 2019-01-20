@@ -25,6 +25,8 @@ import org.http4s.server.AuthMiddleware
 import org.mauritania.main4ino.security.Authentication.AccessAttempt
 import org.mauritania.main4ino.security.{Authentication, User}
 
+import scala.util.{Failure, Success, Try}
+
 class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], time: Time[F]) extends Http4sDsl[F] {
 
   import Service._
@@ -316,7 +318,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
     } yield (deviceBom)
   }
 
-  private[v1] def getDevAll(device: DeviceName, table: Table, from: Option[Timestamp], to: Option[Timestamp]): F[Iterable[DeviceU]] = {
+  private[v1] def getDevAll(device: DeviceName, table: Table, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): F[Iterable[DeviceU]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
       deviceBoms <- repository.selectDevicesWhereTimestamp(table, device, from, to).map(_.map(DeviceU.fromBom))

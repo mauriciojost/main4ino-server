@@ -15,7 +15,7 @@ trait Repository[F[_]] {
 
   def insertDevice(table: Table, t: Device): F[RecordId]
   def selectDeviceWhereRequestId(table: Table, requestId: RecordId): F[Option[Device]]
-  def selectDevicesWhereTimestamp(table: Table, device: DeviceName, from: Option[Timestamp], to: Option[Timestamp]): F[Iterable[Device]]
+  def selectDevicesWhereTimestamp(table: Table, device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): F[Iterable[Device]]
   def selectMaxDevice(table: Table, device: DeviceName): F[Option[Device]]
   def selectMaxActorTupsStatus(table: Table, device: DeviceName, actor: ActorName, status: Option[Status]): F[List[ActorTup]]
   def selectActorTupWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[Status], consume: Boolean): Stream[F, ActorTup]
@@ -42,7 +42,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
     transaction.transact(transactor)
   }
 
-  def selectDevicesWhereTimestamp(table: Table, device: DeviceName, from: Option[Timestamp], to: Option[Timestamp]): IO[Iterable[Device]] = {
+  def selectDevicesWhereTimestamp(table: Table, device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): IO[Iterable[Device]] = {
     val transaction = for {
       d <- sqlSelectMetadataActorTupWhereDevice(table, device, from, to)
     } yield (d)
@@ -100,7 +100,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
       .update.withUniqueGeneratedKeys[RecordId]("id")
   }
 
-  private def sqlSelectMetadataActorTupWhereDevice(table: Table, d: DeviceName, from: Option[Timestamp], to: Option[Timestamp]): Stream[ConnectionIO, Device.Device1] = {
+  private def sqlSelectMetadataActorTupWhereDevice(table: Table, d: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): Stream[ConnectionIO, Device.Device1] = {
     val fromFr = from match {
       case Some(a) => fr"AND r.creation >= $a"
       case None => fr""

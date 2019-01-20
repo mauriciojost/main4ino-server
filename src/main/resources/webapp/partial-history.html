@@ -50,7 +50,7 @@
                         <tbody>
                         <tr ng-repeat="device in result track by $index">
                             <td>{{ device.metadata.id }}</td>
-                            <td>{{ device.metadata.timestamp | date:'yyyy-MM-dd HH:mm:ss Z' }}</td>
+                            <td>{{ device.metadata.timestamp * 1000 | date:'yyyy-MM-dd HH:mm:ss Z' }}</td>
                             <td>{{ device.metadata.device }}</td>
                             <td>
                                 <table ng-repeat="(actor, props) in device.actors track by $index"

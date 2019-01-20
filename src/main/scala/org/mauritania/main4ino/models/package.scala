@@ -12,6 +12,6 @@ package object models {
 	type PropName = String
 	type PropValue = String
 
-	type Timestamp = Long
+	type EpochSecTimestamp = Long
 
 }

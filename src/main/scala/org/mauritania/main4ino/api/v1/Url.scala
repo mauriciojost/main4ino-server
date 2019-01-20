@@ -3,7 +3,7 @@ package org.mauritania.main4ino.api.v1
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import org.mauritania.main4ino.RepositoryIO.Table
 import org.mauritania.main4ino.RepositoryIO.Table.Table
-import org.mauritania.main4ino.models.{Status, Timestamp}
+import org.mauritania.main4ino.models.{Status, EpochSecTimestamp}
 
 object Url {
 
@@ -12,8 +12,8 @@ object Url {
   object StatusP extends OptionalQueryParamDecoderMatcher[Status]("status")
   object ConsumeP extends OptionalQueryParamDecoderMatcher[Boolean]("consume")
 
-  object FromP extends OptionalQueryParamDecoderMatcher[Timestamp]("from")
-  object ToP extends OptionalQueryParamDecoderMatcher[Timestamp]("to")
+  object FromP extends OptionalQueryParamDecoderMatcher[EpochSecTimestamp]("from")
+  object ToP extends OptionalQueryParamDecoderMatcher[EpochSecTimestamp]("to")
 
   object TimezoneP extends OptionalQueryParamDecoderMatcher[String]("timezone")
 

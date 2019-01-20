@@ -30,7 +30,7 @@ object DeviceU {
 
   case class MetadataU (
     id: Option[RecordId],
-    timestamp: Option[Timestamp],
+    timestamp: Option[EpochSecTimestamp],
     device: DeviceName
   )
 

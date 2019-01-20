@@ -147,7 +147,8 @@ webPortalApp.controller(
                 $log.log('Searching device ' + $scope.device + ' in ' + $scope.tabl);
                 var date = new Date();
                 var msAgo = 1000 * 3600 * 24 * $scope.from;
-                var from = date.getTime() - msAgo;
+                var fromMs = date.getTime() - msAgo;
+                var from = fromMs / 1000;
 
                 var req = {
                     method: 'GET',
