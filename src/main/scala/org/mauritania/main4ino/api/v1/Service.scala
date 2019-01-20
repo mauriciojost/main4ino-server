@@ -54,7 +54,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
        |
        |    Return the formatted time at a given timezone (example: UTC, Europe/Paris, etc.)
        |
-       |    Returns: OK (200)
+       |    Returns: OK (200) | BAD_REQUEST (400)
        |
        |
        | USER
@@ -175,7 +175,11 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
       // Date/Time
 
       case GET -> _ / "time" :? TimezoneP(tz) as _ => {
-        Ok(nowAtTimezone(tz.getOrElse("UTC")).map(_.asJson), ContentTypeTextPlain)
+        val attempt = Try(nowAtTimezone(tz.getOrElse("UTC")))
+        attempt match {
+          case Success(v) => Ok(v.map(_.asJson), ContentTypeTextPlain)
+          case Failure(f) => BadRequest()
+        }
       }
 
       // Targets & Reports (at device level)

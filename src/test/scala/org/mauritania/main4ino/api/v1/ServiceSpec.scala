@@ -131,6 +131,12 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     val r = stub[Repository[Id]]
     val t = stub[Time[Id]]
     val s = new Service(new AuthenticationId(AuthConfig), r, t)
+    "return 400 when invalid timezone provided" in {
+      (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).once // mock
+
+      val ta = getApiV1("/time?timezone=EuropeTOs/PariTOs")(s) // unexistent timezone
+      ta.status shouldBe (HttpStatus.BadRequest)
+    }
     "return 200 with the time (default UTC timezone)" in {
       (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).once // mock
 
