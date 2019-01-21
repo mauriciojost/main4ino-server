@@ -50,9 +50,9 @@ class RepositoryIOSpec extends DbSuite {
 
   it should "read devices respecting from and to criteria" in {
 
-    val snap1 = Device1.withId(Some(1L)).withTimestamp(Some(1L))
-    val snap2 = Device1.withId(Some(2L)).withTimestamp(Some(2L))
-    val snap3 = Device1.withId(Some(3L)).withTimestamp(Some(3L))
+    val snap1 = Device1.withId(Some(1L)).withTimestamp(1L)
+    val snap2 = Device1.withId(Some(2L)).withTimestamp(2L)
+    val snap3 = Device1.withId(Some(3L)).withTimestamp(3L)
 
     val repo = new RepositoryIO(transactor)
     repo.insertDevice(Table.Targets, snap1).unsafeRunSync() shouldBe(1L)
@@ -89,6 +89,32 @@ class RepositoryIOSpec extends DbSuite {
 
       repo.selectRequestIdsWhereDevice(table, t1.metadata.device).compile.toList.unsafeRunSync() shouldBe(List(1L))
       repo.selectRequestIdsWhereDevice(table, t2.metadata.device).compile.toList.unsafeRunSync() shouldBe(List(2L, 3L))
+    }
+  }
+
+  it should "delete old target/reports" in {
+    val repo = new RepositoryIO(transactor)
+
+    val d1 = Device1.withDeviceName("device1").withTimestamp(10L)
+    val d2 = Device1.withDeviceName("device2").withTimestamp(20L)
+
+    Table.all.foreach { table =>
+      repo.insertDevice(table, d1).unsafeRunSync() shouldBe(1L) // created target for device 1, resulted in id 1
+      repo.insertDevice(table, d2).unsafeRunSync() shouldBe(2L) // for device 2, resulted in id 2
+
+      repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe(List(1L))
+      repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe(List(2L))
+
+      repo.selectActorTupWhereDeviceActorStatus(table, d1.metadata.device, None, None, false).compile.toList.unsafeRunSync().size shouldBe(5)
+      repo.selectActorTupWhereDeviceActorStatus(table, d2.metadata.device, None, None, false).compile.toList.unsafeRunSync().size shouldBe(5)
+
+      repo.cleanup(table, Long.MaxValue).unsafeRunSync() shouldBe(2)
+
+      repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe(Nil)
+      repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe(Nil)
+
+      repo.selectActorTupWhereDeviceActorStatus(table, d1.metadata.device, None, None, false).compile.toList.unsafeRunSync().size shouldBe(0)
+      repo.selectActorTupWhereDeviceActorStatus(table, d2.metadata.device, None, None, false).compile.toList.unsafeRunSync().size shouldBe(0)
     }
   }
 

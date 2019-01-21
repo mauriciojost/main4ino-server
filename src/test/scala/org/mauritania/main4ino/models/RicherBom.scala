@@ -10,7 +10,7 @@ object RicherBom {
 
     def withStatus(s: Status): Device = Device.fromActorTups(d.metadata, d.asActorTups.map(_.copy(status = s)))
 
-    def withTimestamp(t: Option[EpochSecTimestamp]): Device = d.copy(metadata = d.metadata.copy(timestamp = t))
+    def withTimestamp(t: EpochSecTimestamp): Device = d.copy(metadata = d.metadata.copy(timestamp = Some(t)))
 
     def withouIdNortTimestamp(): Device = d.copy(metadata = d.metadata.copy(id = None, timestamp = None))
 
