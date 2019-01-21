@@ -19,11 +19,14 @@ object Server extends StreamApp[IO] {
       configApp <- Stream.eval(config.Config.load("application.conf"))
       configUsers <- Stream.eval(security.Config.load("security.conf"))
       transactor <- Stream.eval(Database.transactor(configApp.database))
+      auth = new AuthenticationIO(configUsers)
+      repo = new RepositoryIO(transactor)
+      time = new TimeIO()
       _ <- Stream.eval(Database.initialize(transactor))
       exitCode <- BlazeBuilder[IO]
         .bindHttp(configApp.server.port, configApp.server.host)
         .mountService(new webapp.Service().service, "/")
-        .mountService(new v1.Service(new AuthenticationIO(configUsers), new RepositoryIO(transactor), new TimeIO()).serviceWithAuthentication, "/api/v1")
+        .mountService(new v1.Service(auth, repo, time).serviceWithAuthentication, "/api/v1")
         .serve
     } yield exitCode
   }

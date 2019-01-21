@@ -363,7 +363,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
   }
 
 
-  def logAuthentication(user: AccessAttempt): F[AccessAttempt] = {
+  private[v1] def logAuthentication(user: AccessAttempt): F[AccessAttempt] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
       msg = user match {
