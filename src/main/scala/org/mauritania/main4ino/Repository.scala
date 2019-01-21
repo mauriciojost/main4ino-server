@@ -13,7 +13,7 @@ import org.mauritania.main4ino.RepositoryIO.Table.Table
 
 trait Repository[F[_]] {
 
-  def cleanup(table: Table, oltherThan: EpochSecTimestamp): F[Int]
+  def cleanup(table: Table, now: EpochSecTimestamp, preserveWindowSecs: Int): F[Int]
   def insertDevice(table: Table, t: Device): F[RecordId]
   def selectDeviceWhereRequestId(table: Table, requestId: RecordId): F[Option[Device]]
   def selectDevicesWhereTimestamp(table: Table, device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): F[Iterable[Device]]
@@ -27,10 +27,10 @@ trait Repository[F[_]] {
 // Naming regarding to SQL
 class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
 
-  def cleanup(table: Table, olderThan: EpochSecTimestamp) = {
+  def cleanup(table: Table, now: EpochSecTimestamp, preserveWindowSecs: Int) = {
     val transaction = for {
-      m <- sqlDeleteMetadataOlderThan(table, olderThan)
-      _ <- sqlDeleteActorTupOrphan(table)
+      m <- sqlDeleteMetadataWhereCreationIsLess(table, now - preserveWindowSecs)
+      _ <- sqlDeleteActorTupOrphanOfRequest(table)
     } yield (m)
     transaction.transact(transactor)
   }
@@ -109,12 +109,12 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
       .update.withUniqueGeneratedKeys[RecordId]("id")
   }
 
-  private def sqlDeleteMetadataOlderThan(table: Table, olderThan: EpochSecTimestamp): ConnectionIO[Int] = {
-    (fr"DELETE FROM" ++ Fragment.const(table.code + "_requests") ++ fr"WHERE creation < $olderThan")
+  private def sqlDeleteMetadataWhereCreationIsLess(table: Table, upperbound: EpochSecTimestamp): ConnectionIO[Int] = {
+    (fr"DELETE FROM" ++ Fragment.const(table.code + "_requests") ++ fr"WHERE creation < $upperbound")
       .update.run
   }
 
-  private def sqlDeleteActorTupOrphan(table: Table): ConnectionIO[Int] = {
+  private def sqlDeleteActorTupOrphanOfRequest(table: Table): ConnectionIO[Int] = {
     (fr"DELETE FROM " ++ Fragment.const(table.code) ++ fr" tu WHERE NOT EXISTS (SELECT 1 FROM " ++ Fragment.const(table.code + "_requests") ++ fr" re where tu.request_id = re.id)")
       .update.run
   }

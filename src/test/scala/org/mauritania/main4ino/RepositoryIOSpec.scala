@@ -108,7 +108,12 @@ class RepositoryIOSpec extends DbSuite {
       repo.selectActorTupWhereDeviceActorStatus(table, d1.metadata.device, None, None, false).compile.toList.unsafeRunSync().size shouldBe(5)
       repo.selectActorTupWhereDeviceActorStatus(table, d2.metadata.device, None, None, false).compile.toList.unsafeRunSync().size shouldBe(5)
 
-      repo.cleanup(table, Long.MaxValue).unsafeRunSync() shouldBe(2)
+      repo.cleanup(table, 30, 30).unsafeRunSync() shouldBe(0) // preserve all
+
+      repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe(List(1L))
+      repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe(List(2L))
+
+      repo.cleanup(table, 30, 5).unsafeRunSync() shouldBe(2) // preserve nothing
 
       repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe(Nil)
       repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe(Nil)
