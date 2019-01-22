@@ -12,9 +12,9 @@ import org.mauritania.main4ino.{Repository, RepositoryIO}
 import org.mauritania.main4ino.models._
 import org.http4s.headers.`Content-Type`
 import org.mauritania.main4ino.RepositoryIO.Table.Table
-import org.mauritania.main4ino.api.v1.ActorMapU.ActorMapU
-import org.mauritania.main4ino.api.v1.DeviceU.MetadataU
-import org.mauritania.main4ino.api.v1.PropsMapU.PropsMapU
+import org.mauritania.main4ino.api.v1.ActorMapV1.ActorMapV1
+import org.mauritania.main4ino.api.v1.DeviceV1.MetadataV1
+import org.mauritania.main4ino.api.v1.PropsMapV1.PropsMapV1
 import org.mauritania.main4ino.helpers.Time
 import cats.data.{Kleisli, OptionT}
 import cats.effect.Sync
@@ -174,7 +174,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
 
       // Date/Time
 
-      case GET -> _ / "time" :? TimezoneP(tz) as _ => {
+      case GET -> _ / "time" :? TimezoneParam(tz) as _ => {
         val attempt = Try(nowAtTimezone(tz.getOrElse("UTC")))
         attempt match {
           case Success(v) => Ok(v.map(_.asJson), ContentTypeTextPlain)
@@ -184,12 +184,12 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
 
       // Targets & Reports (at device level)
 
-      case a@POST -> _ / "devices" / D(device) / T(table) as _ => {
+      case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) as _ => {
         val x = postDev(a.req, device, table, time.nowUtc)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / D(device) / T(table) / LongVar(id) as _ => {
+      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / LongVar(id) as _ => {
         val x = getDev(table, id)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -197,7 +197,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
         }
       }
 
-      case a@GET -> _ / "devices" / D(device) / T(table) / "last" as _ => {
+      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "last" as _ => {
         val x = getDevLast(device, table)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -205,13 +205,13 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
         }
       }
 
-      case a@GET -> _ / "devices" / D(device) / T(table) :? FromP(from) +& ToP(to) as _ => {
+      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) :? FromParam(from) +& ToParam(to) as _ => {
         val x = getDevAll(device, table, from, to)
         Ok(x.map(_.asJson.noSpaces), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / D(device) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as _ => {
-        val x = getDevActorTups(device, None, table, status, consume).map(t => ActorMapU.fromTups(t))
+      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "summary" :? StatusParam(status) +& ConsumeParam(consume) as _ => {
+        val x = getDevActorTups(device, None, table, status, consume).map(t => ActorMapV1.fromTups(t))
         x.flatMap { m =>
           if (m.isEmpty) {
             NoContent()
@@ -221,30 +221,30 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
         }
       }
 
-      case a@GET -> _ / "devices" / D(device) / T(table) / "count" :? StatusP(status) as _ => {
+      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "count" :? StatusParam(status) as _ => {
         val x = getDevActorCount(device, None, table, status)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
       // Targets & Reports (at device-actor level)
 
-      case a@POST -> _ / "devices" / D(device) / "actors" / D(actor) / T(table) as _ => {
+      case a@POST -> _ / "devices" / Dvc(device) / "actors" / Dvc(actor) / Tbl(table) as _ => {
         val x = postDevActor(a.req, device, actor, table, time.nowUtc)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / D(device) / "actors" / D(actor) / T(table) / "count" :? StatusP(status) as _ => {
+      case a@GET -> _ / "devices" / Dvc(device) / "actors" / Dvc(actor) / Tbl(table) / "count" :? StatusParam(status) as _ => {
         val x = getDevActorCount(device, Some(actor), table, status)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / D(device) / "actors" / D(actor) / T(table) :? StatusP(status) +& ConsumeP(consume) as _ => {
+      case a@GET -> _ / "devices" / Dvc(device) / "actors" / Dvc(actor) / Tbl(table) :? StatusParam(status) +& ConsumeParam(consume) as _ => {
         val x = getDevActors(device, actor, table, status, consume)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / D(device) / "actors" / D(actor) / T(table) / "summary" :? StatusP(status) +& ConsumeP(consume) as _ => {
-        val x = getDevActorTups(device, Some(actor), table, status, consume).map(PropsMapU.fromTups)
+      case a@GET -> _ / "devices" / Dvc(device) / "actors" / Dvc(actor) / Tbl(table) / "summary" :? StatusParam(status) +& ConsumeParam(consume) as _ => {
+        val x = getDevActorTups(device, Some(actor), table, status, consume).map(PropsMapV1.fromTups)
         x.flatMap { m =>
           if (m.isEmpty) {
             NoContent()
@@ -254,8 +254,8 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
         }
       }
 
-      case a@GET -> _ / "devices" / D(device) / "actors" / D(actor) / T(table) / "last" :? StatusP(status) as _ => {
-        val x = getLastDevActorTups(device, actor, table, status).map(PropsMapU.fromTups)
+      case a@GET -> _ / "devices" / Dvc(device) / "actors" / Dvc(actor) / Tbl(table) / "last" :? StatusParam(status) as _ => {
+        val x = getLastDevActorTups(device, actor, table, status).map(PropsMapV1.fromTups)
         x.flatMap { m =>
           if (m.isEmpty) {
             NoContent()
@@ -276,11 +276,11 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
 
     }
 
-  private[v1] def getDev(table: Table, id: RecordId): F[Option[DeviceU]] = {
+  private[v1] def getDev(table: Table, id: RecordId): F[Option[DeviceV1]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
       device <- repository.selectDeviceWhereRequestId(table, id)
-      deviceU = device.map(DeviceU.fromBom)
+      deviceU = device.map(DeviceV1.fromBom)
       _ <- logger.debug(s"GET device $id from table $table: $deviceU")
     } yield (deviceU)
   }
@@ -291,8 +291,8 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
       t <- dt
       ts = Time.asTimestamp(t)
-      actorMapU <- req.decodeJson[ActorMapU]
-      deviceBom = DeviceU(MetadataU(None, Some(ts), device), actorMapU).toBom
+      actorMapU <- req.decodeJson[ActorMapV1]
+      deviceBom = DeviceV1(MetadataV1(None, Some(ts), device), actorMapU).toBom
       id <- repository.insertDevice(table, deviceBom)
       _ <- logger.debug(s"POST device $device into table $table: $deviceBom / $id")
       resp = IdResponse(id)
@@ -305,27 +305,27 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
       t <- dt
       ts = Time.asTimestamp(t)
-      p <- req.decodeJson[PropsMapU]
-      deviceBom = DeviceU(MetadataU(None, Some(ts), device), Map(actor -> p)).toBom
+      p <- req.decodeJson[PropsMapV1]
+      deviceBom = DeviceV1(MetadataV1(None, Some(ts), device), Map(actor -> p)).toBom
       id <- repository.insertDevice(table, deviceBom)
       _ <- logger.debug(s"POST device $device (actor $actor) into table $table: $deviceBom / $id")
       resp = IdResponse(id)
     } yield (resp)
   }
 
-  private[v1] def getDevLast(device: DeviceName, table: Table): F[Option[DeviceU]] = {
+  private[v1] def getDevLast(device: DeviceName, table: Table): F[Option[DeviceV1]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
       r <- repository.selectMaxDevice(table, device)
-      deviceBom = r.map(DeviceU.fromBom)
+      deviceBom = r.map(DeviceV1.fromBom)
       _ <- logger.debug(s"GET last device $device from table $table: $deviceBom")
     } yield (deviceBom)
   }
 
-  private[v1] def getDevAll(device: DeviceName, table: Table, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): F[Iterable[DeviceU]] = {
+  private[v1] def getDevAll(device: DeviceName, table: Table, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): F[Iterable[DeviceV1]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
-      deviceBoms <- repository.selectDevicesWhereTimestamp(table, device, from, to).map(_.map(DeviceU.fromBom))
+      deviceBoms <- repository.selectDevicesWhereTimestamp(table, device, from, to).map(_.map(DeviceV1.fromBom))
       _ <- logger.debug(s"GET all devices $device from table $table from time $from until $to: $deviceBoms")
     } yield (deviceBoms)
   }
@@ -342,12 +342,12 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
     repository.selectMaxActorTupsStatus(table, device, actor, status)
   }
 
-  private[v1] def getDevActors(device: DeviceName, actor: ActorName, table: Table, status: Option[Status], clean: Option[Boolean]): F[Iterable[PropsMapU]] = {
+  private[v1] def getDevActors(device: DeviceName, actor: ActorName, table: Table, status: Option[Status], clean: Option[Boolean]): F[Iterable[PropsMapV1]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
       actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), status, clean.exists(identity)).compile.toList
       propsMaps = actorTups.groupBy(_.requestId).toList.sortBy(_._1)
-      propsMapsU = propsMaps.map(v => PropsMapU.fromTups(v._2))
+      propsMapsU = propsMaps.map(v => PropsMapV1.fromTups(v._2))
       _ <- logger.debug(s"GET device actors device $device actor $actor from table $table with status $status and clean $clean: $propsMaps ($actorTups)")
     } yield (propsMapsU)
   }

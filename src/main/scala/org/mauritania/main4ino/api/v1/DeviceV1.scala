@@ -1,13 +1,13 @@
 package org.mauritania.main4ino.api.v1
 
-import org.mauritania.main4ino.api.v1.ActorMapU.ActorMapU
-import org.mauritania.main4ino.api.v1.DeviceU.MetadataU
+import org.mauritania.main4ino.api.v1.ActorMapV1.ActorMapV1
+import org.mauritania.main4ino.api.v1.DeviceV1.MetadataV1
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models._
 
-case class DeviceU(
-  metadata: MetadataU,
-  actors: ActorMapU
+case class DeviceV1(
+  metadata: MetadataV1,
+  actors: ActorMapV1
 ) {
 
   def toBom: Device = {
@@ -24,19 +24,19 @@ case class DeviceU(
 
 }
 
-object DeviceU {
+object DeviceV1 {
 
-  val EmptyActorMapU: ActorMapU = Map.empty[ActorName, Map[PropName, PropValue]]
+  val EmptyActorMapV1: ActorMapV1 = Map.empty[ActorName, Map[PropName, PropValue]]
 
-  case class MetadataU (
+  case class MetadataV1 (
     id: Option[RecordId],
     timestamp: Option[EpochSecTimestamp],
     device: DeviceName
   )
 
-  def fromBom(b: Device): DeviceU = {
-    DeviceU(
-      metadata = MetadataU(
+  def fromBom(b: Device): DeviceV1 = {
+    DeviceV1(
+      metadata = MetadataV1(
         id = b.metadata.id,
         timestamp = b.metadata.timestamp,
         device = b.metadata.device

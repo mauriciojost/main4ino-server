@@ -92,7 +92,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
       argThat[Table]("Addresses target table")(_ == t),
       argThat[Device]("Is the expected device")(x => x.withouIdNortTimestamp() == d.withouIdNortTimestamp())
     ).returns(1L) // mock
-    val body = asEntityBody(DeviceU.fromBom(d).actors.asJson.toString)
+    val body = asEntityBody(DeviceV1.fromBom(d).actors.asJson.toString)
     postApiV1(s"/devices/${d.metadata.device}/${t.code}", body)(service).status shouldBe (s)
   }
 

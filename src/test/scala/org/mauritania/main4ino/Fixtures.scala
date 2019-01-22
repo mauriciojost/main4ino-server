@@ -1,7 +1,7 @@
 package org.mauritania.main4ino
 
-import org.mauritania.main4ino.api.v1.DeviceU
-import org.mauritania.main4ino.api.v1.DeviceU.MetadataU
+import org.mauritania.main4ino.api.v1.DeviceV1
+import org.mauritania.main4ino.api.v1.DeviceV1.MetadataV1
 import org.mauritania.main4ino.models.{Device, Status}
 import org.mauritania.main4ino.models.Device.Metadata
 
@@ -26,8 +26,8 @@ object Fixtures {
     )
   )
 
-  val Device1InV1 = DeviceU(
-    MetadataU(None, Some(0L), "dev1"),
+  val Device1InV1 = DeviceV1(
+    MetadataV1(None, Some(0L), "dev1"),
     Map(
       "actorx" ->
         Map(
