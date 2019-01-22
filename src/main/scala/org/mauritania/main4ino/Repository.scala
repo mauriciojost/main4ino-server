@@ -131,7 +131,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
     (fr"SELECT r.id, r.creation, r.device_name, t.request_id, t.device_name, t.actor_name, t.property_name, t.property_value, t.property_status" ++
       fr"FROM" ++ Fragment.const(table.code + "_requests") ++ fr"as r JOIN" ++ Fragment.const(table.code) ++ fr"as t" ++
       fr"ON r.id = t.request_id" ++
-      fr"WHERE r.device_name=$d" ++ fromFr ++ toFr)
+      fr"WHERE r.device_name=$d" ++ fromFr ++ toFr ++ fr"ORDER BY r.creation DESC")
       .query[Device.Device1].stream
   }
 
