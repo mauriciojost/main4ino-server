@@ -141,7 +141,7 @@ webPortalApp.controller(
             $scope.device = $location.search().device || getCookie("device");
 
             $scope.tabl = 'reports'; // table to get records from
-            $scope.from = 2; // in days, lower-bound to filter history records
+            $scope.from = 0.5; // in days, lower-bound to filter history records
 
             $scope.search = function() {
                 $log.log('Searching device ' + $scope.device + ' in ' + $scope.tabl);
