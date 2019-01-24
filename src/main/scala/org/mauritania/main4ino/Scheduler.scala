@@ -1,7 +1,5 @@
 package org.mauritania.main4ino
 
-import java.util.concurrent.Executors
-
 import cats.effect.{Fiber, IO}
 
 import scala.concurrent.ExecutionContext
@@ -9,16 +7,13 @@ import scala.concurrent.duration.FiniteDuration
 
 object Scheduler {
 
-  implicit val executionContext = ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
-
-  def regularIO(task: IO[_], duration: FiniteDuration): IO[Fiber[IO, Unit]] = {
-    def repeat: IO[Unit] = {
+  def periodicIO[F](task: IO[F], duration: FiniteDuration)(implicit ec: ExecutionContext): IO[Fiber[IO, F]] = {
+    def repeat: IO[F] = {
       for {
         _ <- IO.sleep(duration)
         p <- task
-        _ <- IO.shift
-        _ <- repeat
-      } yield ()
+        r <- repeat
+      } yield (r)
     }
 
     repeat.start
