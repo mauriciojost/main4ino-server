@@ -27,9 +27,9 @@ trait Repository[F[_]] {
 // Naming regarding to SQL
 class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
 
-  def cleanup(table: Table, now: EpochSecTimestamp, preserveWindowSecs: Int) = {
+  def cleanup(table: Table, now: EpochSecTimestamp, retentionSecs: Int) = {
     val transaction = for {
-      m <- sqlDeleteMetadataWhereCreationIsLess(table, now - preserveWindowSecs)
+      m <- sqlDeleteMetadataWhereCreationIsLess(table, now - retentionSecs)
       _ <- sqlDeleteActorTupOrphanOfRequest(table)
     } yield (m)
     transaction.transact(transactor)
