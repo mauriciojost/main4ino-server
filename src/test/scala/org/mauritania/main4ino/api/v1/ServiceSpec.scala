@@ -21,12 +21,11 @@ import org.mauritania.main4ino.models.{ActorTup, Device, Status => S}
 import org.mauritania.main4ino.security.Authentication.AccessAttempt
 import org.mauritania.main4ino.security.Authentication.UserSession
 import org.mauritania.main4ino.security.{Authentication, AuthenticationIO, Config, User}
-import org.mauritania.main4ino.{Fixtures, Repository}
+import org.mauritania.main4ino.{Fixtures, Helper, Repository, SyncId}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
 
 import scala.reflect.ClassTag
-import org.mauritania.main4ino.SyncId
 import org.mauritania.main4ino.api.v1.Service.TimeResponse
 import org.mauritania.main4ino.helpers.{Time, TimeIO}
 import org.reactormonk.{CryptoBits, PrivateKey}
@@ -92,7 +91,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
       argThat[Table]("Addresses target table")(_ == t),
       argThat[Device]("Is the expected device")(x => x.withouIdNortTimestamp() == d.withouIdNortTimestamp())
     ).returns(1L) // mock
-    val body = asEntityBody(DeviceV1.fromBom(d).actors.asJson.toString)
+    val body = Helper.asEntityBody(DeviceV1.fromBom(d).actors.asJson.toString)
     postApiV1(s"/devices/${d.metadata.device}/${t.code}", body)(service).status shouldBe (s)
   }
 
@@ -230,10 +229,6 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   private[this] def postApiV1(path: String, body: EntityBody[Id], h: Headers = HeadersCredsOk)(service: Service[Id]): Response[Id] = {
     val request = Request[Id](method = Method.POST, uri = Uri.unsafeFromString(path), body = body, headers = h)
     service.request(request)
-  }
-
-  private[this] def asEntityBody(content: String): EntityBody[Id] = {
-    Stream.fromIterator[Id, Byte](content.toCharArray.map(_.toByte).toIterator)
   }
 
   final val HeadersNoCreds = Headers()
