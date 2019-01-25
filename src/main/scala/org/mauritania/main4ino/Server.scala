@@ -1,5 +1,6 @@
 package org.mauritania.main4ino
 
+import java.io.File
 import java.util.concurrent._
 
 import cats.effect.IO
@@ -20,9 +21,17 @@ object Server extends StreamApp[IO] {
 
   // TODO use better IOApp as StreamApp is being removed from fs2
   def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
+    val configDir = args match {
+      case a :: Nil => a
+      case _ => throw new IllegalArgumentException("Must provide configuration directory")
+    }
+
+    val applicationConf = new File(s"$configDir/application.conf")
+    val securityConf = new File(s"$configDir/security.conf")
+
     for {
-      configApp <- Stream.eval(config.Config.load("application.conf"))
-      configUsers <- Stream.eval(security.Config.load("security.conf"))
+      configApp <- Stream.eval(config.Config.load(applicationConf))
+      configUsers <- Stream.eval(security.Config.load(securityConf))
       transactor <- Stream.eval(Database.transactor(configApp.database))
       auth = new AuthenticationIO(configUsers)
       repo = new RepositoryIO(transactor)

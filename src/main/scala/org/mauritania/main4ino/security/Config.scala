@@ -1,5 +1,7 @@
 package org.mauritania.main4ino.security
 
+import java.io.File
+
 import cats.effect.IO
 import org.mauritania.main4ino.config.Loadable
 import org.reactormonk.{CryptoBits, PrivateKey}
@@ -26,7 +28,7 @@ case class Config(
 
 object Config extends Loadable {
 
-  def load(configFile: String): IO[Config] = loadFromFile[Config](configFile)
+  def load(configFile: File): IO[Config] = loadFromFile[Config](configFile)
 
   case class UsersBy(
     byId: Map[UserId, User],
