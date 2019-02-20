@@ -15,7 +15,7 @@ class ConfigSpec extends FlatSpec with Matchers {
   }
 
   it should "throw an exception if the config is invalid" in {
-    a [RuntimeException] should be thrownBy {
+    a [IllegalArgumentException] should be thrownBy {
       Config.load(new File("src/test/resources/security-users-invalid.conf")).unsafeRunSync()
     }
   }

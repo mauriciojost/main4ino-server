@@ -13,4 +13,7 @@ object Fixtures {
     granted = List("/")
   )
 
+  val PrivateKey = "0123456789abcdef0123"
+  val DefaultSecurityConfig = Config(List(User1), PrivateKey, Salt)
+
 }

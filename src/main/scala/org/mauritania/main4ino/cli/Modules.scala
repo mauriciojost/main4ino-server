@@ -9,58 +9,27 @@ import com.typesafe.config.{ConfigFactory, Config => TypeSafeConfig}
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.mauritania.main4ino.cli.Algebras._
-import org.mauritania.main4ino.cli.Data.RawUser
+import org.mauritania.main4ino.cli.Data.AddRawUserParams
 import org.mauritania.main4ino.security.{Authentication, Config, User}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import org.mauritania.main4ino.config.Loadable
+import pureconfig.error.ConfigReaderException
 
-import scala.io.{Source, StdIn}
+import scala.io.Source
 import scala.util.Try
+import pureconfig._
+import pureconfig.generic.auto._
 
 object Modules {
 
-  class ConsoleSync[F[_] : Sync] extends Console[F] {
-    def readLine(): F[String] = {
-      Sync[F].delay {
-        StdIn.readLine()
-      }
-    }
-    def writeLine(msg: String): F[Unit] = {
-      Sync[F].delay {
-        println(msg)
-      }
-    }
-  }
-
-  class UsersSync[F[_] : Sync] extends Users[F] {
-    def readRawUser(s: String): F[RawUser] = {
-      Sync[F].delay {
-        s.split(" ").toList match {
-          case user :: pass :: email :: granted => RawUser(user, pass, email, granted)
-          case _ => throw new IllegalArgumentException("Invalid amount of arguments: user pass email grant1 grant2 ...")
-        }
-
-      }
-    }
-  }
-
   class ConfigsAppErr[F[_]: Monad](implicit A: ApplicativeError[F, Throwable]) extends Configs[F] {
 
-    def addUser(c: Config, u: RawUser): F[Config] = {
+    def addUser(c: Config, u: AddRawUserParams): F[Config] = {
       A.pure {
-        val hashed = Authentication.hashPassword(u.pass, c.salt)
-        val nUser = User(u.name, hashed, u.email, u.granted)
+        val nUser: User = user(c, u)
         val nConf = c.copy(users = nUser :: c.users)
         nConf
-      }
-    }
-
-    def fromString(s: String): F[Config] = {
-      val c = ConfigFactory.parseString(s)
-      val c1 = pureconfig.loadConfig[Config](c: TypeSafeConfig)
-      c1 match {
-        case Right(v) => A.pure(v)
-        case Left(e) => A.raiseError(new IllegalArgumentException(e.toList.map(_.description).mkString(". ")))
       }
     }
 

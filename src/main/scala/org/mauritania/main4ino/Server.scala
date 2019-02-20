@@ -22,12 +22,12 @@ object Server extends StreamApp[IO] {
   // TODO use better IOApp as StreamApp is being removed from fs2
   def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
     val configDir = args match {
-      case a :: Nil => a
+      case a :: Nil => new File(a)
       case _ => throw new IllegalArgumentException("Must provide configuration directory")
     }
 
-    val applicationConf = new File(s"$configDir/application.conf")
-    val securityConf = new File(s"$configDir/security.conf")
+    val applicationConf = new File(configDir, "application.conf")
+    val securityConf = new File(configDir, "security.conf")
 
     for {
       configApp <- Stream.eval(config.Config.load(applicationConf))

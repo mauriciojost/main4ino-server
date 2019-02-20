@@ -19,14 +19,11 @@ import org.scalatest.Sequential
 
 class ServiceFuncSpec extends DbSuite {
 
-  val PrivateKey = "0123456789abcdef0123"
-  val AuthConfig = Config(List(User1), PrivateKey, Salt)
-
   Sequential
 
   "The service" should "create and read a target/report" in {
 
-    implicit val s = new Service(new AuthenticationIO(AuthConfig), new RepositoryIO(transactor), new TimeIO())
+    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
 
     // Add a few targets
     postExpectCreated("/devices/dev1/targets", """{"clock": {"h":"7"}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
@@ -78,7 +75,7 @@ class ServiceFuncSpec extends DbSuite {
 
   it should "create and read a target/report in different value formats (string, int, bool)" in {
 
-    implicit val s = new Service(new AuthenticationIO(AuthConfig), new RepositoryIO(transactor), new TimeIO())
+    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
 
     // Add a target
     postExpectCreated("/devices/dev1/targets", """{"act":{"i":7,"b":true,"s":"str"}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
@@ -91,7 +88,7 @@ class ServiceFuncSpec extends DbSuite {
 
   it should "create targets and merge the properties correctly" in {
 
-    implicit val s = new Service(new AuthenticationIO(AuthConfig), new RepositoryIO(transactor), new TimeIO())
+    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
 
     // Add a few targets
     postExpectCreated("/devices/dev1/targets", """{"clock":{"h":"7"},"body":{"mv0":"Zz."}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
@@ -111,7 +108,7 @@ class ServiceFuncSpec extends DbSuite {
 
   it should "retrieve correctly last device and actor views per status" in {
 
-    implicit val s = new Service(new AuthenticationIO(AuthConfig), new RepositoryIO(transactor), new TimeIO())
+    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
 
     // Add a few targets
     postExpectCreated("/devices/dev1/targets", """{"clock":{"h":"7"},"body":{"mv0":"Zz."}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
@@ -131,7 +128,7 @@ class ServiceFuncSpec extends DbSuite {
 
   it should "respond with no expectation failed when no records are found" in {
 
-    implicit val s = new Service(new AuthenticationIO(AuthConfig), new RepositoryIO(transactor), new TimeIO())
+    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
 
     get("/devices/dev1/targets/1").status shouldBe Status.NoContent
     get("/devices/dev1/targets/last").status shouldBe Status.NoContent
@@ -144,7 +141,7 @@ class ServiceFuncSpec extends DbSuite {
 
   it should "create targets properties and merge them correctly" in {
 
-    implicit val s = new Service(new AuthenticationIO(AuthConfig), new RepositoryIO(transactor), new TimeIO())
+    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
 
     // Add a few targets
     postExpectCreated("/devices/dev1/actors/body/targets", """{"mv0":"Zz."}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
