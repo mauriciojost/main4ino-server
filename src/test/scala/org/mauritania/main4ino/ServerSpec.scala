@@ -15,7 +15,7 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
   val UserPass = BasicCredentials(Fixtures.User1.id, Fixtures.User1Pass)
 
   override def beforeAll(): Unit = {
-    appThread = launchAsync(Array())
+    appThread = launchAsync(Array("src/main/resources/"))
     httpClient = Http1Client[IO]().unsafeRunSync
     Thread.sleep(3000)
   }

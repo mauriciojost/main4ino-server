@@ -1,5 +1,7 @@
 package org.mauritania.main4ino
 
+import java.io.File
+
 import cats.effect.IO
 import fs2.StreamApp.ExitCode
 import fs2.{Stream, StreamApp}
@@ -14,9 +16,10 @@ object Server extends StreamApp[IO] {
 
   // TODO use better IOApp as StreamApp is being removed from fs2
   def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
+    val dir = new File(args(0)) // TODO use CLI arguments
     for {
-      configApp <- Stream.eval(config.Config.load("application.conf"))
-      configUsers <- Stream.eval(security.Config.load("security.conf"))
+      configApp <- Stream.eval(config.Config.load(new File(dir, "application.conf")))
+      configUsers <- Stream.eval(security.Config.load(new File(dir, "security.conf")))
       transactor <- Stream.eval(Database.transactor(configApp.database))
       _ <- Stream.eval(Database.initialize(transactor))
       exitCode <- BlazeBuilder[IO]

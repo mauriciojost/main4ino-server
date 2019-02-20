@@ -1,10 +1,14 @@
 package org.mauritania.main4ino.security
 
+import java.io.File
+
 import cats.effect.IO
 import org.mauritania.main4ino.config.Loadable
 import org.reactormonk.{CryptoBits, PrivateKey}
 import java.time.Clock
 
+import pureconfig._
+import pureconfig.generic.auto._
 import org.mauritania.main4ino.security.Authentication.{EncryptionConfig, UserHashedPass, UserId}
 
 import scala.io.Codec
@@ -24,9 +28,9 @@ case class Config(
   val encryptionConfig = EncryptionConfig(privateKeyBits, salt)
 }
 
-object Config extends Loadable {
+object Config {
 
-  def load(configFile: String): IO[Config] = loadFromFile[Config](configFile)
+  def load(configFile: File): IO[Config] = Loadable.loadFromFile[IO, Config](configFile)
 
   case class UsersBy(
     byId: Map[UserId, User],

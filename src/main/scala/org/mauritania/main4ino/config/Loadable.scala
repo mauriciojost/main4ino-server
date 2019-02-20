@@ -1,20 +1,23 @@
 package org.mauritania.main4ino.config
 
-import cats.effect.IO
+import java.io.File
+
+import cats.effect.Sync
 import com.typesafe.config.ConfigFactory
 import pureconfig.error.ConfigReaderException
 
 import scala.reflect.ClassTag
 
-trait Loadable {
+object Loadable {
+
   import pureconfig._
 
-  def loadFromFile[T: ClassTag](configFile: String)(implicit reader: Derivation[ConfigReader[T]]): IO[T] = {
-    IO {
-      loadConfig[T](ConfigFactory.load(configFile))
-    }.flatMap {
-      case Left(e) => IO.raiseError[T](new ConfigReaderException[T](e))
-      case Right(config) => IO.pure(config)
+  def loadFromFile[F[_] : Sync, T: ClassTag](configFile: File)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
+    implicitly[Sync[F]].fromEither {
+      loadConfig[T](ConfigFactory.parseFile(configFile))
+        .swap
+        .map(i => new IllegalArgumentException(s"Cannot parse: $configFile", new ConfigReaderException[T](i)))
+        .swap
     }
   }
 
