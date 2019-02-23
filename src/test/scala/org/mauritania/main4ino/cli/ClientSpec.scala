@@ -25,7 +25,7 @@ class ClientSpec extends WordSpec with Matchers with SyncId {
       output1.toFile.deleteOnExit()
       val args1 = Array(input1.toFile.getAbsolutePath, modif1.toFile.getAbsolutePath, output1.toFile.getAbsolutePath)
 
-      Client.start[IO](new ConfigsAppErr(), new FilesystemSync())(args1).unsafeRunSync()
+      Client.main(args1)
 
       val fileContent1 = Source.fromFile(output1.toFile).mkString
       val config1 = decode[Config](fileContent1).toOption.get
@@ -41,7 +41,7 @@ class ClientSpec extends WordSpec with Matchers with SyncId {
       val output2 = output1
       val args2 = Array(input2.toFile.getAbsolutePath, modif2.toFile.getAbsolutePath, output2.toFile.getAbsolutePath)
 
-      Client.start[IO](new ConfigsAppErr(), new FilesystemSync())(args2).unsafeRunSync()
+      Client.main(args2)
 
       val fileContent2 = Source.fromFile(output2.toFile).mkString
       val config2 = decode[Config](fileContent2).toOption.get
