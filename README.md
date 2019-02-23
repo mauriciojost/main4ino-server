@@ -15,19 +15,17 @@ One example of a project making use of `main4ino-arduino` is [here](https://gith
 
 ## Basics
 
-The most simple use case this server has been conceived for is described below.
-
 A `device` is an embedded system. For instance, a device can be an alarm based on Arduino.
 
 A device is made of `actors` (or components). For the alarm example, we could have actors clock, speaker and display.
 
 Each actor has `properties`. They can be readable and/or writeable. For the actor speaker, we could have the property volume.
 
-A device normally informs of its status regularly (the current value of the properties of its actors) by creating `reports`.
+A device normally informs of its status regularly (the current value of the properties of its actors) by creating `reports` in the server.
 
-Normally a device can load recently created user-requested values for its actor's properties, by reading the `targets`. 
+Normally a device can load recently created user-requested values for its actor's properties, by reading the `targets` from the server. 
 
-Once the device requested targets from the server successfully, they become consumed, making not retrievable more than once.
+Once the device requested targets from the server successfully, they become consumed, making each target not retrievable more than once.
 
 The corresponding REST API is [here](/src/main/scala/org/mauritania/main4ino/api/v1/Service.scala).
 
@@ -48,10 +46,10 @@ http://localhost:8080/
 or via the REST API: 
 
 ```
-# pass credentials via header
-curl -H "Authorization: token 012345678901234567890123456789" -X POST http://localhost:8080/api/v1/devices/dev1/actors/clock/targets -d '{"h":5}'
+# remember to pass credentials via Basic Auth
+curl -X POST http://localhost:8080/api/v1/devices/dev1/actors/clock/targets -d '{"h":5}'
 # or via uri
-curl -X POST http://localhost:8080/api/v1/token/012345678901234567890123456789/devices/dev1/actors/clock/targets -d '{"h":5}'
+curl -X POST http://localhost:8080/api/v1/devices/dev1/actors/clock/targets -d '{"h":5}'
 
 ```
 
