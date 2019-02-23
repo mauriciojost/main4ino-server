@@ -5,29 +5,29 @@
 
 [![Build Status](https://jenkins.martinenhome.com/buildStatus/icon?job=main4ino-server/master)](https://jenkins.martinenhome.com/job/main4ino-server/job/master/)
 
-Main4ino is a very simple framework for the delivery of properties to embedded systems (devices) that support wifi connectivity (like the ESP8266).
+Main4ino is a very simple framework to facilitate the synchronization of properties from a common server to multiple embedded systems (devices) that support wifi connectivity (like the ESP8266).
 
 There are two parts: 
 - **main4ino-server** (this project): to be launched somewhere accessible by the devices
-- [main4ino-arduino](https://bitbucket.org/mauriciojost/main4ino-arduino/): to be used by the soft of the devices
+- [main4ino-arduino](https://bitbucket.org/mauriciojost/main4ino-arduino/): to be used by the soft of the Arduino devices
 
 One example of a project making use of `main4ino-arduino` is [here](https://github.com/mauriciojost/botino-arduino).
 
 ## Basics
 
-All the basics below refer to the most simple use case this server has been conceived for.
+The most simple use case this server has been conceived for is described below.
 
 A `device` is an embedded system. For instance, a device can be an alarm based on Arduino.
 
-A device is made of `actors` (components). To follow the above example, for the alarm we can have actors clock, speaker and display.
+A device is made of `actors` (or components). For the alarm example, we could have actors clock, speaker and display.
 
-Each actor has `properties`, that can be readable and/or writeable: for instance for the actor speaker we could have the volume.
+Each actor has `properties`. They can be readable and/or writeable. For the actor speaker, we could have the property volume.
 
 A device normally informs of its status regularly (the current value of the properties of its actors) by creating `reports`.
 
 Normally a device can load recently created user-requested values for its actor's properties, by reading the `targets`. 
 
-Once the device requested targets, they normally become consumed, making them set only once.
+Once the device requested targets from the server successfully, they become consumed, making not retrievable more than once.
 
 The corresponding REST API is [here](/src/main/scala/org/mauritania/main4ino/api/v1/Service.scala).
 
