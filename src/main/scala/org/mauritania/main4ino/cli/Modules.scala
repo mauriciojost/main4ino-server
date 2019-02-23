@@ -9,7 +9,7 @@ import com.typesafe.config.{ConfigFactory, Config => TypeSafeConfig}
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.mauritania.main4ino.cli.Algebras._
-import org.mauritania.main4ino.cli.Data.AddRawUserParams
+import org.mauritania.main4ino.cli.Actions.{AddRawUser, CliAction}
 import org.mauritania.main4ino.security.{Authentication, Config, User}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
@@ -25,11 +25,16 @@ object Modules {
 
   class ConfigsAppErr[F[_]: Monad](implicit A: ApplicativeError[F, Throwable]) extends Configs[F] {
 
-    def addUser(c: Config, u: AddRawUserParams): F[Config] = {
+    def performAction(c: Config, action: CliAction): F[Config] = {
       A.pure {
-        val nUser: User = user(c, u)
-        val nConf = c.copy(users = nUser :: c.users)
-        nConf
+        action match {
+          case ru : Actions.AddRawUser => {
+            val nUser: User = user(c, ru)
+            val nConf = c.copy(users = nUser :: c.users)
+            nConf
+          }
+          case _ => c
+        }
       }
     }
 
