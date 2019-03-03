@@ -36,6 +36,15 @@ object Device {
     device: DeviceName
 	)
 
+	/**
+		* Intermediate device representation
+		*
+		* It contains a single actor tuple. Instances of this class
+		* are meant to be aggregated to create instances of [[Device]].
+		*
+		* @param metadata the metadata
+		* @param actorTuple the single actor tuple
+		*/
 	case class Device1(
 		metadata: Metadata,
 		actorTuple: ActorTup
