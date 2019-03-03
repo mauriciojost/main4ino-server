@@ -76,6 +76,26 @@ class RepositoryIOSpec extends DbSuite {
 
   }
 
+  it should "read devices respecting order (part 1)" in {
+
+    val snap1 = Device1.withId(Some(1L)).withTimestamp(73L) // third
+    val snap2 = Device1.withId(Some(2L)).withTimestamp(71L) // first
+    val snap3 = Device1.withId(Some(3L)).withTimestamp(72L) // second
+    val snap4 = Device1.withId(Some(4L)).withTimestamp(74L) // fourth
+    val snap5 = Device1.withId(Some(5L)).withTimestamp(75L) // fifth
+
+    val repo = new RepositoryIO(transactor)
+    repo.insertDevice(Table.Targets, snap1).unsafeRunSync() shouldBe(1L)
+    repo.insertDevice(Table.Targets, snap2).unsafeRunSync() shouldBe(2L)
+    repo.insertDevice(Table.Targets, snap3).unsafeRunSync() shouldBe(3L)
+    repo.insertDevice(Table.Targets, snap4).unsafeRunSync() shouldBe(4L)
+    repo.insertDevice(Table.Targets, snap5).unsafeRunSync() shouldBe(5L)
+
+    repo.selectDevicesWhereTimestamp(Table.Targets, "dev1", from = None, to = None)
+      .unsafeRunSync().toList.flatMap(_.metadata.id) shouldBe List(2L , 3L, 1L, 4L, 5L) // retrieved in order of timestamp
+
+  }
+
   it should "read target/report ids from a device name" in {
     val repo = new RepositoryIO(transactor)
 
