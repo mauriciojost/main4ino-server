@@ -4,7 +4,7 @@ import java.nio.file.{Files, Paths}
 
 import cats.Id
 import org.mauritania.main4ino.SyncId
-import org.mauritania.main4ino.cli.Actions.AddRawUser
+import org.mauritania.main4ino.cli.Actions.{AddRawUser, AddRawUsers}
 import org.mauritania.main4ino.cli.Modules.{ConfigsAppErr, FilesystemSync}
 import org.scalatest.{Matchers, WordSpec}
 import org.mauritania.main4ino.security.Fixtures._
@@ -17,7 +17,7 @@ class ModulesSpec extends WordSpec with Matchers with SyncId {
     "add a user" in {
       val c = new ConfigsAppErr[Id]()
       val baseConfig = DefaultSecurityConfig
-      val newUser = AddRawUser("pepe", "toto", "pepe@zzz.com", List("/"))
+      val newUser = AddRawUsers(List(AddRawUser("pepe", "toto", "pepe@zzz.com", List("/"))))
       val newConf = c.performAction(baseConfig, newUser)
 
       val ExpectedNewUserEntry = User(

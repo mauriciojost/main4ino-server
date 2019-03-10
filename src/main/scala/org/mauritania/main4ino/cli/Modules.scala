@@ -28,9 +28,9 @@ object Modules {
     def performAction(c: Config, action: CliAction): F[Config] = {
       A.pure {
         action match {
-          case ru : Actions.AddRawUser => {
-            val nUser: User = user(c, ru)
-            val nConf = c.copy(users = nUser :: c.users)
+          case rus : Actions.AddRawUsers => {
+            val nUsers: List[User] = rus.users.map(u => user(c, u))
+            val nConf = c.copy(users = nUsers ++ c.users)
             nConf
           }
           case _ => c

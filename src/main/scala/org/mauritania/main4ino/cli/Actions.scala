@@ -10,4 +10,9 @@ object Actions {
     granted: List[String]
   ) extends CliAction
 
+  case class AddRawUsers(
+    users: List[AddRawUser]
+  ) extends CliAction
+
+
 }
