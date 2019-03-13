@@ -83,7 +83,7 @@ object Authentication {
   def authenticatedUserFromSessionOrCredentials(encry: EncryptionConfig, usersBy: UsersBy, session: Option[UserSession], creds: Option[(UserId, UserHashedPass)]): AuthenticationAttempt = {
     creds.flatMap(usersBy.byIdPass.get)
       .orElse(session.flatMap(v => encry.pkey.validateSignedToken(v)).flatMap(usersBy.byId.get))
-      .toRight(s"Could not find related user (session ${session.getOrElse('?')}, credentials ${creds.getOrElse('?')})")
+      .toRight(s"Could not find related user (user:${creds.map(_._1)} / session:$session)")
   }
 
   /**
