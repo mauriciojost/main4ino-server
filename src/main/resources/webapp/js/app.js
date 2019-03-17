@@ -28,7 +28,6 @@ function getCookie(name) {
 function eraseCookie(name) {
     document.cookie = name+'=; Max-Age=-99999999;';
 }
-
 webPortalApp.config(function($stateProvider, $urlRouterProvider) {
     
     $urlRouterProvider.otherwise('/home');
@@ -233,6 +232,21 @@ webPortalApp.controller(
             $scope.propDescriptions = function(actor, propName) {
               var l = $scope.propLegend(actor, propName);
               return l.descriptions.join('. ').trim();
+            }
+
+            $scope.isPropNameEligible = function(name, incStatus, incDebug, incSensitive) {
+                var isStatus = name.startsWith(StatusPropPrefix);
+                var isDebug = name.startsWith(DebugPropPrefix);
+                var isSensitive = name.startsWith(SensitivePropPrefix);
+                if (isStatus) {
+                    return incStatus;
+                } else if (isDebug) {
+                    return incDebug;
+                } else if (isSensitive) {
+                    return incSensitive;
+                } else {
+                    return true;
+                }
             }
 
             $scope.propExamples = function(actor, propName) {

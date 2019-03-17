@@ -9,9 +9,10 @@
             <container>
                 <h3>1. Specify your device information</h3>
                 <br/>
-                <div>
-                    <input type="text" name="device" class="form-control" ng-model="device" placeholder="Device Name"/>
-                </div>
+                <div><input type="text" name="device" class="form-control" ng-model="device" placeholder="Device Name"/><div>
+                </div><label><input type="checkbox" name="iStatus" ng-model="includeStatus">Include status</label><div>
+                </div><label><input type="checkbox" name="iDebug" ng-model="includeDebug">Include debug</label><div>
+                </div><label><input type="checkbox" name="iSensitive" ng-model="includeSensitive">Include sensitive</label></div>
             </container>
         </div>
 
@@ -58,7 +59,7 @@
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    <tr ng-if="!(propNameRep.startsWith(SensitivePropPrefix))" ng-repeat="(propNameRep, propValueRep) in propsRep track by $index">
+                                    <tr ng-if="isPropNameEligible(propNameRep, includeStatus, includeDebug, includeSensitive)" ng-repeat="(propNameRep, propValueRep) in propsRep track by $index">
                                         <td>{{ propNameRep }}</td>
                                         <td>
                                             <div>
