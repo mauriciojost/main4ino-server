@@ -58,7 +58,7 @@
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    <tr ng-repeat="(propNameRep, propValueRep) in propsRep track by $index">
+                                    <tr ng-if="!(propNameRep.startsWith(SensitivePropPrefix))" ng-repeat="(propNameRep, propValueRep) in propsRep track by $index">
                                         <td>{{ propNameRep }}</td>
                                         <td>
                                             <div>

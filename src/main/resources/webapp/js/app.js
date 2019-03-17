@@ -1,3 +1,7 @@
+var DebugPropPrefix = "~"
+var StatusPropPrefix = "."
+var SensitivePropPrefix = "_"
+
 var webPortalApp = angular.module('webPortalApp', ['ui.router', 'ngSanitize']);
 
 function setCookie(name,value,days) {
