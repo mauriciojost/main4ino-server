@@ -87,7 +87,7 @@ object Authentication {
   }
 
   /**
-    * Check if a user can acces a given resource
+    * Check if a user can access a given resource
     */
   def checkAccess(user: User, resourceUriPath: Path): AccessAttempt = {
     user.authorized(dropTokenFromPath(resourceUriPath))

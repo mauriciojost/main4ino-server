@@ -1,7 +1,7 @@
 [
   {
     "patterns": ["^body\\.r\\d{1,2}$"],
-    "descriptions": ["Routine i-th of the body (format: 'frequency:move1.move2.move3...'. See <a href=\"https://github.com/mauriciojost/botino-arduino/blob/master/src/actors/Body.h\" target=\"_blank\">move codes here</a>."],
+    "descriptions": ["Routine i-th of the body (format: 'frequency:pose1.pose2...poseN.'. See <a href=\"https://github.com/mauriciojost/botino-arduino/blob/master/src/actors/Body.md\" target=\"_blank\">all pose codes here</a>."],
     "examples": [
       "@12h00:M2Message at midday.A99. -> Tell message 'Lunch!' at 12 every day and put arms up quickly",
       "never:D0. -> Dance 0 never (to disable the routine)",
