@@ -1,6 +1,7 @@
 var DebugPropPrefix = "~"
 var StatusPropPrefix = "."
 var SensitivePropPrefix = "_"
+var AdvancedPropPrefix = "+"
 
 var webPortalApp = angular.module('webPortalApp', ['ui.router', 'ngSanitize']);
 
@@ -234,16 +235,19 @@ webPortalApp.controller(
               return l.descriptions.join('. ').trim();
             }
 
-            $scope.isPropNameEligible = function(name, incStatus, incDebug, incSensitive) {
+            $scope.isPropNameEligible = function(name, incStatus, incDebug, incSensitive, incAdvanced) {
                 var isStatus = name.startsWith(StatusPropPrefix);
                 var isDebug = name.startsWith(DebugPropPrefix);
                 var isSensitive = name.startsWith(SensitivePropPrefix);
+                var isAdvanced = name.startsWith(AdvancedPropPrefix);
                 if (isStatus) {
                     return incStatus;
                 } else if (isDebug) {
                     return incDebug;
                 } else if (isSensitive) {
                     return incSensitive;
+                } else if (isAdvanced) {
+                    return incAdvanced;
                 } else {
                     return true;
                 }
