@@ -74,8 +74,22 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
        |    Returns: OK (200)
        |
        |
+       | ADMINISTRATOR
+       | -------------
+       |
+       | All below queries apply to both targets and reports (although in the examples they use targets).
+       |
+       | DELETE /administrator/devices/<dev>/targets/
+       |
+       |    Delete all targets
+       |
+       |    Returns: OK (200)
+       |
+       |
        | DEVICES
        | -------
+       |
+       | All below queries apply to both targets and reports (although in the examples they use targets).
        |
        | POST /devices/<dev>/targets/
        |
@@ -184,7 +198,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
 
     // Administration
 
-    case a@DELETE -> _ / "devices" / Dvc(device) / Tbl(table) as _ => {
+    case a@DELETE -> _ / "administrator" / "devices" / Dvc(device) / Tbl(table) as _ => {
       val x = deleteDev(a.req, device, table)
       Ok(x.map(_.asJson), ContentTypeAppJson)
     }

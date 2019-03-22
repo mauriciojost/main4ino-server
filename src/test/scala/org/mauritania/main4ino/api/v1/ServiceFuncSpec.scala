@@ -74,7 +74,7 @@ class ServiceFuncSpec extends DbSuite {
     val dev1TargetsCountAnyStatus = getExpectOk("/devices/dev1/actors/body/targets/count")
     dev1TargetsCountAnyStatus.noSpaces shouldBe CountResponse(2).asJson.noSpaces
 
-    delete("/devices/dev1/targets")
+    delete("/administrator/devices/dev1/targets")
 
     val dev1TargetsCountAnyStatusAfter = getExpectOk("/devices/dev1/actors/body/targets/count")
     dev1TargetsCountAnyStatusAfter.noSpaces shouldBe CountResponse(0).asJson.noSpaces
