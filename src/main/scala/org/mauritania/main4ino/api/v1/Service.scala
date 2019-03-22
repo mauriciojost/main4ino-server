@@ -182,6 +182,12 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
         }
       }
 
+    // Administration
+
+    case a@DELETE -> _ / "devices" / Dvc(device) / Tbl(table) as _ => {
+      val x = deleteDev(a.req, device, table)
+      Ok(x.map(_.asJson), ContentTypeAppJson)
+    }
       // Targets & Reports (at device level)
 
       case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) as _ => {
@@ -275,6 +281,15 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
       }
 
     }
+
+  def deleteDev(req: Request[F], device: String, table: Table): F[CountResponse] = {
+    for {
+      logger <- Slf4jLogger.fromClass[F](Service.getClass)
+      count <- repository.deleteDeviceWhereName(table, device)
+      _ <- logger.debug(s"DELETED $count requests of device $device")
+    } yield (CountResponse(count))
+
+  }
 
   private[v1] def getDev(table: Table, id: RecordId): F[Option[DeviceV1]] = {
     for {

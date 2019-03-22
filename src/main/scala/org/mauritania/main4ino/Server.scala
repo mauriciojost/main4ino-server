@@ -41,7 +41,7 @@ object Server extends StreamApp[IO] {
         now <- time.nowUtc
         epSecs = now.toEpochSecond
         cleaned <- repo.cleanup(Table.Reports, epSecs, configApp.database.cleanup.retentionSecs)
-        _ <- logger.info(s"Repository cleanup at $now ($epSecs): $cleaned cleaned")
+        _ <- logger.info(s"Repository cleanup at $now ($epSecs): $cleaned requests cleaned")
       } yield (cleaned)
 
       _ <- Stream.eval(Database.initialize(transactor))

@@ -12,8 +12,8 @@ import fs2.Stream
 import org.mauritania.main4ino.RepositoryIO.Table.Table
 
 trait Repository[F[_]] {
-
   def cleanup(table: Table, now: EpochSecTimestamp, preserveWindowSecs: Int): F[Int]
+  def deleteDeviceWhereName(table: Table, device: String): F[Int]
   def insertDevice(table: Table, t: Device): F[RecordId]
   def selectDeviceWhereRequestId(table: Table, requestId: RecordId): F[Option[Device]]
   def selectDevicesWhereTimestamp(table: Table, device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): F[Iterable[Device]]
@@ -30,6 +30,14 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
   def cleanup(table: Table, now: EpochSecTimestamp, retentionSecs: Int) = {
     val transaction = for {
       m <- sqlDeleteMetadataWhereCreationIsLess(table, now - retentionSecs)
+      _ <- sqlDeleteActorTupOrphanOfRequest(table)
+    } yield (m)
+    transaction.transact(transactor)
+  }
+
+  def deleteDeviceWhereName(table: Table, device: String) = {
+    val transaction = for {
+      m <- sqlDeleteMetadataWhereDeviceName(table, device)
       _ <- sqlDeleteActorTupOrphanOfRequest(table)
     } yield (m)
     transaction.transact(transactor)
@@ -107,6 +115,11 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
   private def sqlInsertMetadata(table: Table, m: Metadata): ConnectionIO[RecordId] = {
     (fr"INSERT INTO " ++ Fragment.const(table.code + "_requests") ++ fr" (creation, device_name) VALUES (${m.timestamp}, ${m.device})")
       .update.withUniqueGeneratedKeys[RecordId]("id")
+  }
+
+  private def sqlDeleteMetadataWhereDeviceName(table: Table, device: String): ConnectionIO[Int] = {
+    (fr"DELETE FROM" ++ Fragment.const(table.code + "_requests") ++ fr"WHERE device_name=$device")
+      .update.run
   }
 
   private def sqlDeleteMetadataWhereCreationIsLess(table: Table, upperbound: EpochSecTimestamp): ConnectionIO[Int] = {

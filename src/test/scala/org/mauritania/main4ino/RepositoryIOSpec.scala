@@ -112,6 +112,27 @@ class RepositoryIOSpec extends DbSuite {
     }
   }
 
+  it should "delete target/reports" in {
+    val repo = new RepositoryIO(transactor)
+
+    val d1 = Device1.withDeviceName("device1").withTimestamp(10L)
+    val d2 = Device1.withDeviceName("device2").withTimestamp(20L)
+
+    Table.all.foreach { table =>
+      repo.insertDevice(table, d1).unsafeRunSync() shouldBe(1L) // created target for device 1, resulted in id 1
+      repo.insertDevice(table, d2).unsafeRunSync() shouldBe(2L) // for device 2, resulted in id 2
+
+      repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe(List(1L))
+      repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe(List(2L))
+
+      repo.deleteDeviceWhereName(table, d1.metadata.device).unsafeRunSync()
+
+      repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe(Nil)
+      repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe(List(2L))
+    }
+  }
+
+
   it should "delete old target/reports" in {
     val repo = new RepositoryIO(transactor)
 

@@ -21,7 +21,7 @@ class ServiceFuncSpec extends DbSuite {
 
   Sequential
 
-  "The service" should "create and read a target/report" in {
+  "The service" should "create, read a target/report and delete it" in {
 
     implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
 
@@ -70,6 +70,15 @@ class ServiceFuncSpec extends DbSuite {
 
     val dev1TargetsCountAfterClean = getExpectOk("/devices/dev1/actors/body/targets/count?status=C")
     dev1TargetsCountAfterClean.noSpaces shouldBe CountResponse(0).asJson.noSpaces
+
+    val dev1TargetsCountAnyStatus = getExpectOk("/devices/dev1/actors/body/targets/count")
+    dev1TargetsCountAnyStatus.noSpaces shouldBe CountResponse(2).asJson.noSpaces
+
+    delete("/devices/dev1/targets")
+
+    val dev1TargetsCountAnyStatusAfter = getExpectOk("/devices/dev1/actors/body/targets/count")
+    dev1TargetsCountAnyStatusAfter.noSpaces shouldBe CountResponse(0).asJson.noSpaces
+
 
   }
 
@@ -174,6 +183,11 @@ class ServiceFuncSpec extends DbSuite {
 
   private[this] def post(path: String, body: String)(implicit service: Service[IO]): Response[IO] = {
     val request = Request[IO](method = Method.POST, uri = Uri.unsafeFromString(path), body = asEntityBody(body), headers = DefaultHeaders)
+    service.request(request).unsafeRunSync()
+  }
+
+  private[this] def delete(path: String)(implicit service: Service[IO]): Response[IO] = {
+    val request = Request[IO](method = Method.DELETE, uri = Uri.unsafeFromString(path), headers = DefaultHeaders)
     service.request(request).unsafeRunSync()
   }
 
