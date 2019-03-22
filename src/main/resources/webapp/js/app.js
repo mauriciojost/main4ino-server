@@ -145,18 +145,24 @@ webPortalApp.controller(
             $scope.device = $location.search().device || getCookie("device");
 
             $scope.tabl = 'reports'; // table to get records from
-            $scope.from = 0.5; // in days, lower-bound to filter history records
+            $scope.from = -0.5; // in days, lower-bound to filter history records
+            $scope.until = 0.0; // in days, upper-bound to filter history records
 
             $scope.search = function() {
                 $log.log('Searching device ' + $scope.device + ' in ' + $scope.tabl);
                 var date = new Date();
-                var msAgo = 1000 * 3600 * 24 * $scope.from;
-                var fromMs = date.getTime() - msAgo;
+
+                var msUntil = 1000 * 3600 * 24 * $scope.until;
+                var untilMs = date.getTime() + msUntil;
+                var until = (untilMs / 1000) | 0; // take to seconds and cast to int
+
+                var msFrom = 1000 * 3600 * 24 * $scope.from;
+                var fromMs = date.getTime() + msFrom;
                 var from = (fromMs / 1000) | 0; // take to seconds and cast to int
 
                 var req = {
                     method: 'GET',
-                    url: 'api/v1/devices/' + $scope.device + '/' + $scope.tabl + '?from=' + from,
+                    url: 'api/v1/devices/' + $scope.device + '/' + $scope.tabl + '?from=' + from + '&to=' + until,
                     headers: {'Content-Type': 'application/json', 'Session': $scope.session},
                     data: $scope.request
                 };
