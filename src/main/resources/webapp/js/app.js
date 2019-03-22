@@ -148,6 +148,37 @@ webPortalApp.controller(
             $scope.from = -0.5; // in days, lower-bound to filter history records
             $scope.until = 0.0; // in days, upper-bound to filter history records
 
+            $scope.deleteDev = function() {
+                $log.log('Deleting device ' + $scope.device + ' in ' + $scope.tabl);
+                var req = {
+                    method: 'DELETE',
+                    url: 'api/v1/administrator/devices/' + $scope.device + '/' + $scope.tabl,
+                    headers: {'Content-Type': 'application/json', 'Session': $scope.session},
+                    data: $scope.request
+                };
+
+                $log.log('Executing request...');
+
+                $http(req).success(
+                    function(data) {
+                        $log.log('Deleted: ' + JSON.stringify(data));
+                        $scope.result = '[]';
+                    }
+                ).error(
+                    function(data) {
+                        $log.log('Problem requesting delete: ' + JSON.stringify(data));
+                        BootstrapDialog.show({
+                            title: 'Error',
+                            message: 'Failed to delete: ' + data
+                        });
+                    }
+                );
+
+                $log.log('Executed request.');
+
+            };
+
+
             $scope.search = function() {
                 $log.log('Searching device ' + $scope.device + ' in ' + $scope.tabl);
                 var date = new Date();
