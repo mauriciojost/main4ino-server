@@ -2,9 +2,9 @@ package org.mauritania.main4ino
 
 package object models {
 
-	type Status = String
+	type Status = String // TODO must use a proper type
 
-	type RecordId = Long
+	type RecordId = Long // TODO change to RequestId
 
 	type DeviceName = String
 	type ActorName = String
