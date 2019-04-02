@@ -2,16 +2,20 @@ package org.mauritania.main4ino
 
 import cats.implicits._
 import cats.effect.IO
+import cats.free.Free
 import doobie.util.transactor.Transactor
 import doobie._
 import doobie.implicits._
-import doobie.free.connection.raw
+import doobie.free.connection.{ConnectionOp, raw}
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models._
 import fs2.Stream
 import org.mauritania.main4ino.RepositoryIO.Table.Table
+import org.mauritania.main4ino.models.PropsMap.PropsMap
 
 trait Repository[F[_]] {
+
+  def insertDeviceActor(table: Table, device: DeviceName, actor: ActorName, requestId: RecordId, r: PropsMap): F[Int]
   def cleanup(table: Table, now: EpochSecTimestamp, preserveWindowSecs: Int): F[Int]
   def deleteDeviceWhereName(table: Table, device: String): F[Int]
   def insertDevice(table: Table, t: Device): F[RecordId]
@@ -48,6 +52,16 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
       deviceId <- sqlInsertMetadata(table, t.metadata)
       nroTargetActorProps <- sqlInsertActorTup(table, t.asActorTups, deviceId)
     } yield (deviceId)
+    transaction.transact(transactor)
+  }
+
+  def insertDeviceActor(table: Table, dev: DeviceName, actor: ActorName, requestId: RecordId, p: PropsMap): IO[Int] = {
+    val transaction = for {
+      mtd <- sqlSelectMetadataWhereRequestId(table, requestId)
+      // TODO check that the request exists, belongs to current device and is open
+      mtdBelongsToDev = mtd.exists(_.device == dev)
+      inserts <- if (mtdBelongsToDev) sqlInsertActorTup(table, ActorTup.fromPropsMap(requestId, dev, actor, p), requestId) else Free.pure[ConnectionOp, Int](0)
+    } yield (inserts)
     transaction.transact(transactor)
   }
 

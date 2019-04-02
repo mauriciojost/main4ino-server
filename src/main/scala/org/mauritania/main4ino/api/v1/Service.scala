@@ -113,9 +113,16 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
        |    Returns: CREATED (201)
        |
        |
-       | GET /devices/<dev>/targets/<id>
+       | PUT /devices/<dev>/targets/<request_id>
        |
-       |    Retrieve a target by its id
+       |    Update the target given the device and the request ID.
+       |
+       |    Returns: OK (200)
+       |
+       |
+       | GET /devices/<dev>/targets/<request_id>
+       |
+       |    Retrieve a target by its request ID.
        |
        |    Returns: OK (200) | NO_CONTENT (204)
        |
@@ -153,18 +160,13 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
        |    Returns: OK (200)
        |
        |
-       | POST /devices/<dev>/actors/<actor>/targets
+       | POST /devices/<dev>/actors/<actor>/targets?requestid=<id>
        |
-       |    Create a new target
+       |    Create a new target for a given actor with the provided actor properties.
+       |
+       |    An existent request can be filled in if the request ID is provided.
        |
        |    Returns: CREATED (201)
-       |
-       |
-       | GET /devices/<dev>/actors/<actor>/targets/count?status=<status>
-       |
-       |    Count the amount of target-properties with the given status
-       |
-       |    Returns: OK (200)
        |
        |
        | GET /devices/<dev>/actors/<actor>/targets?status=<status>&consume=<consume>
@@ -219,15 +221,26 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
       val x = deleteDev(a.req, device, table)
       Ok(x.map(_.asJson), ContentTypeAppJson)
     }
-      // Targets & Reports (at device level)
+
+    // Targets & Reports (at device level)
 
       case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) as _ => {
         val x = postDev(a.req, device, table, time.nowUtc)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
-      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / LongVar(id) as _ => {
-        val x = getDev(table, id)
+        /*
+      case a@PUT -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) as _ => {
+        val x = updateRequest(table, requestId)
+        x.flatMap {
+          case Some(v) => Ok(v.asJson, ContentTypeAppJson)
+          case None => NoContent()
+        }
+      }
+      */
+
+      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) as _ => {
+        val x = getDev(table, requestId)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
           case None => NoContent()
@@ -265,14 +278,9 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
 
       // Targets & Reports (at device-actor level)
 
-      case a@POST -> _ / "devices" / Dvc(device) / "actors" / Dvc(actor) / Tbl(table) as _ => {
-        val x = postDevActor(a.req, device, actor, table, time.nowUtc)
+      case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(rid) / "actors" / Dvc(actor) as _ => {
+        val x = postDevActor(a.req, device, actor, table, rid)
         Created(x.map(_.asJson), ContentTypeAppJson)
-      }
-
-      case a@GET -> _ / "devices" / Dvc(device) / "actors" / Dvc(actor) / Tbl(table) / "count" :? StatusParam(status) as _ => {
-        val x = getDevActorCount(device, Some(actor), table, status)
-        Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
       case a@GET -> _ / "devices" / Dvc(device) / "actors" / Dvc(actor) / Tbl(table) :? StatusParam(status) +& ConsumeParam(consume) as _ => {
@@ -356,6 +364,18 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
       id <- repository.insertDevice(table, deviceBom)
       _ <- logger.debug(s"POST device $device (actor $actor) into table $table: $deviceBom / $id")
       resp = IdResponse(id)
+    } yield (resp)
+  }
+
+  private[v1] def postDevActor(req: Request[F], device: DeviceName, actor: ActorName, table: Table, requestId: RecordId): F[CountResponse] = {
+    implicit val x = JsonEncoding.StringDecoder
+    for {
+      logger <- Slf4jLogger.fromClass[F](Service.getClass)
+      p <- req.decodeJson[PropsMapV1]
+      r = PropsMapV1.toPropsMap(p, Status.Created)
+      id <- repository.insertDeviceActor(table, device, actor, requestId, r)
+      _ <- logger.debug(s"POST device $device (actor $actor) into table $table: $r / $id")
+      resp = CountResponse(id)
     } yield (resp)
   }
 
