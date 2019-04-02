@@ -33,6 +33,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
   import Url._
 
   private val HelpMsg =
+
     s"""
        | API HELP
        | --- ----
@@ -40,9 +41,10 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
        | HELP
        | ----
        |
+       |
        | GET /help
        |
-       |    Display this help
+       |    Display this help.
        |
        |    Returns: OK (200)
        |
@@ -50,9 +52,15 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
        | TIME
        | ----
        |
+       | All below queries are useful for time synchronization.
+       |
+       |
        | GET /time?timezone=<tz>
        |
-       |    Return the formatted time at a given timezone (example: UTC, Europe/Paris, etc.)
+       |    Return the ISO-local-time formatted time at a given timezone.
+       |
+       |    Examples of valid timezones: UTC, Europe/Paris, ...
+       |    Examples of formatted time: 1970-01-01T00:00:00
        |
        |    Returns: OK (200) | BAD_REQUEST (400)
        |
@@ -60,16 +68,19 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
        | USER
        | ----
        |
+       |
        | POST /session (with standard basic auth)
        |
-       |    Return the session id
+       |    Return the session id from the basic auth provided credentials.
+       |
+       |    The provided token can be used to authenticate without providing user/password.
        |
        |    Returns: OK (200)
        |
        |
        | GET /user
        |
-       |    Return the user id (if logged in)
+       |    Return the currently logged in user id.
        |
        |    Returns: OK (200)
        |
@@ -79,9 +90,12 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
        |
        | All below queries apply to both targets and reports (although in the examples they use targets).
        |
+       |
        | DELETE /administrator/devices/<dev>/targets/
        |
-       |    Delete all targets
+       |    Delete all targets for the given device.
+       |
+       |    To use with extreme care.
        |
        |    Returns: OK (200)
        |
@@ -91,9 +105,10 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
        |
        | All below queries apply to both targets and reports (although in the examples they use targets).
        |
+       |
        | POST /devices/<dev>/targets/
        |
-       |    Create a target
+       |    Create a target, retrieve a request ID.
        |
        |    Returns: CREATED (201)
        |
@@ -107,21 +122,21 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
        |
        | GET /devices/<dev>/targets/last
        |
-       |    Retrieve the last target created
+       |    Retrieve the last target created (chronologically).
        |
        |    Returns: OK (200) | NO_CONTENT (204)
        |
        |
        | GET /devices/<dev>/targets?from=<timestamp>&to=<timestamp>
        |
-       |    Retrieve the list of the targets that where created in between the range provided (timestamp in [ms] since the epoch)
+       |    Retrieve the list of the targets that where created in between the time range provided (timestamp in [ms] since the epoch).
        |
        |    Returns: OK (200)
        |
        |
        | GET /devices/<dev>/targets/summary?status=<status>&consume=<consume>
        |
-       |    Retrieve the list of the targets summarized for the device (most recent actor-prop value wins)
+       |    Retrieve the list of the targets summarized for the device (most recent actor-prop value wins).
        |
        |    The summarized target is generated only using properties that have the given status.
        |    The flag consume tells if the status of the matching properties should be changed from C (created) to X (consumed).
@@ -131,7 +146,9 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
        |
        | GET /devices/<dev>/targets/count?status=<status>
        |
-       |    Count the amount of target-properties with the given status for the device
+       |    Count the amount of target-properties with the given status for the device.
+       |
+       |    This is useful to know in advance if is worth to perform a heavier query to retrieve actors properties.
        |
        |    Returns: OK (200)
        |
