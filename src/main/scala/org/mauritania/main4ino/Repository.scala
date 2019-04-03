@@ -15,11 +15,13 @@ import org.mauritania.main4ino.models.PropsMap.PropsMap
 
 trait Repository[F[_]] {
 
-  def insertDeviceActor(table: Table, device: DeviceName, actor: ActorName, requestId: RecordId, r: PropsMap): F[Int]
+  type ErrMsg = String
+
+  def insertDeviceActor(table: Table, device: DeviceName, actor: ActorName, requestId: RecordId, r: PropsMap): F[Either[ErrMsg, Int]]
   def cleanup(table: Table, now: EpochSecTimestamp, preserveWindowSecs: Int): F[Int]
-  def deleteDeviceWhereName(table: Table, device: String): F[Int]
+  def deleteDeviceWhereName(table: Table, device: DeviceName): F[Int]
   def insertDevice(table: Table, t: Device): F[RecordId]
-  def selectDeviceWhereRequestId(table: Table, requestId: RecordId): F[Option[Device]]
+  def selectDeviceWhereRequestId(table: Table, dev: DeviceName, requestId: RecordId): F[Either[ErrMsg, Device]]
   def selectDevicesWhereTimestamp(table: Table, device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): F[Iterable[Device]]
   def selectMaxDevice(table: Table, device: DeviceName): F[Option[Device]]
   def selectMaxActorTupsStatus(table: Table, device: DeviceName, actor: ActorName, status: Option[Status]): F[List[ActorTup]]
@@ -55,21 +57,27 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
     transaction.transact(transactor)
   }
 
-  def insertDeviceActor(table: Table, dev: DeviceName, actor: ActorName, requestId: RecordId, p: PropsMap): IO[Int] = {
+  def insertDeviceActor(table: Table, dev: DeviceName, actor: ActorName, requestId: RecordId, p: PropsMap): IO[Either[ErrMsg, Int]] = {
     val transaction = for {
       mtd <- sqlSelectMetadataWhereRequestId(table, requestId)
-      // TODO check that the request exists, belongs to current device and is open
-      mtdBelongsToDev = mtd.exists(_.device == dev)
-      inserts <- if (mtdBelongsToDev) sqlInsertActorTup(table, ActorTup.fromPropsMap(requestId, dev, actor, p), requestId) else Free.pure[ConnectionOp, Int](0)
+      // TODO check that the request exists, it belongs to current device and ALSO that it is open
+      ok = mtd.exists(_.device == dev)
+      r: ConnectionIO[Either[ErrMsg, Int]] = if (ok)
+        sqlInsertActorTup(table, ActorTup.fromPropsMap(requestId, dev, actor, p), requestId).map(Right.apply[ErrMsg, Int])
+      else
+        Free.pure[ConnectionOp, Either[ErrMsg, Int]](Left.apply[ErrMsg, Int](s"Rejected: request $requestId does not relate to $dev"))
+      inserts <- r
     } yield (inserts)
     transaction.transact(transactor)
   }
 
-  def selectDeviceWhereRequestId(table: Table, requestId: RecordId): IO[Option[Device]] = {
+  def selectDeviceWhereRequestId(table: Table, dev: DeviceName, requestId: RecordId): IO[Either[ErrMsg, Device]] = {
     val transaction = for {
       t <- sqlSelectMetadataWhereRequestId(table, requestId)
+      k = t.exists(_.device == dev)
       p <- sqlSelectActorTupWhereRequestIdActorStatus(table, requestId)
-    } yield (t.map(Device.fromActorTups(_, p)))
+      j = t.map(Device.fromActorTups(_, p)).filter(_.metadata.device == dev).toRight(s"Request $requestId does not belong to $dev")
+    } yield (j)
     transaction.transact(transactor)
   }
 
@@ -131,7 +139,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
       .update.withUniqueGeneratedKeys[RecordId]("id")
   }
 
-  private def sqlDeleteMetadataWhereDeviceName(table: Table, device: String): ConnectionIO[Int] = {
+  private def sqlDeleteMetadataWhereDeviceName(table: Table, device: DeviceName): ConnectionIO[Int] = {
     (fr"DELETE FROM" ++ Fragment.const(table.code + "_requests") ++ fr"WHERE device_name=$device")
       .update.run
   }

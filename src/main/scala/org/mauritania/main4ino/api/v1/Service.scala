@@ -1,14 +1,12 @@
 package org.mauritania.main4ino.api.v1
 
 import java.time.{ZoneId, ZonedDateTime}
-import java.time.format.DateTimeFormatter
 
-import cats.Monad
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
 import org.http4s.{AuthedService, Cookie, HttpService, MediaType, Request, Response}
-import org.mauritania.main4ino.{Repository, RepositoryIO}
+import org.mauritania.main4ino.Repository
 import org.mauritania.main4ino.models._
 import org.http4s.headers.`Content-Type`
 import org.mauritania.main4ino.RepositoryIO.Table.Table
@@ -267,12 +265,12 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
       }
       */
 
-        // To be used by ... ? // TODO check and remove if not needed
+        // To be used by ... ? // Useful mainly for testing purposes
       case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) as _ => {
-        val x = getDev(table, requestId)
+        val x = getDev(table, device, requestId)
         x.flatMap {
-          case Some(v) => Ok(v.asJson, ContentTypeAppJson)
-          case None => NoContent()
+          case Right(v) => Ok(v.asJson, ContentTypeAppJson)
+          case Left(m) => NoContent() // ignore message
         }
       }
 
@@ -281,7 +279,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
         val x = getDevLast(device, table)
         x.flatMap {
           case Some(v) => Ok(v.asJson, ContentTypeAppJson)
-          case None => NoContent()
+          case None => NoContent() // ignore message
         }
       }
 
@@ -314,7 +312,10 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
         // To be used by devices to push actor reports (actor by actor) to a given existent ReqTran
       case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(rid) / "actors" / Dvc(actor) as _ => {
         val x = postDevActor(a.req, device, actor, table, rid)
-        Created(x.map(_.asJson), ContentTypeAppJson)
+        x.flatMap {
+          case Right(v) => Created(v.asJson, ContentTypeAppJson)
+          case Left(m) => NotModified() // ignore message
+        }
       }
 
         // To be used by devices to pull actor targets (actor by actor) // used at all ???
@@ -357,10 +358,10 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
 
   }
 
-  private[v1] def getDev(table: Table, id: RecordId): F[Option[DeviceV1]] = {
+  private[v1] def getDev(table: Table, dev: DeviceName, id: RecordId): F[Either[String, DeviceV1]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
-      device <- repository.selectDeviceWhereRequestId(table, id)
+      device <- repository.selectDeviceWhereRequestId(table, dev, id)
       deviceU = device.map(DeviceV1.fromBom)
       _ <- logger.debug(s"GET device $id from table $table: $deviceU")
     } yield (deviceU)
@@ -381,16 +382,15 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
     } yield (resp)
   }
 
-  private[v1] def postDevActor(req: Request[F], device: DeviceName, actor: ActorName, table: Table, requestId: RecordId): F[CountResponse] = {
+  private[v1] def postDevActor(req: Request[F], device: DeviceName, actor: ActorName, table: Table, requestId: RecordId): F[Either[String, Int]] = {
     implicit val x = JsonEncoding.StringDecoder
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
       p <- req.decodeJson[PropsMapV1]
       r = PropsMapV1.toPropsMap(p, Status.Created)
-      id <- repository.insertDeviceActor(table, device, actor, requestId, r)
-      _ <- logger.debug(s"POST device $device (actor $actor) into table $table: $r / $id")
-      resp = CountResponse(id)
-    } yield (resp)
+      s <- repository.insertDeviceActor(table, device, actor, requestId, r)
+      _ <- logger.debug(s"POST device $device (actor $actor) into table $table: $r / $s")
+    } yield (s)
   }
 
   private[v1] def getDevLast(device: DeviceName, table: Table): F[Option[DeviceV1]] = {

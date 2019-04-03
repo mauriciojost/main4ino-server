@@ -101,8 +101,8 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     val t = stub[Time[Id]]
     val s = new Service(new AuthenticationId(AuthConfig), r, t)
     "return 200 with an existent target/request when reading target/report requests" in {
-      (r.selectDeviceWhereRequestId _).when(Table.Targets, 1L).returns(Some(Dev1)).once // mock
-      (r.selectDeviceWhereRequestId _).when(Table.Reports, 1L).returns(Some(Dev1)).once() // mock
+      (r.selectDeviceWhereRequestId _).when(Table.Targets, Dev1.metadata.device, 1L).returns(Right(Dev1)).once // mock
+      (r.selectDeviceWhereRequestId _).when(Table.Reports, Dev1.metadata.device, 1L).returns(Right(Dev1)).once() // mock
       val ta = getApiV1("/devices/dev1/targets/1")(s)
       ta.status shouldBe (HttpStatus.Ok)
       ta.as[Json](SyncId, DecoderIdJson) shouldBe (Dev1V1.asJson)
