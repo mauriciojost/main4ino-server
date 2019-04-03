@@ -226,6 +226,20 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
         }
       }
 
+      // User
+
+      // To be used by web ui to retrieve a session token
+      case a@POST -> _ / "session" as user => {
+        val session = auth.generateSession(user)
+        session.flatMap(s => Ok(s))
+      }
+
+      // To be used by web ui to verify login
+      case a@GET -> _ / "user" as user => {
+        Ok(user.name)
+      }
+
+
     // Administration
 
       // To be used by web ui to fully remove records for a given device table
@@ -332,16 +346,6 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
           }
         }
       }
-
-      case a@POST -> _ / "session" as user => {
-        val session = auth.generateSession(user)
-        session.flatMap(s => Ok(s))
-      }
-
-      case a@GET -> _ / "user" as user => {
-        Ok(user.name)
-      }
-
     }
 
   def deleteDev(req: Request[F], device: String, table: Table): F[CountResponse] = {
