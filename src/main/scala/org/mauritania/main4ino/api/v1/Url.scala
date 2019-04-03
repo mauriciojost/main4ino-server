@@ -20,7 +20,7 @@ object Url {
   object TimezoneParam extends OptionalQueryParamDecoderMatcher[String]("timezone")
 
   // Url sections
-  object Tbl { // table section
+  object Tbl { // table section // TODO change name Table to ReqType (as in request type)
     def unapply(str: String): Option[Table] = Table.resolve(str)
   }
 

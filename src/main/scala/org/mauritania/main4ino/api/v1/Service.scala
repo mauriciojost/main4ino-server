@@ -108,7 +108,9 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
        |
        | POST /devices/<dev>/targets/
        |
-       |    Create a target, retrieve a request ID.
+       |    Create a target, get the request ID.
+       |
+       |    Mostly used by the device (mode reports).
        |
        |    Returns: CREATED (201)
        |
@@ -160,7 +162,13 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
        |    Returns: OK (200)
        |
        |
-       | POST /devices/<dev>/actors/<actor>/targets?requestid=<id>
+       | ACTORS
+       | ------
+       |
+       | All below queries apply to both targets and reports (although in the examples they use targets).
+       |
+       |
+       | POST /devices/<dev>/targets/<requestid>/actors/<actor>
        |
        |    Create a new target for a given actor with the provided actor properties.
        |
@@ -169,7 +177,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
        |    Returns: CREATED (201)
        |
        |
-       | GET /devices/<dev>/actors/<actor>/targets?status=<status>&consume=<consume>
+       | GET /devices/<dev>/targets/<requestid>/actors/<actor>?status=<status>&consume=<consume>
        |
        |    Retrieve the list of the targets for the device-actor (most recent actor-prop value wins)
        |
@@ -179,7 +187,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
        |    Returns: OK (200)
        |
        |
-       | GET /devices/<dev>/actors/<actor>/targets/summary?status=<status>&consume=<consume>
+       | GET /devices/<dev>/actors/<actor>/summary?status=<status>&consume=<consume>
        |
        |    Retrieve the summary of the targets for the device-actor (most recent actor-prop value wins)
        |
@@ -202,11 +210,14 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
 
       // Help
 
+
+    // To be used by developers
       case GET -> _ / "help" as _ =>
         Ok(HelpMsg, ContentTypeTextPlain)
 
       // Date/Time
 
+      // To be used by devices to get sync in time
       case GET -> _ / "time" :? TimezoneParam(tz) as _ => {
         val attempt = Try(nowAtTimezone(tz.getOrElse("UTC")))
         attempt match {
@@ -217,6 +228,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
 
     // Administration
 
+      // To be used by web ui to fully remove records for a given device table
     case a@DELETE -> _ / "administrator" / "devices" / Dvc(device) / Tbl(table) as _ => {
       val x = deleteDev(a.req, device, table)
       Ok(x.map(_.asJson), ContentTypeAppJson)
@@ -224,12 +236,14 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
 
     // Targets & Reports (at device level)
 
+        // To be used by devices to start a ReqTran (request transaction)
       case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) as _ => {
         val x = postDev(a.req, device, table, time.nowUtc)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
         /*
+        // To be used by devices to commit a ReqTran (request transaction)
       case a@PUT -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) as _ => {
         val x = updateRequest(table, requestId)
         x.flatMap {
@@ -239,6 +253,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
       }
       */
 
+        // To be used by ... ? // TODO check and remove if not needed
       case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) as _ => {
         val x = getDev(table, requestId)
         x.flatMap {
@@ -247,6 +262,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
         }
       }
 
+        // To be used by devices to retrieve last status upon reboot ??? not used seems
       case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "last" as _ => {
         val x = getDevLast(device, table)
         x.flatMap {
@@ -255,11 +271,13 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
         }
       }
 
+        // To be used by web ui to retrieve history of transactions in a given time period
       case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) :? FromParam(from) +& ToParam(to) as _ => {
         val x = getDevAll(device, table, from, to)
         Ok(x.map(_.asJson.noSpaces), ContentTypeAppJson)
       }
 
+        // To be used by web ui to have a summary for a given device
       case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "summary" :? StatusParam(status) +& ConsumeParam(consume) as _ => {
         val x = getDevActorTups(device, None, table, status, consume).map(t => ActorMapV1.fromTups(t))
         x.flatMap { m =>
@@ -271,6 +289,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
         }
       }
 
+        // To be used by devices to check if it is worth to request existent transactions
       case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "count" :? StatusParam(status) as _ => {
         val x = getDevActorCount(device, None, table, status)
         Ok(x.map(_.asJson), ContentTypeAppJson)
@@ -278,16 +297,19 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
 
       // Targets & Reports (at device-actor level)
 
+        // To be used by devices to push actor reports (actor by actor) to a given existent ReqTran
       case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(rid) / "actors" / Dvc(actor) as _ => {
         val x = postDevActor(a.req, device, actor, table, rid)
         Created(x.map(_.asJson), ContentTypeAppJson)
       }
 
+        // To be used by devices to pull actor targets (actor by actor) // used at all ???
       case a@GET -> _ / "devices" / Dvc(device) / "actors" / Dvc(actor) / Tbl(table) :? StatusParam(status) +& ConsumeParam(consume) as _ => {
         val x = getDevActors(device, actor, table, status, consume)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
 
+      // To be used by devices to pull actor targets (actor by actor) as a summary
       case a@GET -> _ / "devices" / Dvc(device) / "actors" / Dvc(actor) / Tbl(table) / "summary" :? StatusParam(status) +& ConsumeParam(consume) as _ => {
         val x = getDevActorTups(device, Some(actor), table, status, consume).map(PropsMapV1.fromTups)
         x.flatMap { m =>
@@ -299,6 +321,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
         }
       }
 
+        // To be used by devices to see the last status of a given actor (used upon restart)
       case a@GET -> _ / "devices" / Dvc(device) / "actors" / Dvc(actor) / Tbl(table) / "last" :? StatusParam(status) as _ => {
         val x = getLastDevActorTups(device, actor, table, status).map(PropsMapV1.fromTups)
         x.flatMap { m =>

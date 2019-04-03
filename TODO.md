@@ -9,6 +9,7 @@
 
 # DONE
 
+- Document which parts of the API have which usecase.
 - Have logs (in a purely functional way if possible)
 - Do not display None keys in the JSON -> by displaying more appropriate types according to the queries
 - Handle non happy paths too
