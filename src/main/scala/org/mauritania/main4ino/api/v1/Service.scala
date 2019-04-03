@@ -366,6 +366,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
     } yield (deviceU)
   }
 
+  // TODO rename all Dev to ReqTran (request transaction)
   private[v1] def postDev(req: Request[F], device: DeviceName, table: Table, dt: F[ZonedDateTime]): F[IdResponse] = {
     implicit val x = JsonEncoding.StringDecoder
     for {
@@ -376,20 +377,6 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
       deviceBom = DeviceV1(MetadataV1(None, Some(ts), device), actorMapU).toBom
       id <- repository.insertDevice(table, deviceBom)
       _ <- logger.debug(s"POST device $device into table $table: $deviceBom / $id")
-      resp = IdResponse(id)
-    } yield (resp)
-  }
-
-  private[v1] def postDevActor(req: Request[F], device: DeviceName, actor: ActorName, table: Table, dt: F[ZonedDateTime]): F[IdResponse] = {
-    implicit val x = JsonEncoding.StringDecoder
-    for {
-      logger <- Slf4jLogger.fromClass[F](Service.getClass)
-      t <- dt
-      ts = Time.asTimestamp(t)
-      p <- req.decodeJson[PropsMapV1]
-      deviceBom = DeviceV1(MetadataV1(None, Some(ts), device), Map(actor -> p)).toBom
-      id <- repository.insertDevice(table, deviceBom)
-      _ <- logger.debug(s"POST device $device (actor $actor) into table $table: $deviceBom / $id")
       resp = IdResponse(id)
     } yield (resp)
   }
