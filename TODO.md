@@ -6,6 +6,9 @@
 - Render target/report and properties statuses type-safe
 - Perform cleanup of repository, service v1 and its doc, and url class
 - Consume done at transaction/request level, one transaction at a time, no merging of different transactions
+- Auto-format code
+- Do a check to ensure that documentation matches service v1
+- Document the return type of each method of the REST API
 
 # DONE
 
