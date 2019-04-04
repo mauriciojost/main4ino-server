@@ -15,12 +15,13 @@ import org.mauritania.main4ino.api.v1.Service.TimeResponse
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.RicherBom._
-import org.mauritania.main4ino.models.{ActorTup, Device, Status => S}
+import org.mauritania.main4ino.models.{ActorTup, Device}
 import org.mauritania.main4ino.security.Authentication.{AccessAttempt, UserSession}
 import org.mauritania.main4ino.security.{Authentication, Config, User}
 import org.mauritania.main4ino.{Fixtures, Helper, Repository, SyncId}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
+import org.mauritania.main4ino.models.ActorTup.{Status => S}
 
 import scala.reflect.ClassTag
 
@@ -63,7 +64,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     val s = new Service(new AuthenticationId(AuthConfig), r, t)
     "return 201 with empty properties" in {
       (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).twice // mock
-      val d = Device(Metadata(None, None, "dev1"))
+      val d = Device(Metadata(None, None, "dev1", Metadata.Status.Created))
       createADeviceAndExpect(Table.Reports, d)(HttpStatus.Created)(s, r)
       createADeviceAndExpect(Table.Targets, d)(HttpStatus.Created)(s, r)
     }
@@ -157,8 +158,8 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
       (r.selectActorTupWhereDeviceActorStatus _)
         .when(e(Table.Targets), e("dev1"), e(Some("clock")), e(Some(S.Created)), e(false))
         .returns(Stream.fromIterator[Id, ActorTup](Iterator(
-          ActorTup(Some(1), "dev1", "clock", "h", "7", S.Consumed),
-          ActorTup(Some(2), "dev1", "clock", "h", "8", S.Consumed)
+          ActorTup(Some(1), "dev1", "clock", "h", "7", S.Consumed, None),
+          ActorTup(Some(2), "dev1", "clock", "h", "8", S.Consumed, None)
         ))).once()
 
       val r1 = s.getDevActors("dev1", "clock", Table.Targets, Some(S.Created), None)
@@ -172,9 +173,9 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
 
     "return the actor tups for a given actor" in {
       val tups = List(
-        ActorTup(Some(1), "dev1", "clock", "h", "7", S.Created),
-        ActorTup(Some(2), "dev1", "clock", "m", "0", S.Created),
-        ActorTup(Some(3), "dev1", "clock", "h", "8", S.Created)
+        ActorTup(Some(1), "dev1", "clock", "h", "7", S.Created, None),
+        ActorTup(Some(2), "dev1", "clock", "m", "0", S.Created, None),
+        ActorTup(Some(3), "dev1", "clock", "h", "8", S.Created, None)
       )
       (r.selectActorTupWhereDeviceActorStatus _)
         .when(e(Table.Targets), e("dev1"), e(Some("clock")), e(Some(S.Created)), false)

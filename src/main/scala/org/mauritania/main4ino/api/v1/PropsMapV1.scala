@@ -1,8 +1,9 @@
 package org.mauritania.main4ino.api.v1
 
 import org.mauritania.main4ino.api.v1.ActorMapV1.ActorMapV1
+import org.mauritania.main4ino.models.ActorTup.Status
 import org.mauritania.main4ino.models.PropsMap.PropsMap
-import org.mauritania.main4ino.models.{ActorTup, PropName, PropValue, Status}
+import org.mauritania.main4ino.models.{ActorTup, PropName, PropValue}
 
 object PropsMapV1 {
 

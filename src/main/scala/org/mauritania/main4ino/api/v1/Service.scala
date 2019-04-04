@@ -19,6 +19,8 @@ import org.mauritania.main4ino.api.v1.ActorMapV1.ActorMapV1
 import org.mauritania.main4ino.api.v1.DeviceV1.MetadataV1
 import org.mauritania.main4ino.api.v1.PropsMapV1.PropsMapV1
 import org.mauritania.main4ino.helpers.Time
+import org.mauritania.main4ino.models.ActorTup.{Status => AtStatus}
+import org.mauritania.main4ino.models.Device.Metadata.{Status => MdStatus}
 import org.mauritania.main4ino.models._
 import org.mauritania.main4ino.security.Authentication.AccessAttempt
 import org.mauritania.main4ino.security.{Authentication, User}
@@ -250,7 +252,7 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
 
     // To be used by devices to start a ReqTran (request transaction)
     case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) as _ => {
-      val x = postDev(a.req, device, table, time.nowUtc)
+      val x = postDev(a.req, device, table)
       Created(x.map(_.asJson), ContentTypeAppJson)
     }
 
@@ -380,14 +382,14 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
   }
 
   // TODO rename all Dev to ReqTran (request transaction)
-  private[v1] def postDev(req: Request[F], device: DeviceName, table: Table, dt: F[ZonedDateTime]): F[IdResponse] = {
+  private[v1] def postDev(req: Request[F], device: DeviceName, table: Table): F[IdResponse] = {
     implicit val x = JsonEncoding.StringDecoder
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
-      t <- dt
+      t <- time.nowUtc
       ts = Time.asTimestamp(t)
       actorMapU <- req.decodeJson[ActorMapV1]
-      deviceBom = DeviceV1(MetadataV1(None, Some(ts), device), actorMapU).toBom
+      deviceBom = DeviceV1(MetadataV1(None, Some(ts), device, MdStatus.Created), actorMapU).toBom
       id <- repository.insertDevice(table, deviceBom)
       _ <- logger.debug(s"POST device $device into table $table: $deviceBom / $id")
       resp = IdResponse(id)
@@ -398,9 +400,11 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
     implicit val x = JsonEncoding.StringDecoder
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
+      t <- time.nowUtc
+      ts = Time.asTimestamp(t)
       p <- req.decodeJson[PropsMapV1]
-      r = PropsMapV1.toPropsMap(p, Status.Created)
-      s <- repository.insertDeviceActor(table, device, actor, requestId, r)
+      r = PropsMapV1.toPropsMap(p, AtStatus.Created)
+      s <- repository.insertDeviceActor(table, device, actor, requestId, r, ts)
       _ <- logger.debug(s"POST device $device (actor $actor) into table $table: $r / $s")
     } yield (s)
   }
@@ -413,7 +417,7 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
       t <- dt
       ts = Time.asTimestamp(t)
       p <- req.decodeJson[PropsMapV1]
-      deviceBom = DeviceV1(MetadataV1(None, Some(ts), device), Map(actor -> p)).toBom
+      deviceBom = DeviceV1(MetadataV1(None, Some(ts), device, MdStatus.Created), Map(actor -> p)).toBom
       id <- repository.insertDevice(table, deviceBom)
       _ <- logger.debug(s"POST device $device (actor $actor) into table $table: $deviceBom / $id")
       resp = IdResponse(id)
@@ -437,7 +441,7 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
     } yield (deviceBoms)
   }
 
-  private[v1] def getDevActorTups(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status], clean: Option[Boolean]): F[Iterable[ActorTup]] = {
+  private[v1] def getDevActorTups(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[AtStatus], clean: Option[Boolean]): F[Iterable[ActorTup]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
       actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, clean.exists(identity)).compile.toList
@@ -445,11 +449,11 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
     } yield (actorTups)
   }
 
-  private[v1] def getLastDevActorTups(device: DeviceName, actor: ActorName, table: Table, status: Option[Status]) = {
+  private[v1] def getLastDevActorTups(device: DeviceName, actor: ActorName, table: Table, status: Option[AtStatus]) = {
     repository.selectMaxActorTupsStatus(table, device, actor, status)
   }
 
-  private[v1] def getDevActors(device: DeviceName, actor: ActorName, table: Table, status: Option[Status], clean: Option[Boolean]): F[Iterable[PropsMapV1]] = {
+  private[v1] def getDevActors(device: DeviceName, actor: ActorName, table: Table, status: Option[AtStatus], clean: Option[Boolean]): F[Iterable[PropsMapV1]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
       actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), status, clean.exists(identity)).compile.toList
@@ -460,7 +464,7 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
   }
 
 
-  private[v1] def getDevActorCount(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[Status]): F[CountResponse] = {
+  private[v1] def getDevActorCount(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[AtStatus]): F[CountResponse] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
       actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, false).compile.toList

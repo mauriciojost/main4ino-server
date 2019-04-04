@@ -4,6 +4,7 @@ import cats.effect.IO
 import doobie.hikari.HikariTransactor
 import org.mauritania.main4ino.db.Config.Cleanup
 import org.mauritania.main4ino.db.{Config, Database}
+import org.mauritania.main4ino.helpers.{Time, TimeIO}
 import org.scalatest._
 
 trait DbSuite extends FlatSpec with Matchers with BeforeAndAfterEach {

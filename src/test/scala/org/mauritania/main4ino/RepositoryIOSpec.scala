@@ -2,6 +2,7 @@ package org.mauritania.main4ino.models
 
 import org.mauritania.main4ino.Fixtures.Device1
 import org.mauritania.main4ino.RepositoryIO.Table
+import org.mauritania.main4ino.models.ActorTup.Status
 import org.mauritania.main4ino.models.RicherBom._
 import org.mauritania.main4ino.{DbSuite, RepositoryIO}
 import org.scalatest.Sequential

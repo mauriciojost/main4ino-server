@@ -3,6 +3,7 @@ package org.mauritania.main4ino.models
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.ActorMap.ActorMap
 import org.mauritania.main4ino.models.Device.Metadata
+import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models.PropsMap.PropsMap
 
 case class Device(
@@ -14,13 +15,13 @@ case class Device(
     for {
       (actor, ps) <- actors.toSeq
       (propName, (propValue, status)) <- ps.toSeq
-    } yield (ActorTup(None, metadata.device, actor, propName, propValue, status))
+    } yield (ActorTup(None, metadata.device, actor, propName, propValue, status, None))
 
   override def toString(): String = {
     this.getClass.getSimpleName + "(\n" +
       "  id       : " + metadata.id.mkString + "\n" +
       "  device   : " + metadata.device + "\n" +
-      "  timestamp: " + metadata.timestamp.map(Time.asString).mkString + "\n" +
+      "  timestamp: " + metadata.creation.map(Time.asString).mkString + "\n" +
       "  actors   : \n" + actors.map { case (a, p) => s"    - $a: ${p.map { case (k, (v, s)) => s"$k=$v($s)" }.mkString(", ")} \n" }.mkString +
       ")"
   }
@@ -28,13 +29,26 @@ case class Device(
 
 object Device {
 
+
   val EmptyActorMap: ActorMap = Map.empty[ActorName, PropsMap]
 
   case class Metadata(
     id: Option[RecordId],
-    timestamp: Option[EpochSecTimestamp],
-    device: DeviceName
+    creation: Option[EpochSecTimestamp],
+    device: DeviceName,
+    status: Status
   )
+
+  object Metadata {
+
+    type Status = String // TODO have type safety here
+
+    object Status {
+      val Created: Status = "C"
+      val Consumed: Status = "X"
+    }
+
+  }
 
   /**
     * Intermediate device representation
