@@ -1,8 +1,6 @@
 # TODO
 
 - Remove unneeded API methods
-- Allow to create a target/report for a given device and fill it in actor per actor
-- Be able to change the target/report status
 - Render target/report and properties statuses type-safe
 - Perform cleanup of repository, service v1 and its doc, and url class
 - Consume done at transaction/request level, one transaction at a time, no merging of different transactions
@@ -11,6 +9,8 @@
 
 # DONE
 
+- Allow to create a target/report for a given device and fill it in actor per actor
+- Be able to change the target/report status
 - Auto-format code
 - Document which parts of the API have which usecase.
 - Have logs (in a purely functional way if possible)
