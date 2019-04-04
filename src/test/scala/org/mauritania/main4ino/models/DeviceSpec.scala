@@ -27,7 +27,7 @@ class DeviceSpec extends WordSpec with Matchers {
   "Device" should {
 
     "internal method should create a map from tuples" in {
-      ActorMap.fromTups(
+      ActorMap.resolveFromTups(
         Iterable(
           ActorTup(Some(1L), "dev1", "actorx", "prop1", "1", Status.Created),
           ActorTup(Some(2L), "dev1", "actorx", "prop1", "2", Status.Created), // an update of the above
@@ -40,6 +40,17 @@ class DeviceSpec extends WordSpec with Matchers {
           "prop2" -> ("1", Status.Created)
         )
 
+      )
+    }
+
+    "internal method should pick first actor-prop if provided multiple times in same request ID" in {
+      ActorMap.resolveFromTups(
+        Iterable(
+          ActorTup(Some(1L), "dev1", "actorx", "prop1", "1", Status.Created),
+          ActorTup(Some(1L), "dev1", "actorx", "prop1", "2", Status.Created), // an override of the above (to be ignored)
+        )
+      ) shouldBe Map(
+        "actorx" -> Map("prop1" -> ("1", Status.Created))
       )
     }
 

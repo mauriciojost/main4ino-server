@@ -8,7 +8,7 @@ object ActorMapV1 {
 
   type ActorMapV1 = Map[ActorName, PropsMapV1]
 
-  def fromTups(ps: Iterable[ActorTup]): ActorMapV1 = fromActorMap(ActorMap.fromTups(ps))
+  def fromTups(ps: Iterable[ActorTup]): ActorMapV1 = fromActorMap(ActorMap.resolveFromTups(ps))
 
   def fromActorMap(a: ActorMap): ActorMapV1 = a.mapValues(_.mapValues(_._1))
 
