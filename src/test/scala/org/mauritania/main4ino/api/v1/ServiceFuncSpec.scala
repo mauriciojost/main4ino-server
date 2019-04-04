@@ -41,42 +41,42 @@ class ServiceFuncSpec extends DbSuite {
     dev1TargetsCount.noSpaces shouldBe CountResponse(6).asJson.noSpaces
 
     // Only the count of targets for dev1 clock
-    val dev1ClockTargetsCount = getExpectOk("/devices/dev1/actors/clock/targets/count?status=C")
+    val dev1ClockTargetsCount = getExpectOk("/devices/dev1/targets/actors/clock/count?status=C")
     dev1ClockTargetsCount.noSpaces shouldBe CountResponse(4).asJson.noSpaces
 
     // The raw targets list for dev1 / clock
-    val dev1ClockTarget = getExpectOk("/devices/dev1/actors/clock/targets?status=C&consume=false")
+    val dev1ClockTarget = getExpectOk("/devices/dev1/targets/actors/clock?status=C&consume=false")
     dev1ClockTarget.asArray.get(0).noSpaces shouldBe ("""{"h":"7"}""")
     dev1ClockTarget.asArray.get(1).noSpaces shouldBe ("""{"m":"0"}""")
     dev1ClockTarget.asArray.get(2).noSpaces shouldBe ("""{"s":"1"}""")
     dev1ClockTarget.asArray.get(3).noSpaces shouldBe ("""{"s":"9"}""")
 
-    val dev1ClockBody = getExpectOk("/devices/dev1/actors/body/targets?status=C&consume=false")
+    val dev1ClockBody = getExpectOk("/devices/dev1/targets/actors/body?status=C&consume=false")
     dev1ClockBody.asArray.get(0).noSpaces shouldBe ("""{"mv0":"Zz."}""")
     dev1ClockBody.asArray.get(1).noSpaces shouldBe ("""{"mv0":"ZzY"}""")
 
     // The merged targets for dev1
-    val dev1TargetsSummaryBody = getExpectOk("/devices/dev1/actors/body/targets/summary?consume=false&status=C")
+    val dev1TargetsSummaryBody = getExpectOk("/devices/dev1/targets/actors/body/summary?consume=false&status=C")
     dev1TargetsSummaryBody.noSpaces shouldBe """{"mv0":"ZzY"}"""
 
-    val dev1TargetsSummaryClock = getExpectOk("/devices/dev1/actors/clock/targets/summary?consume=false&status=C")
+    val dev1TargetsSummaryClock = getExpectOk("/devices/dev1/targets/actors/clock/summary?consume=false&status=C")
     dev1TargetsSummaryClock.noSpaces shouldBe """{"h":"7","s":"9","m":"0"}"""
 
-    val dev1TargetsMergedCleanedBody = getExpectOk("/devices/dev1/actors/body/targets/summary?consume=true&status=C")
+    val dev1TargetsMergedCleanedBody = getExpectOk("/devices/dev1/targets/actors/body/summary?consume=true&status=C")
     dev1TargetsMergedCleanedBody.noSpaces shouldBe """{"mv0":"ZzY"}"""
 
-    val dev1TargetsMergedCleanedClock = getExpectOk("/devices/dev1/actors/clock/targets/summary?consume=true&status=C")
+    val dev1TargetsMergedCleanedClock = getExpectOk("/devices/dev1/targets/actors/clock/summary?consume=true&status=C")
     dev1TargetsMergedCleanedClock.noSpaces shouldBe """{"h":"7","s":"9","m":"0"}"""
 
-    val dev1TargetsCountAfterClean = getExpectOk("/devices/dev1/actors/body/targets/count?status=C")
+    val dev1TargetsCountAfterClean = getExpectOk("/devices/dev1/targets/actors/body/count?status=C")
     dev1TargetsCountAfterClean.noSpaces shouldBe CountResponse(0).asJson.noSpaces
 
-    val dev1TargetsCountAnyStatus = getExpectOk("/devices/dev1/actors/body/targets/count")
+    val dev1TargetsCountAnyStatus = getExpectOk("/devices/dev1/targets/actors/body/count")
     dev1TargetsCountAnyStatus.noSpaces shouldBe CountResponse(2).asJson.noSpaces
 
     delete("/administrator/devices/dev1/targets")
 
-    val dev1TargetsCountAnyStatusAfter = getExpectOk("/devices/dev1/actors/body/targets/count")
+    val dev1TargetsCountAnyStatusAfter = getExpectOk("/devices/dev1/targets/actors/body/count")
     dev1TargetsCountAnyStatusAfter.noSpaces shouldBe CountResponse(0).asJson.noSpaces
 
 
@@ -106,8 +106,8 @@ class ServiceFuncSpec extends DbSuite {
 
     // Check the responses
     val dev1 = getExpectOk("/devices/dev1/targets/summary?consume=false&status=C")
-    val clk = getExpectOk("/devices/dev1/actors/clock/targets/summary?consume=false&status=C")
-    val body = getExpectOk("/devices/dev1/actors/body/targets/summary?consume=false&status=C")
+    val clk = getExpectOk("/devices/dev1/targets/actors/clock/summary?consume=false&status=C")
+    val body = getExpectOk("/devices/dev1/targets/actors/body/summary?consume=false&status=C")
 
     dev1.noSpaces shouldBe """{"body":{"mv1":"Zz.","mv0":"Zz."},"clock":{"h":"7","m":"0"}}"""
     clk.noSpaces shouldBe """{"h":"7","m":"0"}"""
@@ -125,8 +125,8 @@ class ServiceFuncSpec extends DbSuite {
     postExpectCreated("/devices/dev1/targets", """{"body":{"mv1":"Zz."}}""").noSpaces shouldBe IdResponse(3).asJson.noSpaces
 
     // Check the responses
-    val clk = getExpectOk("/devices/dev1/actors/clock/targets/last?status=C")
-    val body = getExpectOk("/devices/dev1/actors/body/targets/last?status=C")
+    val clk = getExpectOk("/devices/dev1/targets/actors/clock/last?status=C")
+    val body = getExpectOk("/devices/dev1/targets/actors/body/last?status=C")
     val dev1 = getExpectOk("/devices/dev1/targets/last?status=C")
 
     clk.noSpaces shouldBe """{"m":"0"}"""
@@ -142,9 +142,9 @@ class ServiceFuncSpec extends DbSuite {
     get("/devices/dev1/targets/1").status shouldBe Status.NoContent
     get("/devices/dev1/targets/last").status shouldBe Status.NoContent
     get("/devices/dev1/targets/summary").status shouldBe Status.NoContent
-    get("/devices/dev1/actors/clock/targets/last").status shouldBe Status.NoContent
-    get("/devices/dev1/actors/body/targets/last").status shouldBe Status.NoContent
-    get("/devices/dev1/actors/body/targets/summary").status shouldBe Status.NoContent
+    get("/devices/dev1/targets/actors/clock/last").status shouldBe Status.NoContent
+    get("/devices/dev1/targets/actors/body/last").status shouldBe Status.NoContent
+    get("/devices/dev1/targets/actors/body/summary").status shouldBe Status.NoContent
 
   }
 
@@ -153,12 +153,12 @@ class ServiceFuncSpec extends DbSuite {
     implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
 
     // Add a few targets
-    postExpectCreated("/devices/dev1/actors/body/targets", """{"mv0":"Zz."}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
-    postExpectCreated("/devices/dev1/actors/body/targets", """{"mv1":"0"}""").noSpaces shouldBe IdResponse(2).asJson.noSpaces
-    postExpectCreated("/devices/dev1/actors/body/targets", """{"mv1":"Zz.","mv2":"Da2"}""").noSpaces shouldBe IdResponse(3).asJson.noSpaces
+    postExpectCreated("/devices/dev1/targets/actors/body", """{"mv0":"Zz."}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
+    postExpectCreated("/devices/dev1/targets/actors/body", """{"mv1":"0"}""").noSpaces shouldBe IdResponse(2).asJson.noSpaces
+    postExpectCreated("/devices/dev1/targets/actors/body", """{"mv1":"Zz.","mv2":"Da2"}""").noSpaces shouldBe IdResponse(3).asJson.noSpaces
 
     // Check the responses
-    val body = getExpectOk("/devices/dev1/actors/body/targets/summary?status=C")
+    val body = getExpectOk("/devices/dev1/targets/actors/body/summary?status=C")
 
     body.noSpaces shouldBe """{"mv2":"Da2","mv1":"Zz.","mv0":"Zz."}"""
 

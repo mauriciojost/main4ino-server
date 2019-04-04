@@ -29,8 +29,8 @@ class ClientSpec extends WordSpec with Matchers with SyncId {
 
       val fileContent1 = Source.fromFile(output1.toFile).mkString
       val config1 = decode[Config](fileContent1).toOption.get
-      config1.users.map(_.name).toSet shouldBe Set(/* just added */ "newuser", "name")
-      config1.users.map(_.email).toSet shouldBe Set(/* just added */ "newuser@zzz.com", "name@zzz.com")
+      config1.users.map(_.name).toSet shouldBe Set(/* just added */ "newuser", "admin")
+      config1.users.map(_.email).toSet shouldBe Set(/* just added */ "newuser@zzz.com", "admin@zzz.com")
       config1.users.map(_.granted.toSet).toSet shouldBe Set(
         /* just added */ Set("/api/v1/time", "/"),
         Set("/")
@@ -45,8 +45,8 @@ class ClientSpec extends WordSpec with Matchers with SyncId {
 
       val fileContent2 = Source.fromFile(output2.toFile).mkString
       val config2 = decode[Config](fileContent2).toOption.get
-      config2.users.map(_.name).toSet shouldBe Set("newuser2", "newuser", "name")
-      config2.users.map(_.email).toSet shouldBe Set("newuser2@zzz.com", "newuser@zzz.com", "name@zzz.com")
+      config2.users.map(_.name).toSet shouldBe Set("newuser2", "newuser", "admin")
+      config2.users.map(_.email).toSet shouldBe Set("newuser2@zzz.com", "newuser@zzz.com", "admin@zzz.com")
       config2.users.map(_.granted.toSet).toSet shouldBe Set(
         Set("/api"),
         Set("/api/v1/time", "/"),
