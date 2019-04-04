@@ -94,6 +94,23 @@ class ServiceFuncSpec extends DbSuite {
 
   }
 
+  it should "create a target/report and fill it in afterwards" in {
+
+    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
+
+    // Add a target (empty)
+    postExpectCreated("/devices/dev1/targets", """{}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
+
+    postExpectCreated("/devices/dev1/targets/1/actors/actor1", """{"prop1":"val1"}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces // inserted
+    postExpectCreated("/devices/dev1/targets/1/actors/actor1", """{"prop1":"val11"}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces // inserted (ignored)
+
+    // Check the responses
+    val dev1 = getExpectOk("/devices/dev1/targets/1")
+    dev1.\\("actors")(0).noSpaces shouldBe ("""{"actor1":{"prop1":"val1"}}""")
+
+  }
+
+
   it should "create targets and merge the properties correctly" in {
 
     implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())

@@ -319,7 +319,7 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
     case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(rid) / "actors" / Dvc(actor) as _ => {
       val x = postDevActor(a.req, device, actor, table, rid)
       x.flatMap {
-        case Right(v) => Created(v.asJson, ContentTypeAppJson)
+        case Right(v) => Created(CountResponse(v).asJson, ContentTypeAppJson)
         case Left(m) => NotModified() // ignore message
       }
     }
