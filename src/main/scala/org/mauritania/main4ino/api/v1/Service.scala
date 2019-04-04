@@ -2,30 +2,30 @@ package org.mauritania.main4ino.api.v1
 
 import java.time.{ZoneId, ZonedDateTime}
 
+import cats.data.{Kleisli, OptionT}
+import cats.effect.Sync
+import cats.implicits._
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.circe._
-import io.circe.generic.auto._
-import org.http4s.{AuthedService, Cookie, HttpService, MediaType, Request, Response}
-import org.mauritania.main4ino.Repository
-import org.mauritania.main4ino.models._
+import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.`Content-Type`
+import org.http4s.server.AuthMiddleware
+import org.http4s.{AuthedService, HttpService, MediaType, Request, Response}
+import org.mauritania.main4ino.Repository
 import org.mauritania.main4ino.RepositoryIO.Table.Table
 import org.mauritania.main4ino.api.v1.ActorMapV1.ActorMapV1
 import org.mauritania.main4ino.api.v1.DeviceV1.MetadataV1
 import org.mauritania.main4ino.api.v1.PropsMapV1.PropsMapV1
 import org.mauritania.main4ino.helpers.Time
-import cats.data.{Kleisli, OptionT}
-import cats.effect.Sync
-import cats.implicits._
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.http4s.dsl.Http4sDsl
-import org.http4s.server.AuthMiddleware
+import org.mauritania.main4ino.models._
 import org.mauritania.main4ino.security.Authentication.AccessAttempt
 import org.mauritania.main4ino.security.{Authentication, User}
 
 import scala.util.{Failure, Success, Try}
 
-class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], time: Time[F]) extends Http4sDsl[F] {
+class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], time: Time[F]) extends Http4sDsl[F] {
 
   import Service._
   import Url._
@@ -206,41 +206,41 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
 
   private[v1] val service = AuthedService[User, F] {
 
-      // Help
+    // Help
 
 
     // To be used by developers
-      case GET -> _ / "help" as _ =>
-        Ok(HelpMsg, ContentTypeTextPlain)
+    case GET -> _ / "help" as _ =>
+      Ok(HelpMsg, ContentTypeTextPlain)
 
-      // Date/Time
+    // Date/Time
 
-      // To be used by devices to get sync in time
-      case GET -> _ / "time" :? TimezoneParam(tz) as _ => {
-        val attempt = Try(nowAtTimezone(tz.getOrElse("UTC")))
-        attempt match {
-          case Success(v) => Ok(v.map(_.asJson), ContentTypeTextPlain)
-          case Failure(f) => BadRequest()
-        }
+    // To be used by devices to get sync in time
+    case GET -> _ / "time" :? TimezoneParam(tz) as _ => {
+      val attempt = Try(nowAtTimezone(tz.getOrElse("UTC")))
+      attempt match {
+        case Success(v) => Ok(v.map(_.asJson), ContentTypeTextPlain)
+        case Failure(f) => BadRequest()
       }
+    }
 
-      // User
+    // User
 
-      // To be used by web ui to retrieve a session token
-      case a@POST -> _ / "session" as user => {
-        val session = auth.generateSession(user)
-        session.flatMap(s => Ok(s))
-      }
+    // To be used by web ui to retrieve a session token
+    case a@POST -> _ / "session" as user => {
+      val session = auth.generateSession(user)
+      session.flatMap(s => Ok(s))
+    }
 
-      // To be used by web ui to verify login
-      case a@GET -> _ / "user" as user => {
-        Ok(user.name)
-      }
+    // To be used by web ui to verify login
+    case a@GET -> _ / "user" as user => {
+      Ok(user.name)
+    }
 
 
     // Administration
 
-      // To be used by web ui to fully remove records for a given device table
+    // To be used by web ui to fully remove records for a given device table
     case a@DELETE -> _ / "administrator" / "devices" / Dvc(device) / Tbl(table) as _ => {
       val x = deleteDev(a.req, device, table)
       Ok(x.map(_.asJson), ContentTypeAppJson)
@@ -248,118 +248,118 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
 
     // Targets & Reports (at device level)
 
-        // To be used by devices to start a ReqTran (request transaction)
-      case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) as _ => {
-        val x = postDev(a.req, device, table, time.nowUtc)
-        Created(x.map(_.asJson), ContentTypeAppJson)
+    // To be used by devices to start a ReqTran (request transaction)
+    case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) as _ => {
+      val x = postDev(a.req, device, table, time.nowUtc)
+      Created(x.map(_.asJson), ContentTypeAppJson)
+    }
+
+    /*
+    // To be used by devices to commit a ReqTran (request transaction)
+  case a@PUT -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) as _ => {
+    val x = updateRequest(table, requestId)
+    x.flatMap {
+      case Some(v) => Ok(v.asJson, ContentTypeAppJson)
+      case None => NoContent()
+    }
+  }
+  */
+
+    // To be used by ... ? // Useful mainly for testing purposes
+    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) as _ => {
+      val x = getDev(table, device, requestId)
+      x.flatMap {
+        case Right(v) => Ok(v.asJson, ContentTypeAppJson)
+        case Left(m) => NoContent() // ignore message
       }
+    }
 
-        /*
-        // To be used by devices to commit a ReqTran (request transaction)
-      case a@PUT -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) as _ => {
-        val x = updateRequest(table, requestId)
-        x.flatMap {
-          case Some(v) => Ok(v.asJson, ContentTypeAppJson)
-          case None => NoContent()
-        }
+    // To be used by devices to retrieve last status upon reboot ??? not used seems
+    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "last" as _ => {
+      val x = getDevLast(device, table)
+      x.flatMap {
+        case Some(v) => Ok(v.asJson, ContentTypeAppJson)
+        case None => NoContent() // ignore message
       }
-      */
+    }
 
-        // To be used by ... ? // Useful mainly for testing purposes
-      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) as _ => {
-        val x = getDev(table, device, requestId)
-        x.flatMap {
-          case Right(v) => Ok(v.asJson, ContentTypeAppJson)
-          case Left(m) => NoContent() // ignore message
-        }
-      }
+    // To be used by web ui to retrieve history of transactions in a given time period
+    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) :? FromParam(from) +& ToParam(to) as _ => {
+      val x = getDevAll(device, table, from, to)
+      Ok(x.map(_.asJson.noSpaces), ContentTypeAppJson)
+    }
 
-        // To be used by devices to retrieve last status upon reboot ??? not used seems
-      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "last" as _ => {
-        val x = getDevLast(device, table)
-        x.flatMap {
-          case Some(v) => Ok(v.asJson, ContentTypeAppJson)
-          case None => NoContent() // ignore message
-        }
-      }
-
-        // To be used by web ui to retrieve history of transactions in a given time period
-      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) :? FromParam(from) +& ToParam(to) as _ => {
-        val x = getDevAll(device, table, from, to)
-        Ok(x.map(_.asJson.noSpaces), ContentTypeAppJson)
-      }
-
-        // To be used by web ui to have a summary for a given device
-      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "summary" :? StatusParam(status) +& ConsumeParam(consume) as _ => {
-        val x = getDevActorTups(device, None, table, status, consume).map(t => ActorMapV1.fromTups(t))
-        x.flatMap { m =>
-          if (m.isEmpty) {
-            NoContent()
-          } else {
-            Ok(m.asJson, ContentTypeAppJson)
-          }
-        }
-      }
-
-        // To be used by devices to check if it is worth to request existent transactions
-      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "count" :? StatusParam(status) as _ => {
-        val x = getDevActorCount(device, None, table, status)
-        Ok(x.map(_.asJson), ContentTypeAppJson)
-      }
-
-      // Targets & Reports (at device-actor level)
-
-      // To be used by tests to push actor reports (actor by actor) creating a new ReqTran
-      case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) as _ => {
-        val x = postDevActor(a.req, device, actor, table, time.nowUtc)
-        Created(x.map(_.asJson), ContentTypeAppJson)
-      }
-
-      // To be used by devices to push actor reports (actor by actor) to a given existent ReqTran
-      case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(rid) / "actors" / Dvc(actor) as _ => {
-        val x = postDevActor(a.req, device, actor, table, rid)
-        x.flatMap {
-          case Right(v) => Created(v.asJson, ContentTypeAppJson)
-          case Left(m) => NotModified() // ignore message
-        }
-      }
-
-      // To be used for testing mainly
-      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) / "count" :? StatusParam(status) as _ => {
-        val x = getDevActorCount(device, Some(actor), table, status)
-        Ok(x.map(_.asJson), ContentTypeAppJson)
-      }
-
-        // To be used by devices to pull actor targets (actor by actor) // used at all ???
-      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) :? StatusParam(status) +& ConsumeParam(consume) as _ => {
-        val x = getDevActors(device, actor, table, status, consume)
-        Ok(x.map(_.asJson), ContentTypeAppJson)
-      }
-
-      // To be used by devices to pull actor targets (actor by actor) as a summary
-      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) / "summary" :? StatusParam(status) +& ConsumeParam(consume) as _ => {
-        val x = getDevActorTups(device, Some(actor), table, status, consume).map(PropsMapV1.fromTups)
-        x.flatMap { m =>
-          if (m.isEmpty) {
-            NoContent()
-          } else {
-            Ok(m.asJson, ContentTypeAppJson)
-          }
-        }
-      }
-
-        // To be used by devices to see the last status of a given actor (used upon restart)
-      case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) / "last" :? StatusParam(status) as _ => {
-        val x = getLastDevActorTups(device, actor, table, status).map(PropsMapV1.fromTups)
-        x.flatMap { m =>
-          if (m.isEmpty) {
-            NoContent()
-          } else {
-            Ok(m.asJson, ContentTypeAppJson)
-          }
+    // To be used by web ui to have a summary for a given device
+    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "summary" :? StatusParam(status) +& ConsumeParam(consume) as _ => {
+      val x = getDevActorTups(device, None, table, status, consume).map(t => ActorMapV1.fromTups(t))
+      x.flatMap { m =>
+        if (m.isEmpty) {
+          NoContent()
+        } else {
+          Ok(m.asJson, ContentTypeAppJson)
         }
       }
     }
+
+    // To be used by devices to check if it is worth to request existent transactions
+    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "count" :? StatusParam(status) as _ => {
+      val x = getDevActorCount(device, None, table, status)
+      Ok(x.map(_.asJson), ContentTypeAppJson)
+    }
+
+    // Targets & Reports (at device-actor level)
+
+    // To be used by tests to push actor reports (actor by actor) creating a new ReqTran
+    case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) as _ => {
+      val x = postDevActor(a.req, device, actor, table, time.nowUtc)
+      Created(x.map(_.asJson), ContentTypeAppJson)
+    }
+
+    // To be used by devices to push actor reports (actor by actor) to a given existent ReqTran
+    case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(rid) / "actors" / Dvc(actor) as _ => {
+      val x = postDevActor(a.req, device, actor, table, rid)
+      x.flatMap {
+        case Right(v) => Created(v.asJson, ContentTypeAppJson)
+        case Left(m) => NotModified() // ignore message
+      }
+    }
+
+    // To be used for testing mainly
+    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) / "count" :? StatusParam(status) as _ => {
+      val x = getDevActorCount(device, Some(actor), table, status)
+      Ok(x.map(_.asJson), ContentTypeAppJson)
+    }
+
+    // To be used by devices to pull actor targets (actor by actor) // used at all ???
+    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) :? StatusParam(status) +& ConsumeParam(consume) as _ => {
+      val x = getDevActors(device, actor, table, status, consume)
+      Ok(x.map(_.asJson), ContentTypeAppJson)
+    }
+
+    // To be used by devices to pull actor targets (actor by actor) as a summary
+    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) / "summary" :? StatusParam(status) +& ConsumeParam(consume) as _ => {
+      val x = getDevActorTups(device, Some(actor), table, status, consume).map(PropsMapV1.fromTups)
+      x.flatMap { m =>
+        if (m.isEmpty) {
+          NoContent()
+        } else {
+          Ok(m.asJson, ContentTypeAppJson)
+        }
+      }
+    }
+
+    // To be used by devices to see the last status of a given actor (used upon restart)
+    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) / "last" :? StatusParam(status) as _ => {
+      val x = getLastDevActorTups(device, actor, table, status).map(PropsMapV1.fromTups)
+      x.flatMap { m =>
+        if (m.isEmpty) {
+          NoContent()
+        } else {
+          Ok(m.asJson, ContentTypeAppJson)
+        }
+      }
+    }
+  }
 
   def deleteDev(req: Request[F], device: String, table: Table): F[CountResponse] = {
     for {
@@ -485,6 +485,7 @@ class Service[F[_]: Sync](auth: Authentication[F], repository: Repository[F], ti
   private[v1] val customAuthMiddleware: AuthMiddleware[F, User] =
     AuthMiddleware(Kleisli(auth.authenticateAndCheckAccessFromRequest) andThen Kleisli(logAuthentication), onFailure)
   val serviceWithAuthentication: HttpService[F] = customAuthMiddleware(service)
+
   private[v1] def request(r: Request[F]): F[Response[F]] = serviceWithAuthentication.orNotFound(r)
 
   private def nowAtTimezone(tz: String): F[TimeResponse] = {

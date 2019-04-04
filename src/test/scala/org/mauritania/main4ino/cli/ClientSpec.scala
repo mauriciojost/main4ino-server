@@ -2,11 +2,9 @@ package org.mauritania.main4ino.cli
 
 import java.nio.file.{Files, Paths}
 
-import cats.effect.IO
 import io.circe.generic.auto._
 import io.circe.jawn.decode
 import org.mauritania.main4ino.SyncId
-import org.mauritania.main4ino.cli.Modules._
 import org.mauritania.main4ino.security.Config
 import org.scalatest.{Matchers, WordSpec}
 

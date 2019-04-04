@@ -3,32 +3,26 @@ package org.mauritania.main4ino.api.v1
 import java.time._
 
 import cats._
-import cats.effect.Sync
-import cats.implicits._
 import fs2.Stream
 import io.circe.Json
 import io.circe.generic.auto._
 import io.circe.syntax._
-import org.http4s.dsl.io._
-import org.http4s.circe._
 import org.http4s.headers.Authorization
 import org.http4s.{Request, Response, Uri, Status => HttpStatus, _}
 import org.mauritania.main4ino.RepositoryIO.Table
 import org.mauritania.main4ino.RepositoryIO.Table.Table
+import org.mauritania.main4ino.api.v1.Service.TimeResponse
+import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.RicherBom._
 import org.mauritania.main4ino.models.{ActorTup, Device, Status => S}
-import org.mauritania.main4ino.security.Authentication.AccessAttempt
-import org.mauritania.main4ino.security.Authentication.UserSession
-import org.mauritania.main4ino.security.{Authentication, AuthenticationIO, Config, User}
+import org.mauritania.main4ino.security.Authentication.{AccessAttempt, UserSession}
+import org.mauritania.main4ino.security.{Authentication, Config, User}
 import org.mauritania.main4ino.{Fixtures, Helper, Repository, SyncId}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
 
 import scala.reflect.ClassTag
-import org.mauritania.main4ino.api.v1.Service.TimeResponse
-import org.mauritania.main4ino.helpers.{Time, TimeIO}
-import org.reactormonk.{CryptoBits, PrivateKey}
 
 class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
 

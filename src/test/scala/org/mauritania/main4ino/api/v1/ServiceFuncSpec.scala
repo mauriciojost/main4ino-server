@@ -3,7 +3,6 @@ package org.mauritania.main4ino.api.v1
 import cats.effect.IO
 import fs2.Stream
 import io.circe.Json
-import org.mauritania.main4ino.api.v1.Service.{CountResponse, IdResponse}
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._

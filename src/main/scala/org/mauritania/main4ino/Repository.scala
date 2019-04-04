@@ -1,31 +1,40 @@
 package org.mauritania.main4ino
 
-import cats.implicits._
 import cats.effect.IO
 import cats.free.Free
-import doobie.util.transactor.Transactor
+import cats.implicits._
 import doobie._
-import doobie.implicits._
 import doobie.free.connection.{ConnectionOp, raw}
-import org.mauritania.main4ino.models.Device.Metadata
-import org.mauritania.main4ino.models._
+import doobie.implicits._
+import doobie.util.transactor.Transactor
 import fs2.Stream
 import org.mauritania.main4ino.RepositoryIO.Table.Table
+import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.PropsMap.PropsMap
+import org.mauritania.main4ino.models._
 
 trait Repository[F[_]] {
 
   type ErrMsg = String
 
   def insertDeviceActor(table: Table, device: DeviceName, actor: ActorName, requestId: RecordId, r: PropsMap): F[Either[ErrMsg, Int]]
+
   def cleanup(table: Table, now: EpochSecTimestamp, preserveWindowSecs: Int): F[Int]
+
   def deleteDeviceWhereName(table: Table, device: DeviceName): F[Int]
+
   def insertDevice(table: Table, t: Device): F[RecordId]
+
   def selectDeviceWhereRequestId(table: Table, dev: DeviceName, requestId: RecordId): F[Either[ErrMsg, Device]]
+
   def selectDevicesWhereTimestamp(table: Table, device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): F[Iterable[Device]]
+
   def selectMaxDevice(table: Table, device: DeviceName): F[Option[Device]]
+
   def selectMaxActorTupsStatus(table: Table, device: DeviceName, actor: ActorName, status: Option[Status]): F[List[ActorTup]]
+
   def selectActorTupWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[Status], consume: Boolean): Stream[F, ActorTup]
+
   def selectRequestIdsWhereDevice(table: Table, d: DeviceName): Stream[F, RecordId]
 
 }
@@ -239,10 +248,13 @@ object RepositoryIO {
   object Table {
 
     sealed abstract class Table(val code: String)
+
     case object Reports extends Table("reports")
+
     case object Targets extends Table("targets")
 
     val all = List(Reports, Targets)
+
     def resolve(s: String): Option[Table] = all.find(_.code == s)
   }
 
