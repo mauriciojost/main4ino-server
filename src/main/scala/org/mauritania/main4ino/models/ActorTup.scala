@@ -1,7 +1,5 @@
 package org.mauritania.main4ino.models
 
-import java.time.ZonedDateTime
-
 import org.mauritania.main4ino.models.ActorTup.Status
 import org.mauritania.main4ino.models.PropsMap.PropsMap
 
@@ -25,8 +23,9 @@ object ActorTup {
 	type Status = String // TODO must use a proper type
 
 	object Status {
-		val Created: Status = "C"
-		val Consumed: Status = "X"
+    // Natural progression: C -> X
+		val Created: Status = "C" // created, eligible for consumption
+		val Consumed: Status = "X" // consumed, not eligible for consumption anymore
 	}
 
 	def fromPropsMap(requestId: RecordId, deviceName: DeviceName, actorName: ActorName, pm: PropsMap, ts: EpochSecTimestamp): Iterable[ActorTup] = {
