@@ -17,7 +17,6 @@ import org.mauritania.main4ino.models.PropsMap.PropsMap
 import org.mauritania.main4ino.models._
 
 trait Repository[F[_]] {
-
   type ErrMsg = String
 
   def insertDeviceActor(table: Table, device: DeviceName, actor: ActorName, requestId: RecordId, r: PropsMap, ts: EpochSecTimestamp): F[Either[ErrMsg, Int]]
@@ -39,6 +38,8 @@ trait Repository[F[_]] {
   def selectActorTupWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[AtStatus], consume: Boolean): Stream[F, ActorTup]
 
   def selectRequestIdsWhereDevice(table: Table, d: DeviceName): Stream[F, RecordId]
+
+  def updateDeviceWhereRequestId(table: Table, dev: DeviceName, requestId: RecordId, status: MdStatus): F[Either[ErrMsg,Int]]
 
 }
 
@@ -80,6 +81,21 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
       inserts <- r
     } yield (inserts)
     transaction.transact(transactor)
+  }
+
+
+  def updateDeviceWhereRequestId(table: Table, dev: DeviceName, requestId: RecordId, status: MdStatus): IO[Either[ErrMsg,Int]] = {
+    val transaction = for {
+      mtd <- sqlSelectMetadataWhereRequestId(table, requestId)
+      ok = mtd.exists(m => m.device == dev && m.status == MdStatus.Open)
+      r: ConnectionIO[Either[ErrMsg, Int]] = if (ok)
+        sqlUpdateMetadataWhereRequestId(table, requestId, status).map(Right.apply[ErrMsg, Int])
+      else
+        Free.pure[ConnectionOp, Either[ErrMsg, Int]](Left.apply[ErrMsg, Int](s"Rejected: request $requestId does not relate to $dev or is closed"))
+      inserts <- r
+    } yield (inserts)
+    transaction.transact(transactor)
+
   }
 
   def selectDeviceWhereRequestId(table: Table, dev: DeviceName, requestId: RecordId): IO[Either[ErrMsg, Device]] = {
@@ -148,6 +164,10 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
   private def sqlInsertMetadata(table: Table, m: Metadata): ConnectionIO[RecordId] = {
     (fr"INSERT INTO " ++ Fragment.const(table.code + "_requests") ++ fr" (creation, device_name, status) VALUES (${m.creation}, ${m.device}, ${m.status})")
       .update.withUniqueGeneratedKeys[RecordId]("id")
+  }
+
+  private def sqlUpdateMetadataWhereRequestId(table: Table, r: RecordId, s: MdStatus): ConnectionIO[Int] = {
+    (fr"UPDATE " ++ Fragment.const(table.code + "_requests") ++ fr" SET status = ${s} WHERE id=${r}").update.run
   }
 
   private def sqlDeleteMetadataWhereDeviceName(table: Table, device: DeviceName): ConnectionIO[Int] = {

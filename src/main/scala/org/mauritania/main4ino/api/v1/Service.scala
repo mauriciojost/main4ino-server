@@ -256,16 +256,14 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
       Created(x.map(_.asJson), ContentTypeAppJson)
     }
 
-    /*
-    // To be used by devices to commit a ReqTran (request transaction)
-  case a@PUT -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) as _ => {
-    val x = updateRequest(table, requestId)
-    x.flatMap {
-      case Some(v) => Ok(v.asJson, ContentTypeAppJson)
-      case None => NoContent()
+    // To be used by devices to commit a request
+    case a@PUT -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) :? StatusParam(status) as _ => {
+      val x = updateRequest(table, device, requestId, status.getOrElse(MdStatus.Closed))
+      x.flatMap {
+        case Right(v) => Ok(v.asJson, ContentTypeAppJson)
+        case Left(v) => NotModified()
+      }
     }
-  }
-  */
 
     // To be used by ... ? // Useful mainly for testing purposes
     case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) as _ => {
@@ -395,6 +393,14 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
       _ <- logger.debug(s"POST device $device into table $table: $deviceBom / $id")
       resp = IdResponse(id)
     } yield (resp)
+  }
+
+  private[v1] def updateRequest(table: Table, device: String, requestId: RecordId, status: MdStatus): F[Either[ErrMsg, Int]] = {
+    for {
+      logger <- Slf4jLogger.fromClass[F](Service.getClass)
+      r <- repository.updateDeviceWhereRequestId(table, device, requestId, status)
+      _ <- logger.debug(s"Update device $device into table $table: $r")
+    } yield (r)
   }
 
   private[v1] def postDevActor(req: Request[F], device: DeviceName, actor: ActorName, table: Table, requestId: RecordId): F[Either[String, Int]] = {
