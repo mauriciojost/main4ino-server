@@ -10,7 +10,7 @@ import org.mauritania.main4ino.security.{Fixtures => FixturesSecurity}
 object Fixtures {
 
   val Device1 = Device(
-    Metadata(None, Some(0L), "dev1", Metadata.Status.Created),
+    Metadata(None, Some(0L), "dev1", Metadata.Status.Closed),
     Map(
       "actorx" ->
         Map(
@@ -27,7 +27,7 @@ object Fixtures {
   )
 
   val Device1InV1 = DeviceV1(
-    MetadataV1(None, Some(0L), "dev1", Metadata.Status.Created),
+    MetadataV1(None, Some(0L), "dev1", Metadata.Status.Closed),
     Map(
       "actorx" ->
         Map(

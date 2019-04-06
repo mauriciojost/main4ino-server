@@ -44,8 +44,10 @@ object Device {
     type Status = String // TODO have type safety here
 
     object Status {
-      val Created: Status = "C"
-      val Consumed: Status = "X"
+      // Natural progression: O -> C -> X
+      val Open: Status = "O" // modifications can be done on it (add properties)
+      val Closed: Status = "C" // modifications cannot be done on it anymore
+      val Consumed: Status = "X" // it has been already consumed (no modifications can be done on it)
     }
 
   }

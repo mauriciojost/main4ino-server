@@ -10,7 +10,8 @@ import doobie.util.transactor.Transactor
 import fs2.Stream
 import org.mauritania.main4ino.RepositoryIO.Table.Table
 import org.mauritania.main4ino.helpers.Time
-import org.mauritania.main4ino.models.ActorTup.Status
+import org.mauritania.main4ino.models.ActorTup.{Status => AtStatus}
+import org.mauritania.main4ino.models.Device.Metadata.{Status => MdStatus}
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.PropsMap.PropsMap
 import org.mauritania.main4ino.models._
@@ -33,9 +34,9 @@ trait Repository[F[_]] {
 
   def selectMaxDevice(table: Table, device: DeviceName): F[Option[Device]]
 
-  def selectMaxActorTupsStatus(table: Table, device: DeviceName, actor: ActorName, status: Option[Status]): F[List[ActorTup]]
+  def selectMaxActorTupsStatus(table: Table, device: DeviceName, actor: ActorName, status: Option[AtStatus]): F[List[ActorTup]]
 
-  def selectActorTupWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[Status], consume: Boolean): Stream[F, ActorTup]
+  def selectActorTupWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[AtStatus], consume: Boolean): Stream[F, ActorTup]
 
   def selectRequestIdsWhereDevice(table: Table, d: DeviceName): Stream[F, RecordId]
 
@@ -71,12 +72,11 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
   def insertDeviceActor(table: Table, dev: DeviceName, actor: ActorName, requestId: RecordId, p: PropsMap, ts: EpochSecTimestamp): IO[Either[ErrMsg, Int]] = {
     val transaction = for {
       mtd <- sqlSelectMetadataWhereRequestId(table, requestId)
-      // TODO check that the request exists, it belongs to current device and ALSO that it is open
-      ok = mtd.exists(_.device == dev)
+      ok = mtd.exists(m => m.device == dev && m.status == MdStatus.Open)
       r: ConnectionIO[Either[ErrMsg, Int]] = if (ok)
         sqlInsertActorTup(table, ActorTup.fromPropsMap(requestId, dev, actor, p, ts), requestId).map(Right.apply[ErrMsg, Int])
       else
-        Free.pure[ConnectionOp, Either[ErrMsg, Int]](Left.apply[ErrMsg, Int](s"Rejected: request $requestId does not relate to $dev"))
+        Free.pure[ConnectionOp, Either[ErrMsg, Int]](Left.apply[ErrMsg, Int](s"Rejected: request $requestId does not relate to $dev or is closed"))
       inserts <- r
     } yield (inserts)
     transaction.transact(transactor)
@@ -116,7 +116,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
     transaction.transact(transactor)
   }
 
-  def selectMaxActorTupsStatus(table: Table, device: DeviceName, actor: ActorName, status: Option[Status]): IO[List[ActorTup]] = {
+  def selectMaxActorTupsStatus(table: Table, device: DeviceName, actor: ActorName, status: Option[AtStatus]): IO[List[ActorTup]] = {
     // TODO investigate if this yields only one sql query in the end, otherwise write it as such
     val ac = Some(actor)
     val transaction = for {
@@ -126,7 +126,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
     transaction.transact(transactor)
   }
 
-  def selectActorTupWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[Status], consume: Boolean): Stream[IO, ActorTup] = {
+  def selectActorTupWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[AtStatus], consume: Boolean): Stream[IO, ActorTup] = {
     val transaction = for {
       p <- sqlSelectActorTupWhereDeviceActorStatus(table, device, actor, status)
       c <- if (consume) Stream.eval[ConnectionIO, Int](sqlUpdateActorTupWhereDeviceActorConsume(table, device, actor)) else Stream.fromIterator[ConnectionIO, Int](Iterator(0))
@@ -186,7 +186,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
       .query[Metadata].option
   }
 
-  private def sqlSelectLastRequestIdWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[Status]): ConnectionIO[Option[RecordId]] = {
+  private def sqlSelectLastRequestIdWhereDeviceActorStatus(table: Table, device: DeviceName, actor: Option[ActorName], status: Option[AtStatus]): ConnectionIO[Option[RecordId]] = {
     val actorFr = actor match {
       case Some(a) => fr"AND actor_name = $a"
       case None => fr""
@@ -202,7 +202,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
     table: Table,
     requestId: RecordId,
     actor: Option[ActorName] = None,
-    status: Option[Status] = None
+    status: Option[AtStatus] = None
   ): ConnectionIO[List[ActorTup]] = {
     val actorFr = actor match {
       case Some(a) => fr"AND actor_name = $a"
@@ -221,7 +221,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
       case Some(a) => fr"AND actor_name = $a"
       case None => fr""
     }
-    (fr"UPDATE " ++ Fragment.const(table.code) ++ fr" SET property_status = ${Status.Consumed} WHERE property_status=${Status.Created} and device_name=$device" ++ actorFr)
+    (fr"UPDATE " ++ Fragment.const(table.code) ++ fr" SET property_status = ${AtStatus.Consumed} WHERE property_status=${AtStatus.Created} and device_name=$device" ++ actorFr)
       .update.run
   }
 
@@ -229,7 +229,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
     table: Table,
     device: DeviceName,
     actor: Option[ActorName],
-    status: Option[Status]
+    status: Option[AtStatus]
   ): Stream[ConnectionIO, ActorTup] = {
 
     val actorFr = actor match {

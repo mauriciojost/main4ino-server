@@ -389,7 +389,8 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
       t <- time.nowUtc
       ts = Time.asTimestamp(t)
       actorMapU <- req.decodeJson[ActorMapV1]
-      deviceBom = DeviceV1(MetadataV1(None, Some(ts), device, MdStatus.Created), actorMapU).toBom
+      status = if (actorMapU.isEmpty) MdStatus.Open else MdStatus.Closed
+      deviceBom = DeviceV1(MetadataV1(None, Some(ts), device, status), actorMapU).toBom
       id <- repository.insertDevice(table, deviceBom)
       _ <- logger.debug(s"POST device $device into table $table: $deviceBom / $id")
       resp = IdResponse(id)
@@ -417,7 +418,7 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
       t <- dt
       ts = Time.asTimestamp(t)
       p <- req.decodeJson[PropsMapV1]
-      deviceBom = DeviceV1(MetadataV1(None, Some(ts), device, MdStatus.Created), Map(actor -> p)).toBom
+      deviceBom = DeviceV1(MetadataV1(None, Some(ts), device, MdStatus.Closed), Map(actor -> p)).toBom
       id <- repository.insertDevice(table, deviceBom)
       _ <- logger.debug(s"POST device $device (actor $actor) into table $table: $deviceBom / $id")
       resp = IdResponse(id)

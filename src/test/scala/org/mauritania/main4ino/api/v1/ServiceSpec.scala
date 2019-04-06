@@ -64,7 +64,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     val s = new Service(new AuthenticationId(AuthConfig), r, t)
     "return 201 with empty properties" in {
       (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).twice // mock
-      val d = Device(Metadata(None, None, "dev1", Metadata.Status.Created))
+      val d = Device(Metadata(None, None, "dev1", Metadata.Status.Closed))
       createADeviceAndExpect(Table.Reports, d)(HttpStatus.Created)(s, r)
       createADeviceAndExpect(Table.Targets, d)(HttpStatus.Created)(s, r)
     }
