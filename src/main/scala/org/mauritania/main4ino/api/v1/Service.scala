@@ -32,11 +32,15 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
   import Service._
   import Url._
 
+  type ErrMsg = String
+
   private val HelpMsg =
 
     s"""
        | API HELP
        | --- ----
+       |
+       | See: https://github.com/mauriciojost/main4ino-server/blob/master/src/main/scala/org/mauritania/main4ino/api/v1/Service.scala
        |
        | HELP
        | ----
@@ -103,7 +107,7 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
        | DEVICES
        | -------
        |
-       | All below queries apply to both targets and reports (although in the examples they use targets).
+       | All below queries are applicable to both targets and reports (although in the examples they use targets).
        |
        |
        | POST /devices/<dev>/targets/
@@ -111,6 +115,8 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
        |    Create a target, get the request ID.
        |
        |    Mostly used by the device (mode reports).
+       |    If not actor-properties provided the request remains in state open, waiting for properties
+       |    to be added. It should be explicitly closed so that it is exposed to devices.
        |
        |    Returns: CREATED (201)
        |
@@ -270,7 +276,7 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
       val x = getDev(table, device, requestId)
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
-        case Left(m) => NoContent() // ignore message
+        case Left(v) => NotModified()
       }
     }
 
@@ -320,7 +326,7 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
       val x = postDevActor(a.req, device, actor, table, rid)
       x.flatMap {
         case Right(v) => Created(CountResponse(v).asJson, ContentTypeAppJson)
-        case Left(m) => NotModified() // ignore message
+        case Left(v) => NotModified()
       }
     }
 
@@ -361,7 +367,7 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
     }
   }
 
-  def deleteDev(req: Request[F], device: String, table: Table): F[CountResponse] = {
+  def deleteDev(req: Request[F], device: DeviceName, table: Table): F[CountResponse] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
       count <- repository.deleteDeviceWhereName(table, device)
@@ -379,7 +385,6 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
     } yield (deviceU)
   }
 
-  // TODO rename all Dev to ReqTran (request transaction)
   private[v1] def postDev(req: Request[F], device: DeviceName, table: Table): F[IdResponse] = {
     implicit val x = JsonEncoding.StringDecoder
     for {
@@ -449,6 +454,7 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
   }
 
   private[v1] def getDevActorTups(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[AtStatus], clean: Option[Boolean]): F[Iterable[ActorTup]] = {
+    // TODO bugged, can retrieve actor tups whose metadata is open
     for {
       logger <- Slf4jLogger.fromClass[F](Service.getClass)
       actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, clean.exists(identity)).compile.toList
@@ -479,7 +485,6 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
       _ <- logger.debug(s"GET count of device $device actor $actor from table $table with status $status: $count ($actorTups)")
     } yield (count)
   }
-
 
   private[v1] def logAuthentication(user: AccessAttempt): F[AccessAttempt] = {
     for {
