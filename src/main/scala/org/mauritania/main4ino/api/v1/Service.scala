@@ -276,7 +276,7 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
       val x = getDev(table, device, requestId)
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
-        case Left(v) => NotModified()
+        case Left(v) => NoContent()
       }
     }
 
