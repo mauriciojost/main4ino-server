@@ -10,6 +10,8 @@ package object models {
 	type PropName = String
 	type PropValue = String
 
+	type PropsMap = Map[PropName, PropValue]
+
 	type EpochSecTimestamp = Long
 
 }

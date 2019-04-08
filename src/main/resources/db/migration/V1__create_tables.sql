@@ -8,11 +8,9 @@ CREATE TABLE targets_requests (
 CREATE TABLE targets (
   id SERIAL PRIMARY KEY,
   request_id INT,
-  device_name TEXT,
   actor_name TEXT,
   property_name TEXT,
   property_value TEXT,
-  property_status TEXT,
   creation LONG
 );
 
@@ -26,10 +24,8 @@ CREATE TABLE reports_requests (
 CREATE TABLE reports (
   id SERIAL PRIMARY KEY,
   request_id INT,
-  device_name TEXT,
   actor_name TEXT,
   property_name TEXT,
   property_value TEXT,
-  property_status TEXT,
   creation LONG
 );

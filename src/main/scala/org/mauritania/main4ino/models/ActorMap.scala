@@ -1,7 +1,5 @@
 package org.mauritania.main4ino.models
 
-import org.mauritania.main4ino.models.PropsMap.PropsMap
-
 object ActorMap {
 
   type ActorMap = Map[ActorName, PropsMap]
@@ -21,10 +19,11 @@ object ActorMap {
         byActorActorTups.groupBy(_.prop)
           .mapValues { byActorPropActorTups =>
             val eligibleActorTupPerActorProp = byActorPropActorTups.maxBy(_.requestId)
-            (eligibleActorTupPerActorProp.value, eligibleActorTupPerActorProp.status)
+            eligibleActorTupPerActorProp.value
           }
       }
     props
   }
+
 
 }

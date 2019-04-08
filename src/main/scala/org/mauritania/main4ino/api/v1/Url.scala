@@ -1,9 +1,9 @@
 package org.mauritania.main4ino.api.v1
 
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
-import org.mauritania.main4ino.RepositoryIO.Table
-import org.mauritania.main4ino.RepositoryIO.Table.Table
-import org.mauritania.main4ino.models.ActorTup.Status
+import org.mauritania.main4ino.Repository.Table
+import org.mauritania.main4ino.Repository.Table.Table
+import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models.{EpochSecTimestamp, RecordId}
 
 import scala.util.Try
@@ -13,7 +13,7 @@ object Url {
   // Parameters
 
   object StatusParam extends OptionalQueryParamDecoderMatcher[Status]("status")
-  object ConsumeParam extends OptionalQueryParamDecoderMatcher[Boolean]("consume")
+  //object ConsumeParam extends OptionalQueryParamDecoderMatcher[Boolean]("consume")
 
   object FromParam extends OptionalQueryParamDecoderMatcher[EpochSecTimestamp]("from")
   object ToParam extends OptionalQueryParamDecoderMatcher[EpochSecTimestamp]("to")

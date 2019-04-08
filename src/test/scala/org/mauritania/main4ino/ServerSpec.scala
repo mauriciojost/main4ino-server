@@ -13,7 +13,7 @@ import io.circe.syntax._
 import io.circe._
 import io.circe.parser._
 import org.mauritania.main4ino.api.v1.DeviceV1
-import org.mauritania.main4ino.api.v1.Service.IdResponse
+import org.mauritania.main4ino.api.Translator.IdResponse
 import org.mauritania.main4ino.models.RecordId
 
 class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {

@@ -9,7 +9,8 @@ import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, EntityBody, Headers, Method, Request, Response, Status, Uri}
-import org.mauritania.main4ino.api.v1.Service.{CountResponse, IdResponse}
+import org.mauritania.main4ino.api.Translator
+import org.mauritania.main4ino.api.Translator.{CountResponse, IdResponse}
 import org.mauritania.main4ino.helpers.TimeIO
 import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security._
@@ -20,9 +21,9 @@ class ServiceFuncSpec extends DbSuite {
 
   Sequential
 
-  "The service" should "create, read a target/report and delete it" in {
+  "The service from web ui" should "create, read a target/report and delete it" in {
 
-    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
+    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
 
     // Add a few targets
     postExpectCreated("/devices/dev1/targets", """{"clock": {"h":"7"}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
@@ -81,9 +82,9 @@ class ServiceFuncSpec extends DbSuite {
 
   }
 
-  it should "create and read a target/report in different value formats (string, int, bool)" in {
+  "The service from the device" should "create and read a target/report in different value formats (string, int, bool)" in {
 
-    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
+    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
 
     // Add a target
     postExpectCreated("/devices/dev1/targets", """{"act":{"i":7,"b":true,"s":"str"}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
@@ -96,7 +97,7 @@ class ServiceFuncSpec extends DbSuite {
 
   it should "create a target/report and fill it in afterwards" in {
 
-    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
+    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
 
     // Add a target (empty)
     postExpectCreated("/devices/dev1/targets", """{}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
@@ -113,7 +114,7 @@ class ServiceFuncSpec extends DbSuite {
 
   it should "create targets and merge the properties correctly" in {
 
-    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
+    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
 
     // Add a few targets
     postExpectCreated("/devices/dev1/targets", """{"clock":{"h":"7"},"body":{"mv0":"Zz."}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
@@ -133,7 +134,7 @@ class ServiceFuncSpec extends DbSuite {
 
   it should "retrieve correctly last device and actor views per status" in {
 
-    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
+    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
 
     // Add a few targets
     postExpectCreated("/devices/dev1/targets", """{"clock":{"h":"7"},"body":{"mv0":"Zz."}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
@@ -153,7 +154,7 @@ class ServiceFuncSpec extends DbSuite {
 
   it should "respond with no expectation failed when no records are found" in {
 
-    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
+    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
 
     get("/devices/dev1/targets/1").status shouldBe Status.NoContent
     get("/devices/dev1/targets/last").status shouldBe Status.NoContent
@@ -166,7 +167,7 @@ class ServiceFuncSpec extends DbSuite {
 
   it should "create targets properties and merge them correctly" in {
 
-    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new RepositoryIO(transactor), new TimeIO())
+    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
 
     // Add a few targets
     postExpectCreated("/devices/dev1/targets/actors/body", """{"mv0":"Zz."}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces

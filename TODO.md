@@ -15,6 +15,7 @@
 - Make a check on status transitions: forbid invalid transitions and document them
 - Resolve code TODOs
 - Migrate HELP as documentation in Service
+- Go at Device level in Translator, avoid going to ActorTup level
 
 # DONE
 

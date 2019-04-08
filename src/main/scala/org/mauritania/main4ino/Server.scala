@@ -8,8 +8,8 @@ import fs2.StreamApp.ExitCode
 import fs2.{Stream, StreamApp}
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.server.blaze.BlazeBuilder
-import org.mauritania.main4ino.RepositoryIO.Table
-import org.mauritania.main4ino.api.v1
+import org.mauritania.main4ino.Repository.Table
+import org.mauritania.main4ino.api.{Translator, v1}
 import org.mauritania.main4ino.db.Database
 import org.mauritania.main4ino.helpers.TimeIO
 import org.mauritania.main4ino.security.AuthenticationIO
@@ -50,7 +50,7 @@ object Server extends StreamApp[IO] {
       exitCodeServer <- BlazeBuilder[IO]
         .bindHttp(configApp.server.port, configApp.server.host)
         .mountService(new webapp.Service().service, "/")
-        .mountService(new v1.Service(auth, repo, time).serviceWithAuthentication, "/api/v1")
+        .mountService(new v1.Service(auth, new Translator(repo, time), time).serviceWithAuthentication, "/api/v1")
         .serve
 
     } yield exitCodeServer

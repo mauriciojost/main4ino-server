@@ -14,12 +14,12 @@ import org.http4s.headers.`Content-Type`
 import org.http4s.server.AuthMiddleware
 import org.http4s.{AuthedService, HttpService, MediaType, Request, Response}
 import org.mauritania.main4ino.Repository
-import org.mauritania.main4ino.RepositoryIO.Table.Table
-import org.mauritania.main4ino.api.v1.ActorMapV1.ActorMapV1
-import org.mauritania.main4ino.api.v1.DeviceV1.MetadataV1
-import org.mauritania.main4ino.api.v1.PropsMapV1.PropsMapV1
+import org.mauritania.main4ino.Repository.Table.Table
+import org.mauritania.main4ino.api.Translator
+import org.mauritania.main4ino.api.Translator.CountResponse
 import org.mauritania.main4ino.helpers.Time
-import org.mauritania.main4ino.models.ActorTup.{Status => AtStatus}
+import org.mauritania.main4ino.models.ActorMap.ActorMap
+import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.Device.Metadata.{Status => MdStatus}
 import org.mauritania.main4ino.models._
 import org.mauritania.main4ino.security.Authentication.AccessAttempt
@@ -27,7 +27,7 @@ import org.mauritania.main4ino.security.{Authentication, User}
 
 import scala.util.{Failure, Success, Try}
 
-class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], time: Time[F]) extends Http4sDsl[F] {
+class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Time[F]) extends Http4sDsl[F] {
 
   import Service._
   import Url._
@@ -212,6 +212,8 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
        |
     """.stripMargin
 
+  implicit val jsonStringDecoder = JsonEncoding.StringDecoder
+
   private[v1] val service = AuthedService[User, F] {
 
     // Help
@@ -225,7 +227,7 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
 
     // To be used by devices to get sync in time
     case GET -> _ / "time" :? TimezoneParam(tz) as _ => {
-      val attempt = Try(nowAtTimezone(tz.getOrElse("UTC")))
+      val attempt = Try(tr.nowAtTimezone(tz.getOrElse("UTC")))
       attempt match {
         case Success(v) => Ok(v.map(_.asJson), ContentTypeTextPlain)
         case Failure(f) => BadRequest()
@@ -250,30 +252,37 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
 
     // To be used by web ui to fully remove records for a given device table
     case a@DELETE -> _ / "administrator" / "devices" / Dvc(device) / Tbl(table) as _ => {
-      val x = deleteDev(a.req, device, table)
+      val x = tr.deleteDev(device, table)
       Ok(x.map(_.asJson), ContentTypeAppJson)
     }
 
     // Targets & Reports (at device level)
 
     // To be used by devices to start a ReqTran (request transaction)
-    case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) as _ => {
-      val x = postDev(a.req, device, table)
+    case a@POST -> _ / "devices" / Dvc(dn) / Tbl(table) as _ => {
+      val am = a.req.decodeJson[ActorMap]
+      val d = for {
+        a <- am
+        t <- time.nowUtc
+        ts = Time.asTimestamp(t)
+        de = Device(dn, ts, a)
+      } yield (de)
+      val x = tr.postDev(d, table)
       Created(x.map(_.asJson), ContentTypeAppJson)
     }
 
     // To be used by devices to commit a request
-    case a@PUT -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) :? StatusParam(status) as _ => {
-      val x = updateRequest(table, device, requestId, status.getOrElse(MdStatus.Closed))
+    case a@PUT -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) as _ => {
+      val x = tr.updateRequest(table, device, requestId, MdStatus.Closed)
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
-        case Left(v) => NotModified()
+        case Left(_) => NotModified()
       }
     }
 
     // To be used by ... ? // Useful mainly for testing purposes
     case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) as _ => {
-      val x = getDev(table, device, requestId)
+      val x = tr.getDev(table, device, requestId)
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
         case Left(v) => NoContent()
@@ -281,8 +290,8 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
     }
 
     // To be used by devices to retrieve last status upon reboot ??? not used seems
-    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "last" as _ => {
-      val x = getDevLast(device, table)
+    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "last" :? StatusParam(status) as _ => {
+      val x = tr.getDevLast(device, table, status)
       x.flatMap {
         case Some(v) => Ok(v.asJson, ContentTypeAppJson)
         case None => NoContent() // ignore message
@@ -290,14 +299,18 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
     }
 
     // To be used by web ui to retrieve history of transactions in a given time period
-    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) :? FromParam(from) +& ToParam(to) as _ => {
-      val x = getDevAll(device, table, from, to)
+    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) :? FromParam(from) +& ToParam(to) +& StatusParam(st) as _ => {
+      val x = tr.getDevAll(device, table, from, to, st)
       Ok(x.map(_.asJson.noSpaces), ContentTypeAppJson)
     }
 
+      COUNT MISSING
+
+      /*
     // To be used by web ui to have a summary for a given device
+    // calculate the last status using last status reported, and the new one using a merge of all the device requests with status closed (but not consumed), so keep device level
     case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "summary" :? StatusParam(status) +& ConsumeParam(consume) as _ => {
-      val x = getDevActorTups(device, None, table, status, consume).map(t => ActorMapV1.fromTups(t))
+      val x = tr.getDevActorTups(device, None, table, status, consume).map(t => ActorMapV1.fromTups(t))
       x.flatMap { m =>
         if (m.isEmpty) {
           NoContent()
@@ -306,45 +319,57 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
         }
       }
     }
+    */
 
+      /*
     // To be used by devices to check if it is worth to request existent transactions
     case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "count" :? StatusParam(status) as _ => {
-      val x = getDevActorCount(device, None, table, status)
+      val x = tr.getDevActorCount(device, None, table, status)
       Ok(x.map(_.asJson), ContentTypeAppJson)
     }
+    */
 
     // Targets & Reports (at device-actor level)
 
     // To be used by tests to push actor reports (actor by actor) creating a new ReqTran
     case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) as _ => {
-      val x = postDevActor(a.req, device, actor, table, time.nowUtc)
+      val pm = a.req.decodeJson[PropsMap]
+      val x = tr.postDevActor(pm, device, actor, table, time.nowUtc)
       Created(x.map(_.asJson), ContentTypeAppJson)
     }
 
     // To be used by devices to push actor reports (actor by actor) to a given existent ReqTran
     case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(rid) / "actors" / Dvc(actor) as _ => {
-      val x = postDevActor(a.req, device, actor, table, rid)
+      val pm = a.req.decodeJson[PropsMap]
+      val x = tr.postDevActor(pm, device, actor, table, rid)
       x.flatMap {
         case Right(v) => Created(CountResponse(v).asJson, ContentTypeAppJson)
         case Left(v) => NotModified()
       }
     }
 
+      /*
     // To be used for testing mainly
     case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) / "count" :? StatusParam(status) as _ => {
-      val x = getDevActorCount(device, Some(actor), table, status)
+      val x = tr.getDevActorCount(device, Some(actor), table, status)
       Ok(x.map(_.asJson), ContentTypeAppJson)
     }
+    */
 
-    // To be used by devices to pull actor targets (actor by actor) // used at all ???
+    // To be used by devices to pull actor targets (actor by actor)
+    // replaced by retrieving the actors of a given request, no summary anymore
+      /*
     case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) :? StatusParam(status) +& ConsumeParam(consume) as _ => {
-      val x = getDevActors(device, actor, table, status, consume)
+      val x = tr.getDevActors(device, actor, table, status, consume)
       Ok(x.map(_.asJson), ContentTypeAppJson)
     }
+    */
 
+      /*
     // To be used by devices to pull actor targets (actor by actor) as a summary
+    // replaced by retrieving the actors of a given request, no summary anymore
     case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) / "summary" :? StatusParam(status) +& ConsumeParam(consume) as _ => {
-      val x = getDevActorTups(device, Some(actor), table, status, consume).map(PropsMapV1.fromTups)
+      val x = tr.getDevActorTups(device, Some(actor), table, status, consume).map(PropsMapV1.fromTups)
       x.flatMap { m =>
         if (m.isEmpty) {
           NoContent()
@@ -353,138 +378,32 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
         }
       }
     }
+    */
 
     // To be used by devices to see the last status of a given actor (used upon restart)
     case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) / "last" :? StatusParam(status) as _ => {
-      val x = getLastDevActorTups(device, actor, table, status).map(PropsMapV1.fromTups)
+      val x = tr.getDevLast(device, table, status)
       x.flatMap { m =>
-        if (m.isEmpty) {
-          NoContent()
-        } else {
-          Ok(m.asJson, ContentTypeAppJson)
+        val v = m.flatMap(_.actor(actor))
+        v match {
+          case Some(x) => Ok(x.asJson, ContentTypeAppJson)
+          case None =>  NoContent()
         }
       }
     }
+
+    // To be used by devices to pull actor targets (actor by actor)
+    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(rid) / "actors" / Dvc(actor) as _ => {
+      val x = tr.getDev(table, device, rid)
+      val v = x.map(e => e.flatMap(d => d.actor(actor).toRight(s"No such actor: $actor")))
+      v.flatMap {
+        case Right(d) => Ok(d.asJson, ContentTypeAppJson)
+        case Left(_) => NoContent()
+      }
+    }
+
   }
 
-  def deleteDev(req: Request[F], device: DeviceName, table: Table): F[CountResponse] = {
-    for {
-      logger <- Slf4jLogger.fromClass[F](Service.getClass)
-      count <- repository.deleteDeviceWhereName(table, device)
-      _ <- logger.debug(s"DELETED $count requests of device $device")
-    } yield (CountResponse(count))
-
-  }
-
-  private[v1] def getDev(table: Table, dev: DeviceName, id: RecordId): F[Either[String, DeviceV1]] = {
-    for {
-      logger <- Slf4jLogger.fromClass[F](Service.getClass)
-      device <- repository.selectDeviceWhereRequestId(table, dev, id)
-      deviceU = device.map(DeviceV1.fromBom)
-      _ <- logger.debug(s"GET device $id from table $table: $deviceU")
-    } yield (deviceU)
-  }
-
-  private[v1] def postDev(req: Request[F], device: DeviceName, table: Table): F[IdResponse] = {
-    implicit val x = JsonEncoding.StringDecoder
-    for {
-      logger <- Slf4jLogger.fromClass[F](Service.getClass)
-      t <- time.nowUtc
-      ts = Time.asTimestamp(t)
-      actorMapU <- req.decodeJson[ActorMapV1]
-      status = if (actorMapU.isEmpty) MdStatus.Open else MdStatus.Closed
-      deviceBom = DeviceV1(MetadataV1(None, Some(ts), device, status), actorMapU).toBom
-      id <- repository.insertDevice(table, deviceBom)
-      _ <- logger.debug(s"POST device $device into table $table: $deviceBom / $id")
-      resp = IdResponse(id)
-    } yield (resp)
-  }
-
-  private[v1] def updateRequest(table: Table, device: String, requestId: RecordId, status: MdStatus): F[Either[ErrMsg, Int]] = {
-    for {
-      logger <- Slf4jLogger.fromClass[F](Service.getClass)
-      r <- repository.updateDeviceWhereRequestId(table, device, requestId, status)
-      _ <- logger.debug(s"Update device $device into table $table: $r")
-    } yield (r)
-  }
-
-  private[v1] def postDevActor(req: Request[F], device: DeviceName, actor: ActorName, table: Table, requestId: RecordId): F[Either[String, Int]] = {
-    implicit val x = JsonEncoding.StringDecoder
-    for {
-      logger <- Slf4jLogger.fromClass[F](Service.getClass)
-      t <- time.nowUtc
-      ts = Time.asTimestamp(t)
-      p <- req.decodeJson[PropsMapV1]
-      r = PropsMapV1.toPropsMap(p, AtStatus.Created)
-      s <- repository.insertDeviceActor(table, device, actor, requestId, r, ts)
-      _ <- logger.debug(s"POST device $device (actor $actor) into table $table: $r / $s")
-    } yield (s)
-  }
-
-
-  private[v1] def postDevActor(req: Request[F], device: DeviceName, actor: ActorName, table: Table, dt: F[ZonedDateTime]): F[IdResponse] = {
-    implicit val x = JsonEncoding.StringDecoder
-    for {
-      logger <- Slf4jLogger.fromClass[F](Service.getClass)
-      t <- dt
-      ts = Time.asTimestamp(t)
-      p <- req.decodeJson[PropsMapV1]
-      deviceBom = DeviceV1(MetadataV1(None, Some(ts), device, MdStatus.Closed), Map(actor -> p)).toBom
-      id <- repository.insertDevice(table, deviceBom)
-      _ <- logger.debug(s"POST device $device (actor $actor) into table $table: $deviceBom / $id")
-      resp = IdResponse(id)
-    } yield (resp)
-  }
-
-  private[v1] def getDevLast(device: DeviceName, table: Table): F[Option[DeviceV1]] = {
-    for {
-      logger <- Slf4jLogger.fromClass[F](Service.getClass)
-      r <- repository.selectMaxDevice(table, device)
-      deviceBom = r.map(DeviceV1.fromBom)
-      _ <- logger.debug(s"GET last device $device from table $table: $deviceBom")
-    } yield (deviceBom)
-  }
-
-  private[v1] def getDevAll(device: DeviceName, table: Table, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): F[Iterable[DeviceV1]] = {
-    for {
-      logger <- Slf4jLogger.fromClass[F](Service.getClass)
-      deviceBoms <- repository.selectDevicesWhereTimestamp(table, device, from, to).map(_.map(DeviceV1.fromBom))
-      _ <- logger.debug(s"GET all devices $device from table $table from time $from until $to: $deviceBoms")
-    } yield (deviceBoms)
-  }
-
-  private[v1] def getDevActorTups(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[AtStatus], clean: Option[Boolean]): F[Iterable[ActorTup]] = {
-    // TODO bugged, can retrieve actor tups whose metadata is open
-    for {
-      logger <- Slf4jLogger.fromClass[F](Service.getClass)
-      actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, clean.exists(identity)).compile.toList
-      _ <- logger.debug(s"GET actor tups of device $device actor $actor from table $table with status $status cleaning $clean: $actorTups")
-    } yield (actorTups)
-  }
-
-  private[v1] def getLastDevActorTups(device: DeviceName, actor: ActorName, table: Table, status: Option[AtStatus]) = {
-    repository.selectMaxActorTupsStatus(table, device, actor, status)
-  }
-
-  private[v1] def getDevActors(device: DeviceName, actor: ActorName, table: Table, status: Option[AtStatus], clean: Option[Boolean]): F[Iterable[PropsMapV1]] = {
-    for {
-      logger <- Slf4jLogger.fromClass[F](Service.getClass)
-      actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, Some(actor), status, clean.exists(identity)).compile.toList
-      propsMaps = actorTups.groupBy(_.requestId).toList.sortBy(_._1)
-      propsMapsU = propsMaps.map(v => PropsMapV1.fromTups(v._2))
-      _ <- logger.debug(s"GET device actors device $device actor $actor from table $table with status $status and clean $clean: $propsMaps ($actorTups)")
-    } yield (propsMapsU)
-  }
-
-
-  private[v1] def getDevActorCount(device: DeviceName, actor: Option[ActorName], table: Table, status: Option[AtStatus]): F[CountResponse] = {
-    for {
-      logger <- Slf4jLogger.fromClass[F](Service.getClass)
-      actorTups <- repository.selectActorTupWhereDeviceActorStatus(table, device, actor, status, false).compile.toList
-      count = CountResponse(actorTups.size)
-      _ <- logger.debug(s"GET count of device $device actor $actor from table $table with status $status: $count ($actorTups)")
-    } yield (count)
-  }
 
   private[v1] def logAuthentication(user: AccessAttempt): F[AccessAttempt] = {
     for {
@@ -504,23 +423,12 @@ class Service[F[_] : Sync](auth: Authentication[F], repository: Repository[F], t
 
   private[v1] def request(r: Request[F]): F[Response[F]] = serviceWithAuthentication.orNotFound(r)
 
-  private def nowAtTimezone(tz: String): F[TimeResponse] = {
-    val tutc = time.nowUtc.map(_.withZoneSameInstant(ZoneId.of(tz)))
-    tutc.map(t => TimeResponse(tz, Time.asTimestamp(t), Time.asString(t)))
-  }
-
 }
 
 object Service {
 
   final val ContentTypeAppJson = `Content-Type`(MediaType.`application/json`)
   final val ContentTypeTextPlain = `Content-Type`(MediaType.`text/plain`)
-
-  case class IdResponse(id: RecordId)
-
-  case class CountResponse(count: Int)
-
-  case class TimeResponse(zoneName: String, timestamp: Long, formatted: String) //"zoneName":"Europe\/Paris","timestamp":1547019039,"formatted":"2019-01-09 07:30:39"}
 
 }
 
