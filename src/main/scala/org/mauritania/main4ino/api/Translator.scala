@@ -5,7 +5,6 @@ import java.time.{ZoneId, ZonedDateTime}
 import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.http4s.Request
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.main4ino.Repository
 import org.mauritania.main4ino.Repository.Table.Table
@@ -88,8 +87,17 @@ class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends 
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       deviceBoms <- repository.selectDevicesWhereTimestampStatus(table, device, from, to, st)
-      _ <- logger.debug(s"GET all devices $device from table $table from time $from until $to: $deviceBoms")
+      _ <- logger.debug(s"GET all devices $device from table $table from time $from until $to with status $st: $deviceBoms")
     } yield (deviceBoms)
+  }
+
+  def getDevAllSummary(device: DeviceName, table: Table, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], st: Option[MdStatus]): F[Option[Device]] = {
+    for {
+      logger <- Slf4jLogger.fromClass[F](Translator.getClass)
+      deviceBoms <- repository.selectDevicesWhereTimestampStatus(table, device, from, to, st)
+      summary = deviceBoms.reduceOption(Device.merge)
+      _ <- logger.debug(s"GET summary all devices $device from table $table from time $from until $to with status $st: $deviceBoms")
+    } yield (summary)
   }
 
   /*
@@ -146,6 +154,8 @@ object Translator {
   case class IdResponse(id: RecordId)
 
   case class CountResponse(count: Int)
+
+  case class IdsOnlyResponse(ids: Seq[RecordId])
 
   case class TimeResponse(zoneName: String, timestamp: Long, formatted: String) //"zoneName":"Europe\/Paris","timestamp":1547019039,"formatted":"2019-01-09 07:30:39"}
 

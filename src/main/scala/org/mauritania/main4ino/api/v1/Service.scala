@@ -16,9 +16,8 @@ import org.http4s.{AuthedService, HttpService, MediaType, Request, Response}
 import org.mauritania.main4ino.Repository
 import org.mauritania.main4ino.Repository.Table.Table
 import org.mauritania.main4ino.api.Translator
-import org.mauritania.main4ino.api.Translator.CountResponse
+import org.mauritania.main4ino.api.Translator.{CountResponse, IdsOnlyResponse}
 import org.mauritania.main4ino.helpers.Time
-import org.mauritania.main4ino.models.ActorMap.ActorMap
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.Device.Metadata.{Status => MdStatus}
 import org.mauritania.main4ino.models._
@@ -271,9 +270,30 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
       Created(x.map(_.asJson), ContentTypeAppJson)
     }
 
+    // To be used by web ui to retrieve history of transactions in a given time period
+    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) :? FromParam(from) +& ToParam(to) +& StatusParam(st) +& IdsParam(ids) as _ => {
+      val x = tr.getDevAll(device, table, from, to, st)
+      val idsOnly = ids.exists(identity)
+      if (idsOnly) {
+        Ok(x.map(i => IdsOnlyResponse(i.flatMap(_.metadata.id).toSeq.sorted).asJson), ContentTypeAppJson)
+      } else {
+        Ok(x.map(_.asJson), ContentTypeAppJson)
+      }
+    }
+
+    // To be used by web ui to retrieve summary of transactions in a given time period
+    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "summary" :? FromParam(from) +& ToParam(to) +& StatusParam(st) as _ => {
+      val x = tr.getDevAllSummary(device, table, from, to, st)
+      x.flatMap {
+        case Some(v) => Ok(v.actors.asJson, ContentTypeAppJson)
+        case None => NoContent()
+      }
+    }
+
+
     // To be used by devices to commit a request
-    case a@PUT -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) as _ => {
-      val x = tr.updateRequest(table, device, requestId, MdStatus.Closed)
+    case a@PUT -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) :? StatusParam(st) as _ => {
+      val x = tr.updateRequest(table, device, requestId, st.getOrElse(MdStatus.Closed))
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
         case Left(_) => NotModified()
@@ -297,14 +317,6 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
         case None => NoContent() // ignore message
       }
     }
-
-    // To be used by web ui to retrieve history of transactions in a given time period
-    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) :? FromParam(from) +& ToParam(to) +& StatusParam(st) as _ => {
-      val x = tr.getDevAll(device, table, from, to, st)
-      Ok(x.map(_.asJson.noSpaces), ContentTypeAppJson)
-    }
-
-      COUNT MISSING
 
       /*
     // To be used by web ui to have a summary for a given device

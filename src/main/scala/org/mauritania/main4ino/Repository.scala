@@ -8,7 +8,7 @@ import doobie.free.connection.{ConnectionOp, raw}
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import fs2.Stream
-import org.mauritania.main4ino.Repository.Device1
+import org.mauritania.main4ino.Repository.{ActorTup, Device1}
 import org.mauritania.main4ino.Repository.Table.Table
 import org.mauritania.main4ino.api.ErrMsg
 import org.mauritania.main4ino.models.Device.Metadata.Status
@@ -73,7 +73,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
       mtd <- sqlSelectMetadataWhereRequestId(table, requestId)
       ok = mtd.exists(m => m.device == dev && m.status == Status.Open)
       r: ConnectionIO[Either[ErrMsg, Int]] = if (ok)
-        sqlInsertActorTup(table, ActorTup.fromPropsMap(requestId, dev, actor, p, ts), requestId).map(Right.apply[ErrMsg, Int])
+        sqlInsertActorTup(table, ActorTup.from(requestId, dev, actor, p, ts), requestId).map(Right.apply[ErrMsg, Int])
       else
         Free.pure[ConnectionOp, Either[ErrMsg, Int]](Left.apply[ErrMsg, Int](s"Rejected: request $requestId does not relate to $dev or is closed"))
       inserts <- r
@@ -81,15 +81,22 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
     transaction.transact(transactor)
   }
 
+  private def transitionAllowed(current: Status, target: Status): Boolean = {
+    (current, target) match {
+      case (Status.Open, Status.Closed) => true
+      case (Status.Closed, Status.Consumed) => true
+      case _ => false
+    }
+  }
 
   def updateDeviceWhereRequestId(table: Table, dev: DeviceName, requestId: RecordId, status: Status): IO[Either[ErrMsg,Int]] = {
     val transaction = for {
       mtd <- sqlSelectMetadataWhereRequestId(table, requestId)
-      ok = mtd.exists(m => m.device == dev && m.status == Status.Open)
+      ok = mtd.exists(m => m.device == dev && transitionAllowed(m.status, status))
       r: ConnectionIO[Either[ErrMsg, Int]] = if (ok)
         sqlUpdateMetadataWhereRequestId(table, requestId, status).map(Right.apply[ErrMsg, Int])
       else
-        Free.pure[ConnectionOp, Either[ErrMsg, Int]](Left.apply[ErrMsg, Int](s"Rejected: request $requestId does not relate to $dev or is closed"))
+        Free.pure[ConnectionOp, Either[ErrMsg, Int]](Left.apply[ErrMsg, Int](s"Rejected: request $requestId does not relate to $dev or transition not allowed"))
       inserts <- r
     } yield (inserts)
     transaction.transact(transactor)
@@ -268,7 +275,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
 
 object Repository {
 
-  def toDevice(metadata: Metadata, ps: Iterable[ActorTup]): Device = Device(metadata, ActorMap.resolveFromTups(ps))
+  def toDevice(metadata: Metadata, ats: Iterable[ActorTup]): Device = Device(metadata, ActorTup.asActorMap(ats))
 
 
   /**
@@ -289,7 +296,7 @@ object Repository {
 
     def asDevices(s: Iterable[Device1]): Iterable[Device] = {
       val g = s.groupBy(_.metadata)
-      val ds = g.map { case (md, d1s) => Device(md, ActorMap.resolveFromTups(d1s.map(_.actorTuple))) }
+      val ds = g.map { case (md, d1s) => Device(md, ActorTup.asActorMap(d1s.map(_.actorTuple))) }
       ds
     }
 
@@ -306,6 +313,36 @@ object Repository {
     val all = List(Reports, Targets)
 
     def resolve(s: String): Option[Table] = all.find(_.code == s)
+  }
+
+  case class ActorTup(
+    requestId: Option[RecordId],
+    actor: ActorName,
+    prop: PropName,
+    value: PropValue,
+    creation: Option[EpochSecTimestamp]
+  ) {
+    def withRequestId(i: Option[RecordId]): ActorTup = this.copy(requestId = i) // TODO get rid of this .copy by using composition of ActorTupIdless
+  }
+
+  object ActorTup {
+    def asActorMap(ats: Iterable[ActorTup]): ActorMap = {
+      ats.groupBy(_.actor).mapValues{ byActor =>
+        val indexed = byActor.zipWithIndex
+        val byProp = indexed.groupBy{case (t, i) => t.prop}
+        byProp.mapValues{ a =>
+          val (latestPropValue, _) = a.maxBy{case (t, i) => i}
+          latestPropValue.value
+        }
+      }
+    }
+
+
+    def from(requestId: RecordId, deviceName: DeviceName, actorName: ActorName, pm: PropsMap, ts: EpochSecTimestamp): Iterable[ActorTup] = {
+      pm.map { case (name, value) =>
+        ActorTup(Some(requestId), actorName, name, value, Some(ts))
+      }
+    }
   }
 
 }

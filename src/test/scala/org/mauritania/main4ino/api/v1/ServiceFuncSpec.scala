@@ -10,8 +10,9 @@ import io.circe.syntax._
 import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, EntityBody, Headers, Method, Request, Response, Status, Uri}
 import org.mauritania.main4ino.api.Translator
-import org.mauritania.main4ino.api.Translator.{CountResponse, IdResponse}
+import org.mauritania.main4ino.api.Translator.{CountResponse, IdResponse, IdsOnlyResponse}
 import org.mauritania.main4ino.helpers.TimeIO
+import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security._
 import org.mauritania.main4ino.{DbSuite, RepositoryIO}
@@ -21,70 +22,60 @@ class ServiceFuncSpec extends DbSuite {
 
   Sequential
 
-  "The service from web ui" should "create, read a target/report and delete it" in {
+  def defaultService: Service[IO] = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
 
-    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
+  "The service from web ui" should "create and delete devices" in {
 
-    // Add a few targets
+    implicit val s = defaultService
+
+    // Add a target
     postExpectCreated("/devices/dev1/targets", """{"clock": {"h":"7"}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
-    postExpectCreated("/devices/dev1/targets", """{"clock": {"m":"0"}}""").noSpaces shouldBe IdResponse(2).asJson.noSpaces
-    postExpectCreated("/devices/dev1/targets", """{"clock": {"s":"1"}}""").noSpaces shouldBe IdResponse(3).asJson.noSpaces
-    postExpectCreated("/devices/dev1/targets", """{"body": {"mv0":"Zz."}}""").noSpaces shouldBe IdResponse(4).asJson.noSpaces
-    postExpectCreated("/devices/dev1/targets", """{"body": {"mv0":"ZzY"}}""").noSpaces shouldBe IdResponse(5).asJson.noSpaces
-    postExpectCreated("/devices/dev2/targets", """{"body": {"mv0":"Zz."}}""").noSpaces shouldBe IdResponse(6).asJson.noSpaces // dev2
-    postExpectCreated("/devices/dev1/targets", """{"clock": {"s":"9"}}""").noSpaces shouldBe IdResponse(7).asJson.noSpaces
-
-    // Check the responses
+    postExpectCreated("/devices/dev2/targets", """{"clock": {"h":"8"}}""").noSpaces shouldBe IdResponse(2).asJson.noSpaces
 
     // Only the count of targets for dev1
-    val dev1TargetsCount = getExpectOk("/devices/dev1/targets/count?status=C")
-    dev1TargetsCount.noSpaces shouldBe CountResponse(6).asJson.noSpaces
+    getExpectOk("/devices/dev1/targets?ids=true").noSpaces shouldBe IdsOnlyResponse(List(1)).asJson.noSpaces
 
-    // Only the count of targets for dev1 clock
-    val dev1ClockTargetsCount = getExpectOk("/devices/dev1/targets/actors/clock/count?status=C")
-    dev1ClockTargetsCount.noSpaces shouldBe CountResponse(4).asJson.noSpaces
-
-    // The raw targets list for dev1 / clock
-    val dev1ClockTarget = getExpectOk("/devices/dev1/targets/actors/clock?status=C&consume=false")
-    dev1ClockTarget.asArray.get(0).noSpaces shouldBe ("""{"h":"7"}""")
-    dev1ClockTarget.asArray.get(1).noSpaces shouldBe ("""{"m":"0"}""")
-    dev1ClockTarget.asArray.get(2).noSpaces shouldBe ("""{"s":"1"}""")
-    dev1ClockTarget.asArray.get(3).noSpaces shouldBe ("""{"s":"9"}""")
-
-    val dev1ClockBody = getExpectOk("/devices/dev1/targets/actors/body?status=C&consume=false")
-    dev1ClockBody.asArray.get(0).noSpaces shouldBe ("""{"mv0":"Zz."}""")
-    dev1ClockBody.asArray.get(1).noSpaces shouldBe ("""{"mv0":"ZzY"}""")
-
-    // The merged targets for dev1
-    val dev1TargetsSummaryBody = getExpectOk("/devices/dev1/targets/actors/body/summary?consume=false&status=C")
-    dev1TargetsSummaryBody.noSpaces shouldBe """{"mv0":"ZzY"}"""
-
-    val dev1TargetsSummaryClock = getExpectOk("/devices/dev1/targets/actors/clock/summary?consume=false&status=C")
-    dev1TargetsSummaryClock.noSpaces shouldBe """{"h":"7","s":"9","m":"0"}"""
-
-    val dev1TargetsMergedCleanedBody = getExpectOk("/devices/dev1/targets/actors/body/summary?consume=true&status=C")
-    dev1TargetsMergedCleanedBody.noSpaces shouldBe """{"mv0":"ZzY"}"""
-
-    val dev1TargetsMergedCleanedClock = getExpectOk("/devices/dev1/targets/actors/clock/summary?consume=true&status=C")
-    dev1TargetsMergedCleanedClock.noSpaces shouldBe """{"h":"7","s":"9","m":"0"}"""
-
-    val dev1TargetsCountAfterClean = getExpectOk("/devices/dev1/targets/actors/body/count?status=C")
-    dev1TargetsCountAfterClean.noSpaces shouldBe CountResponse(0).asJson.noSpaces
-
-    val dev1TargetsCountAnyStatus = getExpectOk("/devices/dev1/targets/actors/body/count")
-    dev1TargetsCountAnyStatus.noSpaces shouldBe CountResponse(2).asJson.noSpaces
+    // Only the count of targets for dev2
+    getExpectOk("/devices/dev2/targets?ids=true").noSpaces shouldBe IdsOnlyResponse(List(2)).asJson.noSpaces
 
     delete("/administrator/devices/dev1/targets")
 
-    val dev1TargetsCountAnyStatusAfter = getExpectOk("/devices/dev1/targets/actors/body/count")
-    dev1TargetsCountAnyStatusAfter.noSpaces shouldBe CountResponse(0).asJson.noSpaces
+    // Only the count of targets for dev1
+    getExpectOk("/devices/dev1/targets?ids=true").noSpaces shouldBe IdsOnlyResponse(List()).asJson.noSpaces // deleted
 
+    // Only the count of targets for dev2
+    getExpectOk("/devices/dev2/targets?ids=true").noSpaces shouldBe IdsOnlyResponse(List(2)).asJson.noSpaces
+
+
+  }
+
+
+  it should "create, read a target" in {
+
+    implicit val s = defaultService
+
+    // Add a multi-actor target
+    postExpectCreated("/devices/dev1/targets", """{"clock":{"h":"7"},"speaker":{"v":"0"}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
+
+    // Check the responses
+
+    // Ids existent for dev1 with status C (closed)
+    val dev1TargetsCount = getExpectOk("/devices/dev1/targets?ids=true&status=C")
+    dev1TargetsCount.noSpaces shouldBe IdsOnlyResponse(List(1)).asJson.noSpaces
+
+    // Retrieve one actor
+    val dev1ClockTarget = getExpectOk("/devices/dev1/targets/1/actors/clock")
+    dev1ClockTarget.noSpaces shouldBe Map("h" -> "7").asJson.noSpaces
+
+    // Retrieve another actor
+    val dev1SpeakerTarget = getExpectOk("/devices/dev1/targets/1/actors/speaker")
+    dev1SpeakerTarget.noSpaces shouldBe Map("v" -> "0").asJson.noSpaces
 
   }
 
   "The service from the device" should "create and read a target/report in different value formats (string, int, bool)" in {
 
-    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
+    implicit val s = defaultService
 
     // Add a target
     postExpectCreated("/devices/dev1/targets", """{"act":{"i":7,"b":true,"s":"str"}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
@@ -97,24 +88,45 @@ class ServiceFuncSpec extends DbSuite {
 
   it should "create a target/report and fill it in afterwards" in {
 
-    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
+    implicit val s = defaultService
 
     // Add a target (empty)
     postExpectCreated("/devices/dev1/targets", """{}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
 
+    // getExpectOk("/devices/dev1/targets?ids=true").noSpaces shouldBe IdsOnlyResponse(List(1)).asJson.noSpaces not until at least one property added
+
     postExpectCreated("/devices/dev1/targets/1/actors/actor1", """{"prop1":"val1"}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces // inserted
-    postExpectCreated("/devices/dev1/targets/1/actors/actor1", """{"prop1":"val11"}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces // inserted (ignored)
+    postExpectCreated("/devices/dev1/targets/1/actors/actor1", """{"prop1":"val11"}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces // inserted after
+
+    getExpectOk("/devices/dev1/targets?ids=true").noSpaces shouldBe IdsOnlyResponse(List(1)).asJson.noSpaces
 
     // Check the responses
-    val dev1 = getExpectOk("/devices/dev1/targets/1")
-    dev1.\\("actors")(0).noSpaces shouldBe ("""{"actor1":{"prop1":"val1"}}""")
+    getExpectOk("/devices/dev1/targets/1").\\("actors")(0).noSpaces shouldBe ("""{"actor1":{"prop1":"val11"}}""")
+
+
+    // The request is open
+    getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).noSpaces shouldBe Metadata.Status.Open.asJson.noSpaces
+
+    // Close the request
+    putExpect("/devices/dev1/targets/1?status=C", "", Status.Ok)
+    getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).noSpaces shouldBe Metadata.Status.Closed.asJson.noSpaces
+
+    // Consume the request
+    putExpect("/devices/dev1/targets/1?status=X", "", Status.Ok)
+    getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).noSpaces shouldBe Metadata.Status.Consumed.asJson.noSpaces
+
+    // Check its not anymore available if requesting for closed requests
+    getExpectOk("/devices/dev1/targets?ids=true&status=C").noSpaces shouldBe IdsOnlyResponse(List()).asJson.noSpaces
+
+    // Attempt to set status to open again (should be ignored as the transition is not allowed)
+    putExpect("/devices/dev1/targets/1?status=O", "{}", Status.NotModified)
 
   }
 
 
   it should "create targets and merge the properties correctly" in {
 
-    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
+    implicit val s = defaultService
 
     // Add a few targets
     postExpectCreated("/devices/dev1/targets", """{"clock":{"h":"7"},"body":{"mv0":"Zz."}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
@@ -122,19 +134,15 @@ class ServiceFuncSpec extends DbSuite {
     postExpectCreated("/devices/dev1/targets", """{"body":{"mv1":"Zz."}}""").noSpaces shouldBe IdResponse(3).asJson.noSpaces
 
     // Check the responses
-    val dev1 = getExpectOk("/devices/dev1/targets/summary?consume=false&status=C")
-    val clk = getExpectOk("/devices/dev1/targets/actors/clock/summary?consume=false&status=C")
-    val body = getExpectOk("/devices/dev1/targets/actors/body/summary?consume=false&status=C")
+    val dev1 = getExpectOk("/devices/dev1/targets/summary?status=C")
 
     dev1.noSpaces shouldBe """{"body":{"mv1":"Zz.","mv0":"Zz."},"clock":{"h":"7","m":"0"}}"""
-    clk.noSpaces shouldBe """{"h":"7","m":"0"}"""
-    body.noSpaces shouldBe """{"mv1":"Zz.","mv0":"Zz."}"""
 
   }
 
-  it should "retrieve correctly last device and actor views per status" in {
+  it should "retrieve correctly last device view per status" in {
 
-    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
+    implicit val s = defaultService
 
     // Add a few targets
     postExpectCreated("/devices/dev1/targets", """{"clock":{"h":"7"},"body":{"mv0":"Zz."}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
@@ -142,42 +150,21 @@ class ServiceFuncSpec extends DbSuite {
     postExpectCreated("/devices/dev1/targets", """{"body":{"mv1":"Zz."}}""").noSpaces shouldBe IdResponse(3).asJson.noSpaces
 
     // Check the responses
-    val clk = getExpectOk("/devices/dev1/targets/actors/clock/last?status=C")
-    val body = getExpectOk("/devices/dev1/targets/actors/body/last?status=C")
     val dev1 = getExpectOk("/devices/dev1/targets/last?status=C")
 
-    clk.noSpaces shouldBe """{"m":"0"}"""
-    body.noSpaces shouldBe """{"mv1":"Zz."}"""
     dev1.\\("actors")(0).noSpaces shouldBe """{"body":{"mv1":"Zz."}}"""
 
   }
 
   it should "respond with no expectation failed when no records are found" in {
 
-    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
+    implicit val s = defaultService
 
     get("/devices/dev1/targets/1").status shouldBe Status.NoContent
     get("/devices/dev1/targets/last").status shouldBe Status.NoContent
     get("/devices/dev1/targets/summary").status shouldBe Status.NoContent
     get("/devices/dev1/targets/actors/clock/last").status shouldBe Status.NoContent
     get("/devices/dev1/targets/actors/body/last").status shouldBe Status.NoContent
-    get("/devices/dev1/targets/actors/body/summary").status shouldBe Status.NoContent
-
-  }
-
-  it should "create targets properties and merge them correctly" in {
-
-    implicit val s = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
-
-    // Add a few targets
-    postExpectCreated("/devices/dev1/targets/actors/body", """{"mv0":"Zz."}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
-    postExpectCreated("/devices/dev1/targets/actors/body", """{"mv1":"0"}""").noSpaces shouldBe IdResponse(2).asJson.noSpaces
-    postExpectCreated("/devices/dev1/targets/actors/body", """{"mv1":"Zz.","mv2":"Da2"}""").noSpaces shouldBe IdResponse(3).asJson.noSpaces
-
-    // Check the responses
-    val body = getExpectOk("/devices/dev1/targets/actors/body/summary?status=C")
-
-    body.noSpaces shouldBe """{"mv2":"Da2","mv1":"Zz.","mv0":"Zz."}"""
 
   }
 
@@ -196,6 +183,16 @@ class ServiceFuncSpec extends DbSuite {
     val r = post(path, body)
     r.status shouldBe Status.Created
     r.as[Json].unsafeRunSync()
+  }
+
+  private[this] def putExpect(path: String, body: String, status: Status)(implicit service: Service[IO]): Unit = {
+    val r = put(path, body)
+    r.status shouldBe status
+  }
+
+  private[this] def put(path: String, body: String)(implicit service: Service[IO]): Response[IO] = {
+    val request = Request[IO](method = Method.PUT, uri = Uri.unsafeFromString(path), body = asEntityBody(body), headers = DefaultHeaders)
+    service.request(request).unsafeRunSync()
   }
 
   private[this] def post(path: String, body: String)(implicit service: Service[IO]): Response[IO] = {

@@ -16,7 +16,7 @@ import org.mauritania.main4ino.api.Translator.TimeResponse
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.RicherBom._
-import org.mauritania.main4ino.models.{ActorTup, Device}
+import org.mauritania.main4ino.models.Device
 import org.mauritania.main4ino.security.Authentication.{AccessAttempt, UserSession}
 import org.mauritania.main4ino.security.{Authentication, Config, User}
 import org.mauritania.main4ino.{Fixtures, Helper, Repository, SyncId}

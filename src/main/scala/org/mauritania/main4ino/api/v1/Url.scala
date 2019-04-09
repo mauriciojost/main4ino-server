@@ -12,6 +12,7 @@ object Url {
 
   // Parameters
 
+  object IdsParam extends OptionalQueryParamDecoderMatcher[Boolean]("ids")
   object StatusParam extends OptionalQueryParamDecoderMatcher[Status]("status")
   //object ConsumeParam extends OptionalQueryParamDecoderMatcher[Boolean]("consume")
 
