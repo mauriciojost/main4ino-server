@@ -14,7 +14,7 @@ import org.http4s.headers.`Content-Type`
 import org.http4s.server.AuthMiddleware
 import org.http4s.{AuthedService, HttpService, MediaType, Request, Response}
 import org.mauritania.main4ino.Repository
-import org.mauritania.main4ino.Repository.Table.Table
+import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Device.Metadata
@@ -249,7 +249,7 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
     // Administration
 
     // To be used by web ui to fully remove records for a given device table
-    case a@DELETE -> _ / "administrator" / "devices" / Dvc(device) / Tbl(table) as _ => {
+    case a@DELETE -> _ / "administrator" / "devices" / Dvc(device) / Req(table) as _ => {
       val x = tr.deleteDevice(device, table)
       Ok(x.map(_.asJson), ContentTypeAppJson)
     }
@@ -257,7 +257,7 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
     // Targets & Reports (at device level)
 
     // To be used by devices to start a ReqTran (request transaction)
-    case a@POST -> _ / "devices" / Dvc(dn) / Tbl(table) as _ => {
+    case a@POST -> _ / "devices" / Dvc(dn) / Req(table) as _ => {
       val am = a.req.decodeJson[DeviceProps]
       val d = for {
         a <- am
@@ -269,7 +269,7 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
     }
 
     // To be used by web ui to retrieve history of transactions in a given time period
-    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) :? FromParam(from) +& ToParam(to) +& StatusParam(st) +& IdsParam(ids) as _ => {
+    case a@GET -> _ / "devices" / Dev(device) / Req(table) :? FromParam(from) +& ToParam(to) +& StatusParam(st) +& IdsParam(ids) as _ => {
       val idsOnly = ids.exists(identity)
       if (idsOnly) {
         val x = tr.getDevicesIds(device, table, from, to, st)
@@ -281,7 +281,7 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
     }
 
     // To be used by web ui to retrieve summary of transactions in a given time period
-    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "summary" :? FromParam(from) +& ToParam(to) +& StatusParam(st) as _ => {
+    case a@GET -> _ / "devices" / Dev(device) / Req(table) / "summary" :? FromParam(from) +& ToParam(to) +& StatusParam(st) as _ => {
       val x = tr.getDevicesSummary(device, table, from, to, st)
       x.flatMap {
         case Some(v) => Ok(v.actors.asJson, ContentTypeAppJson)
@@ -290,7 +290,7 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
     }
 
     // To be used by devices to commit a request
-    case a@PUT -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) :? StatusParam(st) as _ => {
+    case a@PUT -> _ / "devices" / Dev(device) / Req(table) / ReqId(requestId) :? StatusParam(st) as _ => {
       val x = tr.updateDeviceStatus(table, device, requestId, st.getOrElse(MdStatus.Closed))
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -299,7 +299,7 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
     }
 
     // To be used by ... ? // Useful mainly for testing purposes
-    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(requestId) as _ => {
+    case a@GET -> _ / "devices" / Dev(device) / Req(table) / ReqId(requestId) as _ => {
       val x = tr.getDevice(table, device, requestId)
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -308,7 +308,7 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
     }
 
     // To be used by devices to retrieve last status upon reboot ??? not used seems
-    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "last" :? StatusParam(status) as _ => {
+    case a@GET -> _ / "devices" / Dev(device) / Req(table) / "last" :? StatusParam(status) as _ => {
       val x = tr.getDeviceLast(device, table, status)
       x.flatMap {
         case Some(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -319,7 +319,7 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
     // Targets & Reports (at device-actor level)
 
     // To be used by tests to push actor reports (actor by actor) creating a new ReqTran
-    case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) as _ => {
+    case a@POST -> _ / "devices" / Dev(device) / Req(table) / "actors" / Dvc(actor) as _ => {
       val pm = a.req.decodeJson[ActorProps]
       val dev = for {
         t <- time.nowUtc
@@ -331,7 +331,7 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
     }
 
     // To be used by devices to push actor reports (actor by actor) to a given existent ReqTran
-    case a@POST -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(rid) / "actors" / Dvc(actor) as _ => {
+    case a@POST -> _ / "devices" / Dev(device) / Req(table) / ReqId(rid) / "actors" / Act(actor) as _ => {
       val pm = a.req.decodeJson[ActorProps]
       val x = tr.postDeviceActor(pm, device, actor, table, rid)
       x.flatMap {
@@ -341,7 +341,7 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
     }
 
     // To be used by devices to see the last status of a given actor (used upon restart)
-    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / "actors" / Dvc(actor) / "last" :? StatusParam(status) as _ => {
+    case a@GET -> _ / "devices" / Dev(device) / Req(table) / "actors" / Act(actor) / "last" :? StatusParam(status) as _ => {
       val x = tr.getDeviceLast(device, table, status)
       x.flatMap { m =>
         val v = m.flatMap(_.actor(actor))
@@ -353,7 +353,7 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
     }
 
     // To be used by devices to pull actor targets (actor by actor)
-    case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(rid) / "actors" / Dvc(actor) as _ => {
+    case a@GET -> _ / "devices" / Dev(device) / Req(table) / ReqId(rid) / "actors" / Act(actor) as _ => {
       val x = tr.getDeviceActor(table, device, actor, rid)
       x.flatMap {
         case Right(d) => Ok(d.asJson, ContentTypeAppJson)

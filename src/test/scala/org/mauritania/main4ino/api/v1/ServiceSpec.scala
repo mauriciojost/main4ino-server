@@ -9,8 +9,8 @@ import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.headers.Authorization
 import org.http4s.{Request, Response, Uri, Status => HttpStatus, _}
-import org.mauritania.main4ino.Repository.Table
-import org.mauritania.main4ino.Repository.Table.Table
+import org.mauritania.main4ino.Repository.ReqType
+import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.TimeResponse
 import org.mauritania.main4ino.helpers.Time
@@ -65,25 +65,25 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     "return 201 with empty properties" in {
       (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).anyNumberOfTimes() // mock
       val d = Device(Metadata(None, None, "dev1", Metadata.Status.Closed))
-      createADeviceAndExpect(Table.Reports, d)(HttpStatus.Created)(s, r)
-      createADeviceAndExpect(Table.Targets, d)(HttpStatus.Created)(s, r)
+      createADeviceAndExpect(ReqType.Reports, d)(HttpStatus.Created)(s, r)
+      createADeviceAndExpect(ReqType.Targets, d)(HttpStatus.Created)(s, r)
     }
     "return 201 with a regular target/request" in {
       (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).anyNumberOfTimes() // mock
       val d = Dev1
-      createADeviceAndExpect(Table.Reports, d)(HttpStatus.Created)(s, r)
-      createADeviceAndExpect(Table.Targets, d)(HttpStatus.Created)(s, r)
+      createADeviceAndExpect(ReqType.Reports, d)(HttpStatus.Created)(s, r)
+      createADeviceAndExpect(ReqType.Targets, d)(HttpStatus.Created)(s, r)
     }
   }
 
   private[this] def createADeviceAndExpect(
-    t: Table,
+    t: ReqType,
     d: Device
   )(
     s: HttpStatus
   )(service: Service[Id], repository: Repository[Id]) = {
     (repository.insertDevice _).when(
-      argThat[Table]("Addresses target table")(_ == t),
+      argThat[ReqType]("Addresses target table")(_ == t),
       argThat[Device]("Is the expected device")(x => x.withouIdNortTimestamp() == d.withouIdNortTimestamp()),
       argThat[EpochSecTimestamp]("Is the expected timestamp")(_ => true)
     ).returns(1L) // mock
@@ -97,8 +97,8 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     val t = stub[Time[Id]]
     val s = new Service(new AuthenticationId(AuthConfig), new Translator(r, t), t)(SyncId)
     "return 200 with an existent target/request when reading target/report requests" in {
-      (r.selectDeviceWhereRequestId _).when(Table.Targets, Dev1.metadata.device, 1L).returns(Right(Dev1)).once // mock
-      (r.selectDeviceWhereRequestId _).when(Table.Reports, Dev1.metadata.device, 1L).returns(Right(Dev1)).once() // mock
+      (r.selectDeviceWhereRequestId _).when(ReqType.Targets, Dev1.metadata.device, 1L).returns(Right(Dev1)).once // mock
+      (r.selectDeviceWhereRequestId _).when(ReqType.Reports, Dev1.metadata.device, 1L).returns(Right(Dev1)).once() // mock
       val ta = getApiV1("/devices/dev1/targets/1")(s)
       ta.status shouldBe (HttpStatus.Ok)
       ta.as[Json](SyncId, DecoderIdJson) shouldBe (Dev1V1.asJson)
@@ -114,7 +114,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     val t = stub[Time[Id]]
     val s = new Service(new AuthenticationId(AuthConfig), new Translator(r, t), t)(SyncId)
     "return 200 with a list of existent targets when reading all targets request" in {
-      (r.selectDevicesWhereTimestampStatus _).when(Table.Targets, "dev1", None, None, None).returns(Iterable(Dev1, Dev2)).once // mock
+      (r.selectDevicesWhereTimestampStatus _).when(ReqType.Targets, "dev1", None, None, None).returns(Iterable(Dev1, Dev2)).once // mock
 
       val ta = getApiV1("/devices/dev1/targets")(s)
       ta.status shouldBe (HttpStatus.Ok)

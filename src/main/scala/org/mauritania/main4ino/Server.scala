@@ -8,7 +8,7 @@ import fs2.StreamApp.ExitCode
 import fs2.{Stream, StreamApp}
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.server.blaze.BlazeBuilder
-import org.mauritania.main4ino.Repository.Table
+import org.mauritania.main4ino.Repository.ReqType
 import org.mauritania.main4ino.api.{Translator, v1}
 import org.mauritania.main4ino.db.Database
 import org.mauritania.main4ino.helpers.TimeIO
@@ -40,7 +40,7 @@ object Server extends StreamApp[IO] {
         logger <- Slf4jLogger.fromClass[IO](Server.getClass)
         now <- time.nowUtc
         epSecs = now.toEpochSecond
-        cleaned <- repo.cleanup(Table.Reports, epSecs, configApp.database.cleanup.retentionSecs)
+        cleaned <- repo.cleanup(ReqType.Reports, epSecs, configApp.database.cleanup.retentionSecs)
         _ <- logger.info(s"Repository cleanup at $now ($epSecs): $cleaned requests cleaned")
       } yield (cleaned)
 

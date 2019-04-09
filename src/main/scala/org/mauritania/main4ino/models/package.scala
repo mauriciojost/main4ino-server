@@ -2,7 +2,7 @@ package org.mauritania.main4ino
 
 package object models {
 
-	type RequestId = Long // TODO change to RequestId
+	type RequestId = Long
 
 	type DeviceName = String
 	type ActorName = String

@@ -8,7 +8,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.main4ino.Repository
 import org.mauritania.main4ino.Repository.Attempt
-import org.mauritania.main4ino.Repository.Table.Table
+import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.Translator.{CountResponse, IdResponse, IdsOnlyResponse, TimeResponse}
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Device.Metadata.Status
@@ -16,7 +16,7 @@ import org.mauritania.main4ino.models._
 
 class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends Http4sDsl[F] {
 
-  def deleteDevice(dev: DeviceName, t: Table): F[CountResponse] = {
+  def deleteDevice(dev: DeviceName, t: ReqType): F[CountResponse] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       count <- repository.deleteDeviceWhereName(t, dev)
@@ -25,7 +25,7 @@ class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends 
     } yield (countResp)
   }
 
-  def getDevice(t: Table, dev: DeviceName, id: RequestId): F[Attempt[Device]] = {
+  def getDevice(t: ReqType, dev: DeviceName, id: RequestId): F[Attempt[Device]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       device <- repository.selectDeviceWhereRequestId(t, dev, id)
@@ -33,12 +33,12 @@ class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends 
     } yield (device)
   }
 
-  def getDeviceActor(t: Table, dev: DeviceName, actor: ActorName, id: RequestId): F[Attempt[ActorProps]] = {
+  def getDeviceActor(t: ReqType, dev: DeviceName, actor: ActorName, id: RequestId): F[Attempt[ActorProps]] = {
     val x = getDevice(t, dev, id)
     x.map(e => e.flatMap(d => d.actor(actor).toRight(s"No such actor: $actor")))
   }
 
-  def postDevice(dev: F[Device], t: Table): F[IdResponse] = {
+  def postDevice(dev: F[Device], t: ReqType): F[IdResponse] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       timeUtc <- time.nowUtc
@@ -49,7 +49,7 @@ class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends 
     } yield (response)
   }
 
-  def updateDeviceStatus(table: Table, device: String, requestId: RequestId, status: Status): F[Attempt[CountResponse]] = {
+  def updateDeviceStatus(table: ReqType, device: String, requestId: RequestId, status: Status): F[Attempt[CountResponse]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       updates <- repository.updateDeviceWhereRequestId(table, device, requestId, status)
@@ -58,7 +58,7 @@ class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends 
     } yield (count)
   }
 
-  def postDeviceActor(ap: F[ActorProps], dev: DeviceName, act: ActorName, table: Table, id: RequestId): F[Attempt[CountResponse]] = {
+  def postDeviceActor(ap: F[ActorProps], dev: DeviceName, act: ActorName, table: ReqType, id: RequestId): F[Attempt[CountResponse]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       timeUtc <- time.nowUtc
@@ -69,7 +69,7 @@ class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends 
     } yield (count)
   }
 
-  def getDeviceLast(dev: DeviceName, table: Table, status: Option[Status]): F[Option[Device]] = {
+  def getDeviceLast(dev: DeviceName, table: ReqType, status: Option[Status]): F[Option[Device]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       device <- repository.selectMaxDevice(table, dev, status)
@@ -77,12 +77,12 @@ class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends 
     } yield (device)
   }
 
-  def getDevicesIds(dev: DeviceName, table: Table, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], status: Option[Status]): F[IdsOnlyResponse] = {
+  def getDevicesIds(dev: DeviceName, table: ReqType, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], status: Option[Status]): F[IdsOnlyResponse] = {
     val d = getDevices(dev, table, from, to, status)
     d.map(v => IdsOnlyResponse(v.flatMap(_.metadata.id).toSeq.sorted))
   }
 
-  def getDevices(dev: DeviceName, table: Table, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], status: Option[Status]): F[Iterable[Device]] = {
+  def getDevices(dev: DeviceName, table: ReqType, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], status: Option[Status]): F[Iterable[Device]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       devices <- repository.selectDevicesWhereTimestampStatus(table, dev, from, to, status)
@@ -90,7 +90,7 @@ class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends 
     } yield (devices)
   }
 
-  def getDevicesSummary(dev: DeviceName, table: Table, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], st: Option[Status]): F[Option[Device]] = {
+  def getDevicesSummary(dev: DeviceName, table: ReqType, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], st: Option[Status]): F[Option[Device]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       devices <- repository.selectDevicesWhereTimestampStatus(table, dev, from, to, st)

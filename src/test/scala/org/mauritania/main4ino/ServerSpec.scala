@@ -84,7 +84,7 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   }
 
-  private def jsonAs[T](json: String)(implicit v: Decoder[T]): T = { // TODO replace
+  private def jsonAs[T](json: String)(implicit v: Decoder[T]): T = {
     parse(json).toOption.flatMap(_.as[T].toOption).get
   }
 

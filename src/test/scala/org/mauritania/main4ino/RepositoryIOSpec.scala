@@ -1,7 +1,7 @@
 package org.mauritania.main4ino.models
 
 import org.mauritania.main4ino.Fixtures.Device1
-import org.mauritania.main4ino.Repository.Table
+import org.mauritania.main4ino.Repository.ReqType
 import org.mauritania.main4ino.models.RicherBom._
 import org.mauritania.main4ino.{DbSuite, RepositoryIO}
 import org.scalatest.Sequential
@@ -12,22 +12,22 @@ class RepositoryIOSpec extends DbSuite {
 
   "The repository" should "create and read a report" in {
     val repo = new RepositoryIO(transactor)
-    repo.insertDevice(Table.Reports, Device1, 0L).unsafeRunSync() shouldBe (1L)
-    repo.selectDeviceWhereRequestId(Table.Reports, Device1.metadata.device, 1L).unsafeRunSync() shouldBe (Right(Device1.withId(Some(1L))))
+    repo.insertDevice(ReqType.Reports, Device1, 0L).unsafeRunSync() shouldBe (1L)
+    repo.selectDeviceWhereRequestId(ReqType.Reports, Device1.metadata.device, 1L).unsafeRunSync() shouldBe (Right(Device1.withId(Some(1L))))
   }
 
   it should "create and read a target" in {
     val repo = new RepositoryIO(transactor)
-    repo.insertDevice(Table.Targets, Device1, 0L).unsafeRunSync() shouldBe (1L)
-    repo.selectDeviceWhereRequestId(Table.Targets, Device1.metadata.device, 1L).unsafeRunSync() shouldBe (Right(Device1.withId(Some(1L))))
+    repo.insertDevice(ReqType.Targets, Device1, 0L).unsafeRunSync() shouldBe (1L)
+    repo.selectDeviceWhereRequestId(ReqType.Targets, Device1.metadata.device, 1L).unsafeRunSync() shouldBe (Right(Device1.withId(Some(1L))))
   }
 
   it should "create a target and read the latest image of it" in {
     val Device1Modified = Device1.copy(actors = Device1.actors.updated("actory", Map("yprop1" -> "yvalue1updated")))
     val repo = new RepositoryIO(transactor)
-    repo.insertDevice(Table.Targets, Device1, 0L).unsafeRunSync() shouldBe (1L)
-    repo.insertDevice(Table.Targets, Device1Modified, 0L).unsafeRunSync() shouldBe (2L)
-    repo.selectMaxDevice(Table.Targets, "dev1", None).unsafeRunSync() shouldBe (Some(Device1Modified.withId(Some(2L))))
+    repo.insertDevice(ReqType.Targets, Device1, 0L).unsafeRunSync() shouldBe (1L)
+    repo.insertDevice(ReqType.Targets, Device1Modified, 0L).unsafeRunSync() shouldBe (2L)
+    repo.selectMaxDevice(ReqType.Targets, "dev1", None).unsafeRunSync() shouldBe (Some(Device1Modified.withId(Some(2L))))
   }
 
   it should "read devices respecting from and to criteria" in {
@@ -37,23 +37,23 @@ class RepositoryIOSpec extends DbSuite {
     val snap3 = Device1.withId(Some(3L)).withTimestamp(3L)
 
     val repo = new RepositoryIO(transactor)
-    repo.insertDevice(Table.Targets, snap1, 0L).unsafeRunSync() shouldBe (1L)
-    repo.insertDevice(Table.Targets, snap2, 0L).unsafeRunSync() shouldBe (2L)
-    repo.insertDevice(Table.Targets, snap3, 0L).unsafeRunSync() shouldBe (3L)
+    repo.insertDevice(ReqType.Targets, snap1, 0L).unsafeRunSync() shouldBe (1L)
+    repo.insertDevice(ReqType.Targets, snap2, 0L).unsafeRunSync() shouldBe (2L)
+    repo.insertDevice(ReqType.Targets, snap3, 0L).unsafeRunSync() shouldBe (3L)
 
-    repo.selectDevicesWhereTimestampStatus(Table.Targets, "dev1", from = Some(1L), to = None, st = None)
+    repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", from = Some(1L), to = None, st = None)
       .unsafeRunSync().toSet shouldBe Set(snap1, snap2, snap3)
 
-    repo.selectDevicesWhereTimestampStatus(Table.Targets, "dev1", from = Some(2L), to = None, st = None)
+    repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", from = Some(2L), to = None, st = None)
       .unsafeRunSync().toSet shouldBe Set(snap2, snap3)
 
-    repo.selectDevicesWhereTimestampStatus(Table.Targets, "dev1", from = None, to = Some(2L), st = None)
+    repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", from = None, to = Some(2L), st = None)
       .unsafeRunSync().toSet shouldBe Set(snap1, snap2)
 
-    repo.selectDevicesWhereTimestampStatus(Table.Targets, "dev1", from = None, to = Some(1L), st = None)
+    repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", from = None, to = Some(1L), st = None)
       .unsafeRunSync().toSet shouldBe Set(snap1)
 
-    repo.selectDevicesWhereTimestampStatus(Table.Targets, "dev1", from = Some(2L), to = Some(2L), st = None)
+    repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", from = Some(2L), to = Some(2L), st = None)
       .unsafeRunSync().toSet shouldBe Set(snap2)
 
   }
@@ -67,13 +67,13 @@ class RepositoryIOSpec extends DbSuite {
     val snap5 = Device1.withId(Some(5L)).withTimestamp(75L) // fifth
 
     val repo = new RepositoryIO(transactor)
-    repo.insertDevice(Table.Targets, snap1, 0L).unsafeRunSync() shouldBe (1L)
-    repo.insertDevice(Table.Targets, snap2, 0L).unsafeRunSync() shouldBe (2L)
-    repo.insertDevice(Table.Targets, snap3, 0L).unsafeRunSync() shouldBe (3L)
-    repo.insertDevice(Table.Targets, snap4, 0L).unsafeRunSync() shouldBe (4L)
-    repo.insertDevice(Table.Targets, snap5, 0L).unsafeRunSync() shouldBe (5L)
+    repo.insertDevice(ReqType.Targets, snap1, 0L).unsafeRunSync() shouldBe (1L)
+    repo.insertDevice(ReqType.Targets, snap2, 0L).unsafeRunSync() shouldBe (2L)
+    repo.insertDevice(ReqType.Targets, snap3, 0L).unsafeRunSync() shouldBe (3L)
+    repo.insertDevice(ReqType.Targets, snap4, 0L).unsafeRunSync() shouldBe (4L)
+    repo.insertDevice(ReqType.Targets, snap5, 0L).unsafeRunSync() shouldBe (5L)
 
-    repo.selectDevicesWhereTimestampStatus(Table.Targets, "dev1", from = None, to = None, st = None)
+    repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", from = None, to = None, st = None)
       .unsafeRunSync().toList.flatMap(_.metadata.id) shouldBe List(2L, 3L, 1L, 4L, 5L) // retrieved in order of timestamp
 
   }
@@ -84,7 +84,7 @@ class RepositoryIOSpec extends DbSuite {
     val t1 = Device1.withDeviceName("device1")
     val t2 = Device1.withDeviceName("device2")
 
-    Table.all.foreach { table =>
+    ReqType.all.foreach { table =>
       repo.insertDevice(table, t1, 0L).unsafeRunSync() shouldBe (1L) // created target for device 1, resulted in id 1
       repo.insertDevice(table, t2, 0L).unsafeRunSync() shouldBe (2L) // for device 2, resulted in id 2
       repo.insertDevice(table, t2, 0L).unsafeRunSync() shouldBe (3L) // for device 2, resulted in id 3
@@ -100,7 +100,7 @@ class RepositoryIOSpec extends DbSuite {
     val d1 = Device1.withDeviceName("device1").withTimestamp(10L)
     val d2 = Device1.withDeviceName("device2").withTimestamp(20L)
 
-    Table.all.foreach { table =>
+    ReqType.all.foreach { table =>
       repo.insertDevice(table, d1, 0L).unsafeRunSync() shouldBe (1L) // created target for device 1, resulted in id 1
       repo.insertDevice(table, d2, 0L).unsafeRunSync() shouldBe (2L) // for device 2, resulted in id 2
 
@@ -121,7 +121,7 @@ class RepositoryIOSpec extends DbSuite {
     val d1 = Device1.withDeviceName("device1").withTimestamp(10L)
     val d2 = Device1.withDeviceName("device2").withTimestamp(20L)
 
-    Table.all.foreach { table =>
+    ReqType.all.foreach { table =>
       repo.insertDevice(table, d1, 0L).unsafeRunSync() shouldBe (1L) // created target for device 1, resulted in id 1
       repo.insertDevice(table, d2, 0L).unsafeRunSync() shouldBe (2L) // for device 2, resulted in id 2
 
