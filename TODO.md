@@ -1,7 +1,5 @@
 # TODO
 
-- Be able to change the target/report status
-- Remove unneeded API methods
 - Render target/report and properties statuses type-safe
 - Perform cleanup of repository, service v1 and its doc, and url class
 - Consume done at transaction/request level, one transaction at a time, no merging of different transactions
@@ -15,10 +13,12 @@
 - Make a check on status transitions: forbid invalid transitions and document them
 - Resolve code TODOs
 - Migrate HELP as documentation in Service
-- Go at Device level in Translator, avoid going to ActorTup level
 
 # DONE
 
+- Remove unneeded API methods
+- Be able to change the target/report status
+- Go at Device level in Translator, avoid going to ActorTup level
 - Add target/report status and tuples creation timestamp
 - Allow to create a target/report for a given device and fill it in actor per actor
 - Auto-format code

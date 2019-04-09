@@ -4,7 +4,7 @@ import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import org.mauritania.main4ino.Repository.Table
 import org.mauritania.main4ino.Repository.Table.Table
 import org.mauritania.main4ino.models.Device.Metadata.Status
-import org.mauritania.main4ino.models.{EpochSecTimestamp, RecordId}
+import org.mauritania.main4ino.models.{EpochSecTimestamp, RequestId}
 
 import scala.util.Try
 
@@ -45,7 +45,7 @@ object Url {
   */
 
   object ReqId { // request ID secction
-    def unapply(id: String): Option[RecordId] = Try(id.toLong).toOption
+    def unapply(id: String): Option[RequestId] = Try(id.toLong).toOption
   }
 
 }

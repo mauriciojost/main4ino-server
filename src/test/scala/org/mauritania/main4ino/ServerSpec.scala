@@ -14,7 +14,7 @@ import io.circe._
 import io.circe.parser._
 import org.mauritania.main4ino.api.v1.DeviceV1
 import org.mauritania.main4ino.api.Translator.IdResponse
-import org.mauritania.main4ino.models.RecordId
+import org.mauritania.main4ino.models.RequestId
 
 class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
@@ -96,7 +96,7 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
     )
   }
 
-  private def devGetRequest(devName: String, table: String, id: RecordId) = {
+  private def devGetRequest(devName: String, table: String, id: RequestId) = {
     Request[IO](
       method = Method.GET,
       uri = Uri.unsafeFromString(s"http://localhost:8080/api/v1/token/${UserPass.token}/devices/$devName/$table/$id")

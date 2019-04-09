@@ -2,7 +2,7 @@ package org.mauritania.main4ino
 
 package object models {
 
-	type RecordId = Long // TODO change to RequestId
+	type RequestId = Long // TODO change to RequestId
 
 	type DeviceName = String
 	type ActorName = String
@@ -12,10 +12,10 @@ package object models {
 	type PropValue = String
 
   // Properties of a given actor
-	type PropsMap = Map[PropName, PropValue]
+	type ActorProps = Map[PropName, PropValue]
 
 	// Properties of the actors of a device
-	type ActorMap = Map[ActorName, PropsMap]
+	type DeviceProps = Map[ActorName, ActorProps]
 
 	// Timestamp in seconds from the epoch (in UTC)
 	type EpochSecTimestamp = Long

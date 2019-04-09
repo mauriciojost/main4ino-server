@@ -4,7 +4,7 @@ object RicherBom {
 
   implicit class DeviceRich(val d: Device) extends AnyVal {
 
-    def withId(i: Option[RecordId]): Device = d.copy(metadata = d.metadata.copy(id = i))
+    def withId(i: Option[RequestId]): Device = d.copy(metadata = d.metadata.copy(id = i))
 
     def withDeviceName(n: DeviceName): Device = d.copy(metadata = d.metadata.copy(device = n))
 

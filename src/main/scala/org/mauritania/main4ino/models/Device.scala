@@ -6,7 +6,7 @@ import org.mauritania.main4ino.models.Device.Metadata.Status
 
 case class Device(
   metadata: Metadata,
-  actors: ActorMap = Device.EmptyActorMap
+  actors: DeviceProps = Device.EmptyActorMap
 ) {
 
   def asActorTups: Iterable[ActorTup] =
@@ -15,19 +15,19 @@ case class Device(
       (propName, propValue) <- ps.toSeq
     } yield (ActorTup(None, actor, propName, propValue, None))
 
-  def actor(s: ActorName): Option[PropsMap] = actors.get(s)
+  def actor(s: ActorName): Option[ActorProps] = actors.get(s)
 
 }
 
 object Device {
 
-  val EmptyActorMap: ActorMap = Map.empty[ActorName, PropsMap]
+  val EmptyActorMap: DeviceProps = Map.empty[ActorName, ActorProps]
 
   /**
     * It represents a request that relates to a specific device
     */
   case class Metadata(
-    id: Option[RecordId],
+    id: Option[RequestId],
     creation: Option[EpochSecTimestamp],
     device: DeviceName,
     status: Status
@@ -48,7 +48,7 @@ object Device {
 
   }
 
-  def apply(dev: DeviceName, ts: EpochSecTimestamp, am: ActorMap): Device = {
+  def apply(dev: DeviceName, ts: EpochSecTimestamp, am: DeviceProps): Device = {
     val status = if (am.isEmpty) Status.Open else Status.Closed
     Device(Metadata(None, Some(ts), dev, status), am)
   }
@@ -60,7 +60,7 @@ object Device {
     * keep the one provided in the latest request ID.
     *
     * @param actorTups all [[ActorTup]] to be merged belonging to the same device
-    * @return a merged [[ActorMap]] with only one value per actor-property
+    * @return a merged [[DeviceProps]] with only one value per actor-property
     */
   def merge(d1: Device, d2: Device): Device = {
     assert(d1.metadata.device == d2.metadata.device)
@@ -68,8 +68,8 @@ object Device {
     Device(Metadata(None, None, dname, Status.Unknown), resolve(d1, d2))
   }
 
-  private def resolve(d1: Device, d2: Device): ActorMap = {
-    def flat(r: Option[RecordId], am: ActorMap): Iterable[(ActorName, PropName, PropValue, Option[RecordId])] = am.flatMap{case (an, ps) => ps.map{case (pn, pv) => (an, pn, pv, r)}}
+  private def resolve(d1: Device, d2: Device): DeviceProps = {
+    def flat(r: Option[RequestId], am: DeviceProps): Iterable[(ActorName, PropName, PropValue, Option[RequestId])] = am.flatMap{case (an, ps) => ps.map{case (pn, pv) => (an, pn, pv, r)}}
     val as1 = flat(d1.metadata.id, d1.actors)
     val as2 = flat(d2.metadata.id, d2.actors)
     val as = as1 ++ as2
