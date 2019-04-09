@@ -8,7 +8,7 @@ import doobie.free.connection.{ConnectionOp, raw}
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import fs2.Stream
-import org.mauritania.main4ino.Repository.{ActorTup, Attempt, Device1}
+import org.mauritania.main4ino.Repository.{ActorTup, ActorTupIdLess, Attempt, Device1}
 import org.mauritania.main4ino.Repository.Table.Table
 import org.mauritania.main4ino.api.ErrMsg
 import org.mauritania.main4ino.models.Device.Metadata.Status
@@ -23,7 +23,7 @@ trait Repository[F[_]] {
 
   def deleteDeviceWhereName(table: Table, device: DeviceName): F[Int]
 
-  def insertDevice(table: Table, t: Device): F[RequestId]
+  def insertDevice(table: Table, t: Device, ts: EpochSecTimestamp): F[RequestId]
 
   def selectDeviceWhereRequestId(table: Table, dev: DeviceName, requestId: RequestId): F[Attempt[Device]]
 
@@ -56,10 +56,10 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
     transaction.transact(transactor)
   }
 
-  def insertDevice(table: Table, t: Device): IO[RequestId] = { // TODO can't it be done all in one single sql query?
+  def insertDevice(table: Table, t: Device, ts: EpochSecTimestamp): IO[RequestId] = { // TODO can't it be done all in one single sql query?
     val transaction = for {
       deviceId <- sqlInsertMetadata(table, t.metadata)
-      nroTargetActorProps <- sqlInsertActorTup(table, t.asActorTups, deviceId)
+      _ <- sqlInsertActorTup(table, t.asActorTups, deviceId, ts)
     } yield (deviceId)
     transaction.transact(transactor)
   }
@@ -74,7 +74,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
       else if (!transit)
         Free.pure[ConnectionOp, Attempt[Int]](Left.apply[ErrMsg, Int](s"Request $requestId is not open"))
       else
-        sqlInsertActorTup(table, ActorTup.from(requestId, dev, actor, p, ts), requestId).map(Right.apply[ErrMsg, Int])
+        sqlInsertActorTup(table, ActorTup.from(dev, actor, p), requestId, ts).map(Right.apply[ErrMsg, Int])
       attempt <- inserts
     } yield (attempt)
     transaction.transact(transactor)
@@ -145,9 +145,9 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
 
   // SQL queries (private)
 
-  private def sqlInsertActorTup(table: Table, t: Iterable[ActorTup], requestId: RequestId): ConnectionIO[Int] = {
+  private def sqlInsertActorTup(table: Table, tups: Iterable[ActorTupIdLess], requestId: RequestId, ts: EpochSecTimestamp): ConnectionIO[Int] = {
     val sql = s"INSERT INTO ${table.code} (request_id, actor_name, property_name, property_value, creation) VALUES (?, ?, ?, ?, ?)"
-    Update[ActorTup](sql).updateMany(t.toList.map(_.withRequestId(Some(requestId))))
+    Update[ActorTup](sql).updateMany(tups.toList.map(t => ActorTup(requestId, t, ts)))
   }
 
   private def sqlInsertMetadata(table: Table, m: Metadata): ConnectionIO[RequestId] = {
@@ -266,16 +266,26 @@ object Repository {
   }
 
   case class ActorTup(
-    requestId: Option[RequestId],
-    actor: ActorName,
-    prop: PropName,
-    value: PropValue,
-    creation: Option[EpochSecTimestamp]
+    requestId: RequestId,
+    more: ActorTupIdLess,
+    creation: EpochSecTimestamp
   ) {
-    def withRequestId(i: Option[RequestId]): ActorTup = this.copy(requestId = i) // TODO get rid of this .copy by using composition of ActorTupIdless
+    def actor = more.actor
+    def prop = more.prop
+    def value = more.value
   }
 
+  case class ActorTupIdLess(
+    actor: ActorName,
+    prop: PropName,
+    value: PropValue
+  )
+
   object ActorTup {
+
+    def apply(id: RequestId, actor: ActorName, prop: PropName, value: PropValue, creation: EpochSecTimestamp): ActorTup =
+      ActorTup(id, ActorTupIdLess(actor, prop, value), creation)
+
     def asActorMap(ats: Iterable[ActorTup]): DeviceProps = {
       ats.groupBy(_.actor).mapValues{ byActor =>
         val indexed = byActor.zipWithIndex
@@ -287,9 +297,9 @@ object Repository {
       }
     }
 
-    def from(requestId: RequestId, deviceName: DeviceName, actorName: ActorName, pm: ActorProps, ts: EpochSecTimestamp): Iterable[ActorTup] = {
+    def from(deviceName: DeviceName, actorName: ActorName, pm: ActorProps): Iterable[ActorTupIdLess] = {
       pm.map { case (name, value) =>
-        ActorTup(Some(requestId), actorName, name, value, Some(ts))
+        ActorTupIdLess(actorName, name, value)
       }
     }
   }

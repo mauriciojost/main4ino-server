@@ -1,7 +1,7 @@
 package org.mauritania.main4ino
 
 import org.mauritania.main4ino.Fixtures.Device1
-import org.mauritania.main4ino.Repository.ActorTup
+import org.mauritania.main4ino.Repository.{ActorTup, ActorTupIdLess}
 import org.scalatest.{Matchers, WordSpec}
 
 class RepositorySpec extends WordSpec with Matchers {
@@ -12,12 +12,12 @@ class RepositorySpec extends WordSpec with Matchers {
 
       Device1.asActorTups.toSet shouldBe (
         Set(
-          ActorTup(None, "actorx", "xprop1", "xvalue1", None),
-          ActorTup(None, "actorx", "xprop2", "xvalue2", None),
-          ActorTup(None, "actorx", "xprop3", "xvalue3", None),
+          ActorTupIdLess("actorx", "xprop1", "xvalue1"),
+          ActorTupIdLess("actorx", "xprop2", "xvalue2"),
+          ActorTupIdLess("actorx", "xprop3", "xvalue3"),
 
-          ActorTup(None, "actory", "yprop1", "yvalue1", None),
-          ActorTup(None, "actory", "yprop2", "yvalue2", None)
+          ActorTupIdLess("actory", "yprop1", "yvalue1"),
+          ActorTupIdLess("actory", "yprop2", "yvalue2")
         )
 
         )
@@ -30,10 +30,10 @@ class RepositorySpec extends WordSpec with Matchers {
     "internal method should create a map from tuples" in {
       ActorTup.asActorMap(
         Iterable(
-          ActorTup(Some(1L), "actorx", "prop1", "1", None),
-          ActorTup(Some(2L), "actorx", "prop1", "2", None), // an update of the above
-          ActorTup(Some(1L), "actorx", "prop2", "1", None),
-          ActorTup(Some(2L), "actorx", "prop2", "1", None) // repeated with the above
+          ActorTup(1L, "actorx", "prop1", "1", 0L),
+          ActorTup(2L, "actorx", "prop1", "2", 0L), // an update of the above
+          ActorTup(1L, "actorx", "prop2", "1", 0L),
+          ActorTup(2L, "actorx", "prop2", "1", 0L) // repeated with the above
         )
       ) shouldBe Map(
         "actorx" -> Map(
@@ -47,8 +47,8 @@ class RepositorySpec extends WordSpec with Matchers {
     "internal method should pick last actor-prop if provided multiple times in same request ID" in {
       ActorTup.asActorMap(
         Iterable(
-          ActorTup(Some(1L), "actorx", "prop1", "1", None),
-          ActorTup(Some(1L), "actorx", "prop1", "2", None), // an override of the above (to be ignored)
+          ActorTup(1L, "actorx", "prop1", "1", 0L),
+          ActorTup(1L, "actorx", "prop1", "2", 0L), // an override of the above (to be ignored)
         )
       ) shouldBe Map(
         "actorx" -> Map("prop1" -> "2")

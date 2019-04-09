@@ -1,6 +1,6 @@
 package org.mauritania.main4ino.models
 
-import org.mauritania.main4ino.Repository.ActorTup
+import org.mauritania.main4ino.Repository.{ActorTup, ActorTupIdLess}
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.Device.Metadata.Status
 
@@ -9,11 +9,11 @@ case class Device(
   actors: DeviceProps = Device.EmptyActorMap
 ) {
 
-  def asActorTups: Iterable[ActorTup] =
+  def asActorTups: Iterable[ActorTupIdLess] =
     for {
       (actor, ps) <- actors.toSeq
       (propName, propValue) <- ps.toSeq
-    } yield (ActorTup(None, actor, propName, propValue, None))
+    } yield (ActorTupIdLess(actor, propName, propValue))
 
   def actor(s: ActorName): Option[ActorProps] = actors.get(s)
 

@@ -16,7 +16,7 @@ import org.mauritania.main4ino.api.Translator.TimeResponse
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.RicherBom._
-import org.mauritania.main4ino.models.Device
+import org.mauritania.main4ino.models.{Device, EpochSecTimestamp}
 import org.mauritania.main4ino.security.Authentication.{AccessAttempt, UserSession}
 import org.mauritania.main4ino.security.{Authentication, Config, User}
 import org.mauritania.main4ino.{Fixtures, Helper, Repository, SyncId}
@@ -63,13 +63,13 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     val t = stub[Time[Id]]
     val s = new Service(new AuthenticationId(AuthConfig), new Translator(r, t), t)(SyncId)
     "return 201 with empty properties" in {
-      (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).twice // mock
+      (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).anyNumberOfTimes() // mock
       val d = Device(Metadata(None, None, "dev1", Metadata.Status.Closed))
       createADeviceAndExpect(Table.Reports, d)(HttpStatus.Created)(s, r)
       createADeviceAndExpect(Table.Targets, d)(HttpStatus.Created)(s, r)
     }
     "return 201 with a regular target/request" in {
-      (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).twice // mock
+      (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).anyNumberOfTimes() // mock
       val d = Dev1
       createADeviceAndExpect(Table.Reports, d)(HttpStatus.Created)(s, r)
       createADeviceAndExpect(Table.Targets, d)(HttpStatus.Created)(s, r)
@@ -84,7 +84,8 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   )(service: Service[Id], repository: Repository[Id]) = {
     (repository.insertDevice _).when(
       argThat[Table]("Addresses target table")(_ == t),
-      argThat[Device]("Is the expected device")(x => x.withouIdNortTimestamp() == d.withouIdNortTimestamp())
+      argThat[Device]("Is the expected device")(x => x.withouIdNortTimestamp() == d.withouIdNortTimestamp()),
+      argThat[EpochSecTimestamp]("Is the expected timestamp")(_ => true)
     ).returns(1L) // mock
     val body = Helper.asEntityBody(d.actors.asJson.toString)
     postApiV1(s"/devices/${d.metadata.device}/${t.code}", body)(service).status shouldBe (s)

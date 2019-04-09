@@ -11,7 +11,6 @@ import org.mauritania.main4ino.Repository.Attempt
 import org.mauritania.main4ino.Repository.Table.Table
 import org.mauritania.main4ino.api.Translator.{CountResponse, IdResponse, IdsOnlyResponse, TimeResponse}
 import org.mauritania.main4ino.helpers.Time
-import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models._
 
@@ -34,11 +33,17 @@ class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends 
     } yield (device)
   }
 
+  def getDeviceActor(t: Table, dev: DeviceName, actor: ActorName, id: RequestId): F[Attempt[ActorProps]] = {
+    val x = getDevice(t, dev, id)
+    x.map(e => e.flatMap(d => d.actor(actor).toRight(s"No such actor: $actor")))
+  }
+
   def postDevice(dev: F[Device], t: Table): F[IdResponse] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
+      timeUtc <- time.nowUtc
       device <- dev
-      id <- repository.insertDevice(t, device)
+      id <- repository.insertDevice(t, device, Time.asTimestamp(timeUtc))
       response = IdResponse(id)
       _ <- logger.debug(s"POST device $device into table $t: $response")
     } yield (response)

@@ -2,7 +2,6 @@
 
 - Render target/report and properties statuses type-safe
 - Perform cleanup of repository, service v1 and its doc, and url class
-- Consume done at transaction/request level, one transaction at a time, no merging of different transactions
 - Do a check to ensure that documentation matches service v1
 - Document the return type of each method of the REST API
 - Make tuples/actortuples/propsmap/map/etc.etc.etc. simpler
@@ -16,6 +15,7 @@
 
 # DONE
 
+- Consume done at transaction/request level, one transaction at a time, no merging of different transactions
 - Remove unneeded API methods
 - Be able to change the target/report status
 - Go at Device level in Translator, avoid going to ActorTup level

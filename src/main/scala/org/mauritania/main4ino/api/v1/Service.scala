@@ -262,8 +262,7 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
       val d = for {
         a <- am
         t <- time.nowUtc
-        ts = Time.asTimestamp(t)
-        de = Device(dn, ts, a)
+        de = Device(dn, Time.asTimestamp(t), a)
       } yield (de)
       val x = tr.postDevice(d, table)
       Created(x.map(_.asJson), ContentTypeAppJson)
@@ -355,9 +354,8 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
 
     // To be used by devices to pull actor targets (actor by actor)
     case a@GET -> _ / "devices" / Dvc(device) / Tbl(table) / ReqId(rid) / "actors" / Dvc(actor) as _ => {
-      val x = tr.getDevice(table, device, rid)
-      val v = x.map(e => e.flatMap(d => d.actor(actor).toRight(s"No such actor: $actor")))
-      v.flatMap {
+      val x = tr.getDeviceActor(table, device, actor, rid)
+      x.flatMap {
         case Right(d) => Ok(d.asJson, ContentTypeAppJson)
         case Left(_) => NoContent()
       }
