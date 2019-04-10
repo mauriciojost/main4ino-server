@@ -1,9 +1,12 @@
 package org.mauritania.main4ino.api.v1
 
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import org.http4s.{ParseFailure, QueryParamDecoder, QueryParameterValue}
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import org.mauritania.main4ino.Repository.ReqType
 import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.models.Device.Metadata.Status
+import org.mauritania.main4ino.models.Device.Metadata.Status.Status
 import org.mauritania.main4ino.models.{EpochSecTimestamp, RequestId}
 
 import scala.util.Try
@@ -11,6 +14,10 @@ import scala.util.Try
 object Url {
 
   // Parameters
+
+  implicit val statusDecoder: QueryParamDecoder[Status] = new QueryParamDecoder[Status] {
+    override def decode(value: QueryParameterValue): ValidatedNel[ParseFailure, Status] = Validated.Valid(Status(value.value))
+  }
 
   object IdsParam extends OptionalQueryParamDecoderMatcher[Boolean]("ids")
   object StatusParam extends OptionalQueryParamDecoderMatcher[Status]("status")

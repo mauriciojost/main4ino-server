@@ -4,6 +4,7 @@ import cats.effect.IO
 import cats.free.Free
 import cats.implicits._
 import doobie._
+import doobie.enum.Nullability
 import doobie.free.connection.{ConnectionOp, raw}
 import doobie.implicits._
 import doobie.util.transactor.Transactor
@@ -13,6 +14,7 @@ import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.ErrMsg
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models.Device.Metadata
+import org.mauritania.main4ino.models.Device.Metadata.Status.Status
 import org.mauritania.main4ino.models._
 
 trait Repository[F[_]] {
@@ -39,6 +41,8 @@ trait Repository[F[_]] {
 
 // Naming regarding to SQL
 class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
+
+  implicit val StatusMeta: Meta[Status] = Meta[String].xmap(Status.apply, _.code)
 
   def cleanup(table: ReqType, now: EpochSecTimestamp, retentionSecs: Int) = {
     val transaction = for {

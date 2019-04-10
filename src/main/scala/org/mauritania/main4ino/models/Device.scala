@@ -3,6 +3,7 @@ package org.mauritania.main4ino.models
 import org.mauritania.main4ino.Repository.{ActorTup, ActorTupIdLess}
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.Device.Metadata.Status
+import org.mauritania.main4ino.models.Device.Metadata.Status.Status
 
 case class Device(
   metadata: Metadata,
@@ -35,15 +36,17 @@ object Device {
 
   object Metadata {
 
-    type Status = String // TODO have type safety here
-
     object Status {
       // Natural progression: O -> C -> X
-      val Open: Status = "O" // modifications can be done on it (add properties)
-      val Closed: Status = "C" // modifications cannot be done on it anymore
-      val Consumed: Status = "X" // it has been already consumed (no modifications can be done on it)
+      case object Open extends Status("O") // modifications can be done on it (add properties)
+      case object Closed extends Status("C") // modifications cannot be done on it anymore
+      case object Consumed extends Status("X") // it has been already consumed (no modifications can be done on it)
 
-      val Unknown: Status = "?" // status not defined
+      case object Unknown extends Status("?") // status not defined
+
+      val all = List(Open, Closed, Consumed, Unknown)
+
+      def apply(code: String): Status = all.find(_.code == code).getOrElse(Unknown)
     }
 
   }

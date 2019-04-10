@@ -2,7 +2,7 @@ package org.mauritania.main4ino.api.v1
 
 import cats.effect.IO
 import fs2.Stream
-import io.circe.Json
+import io.circe.{Encoder, Json}
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
@@ -23,6 +23,10 @@ class ServiceFuncSpec extends DbSuite {
   Sequential
 
   def defaultService: Service[IO] = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
+  implicit val statusEncoder = JsonEncoding.StatusEncoder
+  implicit val statusDecoder = JsonEncoding.StatusDecoder
+  implicit val stringDecoder = JsonEncoding.StringDecoder
+
 
   "The service from web ui" should "create and delete devices" in {
 
@@ -90,6 +94,9 @@ class ServiceFuncSpec extends DbSuite {
 
     implicit val s = defaultService
 
+    implicit val statusEncoder = JsonEncoding.StatusEncoder
+    implicit val statusDecoder = JsonEncoding.StatusDecoder
+
     // Add a target (empty)
     postExpectCreated("/devices/dev1/targets", """{}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
 
@@ -105,15 +112,15 @@ class ServiceFuncSpec extends DbSuite {
 
 
     // The request is open
-    getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).noSpaces shouldBe Metadata.Status.Open.asJson.noSpaces
+    getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).asString shouldBe Some(Metadata.Status.Open.code)
 
     // Close the request
     putExpect("/devices/dev1/targets/1?status=C", "", Status.Ok)
-    getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).noSpaces shouldBe Metadata.Status.Closed.asJson.noSpaces
+    getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).asString shouldBe Some(Metadata.Status.Closed.code)
 
     // Consume the request
     putExpect("/devices/dev1/targets/1?status=X", "", Status.Ok)
-    getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).noSpaces shouldBe Metadata.Status.Consumed.asJson.noSpaces
+    getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).asString shouldBe Some(Metadata.Status.Consumed.code)
 
     // Check its not anymore available if requesting for closed requests
     getExpectOk("/devices/dev1/targets?ids=true&status=C").noSpaces shouldBe IdsOnlyResponse(List()).asJson.noSpaces
@@ -169,6 +176,9 @@ class ServiceFuncSpec extends DbSuite {
   }
 
   private[this] def getExpectOk(path: String)(implicit service: Service[IO]): Json = {
+    implicit val a = JsonEncoding.StatusEncoder
+    implicit val b = JsonEncoding.StatusDecoder
+
     val r = get(path)
     r.status shouldBe Status.Ok
     r.as[Json].unsafeRunSync()

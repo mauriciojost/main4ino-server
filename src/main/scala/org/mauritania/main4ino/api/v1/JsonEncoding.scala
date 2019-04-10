@@ -1,6 +1,8 @@
 package org.mauritania.main4ino.api.v1
 
-import io.circe.{Decoder, DecodingFailure}
+import io.circe.{Decoder, DecodingFailure, Encoder, Json}
+import org.mauritania.main4ino.models.Device.Metadata
+import org.mauritania.main4ino.models.Device.Metadata.Status.Status
 
 object JsonEncoding {
 
@@ -16,5 +18,15 @@ object JsonEncoding {
     }
   }
 
+  val StatusEncoder = new Encoder[Status] {
+    override def apply(a: Status): Json = Json.fromString(a.code)
+  }
+
+  val StatusDecoder: Decoder[Status] = { v =>
+    Decoder[String].tryDecode(v) match {
+      case Right(s) => Right[DecodingFailure, Status](Metadata.Status(s))
+      case Left(_) => Left[DecodingFailure, Status](DecodingFailure(s"Cannot decode $v", Nil))
+    }
+  }
 
 }

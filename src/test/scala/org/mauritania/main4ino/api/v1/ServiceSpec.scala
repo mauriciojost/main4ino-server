@@ -38,6 +38,9 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   val Dev1V1 = Fixtures.Device1
   val Dev2V1 = Dev1V1.copy(metadata = Dev1V1.metadata.copy(id = Some(2L), device = "dev2"))
 
+  implicit val statusEncoder = JsonEncoding.StatusEncoder
+  implicit val statusDecoder = JsonEncoding.StatusDecoder
+
   "Help request" should {
     val r = stub[Repository[Id]]
     val t = stub[Time[Id]]

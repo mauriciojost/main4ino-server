@@ -6,6 +6,9 @@ import cats.data.{Kleisli, OptionT}
 import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.circe.Decoder.Result
+import io.circe.Json.JString
+import io.circe.{Decoder, Encoder, HCursor, Json}
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.circe._
@@ -18,7 +21,7 @@ import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Device.Metadata
-import org.mauritania.main4ino.models.Device.Metadata.{Status => MdStatus}
+import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models._
 import org.mauritania.main4ino.security.Authentication.AccessAttempt
 import org.mauritania.main4ino.security.{Authentication, User}
@@ -211,6 +214,8 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
     """.stripMargin
 
   implicit val jsonStringDecoder = JsonEncoding.StringDecoder
+  implicit val jsonStatusDecoder = JsonEncoding.StatusDecoder
+  implicit val jsonStatusEncoder = JsonEncoding.StatusEncoder
 
   private[v1] val service = AuthedService[User, F] {
 
@@ -249,7 +254,7 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
     // Administration
 
     // To be used by web ui to fully remove records for a given device table
-    case a@DELETE -> _ / "administrator" / "devices" / Dvc(device) / Req(table) as _ => {
+    case a@DELETE -> _ / "administrator" / "devices" / Dev(device) / Req(table) as _ => {
       val x = tr.deleteDevice(device, table)
       Ok(x.map(_.asJson), ContentTypeAppJson)
     }
@@ -257,12 +262,12 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
     // Targets & Reports (at device level)
 
     // To be used by devices to start a ReqTran (request transaction)
-    case a@POST -> _ / "devices" / Dvc(dn) / Req(table) as _ => {
+    case a@POST -> _ / "devices" / Dev(device) / Req(table) as _ => {
       val am = a.req.decodeJson[DeviceProps]
       val d = for {
         a <- am
         t <- time.nowUtc
-        de = Device(dn, Time.asTimestamp(t), a)
+        de = Device(device, Time.asTimestamp(t), a)
       } yield (de)
       val x = tr.postDevice(d, table)
       Created(x.map(_.asJson), ContentTypeAppJson)
@@ -291,7 +296,7 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
 
     // To be used by devices to commit a request
     case a@PUT -> _ / "devices" / Dev(device) / Req(table) / ReqId(requestId) :? StatusParam(st) as _ => {
-      val x = tr.updateDeviceStatus(table, device, requestId, st.getOrElse(MdStatus.Closed))
+      val x = tr.updateDeviceStatus(table, device, requestId, st.getOrElse(Status.Closed))
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
         case Left(_) => NotModified()
@@ -319,7 +324,7 @@ class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Tim
     // Targets & Reports (at device-actor level)
 
     // To be used by tests to push actor reports (actor by actor) creating a new ReqTran
-    case a@POST -> _ / "devices" / Dev(device) / Req(table) / "actors" / Dvc(actor) as _ => {
+    case a@POST -> _ / "devices" / Dev(device) / Req(table) / "actors" / Act(actor) as _ => {
       val pm = a.req.decodeJson[ActorProps]
       val dev = for {
         t <- time.nowUtc
