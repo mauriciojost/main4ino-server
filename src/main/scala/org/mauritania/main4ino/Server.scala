@@ -18,13 +18,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 
 object Server extends StreamApp[IO] {
+  final val DefaultConfigDir = "."
 
   // TODO use better IOApp as StreamApp is being removed from fs2
   def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
-    val configDir = args match {
-      case a :: Nil => new File(a)
-      case _ => throw new IllegalArgumentException("Must provide configuration directory")
-    }
+    val configDir = new File(args.headOption.getOrElse(DefaultConfigDir))
 
     val applicationConf = new File(configDir, "application.conf")
     val securityConf = new File(configDir, "security.conf")
