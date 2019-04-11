@@ -17,8 +17,8 @@ import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.RicherBom._
 import org.mauritania.main4ino.models.{Device, EpochSecTimestamp}
-import org.mauritania.main4ino.security.Authentication.{AccessAttempt, UserSession}
-import org.mauritania.main4ino.security.{Authentication, Config, User}
+import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
+import org.mauritania.main4ino.security.{Auther, Config, User}
 import org.mauritania.main4ino.{Fixtures, Helper, Repository, SyncId}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
@@ -44,7 +44,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   "Help request" should {
     val r = stub[Repository[Id]]
     val t = stub[Time[Id]]
-    val s = new Service(new AuthenticationId(AuthConfig), new Translator(r, t), t)(SyncId)
+    val s = defaultService(r, t)
     "return 200" in {
       getApiV1("/help")(s).status shouldBe (HttpStatus.Ok)
     }
@@ -53,18 +53,18 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     }
   }
 
-  class AuthenticationId(config: Config) extends Authentication[Id] {
+  class AutherId(config: Config) extends Auther[Id] {
     def authenticateAndCheckAccessFromRequest(request: Request[Id]): Id[AccessAttempt] =
-      Authentication.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path)
+      Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path)
 
     def generateSession(user: User): Id[UserSession] =
-      Authentication.sessionFromUser(user, config.privateKeyBits, config.nonceStartupTime)
+      Auther.sessionFromUser(user, config.privateKeyBits, config.nonceStartupTime)
   }
 
   "Create target request" should {
     val r = stub[Repository[Id]]
     val t = stub[Time[Id]]
-    val s = new Service(new AuthenticationId(AuthConfig), new Translator(r, t), t)(SyncId)
+    val s = defaultService(r, t)
     "return 201 with empty properties" in {
       (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).anyNumberOfTimes() // mock
       val d = Device(Metadata(None, None, "dev1", Metadata.Status.Closed))
@@ -98,7 +98,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   "The service" should {
     val r = stub[Repository[Id]]
     val t = stub[Time[Id]]
-    val s = new Service(new AuthenticationId(AuthConfig), new Translator(r, t), t)(SyncId)
+    val s = defaultService(r, t)
     "return 200 with an existent target/request when reading target/report requests" in {
       (r.selectDeviceWhereRequestId _).when(ReqType.Targets, Dev1.metadata.device, 1L).returns(Right(Dev1)).once // mock
       (r.selectDeviceWhereRequestId _).when(ReqType.Reports, Dev1.metadata.device, 1L).returns(Right(Dev1)).once() // mock
@@ -115,7 +115,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   it should {
     val r = stub[Repository[Id]]
     val t = stub[Time[Id]]
-    val s = new Service(new AuthenticationId(AuthConfig), new Translator(r, t), t)(SyncId)
+    val s = defaultService(r, t)
     "return 200 with a list of existent targets when reading all targets request" in {
       (r.selectDevicesWhereTimestampStatus _).when(ReqType.Targets, "dev1", None, None, None).returns(Iterable(Dev1, Dev2)).once // mock
 
@@ -125,10 +125,14 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     }
   }
 
+  private def defaultService(r: Repository[Id], t: Time[Id]) = {
+    new Service(new AutherId(AuthConfig), new Translator(r, t), t)(SyncId)
+  }
+
   it should {
     val r = stub[Repository[Id]]
     val t = stub[Time[Id]]
-    val s = new Service(new AuthenticationId(AuthConfig), new Translator(r, t), t)(SyncId)
+    val s = defaultService(r, t)
     "return 400 when invalid timezone provided" in {
       (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).once // mock
 
@@ -155,49 +159,12 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
 
     val r = stub[Repository[Id]]
     val t = stub[Time[Id]]
-    val s = new Service(new AuthenticationId(AuthConfig), new Translator(r, t), t)(SyncId)
-
-    /*
-    "return the list of associated targets set when merging correctly existent targets" in {
-
-      (r.selectActorTupWhereDeviceActorStatus _)
-        .when(e(Table.Targets), e("dev1"), e(Some("clock")), e(Some(S.Created)), e(false))
-        .returns(Stream.fromIterator[Id, ActorTup](Iterator(
-          ActorTup(Some(1), "dev1", "clock", "h", "7", S.Consumed, None),
-          ActorTup(Some(2), "dev1", "clock", "h", "8", S.Consumed, None)
-        ))).once()
-
-      val r1 = s.getDevActors("dev1", "clock", Table.Targets, Some(S.Created), None)
-      val r1m = r1.toSet
-
-      r1m shouldBe Set(
-        Map("h" -> "7"),
-        Map("h" -> "8")
-      )
-    }
-
-    "return the actor tups for a given actor" in {
-      val tups = List(
-        ActorTup(Some(1), "dev1", "clock", "h", "7", S.Created, None),
-        ActorTup(Some(2), "dev1", "clock", "m", "0", S.Created, None),
-        ActorTup(Some(3), "dev1", "clock", "h", "8", S.Created, None)
-      )
-      (r.selectActorTupWhereDeviceActorStatus _)
-        .when(e(Table.Targets), e("dev1"), e(Some("clock")), e(Some(S.Created)), false)
-        .returns(Stream.fromIterator[Id, ActorTup](tups.toIterator)).once()
-
-      val r2 = s.getDevActorTups("dev1", Some("clock"), Table.Targets, Some(S.Created), None)
-      val r2m = r2.toSet
-
-      r2m shouldBe tups.toSet
-
-    }
-    */
+    val s = defaultService(r, t)
 
     "when invalid token" should {
       val r = stub[Repository[Id]]
       val t = stub[Time[Id]]
-      val s = new Service(new AuthenticationId(AuthConfig), new Translator(r, t), t)(SyncId)
+      val s = defaultService(r, t)
       "return 403 (forbidden) if invalid credentials" in {
         getApiV1("/help", HeadersCredsInvalid)(s).status shouldBe (HttpStatus.Forbidden)
       }

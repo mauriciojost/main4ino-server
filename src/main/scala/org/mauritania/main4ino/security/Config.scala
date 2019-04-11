@@ -9,7 +9,7 @@ import java.time.Clock
 
 import pureconfig._
 import pureconfig.generic.auto._
-import org.mauritania.main4ino.security.Authentication.{EncryptionConfig, UserHashedPass, UserId}
+import org.mauritania.main4ino.security.Auther.{EncryptionConfig, UserHashedPass, UserId}
 
 import scala.io.Codec
 

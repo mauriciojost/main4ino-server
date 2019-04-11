@@ -6,7 +6,7 @@ import cats.effect.IO
 import org.http4s.{BasicCredentials, Headers, Request, Uri}
 import org.http4s.Uri.Path
 import org.http4s.util.CaseInsensitiveString
-import org.mauritania.main4ino.security.Authentication.{AccessAttempt, UserSession}
+import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
 import org.reactormonk.CryptoBits
 import com.github.t3hnar.bcrypt._
 import org.http4s.headers.Authorization
@@ -14,7 +14,11 @@ import org.mauritania.main4ino.security.Config.UsersBy
 
 import scala.util.Try
 
-trait Authentication[F[_]] { // TODO Rename as Auther (authentication & authorization)
+/**
+  * Authorization and authentication
+  * @tparam F
+  */
+trait Auther[F[_]] {
 
   /**
     * Authenticate the user given a request and attempt an access to the resource
@@ -38,16 +42,16 @@ trait Authentication[F[_]] { // TODO Rename as Auther (authentication & authoriz
 
 }
 
-class AuthenticationIO(config: Config) extends Authentication[IO] {
+class AutherIO(config: Config) extends Auther[IO] {
 
   def authenticateAndCheckAccessFromRequest(request: Request[IO]): IO[AccessAttempt] =
-    IO.pure(Authentication.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path))
+    IO.pure(Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path))
 
   def generateSession(user: User): IO[UserSession] =
-    IO.pure(Authentication.sessionFromUser(user, config.privateKeyBits, config.nonceStartupTime))
+    IO.pure(Auther.sessionFromUser(user, config.privateKeyBits, config.nonceStartupTime))
 }
 
-object Authentication {
+object Auther {
 
   type UserId = String // username
   type UserHashedPass = String // hashed password

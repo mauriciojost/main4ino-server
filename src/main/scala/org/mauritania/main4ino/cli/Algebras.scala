@@ -3,7 +3,7 @@ package org.mauritania.main4ino.cli
 import java.nio.file.Path
 
 import org.mauritania.main4ino.cli.Actions.{AddRawUser, CliAction}
-import org.mauritania.main4ino.security.{Authentication, Config, User}
+import org.mauritania.main4ino.security.{Auther, Config, User}
 
 object Algebras {
 
@@ -15,7 +15,7 @@ object Algebras {
   trait Configs[F[_]]  {
 
     def user(c: Config, u: AddRawUser): User = {
-      val hashed = Authentication.hashPassword(u.pass, c.salt)
+      val hashed = Auther.hashPassword(u.pass, c.salt)
       User(u.name, hashed, u.email, u.granted)
     }
 

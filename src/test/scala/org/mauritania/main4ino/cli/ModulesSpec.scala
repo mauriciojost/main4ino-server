@@ -8,7 +8,7 @@ import org.mauritania.main4ino.cli.Actions.{AddRawUser, AddRawUsers}
 import org.mauritania.main4ino.cli.Modules.{ConfigsAppErr, FilesystemSync}
 import org.scalatest.{Matchers, WordSpec}
 import org.mauritania.main4ino.security.Fixtures._
-import org.mauritania.main4ino.security.{Authentication, User}
+import org.mauritania.main4ino.security.{Auther, User}
 
 class ModulesSpec extends WordSpec with Matchers with SyncId {
 
@@ -22,7 +22,7 @@ class ModulesSpec extends WordSpec with Matchers with SyncId {
 
       val ExpectedNewUserEntry = User(
         name = "pepe",
-        hashedpass = Authentication.hashPassword("toto", Salt),
+        hashedpass = Auther.hashPassword("toto", Salt),
         email = "pepe@zzz.com",
         granted = List("/")
       )

@@ -22,7 +22,7 @@ class ServiceFuncSpec extends DbSuite {
 
   Sequential
 
-  def defaultService: Service[IO] = new Service(new AuthenticationIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
+  def defaultService: Service[IO] = new Service(new AutherIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
   implicit val statusEncoder = JsonEncoding.StatusEncoder
   implicit val statusDecoder = JsonEncoding.StatusDecoder
   implicit val stringDecoder = JsonEncoding.StringDecoder

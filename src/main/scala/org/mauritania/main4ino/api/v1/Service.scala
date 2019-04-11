@@ -23,12 +23,12 @@ import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models._
-import org.mauritania.main4ino.security.Authentication.AccessAttempt
-import org.mauritania.main4ino.security.{Authentication, User}
+import org.mauritania.main4ino.security.Auther.AccessAttempt
+import org.mauritania.main4ino.security.{Auther, User}
 
 import scala.util.{Failure, Success, Try}
 
-class Service[F[_] : Sync](auth: Authentication[F], tr: Translator[F], time: Time[F]) extends Http4sDsl[F] {
+class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) extends Http4sDsl[F] {
 
   import Service._
   import Url._

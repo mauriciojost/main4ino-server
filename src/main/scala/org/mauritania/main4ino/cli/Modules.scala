@@ -10,7 +10,7 @@ import io.circe.generic.auto._
 import io.circe.syntax._
 import org.mauritania.main4ino.cli.Algebras._
 import org.mauritania.main4ino.cli.Actions.{AddRawUser, CliAction}
-import org.mauritania.main4ino.security.{Authentication, Config, User}
+import org.mauritania.main4ino.security.{Auther, Config, User}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import org.mauritania.main4ino.config.Loadable

@@ -12,7 +12,7 @@ import org.mauritania.main4ino.Repository.ReqType
 import org.mauritania.main4ino.api.{Translator, v1}
 import org.mauritania.main4ino.db.Database
 import org.mauritania.main4ino.helpers.TimeIO
-import org.mauritania.main4ino.security.AuthenticationIO
+import org.mauritania.main4ino.security.AutherIO
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
@@ -33,7 +33,7 @@ object Server extends StreamApp[IO] {
       configApp <- Stream.eval(config.Config.load(applicationConf))
       configUsers <- Stream.eval(security.Config.load(securityConf))
       transactor <- Stream.eval(Database.transactor(configApp.database))
-      auth = new AuthenticationIO(configUsers)
+      auth = new AutherIO(configUsers)
       repo = new RepositoryIO(transactor)
       time = new TimeIO()
       cleanupRepoTask = for {
