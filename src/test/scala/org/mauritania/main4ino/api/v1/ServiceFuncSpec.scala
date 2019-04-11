@@ -50,6 +50,19 @@ class ServiceFuncSpec extends DbSuite {
     // Only the count of targets for dev2
     getExpectOk("/devices/dev2/targets?ids=true").noSpaces shouldBe IdsOnlyResponse(List(2)).asJson.noSpaces
 
+  }
+
+  it should "generate a session and tell the user currently logged in" in {
+
+    implicit val ds = defaultService
+
+    val s = post("/session", "")
+    s.status shouldBe Status.Ok
+    s.as[String].unsafeRunSync() should include ("-" + User1.name)
+
+    val u = get("/user")
+    u.status shouldBe Status.Ok
+    u.as[String].unsafeRunSync() shouldBe User1.name
 
   }
 
