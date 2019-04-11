@@ -13,10 +13,11 @@ object Loadable {
   import pureconfig._
 
   def loadFromFile[F[_] : Sync, T: ClassTag](configFile: File)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
+    val f = configFile.getAbsoluteFile
     implicitly[Sync[F]].fromEither {
-      loadConfig[T](ConfigFactory.parseFile(configFile))
+      loadConfig[T](ConfigFactory.parseFile(f))
         .swap
-        .map(i => new IllegalArgumentException(s"Cannot parse: $configFile", new ConfigReaderException[T](i)))
+        .map(i => new IllegalArgumentException(s"Cannot find/parse file '$f'", new ConfigReaderException[T](i)))
         .swap
     }
   }
