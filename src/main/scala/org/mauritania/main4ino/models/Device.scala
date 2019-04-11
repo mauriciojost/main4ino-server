@@ -37,6 +37,9 @@ object Device {
   object Metadata {
 
     object Status {
+
+      sealed abstract class Status(val code: String)
+
       // Natural progression: O -> C -> X
       case object Open extends Status("O") // modifications can be done on it (add properties)
       case object Closed extends Status("C") // modifications cannot be done on it anymore
