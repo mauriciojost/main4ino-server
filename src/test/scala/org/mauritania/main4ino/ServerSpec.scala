@@ -39,7 +39,7 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   "The server" should "start and expose rest the api (v1)" in {
     val help = httpClient.expect[String](s"http://localhost:8080/api/v1/token/${UserPass.token}/help")
-    help.unsafeRunSync() should include("HELP")
+    help.unsafeRunSync() should include("https")
 
   }
 
