@@ -113,8 +113,8 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   it should "fail if started with bad arduments" in {
     // accepts only one argument
-    assertThrows[IllegalArgumentException](Server.main(Array()))
-    assertThrows[IllegalArgumentException](Server.main(Array("", "")))
+    assertThrows[IllegalArgumentException](Server.stream(List(), IO.pure()).take(1).compile.last.unsafeRunSync())
+    assertThrows[IllegalArgumentException](Server.stream(List("", ""), IO.pure()).take(1).compile.last.unsafeRunSync())
   }
 
   private def launchAsync(args: Array[String]): Thread = {
