@@ -97,7 +97,7 @@ class ServiceFuncSpec extends DbSuite {
     // Add a target (empty)
     postExpectCreated("/devices/dev1/targets", """{}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
 
-    // getExpectOk("/devices/dev1/targets?ids=true").noSpaces shouldBe IdsOnlyResponse(List(1)).asJson.noSpaces not until at least one property added
+    getExpectOk("/devices/dev1/targets?ids=true").noSpaces shouldBe IdsOnlyResponse(List(1)).asJson.noSpaces // not until at least one property added
 
     postExpectCreated("/devices/dev1/targets/1/actors/actor1", """{"prop1":"val1"}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces // inserted
     postExpectCreated("/devices/dev1/targets/1/actors/actor1", """{"prop1":"val11"}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces // inserted after

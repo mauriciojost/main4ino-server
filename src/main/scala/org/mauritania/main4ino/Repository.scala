@@ -192,7 +192,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
       case None => fr""
     }
     (fr"SELECT r.id, r.creation, r.device_name, r.status, t.request_id, t.actor_name, t.property_name, t.property_value, t.creation" ++
-      fr"FROM" ++ Fragment.const(table.code + "_requests") ++ fr"as r JOIN" ++ Fragment.const(table.code) ++ fr"as t" ++
+      fr"FROM" ++ Fragment.const(table.code + "_requests") ++ fr"as r LEFT OUTER JOIN" ++ Fragment.const(table.code) ++ fr"as t" ++
       fr"ON r.id = t.request_id" ++
       fr"WHERE r.device_name=$d" ++ fromFr ++ toFr ++ stFr)
       .query[Device1].stream
@@ -239,18 +239,18 @@ object Repository {
     * are meant to be aggregated to create instances of [[Device]].
     *
     * @param metadata   the metadata
-    * @param actorTuple the single actor tuple
+    * @param actorTuple the single actor tuple (if present, there may be a metadata without any property)
     */
   case class Device1(
     metadata: Metadata,
-    actorTuple: ActorTup
+    actorTuple: Option[ActorTup] // optional (if device filled up)
   )
 
   object Device1 {
 
     def asDeviceHistory(s: Iterable[Device1]): Iterable[Device] = {
       val g = s.groupBy(_.metadata)
-      val dh = g.map { case (md, d1s) => Device(md, ActorTup.asActorMap(d1s.map(_.actorTuple))) }
+      val dh = g.map { case (md, d1s) => Device(md, ActorTup.asActorMap(d1s.flatMap(_.actorTuple))) }
       dh
     }
 
