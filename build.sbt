@@ -4,7 +4,7 @@ val LogbackVersion = "1.2.3"
 val DoobieVersion = "0.5.2"
 val H2Version = "1.4.192"
 val FlywayVersion = "4.2.0"
-val CirceVersion = "0.6.1"
+val CirceVersion = "0.9.3"
 val PureConfigVersion = "0.10.2"
 val ScalaTestVersion = "3.0.4"
 val ScalaMockVersion = "4.0.0"
@@ -25,6 +25,7 @@ lazy val root = (project in file("."))
       "com.github.t3hnar" %% "scala-bcrypt" % BcryptVersion,
       "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
       "org.http4s" %% "http4s-circe" % Http4sVersion,
+      "io.circe" %% "circe-core" % CirceVersion,
       "io.circe" %% "circe-generic" % CirceVersion,
       "io.circe" %% "circe-parser" % CirceVersion,
       "io.chrisdavenport" %% "log4cats-slf4j" % log4CatsSlf4jVersion,
