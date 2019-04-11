@@ -35,183 +35,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
 
   type ErrMsg = String
 
-  private val HelpMsg =
-
-    s"""
-       | API HELP
-       | --- ----
-       |
-       | See: https://github.com/mauriciojost/main4ino-server/blob/master/src/main/scala/org/mauritania/main4ino/api/v1/Service.scala
-       |
-       | HELP
-       | ----
-       |
-       |
-       | GET /help
-       |
-       |    Display this help.
-       |
-       |    Returns: OK (200)
-       |
-       |
-       | TIME
-       | ----
-       |
-       | All below queries are useful for time synchronization.
-       |
-       |
-       | GET /time?timezone=<tz>
-       |
-       |    Return the ISO-local-time formatted time at a given timezone.
-       |
-       |    Examples of valid timezones: UTC, Europe/Paris, ...
-       |    Examples of formatted time: 1970-01-01T00:00:00
-       |
-       |    Returns: OK (200) | BAD_REQUEST (400)
-       |
-       |
-       | USER
-       | ----
-       |
-       |
-       | POST /session (with standard basic auth)
-       |
-       |    Return the session id from the basic auth provided credentials.
-       |
-       |    The provided token can be used to authenticate without providing user/password.
-       |
-       |    Returns: OK (200)
-       |
-       |
-       | GET /user
-       |
-       |    Return the currently logged in user id.
-       |
-       |    Returns: OK (200)
-       |
-       |
-       | ADMINISTRATOR
-       | -------------
-       |
-       | All below queries apply to both targets and reports (although in the examples they use targets).
-       |
-       |
-       | DELETE /administrator/devices/<dev>/targets/
-       |
-       |    Delete all targets for the given device.
-       |
-       |    To use with extreme care.
-       |
-       |    Returns: OK (200)
-       |
-       |
-       | DEVICES
-       | -------
-       |
-       | All below queries are applicable to both targets and reports (although in the examples they use targets).
-       |
-       |
-       | POST /devices/<dev>/targets/
-       |
-       |    Create a target, get the request ID.
-       |
-       |    Mostly used by the device (mode reports).
-       |    If not actor-properties provided the request remains in state open, waiting for properties
-       |    to be added. It should be explicitly closed so that it is exposed to devices.
-       |
-       |    Returns: CREATED (201)
-       |
-       |
-       | PUT /devices/<dev>/targets/<request_id>
-       |
-       |    Update the target given the device and the request ID.
-       |
-       |    Returns: OK (200)
-       |
-       |
-       | GET /devices/<dev>/targets/<request_id>
-       |
-       |    Retrieve a target by its request ID.
-       |
-       |    Returns: OK (200) | NO_CONTENT (204)
-       |
-       |
-       | GET /devices/<dev>/targets/last
-       |
-       |    Retrieve the last target created (chronologically).
-       |
-       |    Returns: OK (200) | NO_CONTENT (204)
-       |
-       |
-       | GET /devices/<dev>/targets?from=<timestamp>&to=<timestamp>
-       |
-       |    Retrieve the list of the targets that where created in between the time range provided (timestamp in [ms] since the epoch).
-       |
-       |    Returns: OK (200)
-       |
-       |
-       | GET /devices/<dev>/targets/summary?status=<status>&consume=<consume>
-       |
-       |    Retrieve the list of the targets summarized for the device (most recent actor-prop value wins).
-       |
-       |    The summarized target is generated only using properties that have the given status.
-       |    The flag consume tells if the status of the matching properties should be changed from C (created) to X (consumed).
-       |
-       |    Returns: OK (200) | NO_CONTENT (204)
-       |
-       |
-       | GET /devices/<dev>/targets/count?status=<status>
-       |
-       |    Count the amount of target-properties with the given status for the device.
-       |
-       |    This is useful to know in advance if is worth to perform a heavier query to retrieve actors properties.
-       |
-       |    Returns: OK (200)
-       |
-       |
-       | ACTORS
-       | ------
-       |
-       | All below queries apply to both targets and reports (although in the examples they use targets).
-       |
-       |
-       | POST /devices/<dev>/targets/<requestid>/actors/<actor>
-       |
-       |    Create a new target for a given actor with the provided actor properties.
-       |
-       |    An existent request can be filled in if the request ID is provided.
-       |
-       |    Returns: CREATED (201)
-       |
-       |
-       | GET /devices/<dev>/targets/<requestid>/actors/<actor>?status=<status>&consume=<consume>
-       |
-       |    Retrieve the list of the targets for the device-actor (most recent actor-prop value wins)
-       |
-       |    The list is generated only using properties that have the given status.
-       |    The flag consume tells if the status of the matching properties should be changed from C (created) to X (consumed).
-       |
-       |    Returns: OK (200)
-       |
-       |
-       | GET /devices/<dev>/targets/actors/<actor>/summary?status=<status>&consume=<consume>
-       |
-       |    Retrieve the summary of the targets for the device-actor (most recent actor-prop value wins)
-       |
-       |    The summarized target is generated only using properties that have the given status.
-       |    The flag consume tells if the status of the matching properties should be changed from C (created) to X (consumed).
-       |
-       |    Returns: OK (200) | NO_CONTENT (204)
-       |
-       |
-       | GET /devices/<dev>/targets/actors/<actor>/last?status=<status>
-       |
-       |    Retrieve the last target created for such actor with such status
-       |
-       |    Returns: OK (200) | NO_CONTENT (204)
-       |
-       |
-    """.stripMargin
+  private val HelpMsg = "See: https://github.com/mauriciojost/main4ino-server/blob/master/src/main/scala/org/mauritania/main4ino/api/v1/Service.scala"
 
   implicit val jsonStringDecoder = JsonEncoding.StringDecoder
   implicit val jsonStatusDecoder = JsonEncoding.StatusDecoder
@@ -219,16 +43,31 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
 
   private[v1] val service = AuthedService[User, F] {
 
-    // Help
-
-
-    // To be used by developers
+    /**
+      * GET /help
+      *
+      * Display this help.
+      *
+      * To be used by developers to use the REST API.
+      *
+      * Returns: OK (200)
+      */
     case GET -> _ / "help" as _ =>
       Ok(HelpMsg, ContentTypeTextPlain)
 
     // Date/Time
 
-    // To be used by devices to get sync in time
+    /**
+      * GET /time?timezone=<tz>
+      *
+      * Return the ISO-local-time formatted time at a given timezone.
+      *
+      * Examples of valid timezones: UTC, Europe/Paris, ...
+      * Examples of formatted time: 1970-01-01T00:00:00
+      * To be used by devices to get time synchronization.
+      *
+      * Returns: OK (200) | BAD_REQUEST (400)
+      */
     case GET -> _ / "time" :? TimezoneParam(tz) as _ => {
       val attempt = Try(tr.nowAtTimezone(tz.getOrElse("UTC")))
       attempt match {
@@ -239,13 +78,28 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
 
     // User
 
-    // To be used by web ui to retrieve a session token
+    /**
+      * POST /session (with standard basic auth)
+      *
+      * Return the session id from the 'basic auth' provided credentials.
+      * The provided token can be used to authenticate without providing user/password.
+      * To be used by web ui to retrieve a session token that can be provided via cookies.
+      *
+      * Returns: OK (200)
+      */
     case a@POST -> _ / "session" as user => {
       val session = auth.generateSession(user)
       session.flatMap(s => Ok(s))
     }
 
-    // To be used by web ui to verify login
+    /**
+      * GET /user
+      *
+      * Return the currently logged in user id.
+      * To be used by web ui to verify user logged in.
+      *
+      * Returns: OK (200)
+      */
     case a@GET -> _ / "user" as user => {
       Ok(user.name)
     }
@@ -253,7 +107,15 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
 
     // Administration
 
-    // To be used by web ui to fully remove records for a given device table
+    /**
+      * DELETE /administrator/devices/<dev>/targets/
+      *
+      * Delete all targets for the given device.
+      * To use with extreme care.
+      * To be used by administrator on a web ui to fully remove records for a given device table.
+      *
+      * Returns: OK (200)
+      */
     case a@DELETE -> _ / "administrator" / "devices" / Dev(device) / Req(table) as _ => {
       val x = tr.deleteDevice(device, table)
       Ok(x.map(_.asJson), ContentTypeAppJson)
@@ -261,7 +123,19 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
 
     // Targets & Reports (at device level)
 
-    // To be used by devices to start a ReqTran (request transaction)
+    /**
+      * POST /devices/<dev>/targets/
+      *
+      * Create a target, get the request ID.
+      *
+      * Mostly used by the device (mode reports) to start a request transaction.
+      * There are 2 main scenarios:
+      * - no actor-property provided: the request remains in state open, waiting for properties
+      *   to be added in a second step. It should be explicitly closed so that it is exposed to devices.
+      * - at least one actor-property is provided: the request is automatically closed, and exposed to devices.
+      *
+      * Returns: CREATED (201)
+      */
     case a@POST -> _ / "devices" / Dev(device) / Req(table) as _ => {
       val am = a.req.decodeJson[DeviceProps]
       val d = for {
@@ -273,7 +147,16 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       Created(x.map(_.asJson), ContentTypeAppJson)
     }
 
-    // To be used by web ui to retrieve history of transactions in a given time period
+    /**
+      * GET /devices/<dev>/targets?from=<timestamp>&to=<timestamp>&status=<status>&ids=<idsonly>
+      *
+      * Retrieve the list of the targets that where created in between the time range
+      * provided (timestamp in [ms] since the epoch) and with the given status.
+      * It is possible to retrieve only the record ids via boolean <idsonly>.
+      * To be used by web ui to retrieve history of transactions in a given time period with a given status.
+      *
+      * Returns: OK (200)
+      */
     case a@GET -> _ / "devices" / Dev(device) / Req(table) :? FromParam(from) +& ToParam(to) +& StatusParam(st) +& IdsParam(ids) as _ => {
       val idsOnly = ids.exists(identity)
       if (idsOnly) {
@@ -285,7 +168,18 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       }
     }
 
-    // To be used by web ui to retrieve summary of transactions in a given time period
+    /**
+      * GET /devices/<dev>/targets/summary?from=<timestamp>&to=<timestamp>&status=<status>
+      *
+      * Retrieve the list of the targets summarized for the device (most recent actor-prop value wins).
+      *
+      * The summarized target is generated only using properties that have the given status.
+      * The flag consume tells if the status of the matching properties should be changed from C (created) to X (consumed).
+      * To be used by web ui to retrieve summary of transactions in a given time period with a given status.
+      *
+      * Returns: OK (200) | NO_CONTENT (204)
+      *
+      */
     case a@GET -> _ / "devices" / Dev(device) / Req(table) / "summary" :? FromParam(from) +& ToParam(to) +& StatusParam(st) as _ => {
       val x = tr.getDevicesSummary(device, table, from, to, st)
       x.flatMap {
@@ -294,7 +188,16 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       }
     }
 
-    // To be used by devices to commit a request
+    /**
+      *
+      * PUT /devices/<dev>/targets/<request_id>
+      *
+      * Update the target given the device and the request ID.
+      *
+      * To be used by devices to commit a request that was filled with actor-properties.
+      *
+      * Returns: OK (200) | NOT_MODIFIED (304)
+      */
     case a@PUT -> _ / "devices" / Dev(device) / Req(table) / ReqId(requestId) :? StatusParam(st) as _ => {
       val x = tr.updateDeviceStatus(table, device, requestId, st.getOrElse(Status.Closed))
       x.flatMap {
@@ -303,7 +206,15 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       }
     }
 
-    // To be used by ... ? // Useful mainly for testing purposes
+    /**
+      * GET /devices/<dev>/targets/<request_id>
+      *
+      * Retrieve a target by its request ID.
+      *
+      * Useful mainly for testing purposes.
+      *
+      * Returns: OK (200) | NO_CONTENT (204)
+      */
     case a@GET -> _ / "devices" / Dev(device) / Req(table) / ReqId(requestId) as _ => {
       val x = tr.getDevice(table, device, requestId)
       x.flatMap {
@@ -312,7 +223,14 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       }
     }
 
-    // To be used by devices to retrieve last status upon reboot ??? not used seems
+    /**
+      * GET /devices/<dev>/targets/last?status=<status>
+      *
+      * Retrieve the last target created with the given status (chronologically).
+      * Used for testing.
+      *
+      * Returns: OK (200) | NO_CONTENT (204)
+      */
     case a@GET -> _ / "devices" / Dev(device) / Req(table) / "last" :? StatusParam(status) as _ => {
       val x = tr.getDeviceLast(device, table, status)
       x.flatMap {
@@ -323,19 +241,36 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
 
     // Targets & Reports (at device-actor level)
 
-    // To be used by tests to push actor reports (actor by actor) creating a new ReqTran
+    /**
+      * POST /devices/<dev>/targets/actors/<actor>
+      *
+      * Create a new target for a given actor with the provided actor properties.
+      *
+      * To be used by tests to push actor reports (actor by actor) creating a new transaction.
+      *
+      * Returns: CREATED (201)
+      */
     case a@POST -> _ / "devices" / Dev(device) / Req(table) / "actors" / Act(actor) as _ => {
-      val pm = a.req.decodeJson[ActorProps]
+      val actorProps = a.req.decodeJson[ActorProps]
       val dev = for {
-        t <- time.nowUtc
-        p <- pm
-        d = Device(device, Time.asTimestamp(t), Map(actor -> p))
-      } yield (d)
+        now <- time.nowUtc
+        p <- actorProps
+        dev = Device(device, Time.asTimestamp(now), Map(actor -> p))
+      } yield (dev)
       val x = tr.postDevice(dev, table)
       Created(x.map(_.asJson), ContentTypeAppJson)
     }
 
-    // To be used by devices to push actor reports (actor by actor) to a given existent ReqTran
+    /**
+      * POST /devices/<dev>/targets/<requestid>/actors/<actor>
+      *
+      * Create a new target for a given actor with the provided actor properties.
+      *
+      * An existent request can be filled in if the request ID is provided.
+      * To be used by devices to push actor reports (actor by actor) to a given existent transaction.
+      *
+      * Returns: CREATED (201) | NOT_MODIFIED (304)
+      */
     case a@POST -> _ / "devices" / Dev(device) / Req(table) / ReqId(rid) / "actors" / Act(actor) as _ => {
       val pm = a.req.decodeJson[ActorProps]
       val x = tr.postDeviceActor(pm, device, actor, table, rid)
@@ -345,19 +280,35 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       }
     }
 
-    // To be used by devices to see the last status of a given actor (used upon restart)
+    /**
+      * GET /devices/<dev>/targets/actors/<actor>/last?status=<status>
+      *
+      * Retrieve the last target created for such actor with such status.
+      *
+      * To be used by devices to see the last status of a given actor (used upon restart).
+      *
+      * Returns: OK (200) | NO_CONTENT (204)
+      */
     case a@GET -> _ / "devices" / Dev(device) / Req(table) / "actors" / Act(actor) / "last" :? StatusParam(status) as _ => {
       val x = tr.getDeviceLast(device, table, status)
       x.flatMap { m =>
         val v = m.flatMap(_.actor(actor))
         v match {
           case Some(x) => Ok(x.asJson, ContentTypeAppJson)
-          case None =>  NoContent()
+          case None => NoContent()
         }
       }
     }
 
-    // To be used by devices to pull actor targets (actor by actor)
+    /**
+      * GET /devices/<dev>/targets/<requestid>/actors/<actor
+      *
+      * Retrieve the corresponding properties in the given request for the given actor.
+      *
+      * To be used by devices to pull actor targets (actor by actor).
+      *
+      * Returns: OK (200) | NO_CONTENT (204)
+      */
     case a@GET -> _ / "devices" / Dev(device) / Req(table) / ReqId(rid) / "actors" / Act(actor) as _ => {
       val x = tr.getDeviceActor(table, device, actor, rid)
       x.flatMap {
