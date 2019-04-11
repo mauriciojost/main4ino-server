@@ -4,10 +4,10 @@
 - Document the return type of each method of the REST API
 - Make the naming for deviceName/dev/device homogeneous: dev
 - Make the naming for actor/act/a homogeneous: act
-- Make a check on status transitions: forbid invalid transitions and document them
 
 # DONE
 
+- Make a check on status transitions: forbid invalid transitions and document them
 - Migrate HELP as documentation in Service
 - Do a check to ensure that documentation matches service v1
 - Resolve code TODOs
