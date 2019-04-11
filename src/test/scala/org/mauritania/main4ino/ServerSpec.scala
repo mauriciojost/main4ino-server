@@ -111,6 +111,12 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
     help.unsafeRunSync() should include("</body>")
   }
 
+  it should "fail if started with bad arduments" in {
+    // accepts only one argument
+    assertThrows[IllegalArgumentException](Server.main(Array()))
+    assertThrows[IllegalArgumentException](Server.main(Array("", "")))
+  }
+
   private def launchAsync(args: Array[String]): Thread = {
     val runnable = new Runnable() {
       override def run() = {

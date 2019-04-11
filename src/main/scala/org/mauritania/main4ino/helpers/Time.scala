@@ -11,7 +11,6 @@ trait Time[F[_]] {
 }
 
 object Time {
-  def asString(t: EpochSecTimestamp): String = Instant.ofEpochSecond(t).toString
   def asString(dt: ZonedDateTime): String = dt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
   def asTimestamp(dt: ZonedDateTime): EpochSecTimestamp = dt.toInstant.getEpochSecond // in seconds from epoch
 }

@@ -4,7 +4,6 @@ import cats.effect.IO
 import cats.free.Free
 import cats.implicits._
 import doobie._
-import doobie.enum.Nullability
 import doobie.free.connection.{ConnectionOp, raw}
 import doobie.implicits._
 import doobie.util.transactor.Transactor

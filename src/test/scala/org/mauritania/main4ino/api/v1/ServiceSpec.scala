@@ -15,7 +15,7 @@ import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.TimeResponse
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Device.Metadata
-import org.mauritania.main4ino.models.RicherBom._
+import org.mauritania.main4ino.models.ForTestRicherClasses._
 import org.mauritania.main4ino.models.{Device, EpochSecTimestamp}
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
 import org.mauritania.main4ino.security.{Auther, Config, User}
@@ -34,9 +34,9 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   val PrivateKey = "0123456789abcdef0123"
   val AuthConfig = Config(List(User1), PrivateKey, Salt)
   val Dev1 = Fixtures.Device1
-  val Dev2 = Fixtures.Device1.withId(Some(2L)).withDeviceName("dev2")
+  val Dev2 = Fixtures.Device1.withId(2L).withDeviceName("dev2")
   val Dev1V1 = Fixtures.Device1
-  val Dev2V1 = Dev1V1.copy(metadata = Dev1V1.metadata.copy(id = Some(2L), device = "dev2"))
+  val Dev2V1 = Dev1V1.withDeviceName("dev2").withId(2L)
 
   implicit val statusEncoder = JsonEncoding.StatusEncoder
   implicit val statusDecoder = JsonEncoding.StatusDecoder
@@ -87,7 +87,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   )(service: Service[Id], repository: Repository[Id]) = {
     (repository.insertDevice _).when(
       argThat[ReqType]("Addresses target table")(_ == t),
-      argThat[Device]("Is the expected device")(x => x.withouIdNortTimestamp() == d.withouIdNortTimestamp()),
+      argThat[Device]("Is the expected device")(x => x.withoutIdNortTimestamp() == d.withoutIdNortTimestamp()),
       argThat[EpochSecTimestamp]("Is the expected timestamp")(_ => true)
     ).returns(1L) // mock
     val body = Helper.asEntityBody(d.actors.asJson.toString)

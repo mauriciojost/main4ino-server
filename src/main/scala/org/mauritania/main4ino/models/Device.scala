@@ -18,6 +18,8 @@ case class Device(
 
   def actor(s: ActorName): Option[ActorProps] = actors.get(s)
 
+  def name: DeviceName = metadata.device
+
 }
 
 object Device {

@@ -30,7 +30,8 @@ case class Config(
 
 object Config {
 
-  def load(configFile: File): IO[Config] = Loadable.loadFromFile[IO, Config](configFile)
+  def load(configFile: File): IO[Config] =
+    Loadable.loadFromFile[IO, Config](configFile)
 
   case class UsersBy(
     byId: Map[UserId, User],
