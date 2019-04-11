@@ -22,7 +22,11 @@ class ServiceFuncSpec extends DbSuite {
 
   Sequential
 
-  def defaultService: Service[IO] = new Service(new AutherIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), new TimeIO()), new TimeIO())
+  def defaultService: Service[IO] = {
+    val t = new TimeIO()
+    new Service(new AutherIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), t), t)
+  }
+
   implicit val statusEncoder = JsonEncoding.StatusEncoder
   implicit val statusDecoder = JsonEncoding.StatusDecoder
   implicit val stringDecoder = JsonEncoding.StringDecoder
@@ -89,6 +93,26 @@ class ServiceFuncSpec extends DbSuite {
     dev1SpeakerTarget.noSpaces shouldBe Map("v" -> "0").asJson.noSpaces
 
   }
+
+  it should "create, read a target actor" in {
+
+    implicit val s = defaultService
+
+    // Add a multi-actor target
+    postExpectCreated("/devices/dev1/targets/actors/clock", """{"h":"7"}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
+
+    // Check the responses
+
+    // Ids existent for dev1 with status C (closed)
+    val dev1TargetsCount = getExpectOk("/devices/dev1/targets?ids=true&status=C")
+    dev1TargetsCount.noSpaces shouldBe IdsOnlyResponse(List(1)).asJson.noSpaces
+
+    // Retrieve one actor
+    val dev1ClockTarget = getExpectOk("/devices/dev1/targets/1/actors/clock")
+    dev1ClockTarget.noSpaces shouldBe Map("h" -> "7").asJson.noSpaces
+
+  }
+
 
   "The service from the device" should "create and read a target/report in different value formats (string, int, bool)" in {
 
