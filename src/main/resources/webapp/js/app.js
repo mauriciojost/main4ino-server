@@ -300,14 +300,14 @@ webPortalApp.controller(
 
                 var reqReports = {
                     method: 'GET',
-                    url: 'api/v1/devices/' + $scope.device + '/reports/summary?consume=false',
+                    url: 'api/v1/devices/' + $scope.device + '/reports/summary?status=C',
                     headers: {'Content-Type': 'application/json', 'Session': $scope.session},
                     data: $scope.request
                 };
 
                 var reqTargets = {
                     method: 'GET',
-                    url: 'api/v1/devices/' + $scope.device + '/targets/summary?status=C&consume=false',
+                    url: 'api/v1/devices/' + $scope.device + '/targets/summary?status=C',
                     headers: {'Content-Type': 'application/json', 'Session': $scope.session},
                     data: $scope.request
                 };
