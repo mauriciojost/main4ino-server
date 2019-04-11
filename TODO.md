@@ -6,11 +6,11 @@
 - Make the naming for deviceName/dev/device homogeneous: dev
 - Make the naming for actor/act/a homogeneous: act
 - Make a check on status transitions: forbid invalid transitions and document them
-- Resolve code TODOs
 - Migrate HELP as documentation in Service
 
 # DONE
 
+- Resolve code TODOs
 - Make tuples/actortuples/propsmap/map/etc.etc.etc. simpler
 - Render target/report and properties statuses type-safe
 - Consume done at transaction/request level, one transaction at a time, no merging of different transactions

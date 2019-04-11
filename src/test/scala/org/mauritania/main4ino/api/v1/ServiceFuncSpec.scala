@@ -94,9 +94,6 @@ class ServiceFuncSpec extends DbSuite {
 
     implicit val s = defaultService
 
-    implicit val statusEncoder = JsonEncoding.StatusEncoder
-    implicit val statusDecoder = JsonEncoding.StatusDecoder
-
     // Add a target (empty)
     postExpectCreated("/devices/dev1/targets", """{}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
 
@@ -176,9 +173,6 @@ class ServiceFuncSpec extends DbSuite {
   }
 
   private[this] def getExpectOk(path: String)(implicit service: Service[IO]): Json = {
-    implicit val a = JsonEncoding.StatusEncoder
-    implicit val b = JsonEncoding.StatusDecoder
-
     val r = get(path)
     r.status shouldBe Status.Ok
     r.as[Json].unsafeRunSync()
