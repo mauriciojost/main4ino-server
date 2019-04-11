@@ -49,7 +49,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
       getApiV1("/help")(s).status shouldBe (HttpStatus.Ok)
     }
     "return help message" in {
-      getApiV1("/help")(s).as[String](SyncId, DecoderIdString) should include("API HELP")
+      getApiV1("/help")(s).as[String](SyncId, DecoderIdString) should include("https")
     }
   }
 
