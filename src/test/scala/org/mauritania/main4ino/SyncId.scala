@@ -9,6 +9,8 @@ import org.http4s.circe._
 
 trait SyncId {
 
+  // TODO this Sync does not perform any suspend, so its use breaks referential transparency (as expressions are evaluated immediately)
+  // what could be used instead in tests to avoid the boilerplate of .runUnsafeSync calls + keep same behaviour as production code?
   implicit val SyncId = new Sync[Id] {
     // from Sync
     override def suspend[A](thunk: => Id[A]): Id[A] = thunk

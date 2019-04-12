@@ -12,6 +12,7 @@ object Loadable {
 
   import pureconfig._
 
+  // TODO is there any interest in doing this a trait over an object?
   def loadFromFile[F[_] : Sync, T: ClassTag](configFile: File)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
     val f = configFile.getAbsoluteFile
     implicitly[Sync[F]].fromEither {
