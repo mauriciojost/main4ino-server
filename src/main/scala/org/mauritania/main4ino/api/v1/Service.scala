@@ -141,8 +141,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       val am = a.req.decodeJson[DeviceProps]
       val d = for {
         a <- am
-        t <- time.nowUtc
-        de = Device(device, Time.asTimestamp(t), a)
+        de = Device(device, a)
       } yield (de)
       val x: F[Translator.IdResponse] = tr.postDevice(d, table)
       Created(x.map(_.asJson), ContentTypeAppJson)
@@ -164,7 +163,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
         val x: F[Translator.IdsOnlyResponse] = tr.getDevicesIds(device, table, from, to, st)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       } else {
-        val x: F[Iterable[DeviceV1]] = tr.getDevices(device, table, from, to, st)
+        val x: F[Iterable[DeviceId]] = tr.getDevices(device, table, from, to, st)
         Ok(x.map(_.asJson), ContentTypeAppJson)
       }
     }
@@ -182,7 +181,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       */
     case a@GET -> _ / "devices" / Dev(device) / Req(table) / "summary" :? FromParam(from) +& ToParam(to) +& StatusParam(st) as _ => {
-      val x: F[Option[DeviceV1]] = tr.getDevicesSummary(device, table, from, to, st)
+      val x: F[Option[Device]] = tr.getDevicesSummary(device, table, from, to, st)
       x.flatMap {
         case Some(v) => Ok(v.actors.asJson, ContentTypeAppJson)
         case None => NoContent()
@@ -217,7 +216,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       * Returns: OK (200) | NO_CONTENT (204)
       */
     case a@GET -> _ / "devices" / Dev(device) / Req(table) / ReqId(requestId) as _ => {
-      val x: F[Attempt[DeviceV1]] = tr.getDevice(table, device, requestId)
+      val x: F[Attempt[DeviceId]] = tr.getDevice(table, device, requestId)
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
         case Left(v) => NoContent()
@@ -233,7 +232,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       * Returns: OK (200) | NO_CONTENT (204)
       */
     case a@GET -> _ / "devices" / Dev(device) / Req(table) / "last" :? StatusParam(status) as _ => {
-      val x: F[Option[DeviceV1]] = tr.getDeviceLast(device, table, status)
+      val x: F[Option[DeviceId]] = tr.getDeviceLast(device, table, status)
       x.flatMap {
         case Some(v) => Ok(v.asJson, ContentTypeAppJson)
         case None => NoContent() // ignore message
@@ -254,9 +253,8 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     case a@POST -> _ / "devices" / Dev(device) / Req(table) / "actors" / Act(actor) as _ => {
       val actorProps = a.req.decodeJson[ActorProps]
       val dev = for {
-        now <- time.nowUtc
         p <- actorProps
-        dev = Device(device, Time.asTimestamp(now), Map(actor -> p))
+        dev = Device(device, Map(actor -> p))
       } yield (dev)
       val x: F[Translator.IdResponse] = tr.postDevice(dev, table)
       Created(x.map(_.asJson), ContentTypeAppJson)
@@ -291,9 +289,9 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       * Returns: OK (200) | NO_CONTENT (204)
       */
     case a@GET -> _ / "devices" / Dev(device) / Req(table) / "actors" / Act(actor) / "last" :? StatusParam(status) as _ => {
-      val x: F[Option[DeviceV1]] = tr.getDeviceLast(device, table, status)
+      val x: F[Option[DeviceId]] = tr.getDeviceLast(device, table, status)
       x.flatMap { m =>
-        val v = m.flatMap(_.actor(actor))
+        val v = m.flatMap(_.device.actor(actor))
         v match {
           case Some(x) => Ok(x.asJson, ContentTypeAppJson)
           case None => NoContent()

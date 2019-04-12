@@ -12,7 +12,7 @@ import org.mauritania.main4ino.Repository.{ActorTup, ActorTupIdLess, Attempt, De
 import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.ErrMsg
 import org.mauritania.main4ino.models.Device.Metadata.Status
-import org.mauritania.main4ino.models.Device.Metadata
+import org.mauritania.main4ino.models.Device.{DbId, Metadata}
 import org.mauritania.main4ino.models.Device.Metadata.Status.Status
 import org.mauritania.main4ino.models._
 
@@ -26,11 +26,11 @@ trait Repository[F[_]] {
 
   def insertDevice(table: ReqType, t: Device, ts: EpochSecTimestamp): F[RequestId]
 
-  def selectDeviceWhereRequestId(table: ReqType, dev: DeviceName, requestId: RequestId): F[Attempt[Device]]
+  def selectDeviceWhereRequestId(table: ReqType, dev: DeviceName, requestId: RequestId): F[Attempt[DeviceId]]
 
-  def selectDevicesWhereTimestampStatus(table: ReqType, device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], st: Option[Status]): F[Iterable[Device]]
+  def selectDevicesWhereTimestampStatus(table: ReqType, device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], st: Option[Status]): F[Iterable[DeviceId]]
 
-  def selectMaxDevice(table: ReqType, device: DeviceName, status: Option[Status]): F[Option[Device]]
+  def selectMaxDevice(table: ReqType, device: DeviceName, status: Option[Status]): F[Option[DeviceId]]
 
   def selectRequestIdsWhereDevice(table: ReqType, d: DeviceName): Stream[F, RequestId]
 
@@ -62,7 +62,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
   def insertDevice(table: ReqType, t: Device, ts: EpochSecTimestamp): IO[RequestId] = {
     // TODO potential optimization: do all in one single sql query
     val transaction = for {
-      deviceId <- sqlInsertMetadata(table, t.metadata)
+      deviceId <- sqlInsertMetadata(table, t.metadata, ts)
       _ <- sqlInsertActorTup(table, t.asActorTups, deviceId, ts)
     } yield (deviceId)
     transaction.transact(transactor)
@@ -71,8 +71,8 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
   def insertDeviceActor(table: ReqType, dev: DeviceName, actor: ActorName, requestId: RequestId, p: ActorProps, ts: EpochSecTimestamp): IO[Attempt[Int]] = {
     val transaction = for {
       mtd <- sqlSelectMetadataWhereRequestId(table, requestId)
-      safe = mtd.exists(m => m.device == dev)
-      transit = mtd.exists(m => m.status == Status.Open)
+      safe = mtd.exists{case (i, m) => m.device == dev}
+      transit = mtd.exists{case (i, m) => m.status == Status.Open}
       inserts: ConnectionIO[Attempt[Int]] = if (!safe)
         Free.pure[ConnectionOp, Attempt[Int]](Left.apply[ErrMsg, Int](s"Request $requestId does not relate to $dev"))
       else if (!transit)
@@ -95,8 +95,8 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
   def updateDeviceWhereRequestId(table: ReqType, dev: DeviceName, requestId: RequestId, status: Status): IO[Either[ErrMsg,Int]] = {
     val transaction = for {
       mtd <- sqlSelectMetadataWhereRequestId(table, requestId)
-      safe = mtd.exists(m => m.device == dev)
-      trans = mtd.exists(m => transitionAllowed(m.status, status))
+      safe = mtd.exists{case (i, m) => (m.device == dev)}
+      trans = mtd.exists{case (i, m) => transitionAllowed(m.status, status)}
       inserts: ConnectionIO[Attempt[Int]] = if (!safe)
         Free.pure[ConnectionOp, Attempt[Int]](Left.apply[ErrMsg, Int](s"Request $requestId does not relate to $dev"))
       else if (!trans)
@@ -109,35 +109,34 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
 
   }
 
-  def selectDeviceWhereRequestId(table: ReqType, dev: DeviceName, requestId: RequestId): IO[Attempt[Device]] = {
+  def selectDeviceWhereRequestId(table: ReqType, dev: DeviceName, requestId: RequestId): IO[Attempt[DeviceId]] = {
     val transaction = for {
       t <- sqlSelectMetadataWhereRequestId(table, requestId)
-      k = t.exists(_.device == dev)
+      k = t.exists{case (i, m) => m.device == dev}
       p <- sqlSelectActorTupWhereRequestIdActorStatus(table, requestId)
-      j = t.map(Repository.toDevice(_, p)).filter(_.metadata.device == dev).toRight(s"Request $requestId does not belong to $dev")
+      j = t.map{case (i, m) => Repository.toDevice(i, m, p)}.filter(_.metadata.device == dev).toRight(s"Request $requestId does not belong to $dev")
     } yield (j)
     transaction.transact(transactor)
   }
 
-  def selectDevicesWhereTimestampStatus(table: ReqType, device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], st: Option[Status]): IO[Iterable[Device]] = {
+  def selectDevicesWhereTimestampStatus(table: ReqType, device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], st: Option[Status]): IO[Iterable[DeviceId]] = {
     val transaction = for {
       d <- sqlSelectMetadataActorTupWhereDeviceStatus(table, device, from, to, st)
     } yield (d)
     val s = transaction.transact(transactor)
     val iol = s.compile.toList
-    iol.map(l => Device1.asDeviceHistory(l).toSeq.sortBy(_.metadata.creation))
+    iol.map(l => Device1.asDeviceHistory(l).toSeq.sortBy(_.dbId.creation))
   }
 
-  def selectMaxDevice(table: ReqType, device: DeviceName, status: Option[Status]): IO[Option[Device]] = {
+  def selectMaxDevice(table: ReqType, device: DeviceName, status: Option[Status]): IO[Option[DeviceId]] = {
     val transaction = for {
       i <- sqlSelectLastRequestIdWhereDeviceStatus(table, device, status)
-      t <- i.map(sqlSelectMetadataWhereRequestId(table, _)).getOrElse(raw[Option[Metadata]](x => None))
+      t <- i.map(sqlSelectMetadataWhereRequestId(table, _)).getOrElse(raw[Option[(DbId, Metadata)]](x => None))
       p <- i.map(sqlSelectActorTupWhereRequestIdActorStatus(table, _)).getOrElse(raw[List[ActorTup]](x => List.empty[ActorTup]))
     } yield {
       (t, p) match {
-        case (Some(m), l) => Some(Repository.toDevice(m, l))
+        case (Some((i, m)), l) => Some(Repository.toDevice(i, m, l))
         case _ => None
-
       }
     }
     transaction.transact(transactor)
@@ -154,8 +153,8 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
     Update[ActorTup](sql).updateMany(tups.toList.map(t => ActorTup(requestId, t, ts)))
   }
 
-  private def sqlInsertMetadata(table: ReqType, m: Metadata): ConnectionIO[RequestId] = {
-    (fr"INSERT INTO " ++ Fragment.const(table.code + "_requests") ++ fr" (creation, device_name, status) VALUES (${m.creation}, ${m.device}, ${m.status})")
+  private def sqlInsertMetadata(table: ReqType, m: Metadata, ts: EpochSecTimestamp): ConnectionIO[RequestId] = {
+    (fr"INSERT INTO " ++ Fragment.const(table.code + "_requests") ++ fr" (creation, device_name, status) VALUES (${ts}, ${m.device}, ${m.status})")
       .update.withUniqueGeneratedKeys[RequestId]("id")
   }
 
@@ -198,9 +197,9 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
       .query[Device1].stream
   }
 
-  private def sqlSelectMetadataWhereRequestId(table: ReqType, id: RequestId): ConnectionIO[Option[Metadata]] = {
+  private def sqlSelectMetadataWhereRequestId(table: ReqType, id: RequestId): ConnectionIO[Option[(DbId, Metadata)]] = {
     (fr"SELECT id, creation, device_name, status FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE id=$id")
-      .query[Metadata].option
+      .query[(DbId, Metadata)].option
   }
 
   private def sqlSelectLastRequestIdWhereDeviceStatus(table: ReqType, device: DeviceName, status: Option[Status]): ConnectionIO[Option[RequestId]] = {
@@ -230,7 +229,7 @@ object Repository {
 
   type Attempt[T] = Either[ErrMsg, T]
 
-  def toDevice(metadata: Metadata, ats: Iterable[ActorTup]): Device = Device(metadata, ActorTup.asActorMap(ats))
+  def toDevice(dbId: DbId, metadata: Metadata, ats: Iterable[ActorTup]): DeviceId = DeviceId(dbId, Device(metadata, ActorTup.asActorMap(ats)))
 
   /**
     * Intermediate device representation
@@ -238,19 +237,21 @@ object Repository {
     * It contains a single actor tuple. Instances of this class
     * are meant to be aggregated to create instances of [[Device]].
     *
+    * @param dbId       the database related ids (and creation timestamp)
     * @param metadata   the metadata
     * @param actorTuple the single actor tuple (if present, there may be a metadata without any property)
     */
   case class Device1(
+    dbId: DbId,
     metadata: Metadata,
     actorTuple: Option[ActorTup] // optional (if device filled up)
   )
 
   object Device1 {
 
-    def asDeviceHistory(s: Iterable[Device1]): Iterable[Device] = {
-      val g = s.groupBy(_.metadata)
-      val dh = g.map { case (md, d1s) => Device(md, ActorTup.asActorMap(d1s.flatMap(_.actorTuple))) }
+    def asDeviceHistory(s: Iterable[Device1]): Iterable[DeviceId] = {
+      val g = s.groupBy(_.dbId)
+      val dh = g.map { case (id, d1s) => DeviceId(id, Device(d1s.head.metadata, ActorTup.asActorMap(d1s.flatMap(_.actorTuple)))) }
       dh
     }
 

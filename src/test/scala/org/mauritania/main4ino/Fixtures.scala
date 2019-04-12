@@ -1,13 +1,14 @@
 package org.mauritania.main4ino
 
-import org.mauritania.main4ino.models.Device
-import org.mauritania.main4ino.models.Device.Metadata
+import org.mauritania.main4ino.models.{Device, DeviceId}
+import org.mauritania.main4ino.models.Device.{DbId, Metadata}
 import org.mauritania.main4ino.security.{Fixtures => FixturesSecurity}
 
 object Fixtures {
 
+  val DbId1 = DbId(1, 0L)
   val Device1 = Device(
-    Metadata(None, Some(0L), "dev1", Metadata.Status.Closed),
+    Metadata("dev1", Metadata.Status.Closed),
     Map(
       "actorx" ->
         Map(
@@ -22,6 +23,8 @@ object Fixtures {
         )
     )
   )
+
+  val DeviceId1 = DeviceId(DbId1, Device1)
 
   val User1 = FixturesSecurity.User1
   val User1Pass = FixturesSecurity.User1Pass

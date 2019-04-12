@@ -12,9 +12,9 @@ import io.circe.generic.auto._
 import io.circe.syntax._
 import io.circe._
 import io.circe.parser._
-import org.mauritania.main4ino.api.v1.{DeviceV1, JsonEncoding}
+import org.mauritania.main4ino.api.v1.JsonEncoding
 import org.mauritania.main4ino.api.Translator.IdResponse
-import org.mauritania.main4ino.models.RequestId
+import org.mauritania.main4ino.models.{DeviceId, RequestId}
 
 class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
@@ -57,13 +57,13 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     // check that dev1 exists
     val dev1t0 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
-    jsonAs[DeviceV1](dev1t0.unsafeRunSync()).metadata.id shouldBe Some(id1)
+    jsonAs[DeviceId](dev1t0.unsafeRunSync()).dbId.id shouldBe id1
 
     Thread.sleep(2000)
 
     // check that dev1 still exists
     val dev1t2 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
-    jsonAs[DeviceV1](dev1t2.unsafeRunSync()).metadata.id shouldBe Some(id1)
+    jsonAs[DeviceId](dev1t2.unsafeRunSync()).dbId.id shouldBe (id1)
 
     // inject dev2
     val dev2ResponseJson = httpClient.expect[String](devPostRequest("dev2", "targets"))
@@ -71,7 +71,7 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     // check that dev2 exists
     val dev2t2 = httpClient.expect[String](devGetRequest("dev2", "targets", id2))
-    jsonAs[DeviceV1](dev2t2.unsafeRunSync()).metadata.id shouldBe Some(id2)
+    jsonAs[DeviceId](dev2t2.unsafeRunSync()).dbId.id shouldBe (id2)
 
     Thread.sleep(3000)
     // cleanup every 5s
@@ -79,11 +79,11 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
     // check that dev2 exists
     val dev2t6 = httpClient.expect[String](devGetRequest("dev2", "targets", id2))
-    jsonAs[DeviceV1](dev2t6.unsafeRunSync()).metadata.id shouldBe Some(id2)
+    jsonAs[DeviceId](dev2t6.unsafeRunSync()).dbId.id shouldBe (id2)
 
     // check that dev1 does not exist anymore (cleaned up)
     val dev1t6 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
-    jsonAs[DeviceV1](dev1t6.unsafeRunSync()).metadata.id shouldBe Some(id1)
+    jsonAs[DeviceId](dev1t6.unsafeRunSync()).dbId.id shouldBe (id1)
 
   }
 

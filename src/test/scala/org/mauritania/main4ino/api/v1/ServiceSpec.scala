@@ -34,8 +34,9 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   val PrivateKey = "0123456789abcdef0123"
   val AuthConfig = Config(List(User1), PrivateKey, Salt)
   val Dev1 = Fixtures.Device1
-  val Dev2 = Fixtures.Device1.withId(2L).withDeviceName("dev2")
-  val Dev1V1 = Fixtures.Device1
+  val DevId1 = Fixtures.DeviceId1
+  val DevId2 = Fixtures.DeviceId1.withId(2L).withDeviceName("dev2")
+  val Dev1V1 = Fixtures.DeviceId1
   val Dev2V1 = Dev1V1.withDeviceName("dev2").withId(2L)
 
   implicit val statusEncoder = JsonEncoding.StatusEncoder
@@ -67,7 +68,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     val s = defaultService(r, t)
     "return 201 with empty properties" in {
       (t.nowUtc _).when().returns(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)).anyNumberOfTimes() // mock
-      val d = Device(Metadata(None, None, "dev1", Metadata.Status.Closed))
+      val d = Device(Metadata("dev1", Metadata.Status.Closed))
       createADeviceAndExpect(ReqType.Reports, d)(HttpStatus.Created)(s, r)
       createADeviceAndExpect(ReqType.Targets, d)(HttpStatus.Created)(s, r)
     }
@@ -87,7 +88,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
   )(service: Service[Id], repository: Repository[Id]) = {
     (repository.insertDevice _).when(
       argThat[ReqType]("Addresses target table")(_ == t),
-      argThat[Device]("Is the expected device")(x => x.withoutIdNortTimestamp() == d.withoutIdNortTimestamp()),
+      argThat[Device]("Is the expected device")(_ => true),
       argThat[EpochSecTimestamp]("Is the expected timestamp")(_ => true)
     ).returns(1L) // mock
     val body = Helper.asEntityBody(d.actors.asJson.toString)
@@ -100,8 +101,8 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     val t = stub[Time[Id]]
     val s = defaultService(r, t)
     "return 200 with an existent target/request when reading target/report requests" in {
-      (r.selectDeviceWhereRequestId _).when(ReqType.Targets, Dev1.metadata.device, 1L).returns(Right(Dev1)).once // mock
-      (r.selectDeviceWhereRequestId _).when(ReqType.Reports, Dev1.metadata.device, 1L).returns(Right(Dev1)).once() // mock
+      (r.selectDeviceWhereRequestId _).when(ReqType.Targets, Dev1.metadata.device, 1L).returns(Right(DevId1)).once // mock
+      (r.selectDeviceWhereRequestId _).when(ReqType.Reports, Dev1.metadata.device, 1L).returns(Right(DevId1)).once() // mock
       val ta = getApiV1("/devices/dev1/targets/1")(s)
       ta.status shouldBe (HttpStatus.Ok)
       ta.as[Json](SyncId, DecoderIdJson) shouldBe (Dev1V1.asJson)
@@ -117,7 +118,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with SyncId {
     val t = stub[Time[Id]]
     val s = defaultService(r, t)
     "return 200 with a list of existent targets when reading all targets request" in {
-      (r.selectDevicesWhereTimestampStatus _).when(ReqType.Targets, "dev1", None, None, None).returns(Iterable(Dev1, Dev2)).once // mock
+      (r.selectDevicesWhereTimestampStatus _).when(ReqType.Targets, "dev1", None, None, None).returns(Iterable(DevId1, DevId2)).once // mock
 
       val ta = getApiV1("/devices/dev1/targets")(s)
       ta.status shouldBe (HttpStatus.Ok)
