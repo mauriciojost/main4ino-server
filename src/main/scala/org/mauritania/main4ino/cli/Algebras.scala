@@ -19,8 +19,9 @@ object Algebras {
       User(u.name, hashed, u.email, u.granted)
     }
 
-    def performAction(c: Config, a: CliAction): F[Config]
-    def asString(c: Config): F[String]
+   // No F[_] returned as they are not meant to have side effects
+    def performAction(c: Config, a: CliAction): Config
+    def asString(c: Config): String
   }
 
 }

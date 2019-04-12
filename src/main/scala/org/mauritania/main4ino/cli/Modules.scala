@@ -25,20 +25,18 @@ object Modules {
 
   class ConfigsAppErr[F[_]: Monad](implicit A: ApplicativeError[F, Throwable]) extends Configs[F] {
 
-    def performAction(c: Config, action: CliAction): F[Config] = {
-      A.pure {
-        action match {
-          case rus : Actions.AddRawUsers => {
-            val nUsers: List[User] = rus.users.map(u => user(c, u))
-            val nConf = c.copy(users = nUsers ++ c.users)
-            nConf
-          }
-          case _ => c
+    def performAction(c: Config, action: CliAction): Config = {
+      action match {
+        case rus : Actions.AddRawUsers => {
+          val nUsers: List[User] = rus.users.map(u => user(c, u))
+          val nConf = c.copy(users = nUsers ++ c.users)
+          nConf
         }
+        case _ => c
       }
     }
 
-    def asString(c: Config): F[String] = A.pure(c.asJson.noSpaces)
+    def asString(c: Config): String = c.asJson.noSpaces
   }
 
   class FilesystemSync[F[_]](implicit S: Sync[F]) extends Filesystem[F]  {

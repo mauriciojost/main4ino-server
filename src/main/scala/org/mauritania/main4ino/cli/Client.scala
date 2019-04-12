@@ -25,8 +25,8 @@ object Client {
       conf <- Loadable.loadFromFile[F, Config](input.toFile)
        // TODO support other actions too
       user <- Loadable.loadFromFile[F, AddRawUsers](modif.toFile)
-      newConf <- O.performAction(conf, user)
-      newConfStr <- O.asString(newConf)
+      newConf = O.performAction(conf, user)
+      newConfStr = O.asString(newConf)
       _ <- S.writeFile(output, newConfStr)
     } yield ()
   }
