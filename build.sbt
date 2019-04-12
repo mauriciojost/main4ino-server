@@ -1,3 +1,4 @@
+val ScalaVersion = "2.12.8"
 val Http4sVersion = "0.18.14"
 val Specs2Version = "4.2.0"
 val LogbackVersion = "1.2.3"
@@ -18,7 +19,7 @@ lazy val root = (project in file("."))
     organization := "org.mauritania",
     name := "botinobe",
     version := "0.1.0-SNAPSHOT",
-    scalaVersion := "2.12.6",
+    scalaVersion := ScalaVersion,
     scalacOptions ++= Seq("-Ypartial-unification"),
     libraryDependencies ++= Seq(
       "org.reactormonk" %% "cryptobits" % CryptobitsVersion,
