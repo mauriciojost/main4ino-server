@@ -7,7 +7,9 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers, Sequential}
 class ServiceFuncSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
 
   // TODO this test is high level (hits REST API via real http)
-  // what kind of tests should go here? what kind of tests should go in
+  // what kind of tests should go here?
+  // what kind of tests should go at a deeper level (without REST)?
+  // when to stop caring about test coverage?
   Sequential
 
   "The service" should "read existent index.html" in {
