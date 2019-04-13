@@ -17,6 +17,10 @@ import org.mauritania.main4ino.security.AutherIO
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 
+// If I replaced the below F=IO by some other Sync that does NOT delay the execution of side effects,
+// my program would stop having the property of referential transparency, correct? (side-effect expressions are evaluated
+// immediately without waiting for the end of the world).
+// What other Monad other than IO would it make sense to use here?
 object Server extends StreamApp[IO] {
   final val DefaultConfigDir = "."
 
@@ -34,6 +38,7 @@ object Server extends StreamApp[IO] {
       auth = new AutherIO(configUsers)
       repo = new RepositoryIO(transactor)
       time = new TimeIO()
+      // Periodic execution of tasks (like cleanup of old records from DB as in here)
       cleanupRepoTask = for {
         logger <- Slf4jLogger.fromClass[IO](Server.getClass)
         now <- time.nowUtc
