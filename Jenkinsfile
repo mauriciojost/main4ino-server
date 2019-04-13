@@ -26,6 +26,7 @@ pipeline {
         step([$class: 'ScoveragePublisher', reportDir: 'target/scala-2.12/scoverage-report', reportFile: 'scoverage.xml'])
       }
     }
+    // Automatic app (per phase) deployment (what tool to use, when to deploy, how to control deployment, etc.)
   }
   post {  
     failure {  

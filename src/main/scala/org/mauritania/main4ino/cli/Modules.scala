@@ -23,6 +23,7 @@ import pureconfig.generic.auto._
 
 object Modules {
 
+  // Overall pass over this implementation and review
   class ConfigsAppErr[F[_]: Monad](implicit A: ApplicativeError[F, Throwable]) extends Configs[F] {
 
     def performAction(c: Config, action: CliAction): Config = {

@@ -29,6 +29,8 @@ object Device {
   /**
     * It represents a request that relates to a specific device
     */
+  // Handling of record IDs in DB (not present at record insertion, but present at record retrieval)
+  // I've done some composition to get rid of it, but not sure it's the best way (API for insertion handles different types than API for retrieval).
   case class Metadata(
     id: Option[RequestId],
     creation: Option[EpochSecTimestamp],
