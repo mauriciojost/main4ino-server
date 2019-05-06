@@ -206,6 +206,15 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       }
     }
 
+    // TODO DEPRECATED, to be removed (and adapt arduino part consequently)
+    case a@POST -> _ / "devices" / Dev(device) / Req(table) / ReqId(requestId) :? StatusParam(st) as _ => {
+      val x: F[Attempt[Translator.CountResponse]] = tr.updateDeviceStatus(table, device, requestId, st.getOrElse(Status.Closed))
+      x.flatMap {
+        case Right(v) => Ok(v.asJson, ContentTypeAppJson)
+        case Left(_) => NotModified()
+      }
+    }
+
     /**
       * GET /devices/<dev>/targets/<request_id>
       *
