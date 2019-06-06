@@ -4,10 +4,10 @@
 
 set -e -x
 
-curr_dir=$(readlink -e `dirname $0`/..)
+root_dir=$(readlink -e `dirname $0`/../..)
 config_dir=`readlink -e $1`
 
-cd $curr_dir
+cd $root_dir
 sbt "runMain org.mauritania.main4ino.Server $config_dir" 
 
 

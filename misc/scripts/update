@@ -4,9 +4,9 @@
 
 set -e -x
 
-curr_dir=$(readlink -e `dirname $0`/..)
+root_dir=$(readlink -e `dirname $0`/../..)
 
-cd $curr_dir
+cd $root_dir
 git reset --hard HEAD~200
 git pull origin master
 git log | head -20
