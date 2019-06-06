@@ -153,7 +153,9 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       * Retrieve the list of the targets that where created in between the time range
       * provided (timestamp in [ms] since the epoch) and with the given status.
       * It is possible to retrieve only the record ids via boolean <idsonly>.
+      *
       * To be used by web ui to retrieve history of transactions in a given time period with a given status.
+      * To be used by the devices to retrieve pull ids (ids of targets/reports with a given status).
       *
       * Returns: OK (200)
       */
@@ -175,6 +177,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * The summarized target is generated only using properties that have the given status.
       * The flag consume tells if the status of the matching properties should be changed from C (created) to X (consumed).
+      *
       * To be used by web ui to retrieve summary of transactions in a given time period with a given status.
       *
       * Returns: OK (200) | NO_CONTENT (204)

@@ -65,8 +65,8 @@ object Device {
       sealed abstract class Status(val code: String)
 
       // Natural progression: O -> C -> X
-      case object Open extends Status("O") // modifications can be done on it (add properties)
-      case object Closed extends Status("C") // modifications cannot be done on it anymore
+      case object Open extends Status("O") // just created, modifications can be done on it (like adding properties)
+      case object Closed extends Status("C") // modifications cannot be done on it anymore, waiting for consumption
       case object Consumed extends Status("X") // it has been already consumed (no modifications can be done on it)
 
       case object Unknown extends Status("?") // status not defined
