@@ -31,6 +31,16 @@ The corresponding REST API is [here](/src/main/scala/org/mauritania/main4ino/api
 
 ## Run
 
+### CLI
+
+The cli allows to create the configuration files for the server.
+
+```
+sbt "runMain org.mauritania.main4ino.cli.Client input.conf add.conf output.conf"
+```
+
+### Server
+
 Run the server to let it be accessible by your devices:
 
 ```
