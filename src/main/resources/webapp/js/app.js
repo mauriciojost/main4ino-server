@@ -225,7 +225,7 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     'SummaryController',
-        function($scope, $http, $log, $location) {
+        function($scope, $http, $log, $location, $window) {
 
             $scope.session = getCookie("session");
             $scope.device = $location.search().device || getCookie("device");
@@ -237,7 +237,7 @@ webPortalApp.controller(
             $scope.propLegends = [];
 
             $log.log('Initialize property legends');
-            $.get('/conf/proplegends.json', function(data) {
+            $.get(window.location.pathname + 'conf/proplegends.json', function(data) {
                 for(var i in data) {
                     var o = data[i];
                     var legend = {
