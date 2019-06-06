@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# Launch me from root-directory
+
+set -e -x
+
+config_dir=$1
+
+sbt "runMain org.mauritania.main4ino.Server $config_dir" 
+
+
