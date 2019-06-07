@@ -47,7 +47,7 @@ object Server extends StreamApp[IO] {
       _ <- Stream.eval(Scheduler.periodicIO(cleanupRepoTask, cleanupPeriodSecs))
       exitCodeServer <- BlazeBuilder[IO]
         .bindHttp(configApp.server.port, configApp.server.host)
-        .mountService(new webapp.Service().service, "/")
+        .mountService(new webapp.Service("/webapp/index.html").service, "/")
         .mountService(new v1.Service(auth, new Translator(repo, time), time).serviceWithAuthentication, "/api/v1")
         .serve
 

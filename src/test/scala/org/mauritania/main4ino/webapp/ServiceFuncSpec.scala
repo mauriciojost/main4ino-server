@@ -9,17 +9,21 @@ class ServiceFuncSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
   Sequential
 
   "The service" should "read existent index.html" in {
-    val indexHtml = getExpectOk("/index.html")(new Service())
+    val indexHtml = getExpectOk("/index.html")(new Service("/webapp/index.html"))
     indexHtml should include("</body>")
   }
 
   it should "read existent index.html (from root)" in {
-    val root = getExpectOk("/")(new Service())
+    val root = getExpectOk("/")(new Service("/webapp/index.html"))
     root should include("</body>") // index.html
   }
 
+  it should "fail to read non-existent index.html (from root)" in {
+    get("/")(new Service("/somewhere/index.html")).status shouldBe Status.InternalServerError
+  }
+
   it should "read existent app.js" in {
-    val appJs = getExpectOk("/js/app.js")(new Service())
+    val appJs = getExpectOk("/js/app.js")(new Service("/webapp/index.html"))
     appJs should include("=") // app.js
   }
 
