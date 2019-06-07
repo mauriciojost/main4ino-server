@@ -383,7 +383,7 @@ webPortalApp.controller(
                 jsn[propName] = propValue;
                 var req = {
                     method: 'POST',
-                    url: '/api/v1/devices/' + device + '/actors/' + actor + '/targets',
+                    url: '/api/v1/devices/' + device + '/targets/actors/' + actor,
                     headers: {'Content-Type': 'application/json', 'Session': $scope.session},
                     data: JSON.stringify(jsn)
                 };
