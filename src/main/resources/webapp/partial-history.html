@@ -49,12 +49,12 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <tr ng-repeat="device in result track by $index">
-                            <td>{{ device.metadata.id }}</td>
-                            <td>{{ device.metadata.timestamp * 1000 | date:'yyyy-MM-dd HH:mm:ss Z' }}</td>
-                            <td>{{ device.metadata.device }}</td>
+                        <tr ng-repeat="i in result track by $index">
+                            <td>{{ i.dbId.id }}</td>
+                            <td>{{ i.dbId.creation * 1000 | date:'yyyy-MM-dd HH:mm:ss Z' }}</td>
+                            <td>{{ i.device.metadata.device }}</td>
                             <td>
-                                <table ng-repeat="(actor, props) in device.actors track by $index"
+                                <table ng-repeat="(actor, props) in i.device.actors track by $index"
                                        class="table table-bordered">
                                     <tbody>
                                     <tr ng-repeat="(pname, pvalue) in props track by $index">
