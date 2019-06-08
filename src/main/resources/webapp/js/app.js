@@ -225,7 +225,7 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     'SummaryController',
-        function($scope, $http, $log, $location, $window) {
+        function($scope, $http, $log, $location) {
 
             $scope.session = getCookie("session");
             $scope.device = $location.search().device || getCookie("device");
@@ -237,7 +237,7 @@ webPortalApp.controller(
             $scope.propLegends = [];
 
             $log.log('Initialize property legends');
-            $.get(window.location.pathname + 'conf/proplegends.json', function(data) {
+            $.get('conf/proplegends.json', function(data) {
                 for(var i in data) {
                     var o = data[i];
                     var legend = {
@@ -383,7 +383,7 @@ webPortalApp.controller(
                 jsn[propName] = propValue;
                 var req = {
                     method: 'POST',
-                    url: '/api/v1/devices/' + device + '/targets/actors/' + actor,
+                    url: 'api/v1/devices/' + device + '/targets/actors/' + actor,
                     headers: {'Content-Type': 'application/json', 'Session': $scope.session},
                     data: JSON.stringify(jsn)
                 };
