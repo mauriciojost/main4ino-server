@@ -54,7 +54,7 @@ class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends 
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       updates <- repository.updateDeviceWhereRequestId(table, device, requestId, status)
       count = updates.map(CountResponse)
-      _ <- logger.debug(s"Update device $device into table $table: $count")
+      _ <- logger.debug(s"Update device $device into table $table id $requestId to $status: count $count")
     } yield (count)
   }
 
@@ -65,7 +65,7 @@ class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends 
       props <- ap
       inserts <- repository.insertDeviceActor(table, dev, act, id, props, Time.asTimestamp(timeUtc))
       count = inserts.map(CountResponse)
-      _ <- logger.debug(s"POST device $dev (actor $act) into table $table: $props / $count")
+      _ <- logger.debug(s"POST device $dev (actor $act) into table $table id $id: $props / $count")
     } yield (count)
   }
 
@@ -73,7 +73,7 @@ class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends 
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       device <- repository.selectMaxDevice(table, dev, status)
-      _ <- logger.debug(s"GET last device $dev from table $table: $device")
+      _ <- logger.debug(s"GET last device $dev from table $table with status $status: $device")
     } yield (device)
   }
 
