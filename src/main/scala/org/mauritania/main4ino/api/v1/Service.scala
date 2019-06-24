@@ -61,6 +61,8 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     /**
       * GET /time?timezone=<tz>
       *
+      * Example: GET /time?timezone=UTC
+      *
       * Return the ISO-local-time formatted time at a given timezone.
       *
       * Examples of valid timezones: UTC, Europe/Paris, ...
@@ -111,6 +113,8 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     /**
       * DELETE /administrator/devices/<dev>/targets/
       *
+      * Example: DELETE /administrator/devices/dev1/targets/
+      *
       * Delete all targets for the given device.
       * To use with extreme care.
       * To be used by administrator on a web ui to fully remove records for a given device table.
@@ -126,6 +130,8 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
 
     /**
       * POST /devices/<dev>/targets/
+      *
+      * Example: POST /devices/dev1/targets/
       *
       * Create a target, get the request ID.
       *
@@ -150,8 +156,10 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     /**
       * GET /devices/<dev>/targets?from=<timestamp>&to=<timestamp>&status=<status>&ids=<idsonly>
       *
+      * Example: GET /devices/dev1/targets?from=1535790000&to=1535790099&status=C&ids=true
+      *
       * Retrieve the list of the targets that where created in between the time range
-      * provided (timestamp in [ms] since the epoch) and with the given status.
+      * provided (timestamp in [sec] since the epoch) and with the given status.
       * It is possible to retrieve only the record ids via boolean <idsonly>.
       *
       * To be used by web ui to retrieve history of transactions in a given time period with a given status.
@@ -171,7 +179,9 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     }
 
     /**
-      * GET /devices/<dev>/targets/summary?from=<timestamp>&to=<timestamp>&status=<status>
+      * GET /devices/<dev>/targets/summary?from=1535790000&to=1535790099&status=C
+      *
+      * Example: GET /devices/dev1/targets/summary?from=<timestamp>&to=<timestamp>&status=<status>
       *
       * Retrieve the list of the targets summarized for the device (most recent actor-prop value wins).
       *
@@ -194,6 +204,8 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     /**
       *
       * PUT /devices/<dev>/targets/<request_id>
+      *
+      * Example: PUT /devices/dev1/targets/1000
       *
       * Update the target given the device and the request ID.
       *
@@ -221,6 +233,8 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     /**
       * GET /devices/<dev>/targets/<request_id>
       *
+      * Example: GET /devices/dev1/targets/1000
+      *
       * Retrieve a target by its request ID.
       *
       * Useful mainly for testing purposes.
@@ -237,6 +251,8 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
 
     /**
       * GET /devices/<dev>/targets/last?status=<status>
+      *
+      * Example: GET /devices/dev1/targets/last?status=C
       *
       * Retrieve the last target created with the given status (chronologically).
       * Used for testing.
@@ -255,6 +271,8 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
 
     /**
       * POST /devices/<dev>/targets/actors/<actor>
+      *
+      * Example: POST /devices/dev1/targets/actors/clock
       *
       * Create a new target for a given actor with the provided actor properties.
       *
@@ -275,6 +293,8 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     /**
       * POST /devices/<dev>/targets/<requestid>/actors/<actor>
       *
+      * Example: POST /devices/dev1/targets/1000/actors/clock
+      *
       * Create a new target for a given actor with the provided actor properties.
       *
       * An existent request can be filled in if the request ID is provided.
@@ -294,9 +314,11 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     /**
       * GET /devices/<dev>/targets/actors/<actor>/last?status=<status>
       *
+      * Example: GET /devices/dev1/targets/actors/clock/last?status=C
+      *
       * Retrieve the last target created for such actor with such status.
       *
-      * To be used by devices to see the last status of a given actor (used upon restart).
+      * To be used by devices to see the last status of a given actor (status = C, used upon restart).
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
@@ -312,7 +334,9 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     }
 
     /**
-      * GET /devices/<dev>/targets/<requestid>/actors/<actor
+      * GET /devices/<dev>/targets/<requestid>/actors/<actor>
+      *
+      * Example: GET /devices/dev1/targets/1000/actors/clock
       *
       * Retrieve the corresponding properties in the given request for the given actor.
       *
