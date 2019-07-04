@@ -361,12 +361,12 @@ webPortalApp.controller(
 
                 BootstrapDialog.show({
                     title: 'Change ' + actor + '.' + propName,
-                    message: 'Change property value to: <input type="text" class="form-control" placeholder="new value" value="' + propValue + '">',
+                    message: 'Change property value to: <p><div><textarea class="minitext">' + propValue + '</textarea></div><p>',
                     buttons: [{
                         label: 'Change',
                         hotkey: 13, // enter
                         action: function(dialog) {
-                           var v = dialog.getModalBody().find('input').val();
+                           var v = dialog.getModalBody().find('textarea').val();
                            $scope.change(device, actor, propName, v);
                            $log.log('Changed to: ' + v);
                            dialog.close();
