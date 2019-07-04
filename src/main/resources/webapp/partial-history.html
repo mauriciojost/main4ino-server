@@ -36,7 +36,7 @@
     <div class="panel panel-info">
         <div class="panel-heading">
             <container>
-                <h3>3. Observe result</h3>
+                <h3>3. Observe result for {{ queriedDevice }}</h3>
                 <br/>
                 <div>
                     <table class="table table-striped table-bordered">
@@ -44,16 +44,14 @@
                         <tr>
                             <th>ID</th>
                             <th>Timestamp</th>
-                            <th>Device</th>
                             <th>Actor / Property / Value</th>
                         </tr>
                         </thead>
                         <tbody>
                         <tr ng-repeat="i in result track by $index">
-                            <td>{{ i.dbId.id }}</td>
-                            <td>{{ i.dbId.creation * 1000 | date:'yyyy-MM-dd HH:mm:ss Z' }}</td>
-                            <td>{{ i.device.metadata.device }}</td>
-                            <td>
+                            <td class="col-md-3">{{ i.dbId.id }}</td>
+                            <td class="col-md-3">{{ i.dbId.creation * 1000 | date:'yyyy-MM-dd HH:mm:ss Z' }}</td>
+                            <td class="col-md-3">
                                 <table ng-repeat="(actor, props) in i.device.actors track by $index"
                                        class="table table-bordered">
                                     <tbody>
