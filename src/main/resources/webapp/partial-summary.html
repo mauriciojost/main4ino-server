@@ -41,7 +41,7 @@
                     <table class="table table-striped table-bordered">
                         <thead>
                         <tr>
-                            <th style="width: 90%">Actors of {{ queriedDevice }}</th>
+                            <th>Actors of {{ queriedDevice }}</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -51,10 +51,10 @@
                                        class="table table-bordered">
                                     <thead>
                                     <tr>
-                                        <th style="width: 10%">{{ actorRep }} / Property</th>
-                                        <th style="width: 40%">Description</th>
-                                        <th style="width: 30%">Value</th>
-                                        <th style="width: 30%">Target</th>
+                                        <th>{{ actorRep }} / Property</th>
+                                        <th>Description</th>
+                                        <th>Value</th>
+                                        <th>Target</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -71,7 +71,7 @@
                                             <p>
                                             <form role="form">
 
-                                                <div  class="input-group">
+                                                <div class="input-group">
                                                     <input type="text" class="form-control"
                                                            ng-model="targetsSummaryUserInput[actorRep][propNameRep]"
                                                            readonly>
