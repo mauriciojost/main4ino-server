@@ -5,3 +5,5 @@
 /db.mv.db
 /db.trace.db
 /app.log
+/.ivy2/
+/.sbt/
