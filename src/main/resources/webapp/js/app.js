@@ -356,6 +356,7 @@ webPortalApp.controller(
                     message: 'Change property value to: <input type="text" class="form-control" placeholder="new value" value="' + propValue + '">',
                     buttons: [{
                         label: 'Change',
+                        hotkey: 13, // enter
                         action: function(dialog) {
                            var v = dialog.getModalBody().find('input').val();
                            $scope.change(device, actor, propName, v);
