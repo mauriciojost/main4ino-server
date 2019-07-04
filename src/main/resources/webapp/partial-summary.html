@@ -55,6 +55,7 @@
                                         <th>Description</th>
                                         <th>Value</th>
                                         <th>Target</th>
+                                        <th>Set</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -65,12 +66,12 @@
                                                 <p ng-bind-html="propDescriptions(actorRep, propNameRep)"></p>
                                             </div>
                                         </td>
-                                        <td><div style="overflow:auto; text-overflow:ellipsis;">{{ propValueRep }}</div></td>
+                                        <td><div>{{ propValueRep }}</div></td>
                                         <td>
                                             <p class="text-warning">{{ targetsSummary[actorRep][propNameRep] }}</p>
-                                            <p>
+                                        </td>
+                                        <td style="text-overflow:string;overflow-x:visible;overflow:visible;">
                                             <form role="form">
-
                                                 <div class="input-group">
                                                     <input type="text" class="form-control"
                                                            ng-model="targetsSummaryUserInput[actorRep][propNameRep]"
