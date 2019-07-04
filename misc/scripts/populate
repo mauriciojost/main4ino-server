@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+# Launch me from root-directory
+
+set -e -x
+
+USER_PASSWORD="admin:password"
+SERVER_ADDRESS="localhost:8080"
+DEV_NAME=device1
+ACTOR1=actor1
+ACTOR2=actor2
+BODY_REPORT='{"actor1":{"p1":"v1", "p2":"v2"}, "actor2":{"p1":"vdddddddddddddddddddddddafdsas asdfadddddddddddddddddddddddddddddddd1", "p2":"v2"}}'
+BODY_TARGET='{"p1":"v1b"}'
+
+cd $root_dir
+
+curl -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/reports" -d "$BODY_REPORT"
+
+curl -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/targets/actors/$ACTOR1" -d "$BODY_TARGET"
+
+
