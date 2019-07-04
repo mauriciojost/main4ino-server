@@ -117,17 +117,17 @@ webPortalApp.controller(
 
             $scope.goHome = function() {
               $log.log('Going home');
-              $state.go('home', {device: $scope.device, session: $scope.session})
+              $state.go('home', {session: $scope.session})
             }
 
             $scope.goHistory = function() {
               $log.log('Going to history');
-              $state.go('history', {device: $scope.device, session: $scope.session})
+              $state.go('history', {session: $scope.session})
             }
 
             $scope.goSummary = function() {
               $log.log('Going to summary');
-              $state.go('summary', {device: $scope.device, session: $scope.session})
+              $state.go('summary', {session: $scope.session})
             }
 
             $scope.loginUsingSession();
