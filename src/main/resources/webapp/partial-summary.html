@@ -38,7 +38,7 @@
                 <h3>3. Observe result for {{ queriedDevice }}</h3>
                 <br/>
                 <div>
-                    <table class="table table-striped table-bordered">
+                    <table class="table table-striped table-bordered myTable">
                         <thead>
                         <tr>
                             <th>Actors of {{ queriedDevice }}</th>
@@ -48,7 +48,7 @@
                         <tr>
                             <td>
                                 <table ng-repeat="(actorRep, propsRep) in reportsSummary track by $index"
-                                       class="table table-bordered">
+                                       class="table table-bordered myTable">
                                     <thead>
                                     <tr>
                                         <th>{{ actorRep }} / Property</th>
@@ -65,7 +65,7 @@
                                                 <p ng-bind-html="propDescriptions(actorRep, propNameRep)"></p>
                                             </div>
                                         </td>
-                                        <td>{{ propValueRep }}</td>
+                                        <td><div style="overflow:auto; text-overflow:ellipsis;">{{ propValueRep }}</div></td>
                                         <td>
                                             <p class="text-warning">{{ targetsSummary[actorRep][propNameRep] }}</p>
                                             <p>

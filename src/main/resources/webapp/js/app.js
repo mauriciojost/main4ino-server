@@ -360,6 +360,7 @@ webPortalApp.controller(
                 $log.log('Request to change ' + device + ' ' + actor + ' ' + propName + ' ' + propValue);
 
                 BootstrapDialog.show({
+                    cssClass: 'dialog-vertical-center',
                     title: 'Change ' + actor + '.' + propName,
                     message: 'Change property value to: <p><div><textarea class="minitext">' + propValue + '</textarea></div><p>',
                     buttons: [{
