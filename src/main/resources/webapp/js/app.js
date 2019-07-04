@@ -58,8 +58,8 @@ webPortalApp.controller(
     'HomeController',
         function($scope, $http, $log, $location, $state) {
 
-            $scope.device = $location.search().device || getCookie("device");
             $scope.logged = null;
+            $scope.device = getCookie("device");
 
             $scope.loginUsingSession = function() {
               $log.log('Login with session');
@@ -130,8 +130,6 @@ webPortalApp.controller(
               $state.go('summary', {device: $scope.device, session: $scope.session})
             }
 
-            $log.log('Device: ' + $scope.device);
-
             $scope.loginUsingSession();
 
         }
@@ -142,7 +140,9 @@ webPortalApp.controller(
         function($scope, $http, $log, $location) {
 
             $scope.session = getCookie("session");
-            $scope.device = $location.search().device || getCookie("device");
+            $scope.device = getCookie("device");
+
+            $scope.queriedDevice = '...';
 
             $scope.tabl = 'reports'; // table to get records from
             $scope.from = -0.5; // in days, lower-bound to filter history records
@@ -180,6 +180,10 @@ webPortalApp.controller(
 
 
             $scope.search = function() {
+
+                setCookie("device", $scope.device, 100);
+                $scope.queriedDevice = $scope.device + " (in progress)";
+
                 $log.log('Searching device ' + $scope.device + ' in ' + $scope.tabl);
                 var date = new Date();
 
@@ -203,11 +207,13 @@ webPortalApp.controller(
                 $http(req).success(
                     function(data) {
                         $log.log('Found: ' + JSON.stringify(data));
+                        $scope.queriedDevice = $scope.device;
                         $scope.result = data;
                     }
                 ).error(
                     function(data) {
                         $log.log('Problem requesting: ' + JSON.stringify(data));
+                        $scope.queriedDevice = 'Failed query for ' + $scope.device;
                         $scope.result = '[]'
                         BootstrapDialog.show({
                             title: 'Error',
@@ -230,7 +236,7 @@ webPortalApp.controller(
             $scope.session = getCookie("session");
             $scope.device = $location.search().device || getCookie("device");
 
-            $scope.queriedDevice = '';
+            $scope.queriedDevice = '...';
 
             $log.log('Device: ' + $scope.device);
 
@@ -297,6 +303,8 @@ webPortalApp.controller(
 
             $scope.search = function() {
                 $log.log('Searching device ' + $scope.device);
+
+                setCookie("device", $scope.device, 100);
 
                 var reqReports = {
                     method: 'GET',
