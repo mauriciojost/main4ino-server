@@ -111,9 +111,9 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     // Administration
 
     /**
-      * DELETE /administrator/devices/<dev>/targets/
+      * DELETE /administrator/devices/<dev>/targets
       *
-      * Example: DELETE /administrator/devices/dev1/targets/
+      * Example: DELETE /administrator/devices/dev1/targets
       *
       * Delete all targets for the given device.
       * To use with extreme care.
@@ -129,9 +129,9 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     // Targets & Reports (at device level)
 
     /**
-      * POST /devices/<dev>/targets/
+      * POST /devices/<dev>/targets
       *
-      * Example: POST /devices/dev1/targets/
+      * Example: POST /devices/dev1/targets
       *
       * Create a target, get the request ID.
       *
