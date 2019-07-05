@@ -20,7 +20,9 @@ import org.mauritania.main4ino.Repository
 import org.mauritania.main4ino.Repository.Attempt
 import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.Translator
+import org.mauritania.main4ino.api.Translator.CountResponse
 import org.mauritania.main4ino.helpers.Time
+import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models._
@@ -125,6 +127,44 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       val x: F[Translator.CountResponse] = tr.deleteDevice(device, table)
       Ok(x.map(_.asJson), ContentTypeAppJson)
     }
+    /**
+      * POST /devices/<dev>/descriptions
+      *
+      * Example: POST /devices/dev1/descriptions
+      *
+      * Update the device description given the device ID.
+      *
+      * Device describes actors and properties with PUT, web ui uses them via GET.
+      *
+      * Returns: CREATED (201)
+      */
+    case a@POST -> _ / "devices" / Dev(device) / "descriptions" as _ => {
+      val d = a.req.decodeJson[VersionJson]
+      val r: F[CountResponse] = d.flatMap(i => tr.updateDescription(device, i)).map(CountResponse(_))
+      r.flatMap { v =>
+        Created(v.asJson, ContentTypeAppJson)
+      }
+    }
+
+    /**
+      * GET /devices/<dev>/descriptions
+      *
+      * Example: GET /devices/dev1/descriptions
+      *
+      * Retrieve a device description given the device ID.
+      *
+      * Device describes actors and properties with PUT, web ui GET.
+      *
+      * Returns: OK (200) | NO_CONTENT (204)
+      */
+    case a@GET -> _ / "devices" / Dev(device) / "descriptions" as _ => {
+      val x: F[Attempt[Description]] = tr.getLastDescription(device)
+      x.flatMap {
+        case Right(v) => Ok(v.asJson, ContentTypeAppJson)
+        case Left(_) => NoContent()
+      }
+    }
+
 
     // Targets & Reports (at device level)
 

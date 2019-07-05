@@ -29,3 +29,10 @@ CREATE TABLE reports (
   property_value TEXT,
   creation LONG
 );
+
+CREATE TABLE descriptions (
+  device_name TEXT,
+  updated LONG,
+  version TEXT,
+  json TEXT,
+);

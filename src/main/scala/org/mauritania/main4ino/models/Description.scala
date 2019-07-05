@@ -1,0 +1,23 @@
+package org.mauritania.main4ino.models
+
+import org.mauritania.main4ino.models.Description.VersionJson
+
+/**
+  * Description of a device, by actors and its properties
+  *
+  * This class allows the devices to describe their actors and properties as their firmware evolves,
+  * decoupling the update in the FE.
+  *
+  */
+case class Description(
+  device: DeviceName,
+  updated: EpochSecTimestamp,
+  versionJson: VersionJson
+)
+
+object Description {
+  case class VersionJson(
+    version: String,
+    json: String
+  )
+}

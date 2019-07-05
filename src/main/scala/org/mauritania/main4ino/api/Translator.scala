@@ -11,10 +11,29 @@ import org.mauritania.main4ino.Repository.Attempt
 import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.Translator.{CountResponse, IdResponse, IdsOnlyResponse, TimeResponse}
 import org.mauritania.main4ino.helpers.Time
+import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status.Status
 import org.mauritania.main4ino.models._
 
 class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends Http4sDsl[F] {
+
+  def getLastDescription(device: String): F[Attempt[Description]] = {
+    for {
+      logger <- Slf4jLogger.fromClass[F](Translator.getClass)
+      d <- repository.getDescription(device)
+      _ <- logger.debug(s"Got description for $device: $d")
+    } yield (d)
+  }
+
+  def updateDescription(device: DeviceName, j: VersionJson): F[Int] = {
+    for {
+      logger <- Slf4jLogger.fromClass[F](Translator.getClass)
+      timeUtc <- time.nowUtc
+      inserts <- repository.setDescription(device, j, Time.asTimestamp(timeUtc))
+      _ <- logger.debug(s"Set description for ${device}: $j")
+    } yield (inserts)
+  }
+
 
   def deleteDevice(dev: DeviceName, t: ReqType): F[CountResponse] = {
     for {

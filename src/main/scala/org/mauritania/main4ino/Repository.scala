@@ -11,12 +11,17 @@ import fs2.Stream
 import org.mauritania.main4ino.Repository.{ActorTup, ActorTupIdLess, Attempt, Device1}
 import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.ErrMsg
+import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models.Device.{DbId, Metadata}
 import org.mauritania.main4ino.models.Device.Metadata.Status.Status
 import org.mauritania.main4ino.models._
 
 trait Repository[F[_]] {
+
+  def setDescription(d: DeviceName, v: VersionJson, ts: EpochSecTimestamp): F[Int]
+
+  def getDescription(device: String): F[Attempt[Description]]
 
   def insertDeviceActor(table: ReqType, device: DeviceName, actor: ActorName, requestId: RequestId, r: ActorProps, ts: EpochSecTimestamp): F[Attempt[Int]]
 
@@ -43,10 +48,26 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
 
   implicit val StatusMeta: Meta[Status] = Meta[String].xmap(Status.apply, _.code)
 
+  def setDescription(d: DeviceName, v: VersionJson, ts: EpochSecTimestamp): IO[Int] = {
+    val transaction = for {
+      i <- sqlInsertDescription(d, v, ts)
+    } yield (i)
+    transaction.transact(transactor)
+  }
+
+  def getDescription(device: String): IO[Attempt[Description]] = {
+    val transaction = for {
+      d <- sqlSelectDescription(device)
+      y = d.toRight(s"No description for $device")
+    } yield (y)
+    transaction.transact(transactor)
+  }
+
   def cleanup(table: ReqType, now: EpochSecTimestamp, retentionSecs: Int) = {
     val transaction = for {
       m <- sqlDeleteMetadataWhereCreationIsLess(table, now - retentionSecs)
       _ <- sqlDeleteActorTupOrphanOfRequest(table)
+      // TODO cleanup descriptions that are not the last one per device
     } yield (m)
     transaction.transact(transactor)
   }
@@ -156,6 +177,14 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
   private def sqlInsertMetadata(table: ReqType, m: Metadata, ts: EpochSecTimestamp): ConnectionIO[RequestId] = {
     (fr"INSERT INTO " ++ Fragment.const(table.code + "_requests") ++ fr" (creation, device_name, status) VALUES (${ts}, ${m.device}, ${m.status})")
       .update.withUniqueGeneratedKeys[RequestId]("id")
+  }
+
+  private def sqlInsertDescription(dev: DeviceName, d: VersionJson, ts: EpochSecTimestamp): ConnectionIO[Int] = {
+    (fr"INSERT INTO descriptions (device_name, updated, version, json) VALUES (${dev}, ${ts}, ${d.version}, ${d.json})").update.run
+  }
+
+  private def sqlSelectDescription(d: DeviceName): ConnectionIO[Option[Description]] = {
+    (fr"SELECT device_name, updated, version, json FROM descriptions WHERE device_name = ${d} ORDER BY updated DESC LIMIT 1").query[Description].option
   }
 
   private def sqlUpdateMetadataWhereRequestId(table: ReqType, r: RequestId, s: Status): ConnectionIO[Int] = {
