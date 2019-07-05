@@ -12,7 +12,7 @@ case class DeviceId(
   dbId: DbId,
   device: Device
 ) {
-  def id: EpochSecTimestamp = dbId.id
+  def id: RequestId = dbId.id
   def creation: EpochSecTimestamp = dbId.creation
   def metadata: Metadata = device.metadata
   def actors: DeviceProps = device.actors
