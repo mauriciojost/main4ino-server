@@ -362,7 +362,7 @@ webPortalApp.controller(
                 BootstrapDialog.show({
                     cssClass: 'dialog-vertical-center',
                     title: 'Change ' + actor + '.' + propName,
-                    message: 'Change property value to: <p><div><textarea class="minitext">' + propValue + '</textarea></div><p>',
+                    message: 'Change property value to: <p><div><textarea style="display:block;width:100%;">' + propValue + '</textarea></div><p>',
                     buttons: [{
                         label: 'Change',
                         hotkey: 13, // enter
