@@ -1,5 +1,7 @@
 package org.mauritania.main4ino.api.v1
 
+import java.time.{Instant, ZoneId, ZonedDateTime}
+
 import cats.effect.IO
 import fs2.Stream
 import io.circe.{Encoder, Json}
@@ -11,7 +13,9 @@ import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, EntityBody, Headers, Method, Request, Response, Status, Uri}
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.{CountResponse, IdResponse, IdsOnlyResponse}
-import org.mauritania.main4ino.helpers.TimeIO
+import org.mauritania.main4ino.helpers.{Time, TimeIO}
+import org.mauritania.main4ino.models.Description
+import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security._
@@ -22,8 +26,14 @@ class ServiceFuncSpec extends DbSuite {
 
   Sequential
 
+  val TheTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("UTC"))
+
+  class FixedTimeIO extends Time[IO] {
+    def nowUtc: IO[ZonedDateTime] = IO.pure(TheTime)
+  }
+
   def defaultService: Service[IO] = {
-    val t = new TimeIO()
+    val t = new FixedTimeIO()
     new Service(new AutherIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), t), t)
   }
 
@@ -207,6 +217,21 @@ class ServiceFuncSpec extends DbSuite {
     get("/devices/dev1/targets/actors/clock/last").status shouldBe Status.NoContent
     get("/devices/dev1/targets/actors/body/last").status shouldBe Status.NoContent
 
+  }
+
+  "The service from both" should "create and read description by device name" in {
+    implicit val s = defaultService
+
+    val r0 = get("/devices/dev1/descriptions")
+    r0.status shouldBe Status.NoContent
+
+    postExpectCreated("/devices/dev1/descriptions", """{"version": "1.0.0", "json":"{}"}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces
+
+    getExpectOk("/devices/dev1/descriptions").noSpaces shouldBe Description("dev1", Time.asTimestamp(TheTime), VersionJson("1.0.0", "{}")).asJson.noSpaces
+
+    postExpectCreated("/devices/dev1/descriptions", """{"version": "1.1.0", "json":"{}"}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces
+
+    getExpectOk("/devices/dev1/descriptions").noSpaces shouldBe Description("dev1", Time.asTimestamp(TheTime), VersionJson("1.1.0", "{}")).asJson.noSpaces
   }
 
   private[this] def getExpectOk(path: String)(implicit service: Service[IO]): Json = {

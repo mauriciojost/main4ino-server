@@ -184,7 +184,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
   }
 
   private def sqlSelectDescription(d: DeviceName): ConnectionIO[Option[Description]] = {
-    (fr"SELECT device_name, updated, version, json FROM descriptions WHERE device_name = ${d} ORDER BY updated DESC LIMIT 1").query[Description].option
+    (fr"SELECT device_name, updated, version, json FROM descriptions WHERE device_name = ${d} ORDER BY id DESC, updated DESC LIMIT 1").query[Description].option
   }
 
   private def sqlUpdateMetadataWhereRequestId(table: ReqType, r: RequestId, s: Status): ConnectionIO[Int] = {

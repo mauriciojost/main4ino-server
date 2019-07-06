@@ -31,6 +31,7 @@ CREATE TABLE reports (
 );
 
 CREATE TABLE descriptions (
+  id SERIAL PRIMARY KEY,
   device_name TEXT,
   updated LONG,
   version TEXT,
