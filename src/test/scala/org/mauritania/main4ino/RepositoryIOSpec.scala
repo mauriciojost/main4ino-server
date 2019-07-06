@@ -2,6 +2,7 @@ package org.mauritania.main4ino.models
 
 import org.mauritania.main4ino.Fixtures._
 import org.mauritania.main4ino.Repository.ReqType
+import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.{DbId, Metadata}
 import org.mauritania.main4ino.models.Device.Metadata.Status.Closed
 import org.mauritania.main4ino.models.ForTestRicherClasses._
@@ -168,6 +169,15 @@ class RepositoryIOSpec extends DbSuite {
       repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe Nil
 
     }
+  }
+
+  it should "create and retrieve descriptions" in {
+    val repo = new RepositoryIO(transactor)
+    repo.getDescription("dev1").unsafeRunSync() shouldBe Left("No description for 'dev1'")
+    repo.setDescription("dev1", VersionJson("1", "{}"), 0L).unsafeRunSync() shouldBe 1
+    repo.getDescription("dev1").unsafeRunSync() shouldBe Right(Description("dev1", 0L, VersionJson("1", "{}")))
+    repo.setDescription("dev1", VersionJson("2", ""), 0L).unsafeRunSync() shouldBe 1
+    repo.getDescription("dev1").unsafeRunSync() shouldBe Right(Description("dev1", 0L, VersionJson("2", "")))
   }
 
 }

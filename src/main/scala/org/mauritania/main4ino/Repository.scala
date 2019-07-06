@@ -58,7 +58,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
   def getDescription(device: String): IO[Attempt[Description]] = {
     val transaction = for {
       d <- sqlSelectDescription(device)
-      y = d.toRight(s"No description for $device")
+      y = d.toRight(s"No description for '$device'")
     } yield (y)
     transaction.transact(transactor)
   }
