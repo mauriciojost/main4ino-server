@@ -262,16 +262,6 @@ webPortalApp.controller(
                 }
             }
 
-            $scope.propDescriptions = function(actor, propName) {
-              var l = $scope.propLegend(actor, propName);
-              return l.descriptions.join('. ').trim();
-            }
-
-            $scope.propExamples = function(actor, propName) {
-              var l = $scope.propLegend(actor, propName);
-              return l.examples;
-            }
-
             $scope.initLegends = function() {
                 $scope.propLegends = [];
 
@@ -283,10 +273,13 @@ webPortalApp.controller(
                 };
 
                 $http(reqDescs).success(
-                    function(dataRaw) {
-                        $log.log('Success descriptions: ' + JSON.stringify(dataRaw));
-                        data = JSON.parse(dataRaw["json"]);
-                        $log.log('Success parsed descriptions: ' + JSON.stringify(data));
+                    function(dataRawJson) {
+
+                        $log.log('Data raw json: ' + JSON.stringify(dataRawJson));
+                        json = dataRawJson["versionJson"]["json"]
+                        $log.log('Json: ' + json);
+                        data = JSON.parse(json);
+                        $log.log('Json parsed: ' + JSON.stringify(data));
 
                         $log.log('Initialize property legends');
                         for(var i in data) {
@@ -317,10 +310,29 @@ webPortalApp.controller(
                             return acum;
                         }
 
+                        $scope.propDescriptions = function(actor, propName) {
+                          var l = $scope.propLegend(actor, propName);
+                          return l.descriptions.join('. ').trim();
+                        }
+
+                        $scope.propExamples = function(actor, propName) {
+                          var l = $scope.propLegend(actor, propName);
+                          return l.examples;
+                        }
+
+
                     }
                 ).error(
                     function(data) {
                         $log.log('Failed descritpion: ' + data);
+                        $scope.propDescriptions = function(actor, propName) {
+                          return '?';
+                        }
+
+                        $scope.propExamples = function(actor, propName) {
+                          return '?';
+                        }
+
                     }
                 );
 
@@ -436,6 +448,7 @@ webPortalApp.controller(
             }
 
             if ($scope.device) { // proceed if device is provided
+                $scope.initLegends();
                 $scope.search();
             }
 
