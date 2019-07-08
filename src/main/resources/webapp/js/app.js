@@ -238,7 +238,7 @@ webPortalApp.controller(
         function($scope, $http, $log, $location) {
 
             $scope.session = getCookie("session");
-            $scope.device = $location.search().device || getCookie("device");
+            $scope.device = getCookie("device");
 
             $scope.queriedDevice = '...';
 
