@@ -67,9 +67,9 @@ class RepositoryIOSpec extends DbSuite {
     val snap3 = Device1.withActorPropValue("a3", "v", "k")
 
     val repo = new RepositoryIO(transactor)
-    repo.insertDevice(ReqType.Targets, snap1, 11L).unsafeRunSync() shouldBe (1L)
-    repo.insertDevice(ReqType.Targets, snap2, 12L).unsafeRunSync() shouldBe (2L)
-    repo.insertDevice(ReqType.Targets, snap3, 13L).unsafeRunSync() shouldBe (3L)
+    repo.insertDevice(ReqType.Targets, snap1, 11L).unsafeRunSync() shouldBe 1L
+    repo.insertDevice(ReqType.Targets, snap2, 12L).unsafeRunSync() shouldBe 2L
+    repo.insertDevice(ReqType.Targets, snap3, 13L).unsafeRunSync() shouldBe 3L
 
     repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", from = Some(11L), to = None, st = None)
       .unsafeRunSync().map(_.device).toSet shouldBe Set(snap1, snap2, snap3)
@@ -131,8 +131,8 @@ class RepositoryIOSpec extends DbSuite {
     val d2 = Device1.withDeviceName("device2")
 
     ReqType.all.foreach { table =>
-      repo.insertDevice(table, d1, 10L).unsafeRunSync() shouldBe (1L) // created target for device 1, resulted in id 1
-      repo.insertDevice(table, d2, 20L).unsafeRunSync() shouldBe (2L) // for device 2, resulted in id 2
+      repo.insertDevice(table, d1, 10L).unsafeRunSync() shouldBe 1L // created target for device 1, resulted in id 1
+      repo.insertDevice(table, d2, 20L).unsafeRunSync() shouldBe 2L // for device 2, resulted in id 2
 
       repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe List(1L)
       repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe List(2L)
@@ -152,18 +152,18 @@ class RepositoryIOSpec extends DbSuite {
     val d2 = Device1.withDeviceName("device2")
 
     ReqType.all.foreach { table =>
-      repo.insertDevice(table, d1, 10L).unsafeRunSync() shouldBe (1L) // created target for device 1, resulted in id 1
-      repo.insertDevice(table, d2, 20L).unsafeRunSync() shouldBe (2L) // for device 2, resulted in id 2
+      repo.insertDevice(table, d1, 10L).unsafeRunSync() shouldBe 1L // created target for device 1, resulted in id 1
+      repo.insertDevice(table, d2, 20L).unsafeRunSync() shouldBe 2L // for device 2, resulted in id 2
 
       repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe List(1L)
       repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe List(2L)
 
-      repo.cleanup(table, 30, 30).unsafeRunSync() shouldBe (0) // preserve all
+      repo.cleanup(table, 30, 30).unsafeRunSync() shouldBe 0 // preserve all
 
       repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe List(1L)
       repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe List(2L)
 
-      repo.cleanup(table, 30, 5).unsafeRunSync() shouldBe (2) // preserve nothing
+      repo.cleanup(table, 30, 5).unsafeRunSync() shouldBe 2 // preserve nothing
 
       repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe Nil
       repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe Nil
