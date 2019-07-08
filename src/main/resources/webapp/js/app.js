@@ -244,44 +244,6 @@ webPortalApp.controller(
 
             $log.log('Device: ' + $scope.device);
 
-            $scope.propLegends = [];
-
-            $log.log('Initialize property legends');
-            $.get('conf/proplegends.json', function(data) {
-                for(var i in data) {
-                    var o = data[i];
-                    var legend = {
-                        patterns: o["patterns"],
-                        descriptions: o["descriptions"],
-                        examples: o["examples"]
-                    };
-                    $log.log('Element proplegend parsed: ' + JSON.stringify(legend));
-                    $scope.propLegends.push(legend);
-                };
-            }, "json");
-
-            $scope.propLegend = function(actor, propName) {
-                var acum = {
-                    descriptions: [],
-                    examples: []
-                };
-
-                for (x of $scope.propLegends) {
-                    for (p of x.patterns) {
-                        if ((actor + '.' + propName).search(p) != -1) {
-                            acum.descriptions = acum.descriptions.concat(x.descriptions);
-                            acum.examples = acum.examples.concat(x.examples);
-                        };
-                    };
-                };
-                return acum;
-            }
-
-            $scope.propDescriptions = function(actor, propName) {
-              var l = $scope.propLegend(actor, propName);
-              return l.descriptions.join('. ').trim();
-            }
-
             $scope.isPropNameEligible = function(name, incStatus, incDebug, incSensitive, incAdvanced) {
                 var isStatus = name.startsWith(StatusPropPrefix);
                 var isDebug = name.startsWith(DebugPropPrefix);
@@ -300,16 +262,74 @@ webPortalApp.controller(
                 }
             }
 
+            $scope.propDescriptions = function(actor, propName) {
+              var l = $scope.propLegend(actor, propName);
+              return l.descriptions.join('. ').trim();
+            }
+
             $scope.propExamples = function(actor, propName) {
               var l = $scope.propLegend(actor, propName);
               return l.examples;
+            }
+
+            $scope.initLegends = function() {
+                $scope.propLegends = [];
+
+                var reqDescs = {
+                    method: 'GET',
+                    url: 'api/v1/devices/' + $scope.device + '/descriptions',
+                    headers: {'Content-Type': 'application/json', 'Session': $scope.session},
+                    data: $scope.request
+                };
+
+                $http(reqDescs).success(
+                    function(dataRaw) {
+                        $log.log('Success descriptions: ' + JSON.stringify(dataRaw));
+                        data = JSON.parse(dataRaw["json"]);
+                        $log.log('Success parsed descriptions: ' + JSON.stringify(data));
+
+                        $log.log('Initialize property legends');
+                        for(var i in data) {
+                            var o = data[i];
+                            var legend = {
+                                patterns: o["patterns"],
+                                descriptions: o["descriptions"],
+                                examples: o["examples"]
+                            };
+                            $log.log('Element proplegend parsed: ' + JSON.stringify(legend));
+                            $scope.propLegends.push(legend);
+                        };
+
+                        $scope.propLegend = function(actor, propName) {
+                            var acum = {
+                                descriptions: [],
+                                examples: []
+                            };
+
+                            for (x of $scope.propLegends) {
+                                for (p of x.patterns) {
+                                    if ((actor + '.' + propName).search(p) != -1) {
+                                        acum.descriptions = acum.descriptions.concat(x.descriptions);
+                                        acum.examples = acum.examples.concat(x.examples);
+                                    };
+                                };
+                            };
+                            return acum;
+                        }
+
+                    }
+                ).error(
+                    function(data) {
+                        $log.log('Failed descritpion: ' + data);
+                    }
+                );
+
             }
 
             $scope.search = function() {
                 $log.log('Searching device ' + $scope.device);
 
                 setCookie("device", $scope.device, 100);
-
                 var reqReports = {
                     method: 'GET',
                     url: 'api/v1/devices/' + $scope.device + '/reports/summary?status=C',
