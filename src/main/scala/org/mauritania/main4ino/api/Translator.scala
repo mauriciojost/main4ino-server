@@ -119,8 +119,10 @@ class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends 
   }
 
   def nowAtTimezone(tz: String): F[TimeResponse] = {
-    val tutc = time.nowUtc.map(_.withZoneSameInstant(ZoneId.of(tz)))
-    tutc.map(t => TimeResponse(tz, Time.asTimestamp(t), Time.asString(t)))
+    for {
+      t <- time.nowUtc
+      ts = t.withZoneSameInstant(ZoneId.of(tz))
+    } yield (TimeResponse(tz, Time.asTimestamp(ts), Time.asString(ts)))
   }
 
 }

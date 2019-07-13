@@ -74,10 +74,10 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       * Returns: OK (200) | BAD_REQUEST (400)
       */
     case GET -> _ / "time" :? TimezoneParam(tz) as _ => {
-      val attempt: Try[F[Translator.TimeResponse]] = Try(tr.nowAtTimezone(tz.getOrElse("UTC")))
-      attempt match {
-        case Success(v) => Ok(v.map(_.asJson), ContentTypeTextPlain)
-        case Failure(f) => BadRequest()
+      val attempt: F[Either[Throwable, Translator.TimeResponse]] = tr.nowAtTimezone(tz.getOrElse("UTC")).attempt
+      attempt.flatMap {
+        case Right(v) => Ok(v.asJson, ContentTypeTextPlain)
+        case Left(f) => BadRequest()
       }
     }
 

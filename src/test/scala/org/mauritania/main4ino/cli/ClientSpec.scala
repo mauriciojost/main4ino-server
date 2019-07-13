@@ -4,13 +4,13 @@ import java.nio.file.{Files, Paths}
 
 import io.circe.generic.auto._
 import io.circe.jawn.decode
-import org.mauritania.main4ino.SyncId
+import org.mauritania.main4ino.DecodersIO
 import org.mauritania.main4ino.security.Config
 import org.scalatest.{Matchers, WordSpec}
 
 import scala.io.Source
 
-class ClientSpec extends WordSpec with Matchers with SyncId {
+class ClientSpec extends WordSpec with Matchers with DecodersIO {
   val User1Cmd = "newuser newpass newuser@zzz.com /api/v1/time /"
   val User2Cmd = "newuser2 newpass2 newuser2@zzz.com /api"
 
