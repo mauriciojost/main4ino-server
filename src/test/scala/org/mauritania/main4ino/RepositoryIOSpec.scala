@@ -145,28 +145,40 @@ class RepositoryIOSpec extends DbSuite {
   }
 
 
-  it should "delete old target/reports" in {
+  it should "delete old target/reports and keep last one per device" in {
     val repo = new RepositoryIO(transactor)
 
     val d1 = Device1.withDeviceName("device1")
     val d2 = Device1.withDeviceName("device2")
 
     ReqType.all.foreach { table =>
-      repo.insertDevice(table, d1, 10L).unsafeRunSync() shouldBe 1L // created target for device 1, resulted in id 1
-      repo.insertDevice(table, d2, 20L).unsafeRunSync() shouldBe 2L // for device 2, resulted in id 2
+      repo.insertDevice(table, d1, 0L).unsafeRunSync() shouldBe 1L // created target for device 1, resulted in id 1
+      repo.insertDevice(table, d1, 5L).unsafeRunSync() shouldBe 2L // another update
+      repo.insertDevice(table, d1, 5L).unsafeRunSync() shouldBe 3L // another update
+      repo.insertDevice(table, d1, 5L).unsafeRunSync() shouldBe 4L // another update
 
-      repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe List(1L)
-      repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe List(2L)
+      repo.insertDevice(table, d2, 0L).unsafeRunSync() shouldBe 5L // for device 2, resulted in id 2
+      repo.insertDevice(table, d2, 5L).unsafeRunSync() shouldBe 6L // another update
+      repo.insertDevice(table, d2, 5L).unsafeRunSync() shouldBe 7L // another update
+      repo.insertDevice(table, d2, 5L).unsafeRunSync() shouldBe 8L // another update
 
-      repo.cleanup(table, 30, 30).unsafeRunSync() shouldBe 0 // preserve all
+      repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe List(1L, 2L, 3L, 4L)
+      repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe List(5L, 6L, 7L, 8L)
 
-      repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe List(1L)
-      repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe List(2L)
+      repo.cleanup(table, 10, 10).unsafeRunSync() shouldBe 0 // should preserve all (remove none)
 
-      repo.cleanup(table, 30, 5).unsafeRunSync() shouldBe 2 // preserve nothing
+      repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe List(1L, 2L, 3L, 4L)
+      repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe List(5L, 6L, 7L, 8L)
 
-      repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe Nil
-      repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe Nil
+      repo.cleanup(table, 10, 5).unsafeRunSync() shouldBe 2 // should remove creations at 0L (so 2 in total)
+
+      repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe List(2L, 3L, 4L)
+      repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe List(6L, 7L, 8L)
+
+      repo.cleanup(table, 10, 0).unsafeRunSync() shouldBe 4 // preserve only last updates
+
+      repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe List(4L)
+      repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe List(8L)
 
     }
   }

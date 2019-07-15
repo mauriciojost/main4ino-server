@@ -65,10 +65,9 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
 
   def cleanup(table: ReqType, now: EpochSecTimestamp, retentionSecs: Int) = {
     val transaction = for {
-      m <- sqlDeleteMetadataWhereCreationIsLess(table, now - retentionSecs)
+      removed <- sqlDeleteMetadataWhereCreationIsLess(table, now - retentionSecs)
       _ <- sqlDeleteActorTupOrphanOfRequest(table)
-      // TODO cleanup descriptions that are not the last one per device
-    } yield (m)
+    } yield (removed)
     transaction.transact(transactor)
   }
 
@@ -197,8 +196,8 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
   }
 
   private def sqlDeleteMetadataWhereCreationIsLess(table: ReqType, upperbound: EpochSecTimestamp): ConnectionIO[Int] = {
-    (fr"DELETE FROM" ++ Fragment.const(table.code + "_requests") ++ fr"WHERE creation < $upperbound")
-      .update.run
+    (fr"DELETE FROM" ++ Fragment.const(table.code + "_requests") ++ fr"WHERE creation < $upperbound AND id NOT IN" ++
+      fr"(SELECT MAX(id) FROM" ++ Fragment.const(table.code + "_requests") ++ fr"GROUP BY device_name)").update.run
   }
 
   private def sqlDeleteActorTupOrphanOfRequest(table: ReqType): ConnectionIO[Int] = {
