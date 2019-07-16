@@ -225,13 +225,13 @@ class ServiceFuncSpec extends DbSuite {
     val r0 = get("/devices/dev1/descriptions")
     r0.status shouldBe Status.NoContent
 
-    postExpectCreated("/devices/dev1/descriptions", """{"version": "1.0.0", "json":"{}"}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces
+    postExpectCreated("/devices/dev1/descriptions", """{"version": "1.0.0", "json":null}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces
 
-    getExpectOk("/devices/dev1/descriptions").noSpaces shouldBe Description("dev1", Time.asTimestamp(TheTime), VersionJson("1.0.0", "{}")).asJson.noSpaces
+    getExpectOk("/devices/dev1/descriptions").noSpaces shouldBe Description("dev1", Time.asTimestamp(TheTime), VersionJson("1.0.0", Json.Null)).asJson.noSpaces
 
-    postExpectCreated("/devices/dev1/descriptions", """{"version": "1.1.0", "json":"{}"}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces
+    postExpectCreated("/devices/dev1/descriptions", """{"version": "1.1.0", "json":null}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces
 
-    getExpectOk("/devices/dev1/descriptions").noSpaces shouldBe Description("dev1", Time.asTimestamp(TheTime), VersionJson("1.1.0", "{}")).asJson.noSpaces
+    getExpectOk("/devices/dev1/descriptions").noSpaces shouldBe Description("dev1", Time.asTimestamp(TheTime), VersionJson("1.1.0", Json.Null)).asJson.noSpaces
   }
 
   private[this] def getExpectOk(path: String)(implicit service: Service[IO]): Json = {

@@ -276,9 +276,7 @@ webPortalApp.controller(
                     function(dataRawJson) {
 
                         $log.log('Data raw json: ' + JSON.stringify(dataRawJson));
-                        json = dataRawJson["versionJson"]["json"]
-                        $log.log('Json: ' + json);
-                        data = JSON.parse(json);
+                        data = dataRawJson["versionJson"]["json"]
                         $log.log('Json parsed: ' + JSON.stringify(data));
 
                         $log.log('Initialize property legends');

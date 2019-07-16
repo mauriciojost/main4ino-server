@@ -11,7 +11,7 @@ ACTOR1=actor1
 ACTOR2=actor2
 BODY_REPORT='{"actor1":{"p1":"v1", "p2":"v2"}, "actor2":{"p1":"vdddddddddddddddddddddddafdsas asdfadddddddddddddddddddddddddddddddd1", "p2":"v2"}}'
 BODY_TARGET='{"p1":"v1b"}'
-DESCRIPTION='{"version":"1.0.0", "json":"[{\"patterns\": [\"^actor1.p1$\"], \"descriptions\": [\"Property 1. See <a href=\\\"https://google.com/\\\" target=\\\"_blank\\\">here</a>.\"], \"examples\": [\"1\", \"2\", \"3\"]}]"}'
+DESCRIPTION='{"version":"1.0.0", "json":[{"patterns": ["^actor1.p1$"], "descriptions": ["Property 1 xx."], "examples": ["1", "2", "3"]}]}'
 
 cd $root_dir
 

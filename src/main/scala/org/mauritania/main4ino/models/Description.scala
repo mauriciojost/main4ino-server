@@ -1,5 +1,6 @@
 package org.mauritania.main4ino.models
 
+import io.circe.Json
 import org.mauritania.main4ino.models.Description.VersionJson
 
 /**
@@ -18,6 +19,6 @@ case class Description(
 object Description {
   case class VersionJson(
     version: String,
-    json: String
+    json: Json
   )
 }

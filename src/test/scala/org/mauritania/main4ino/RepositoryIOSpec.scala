@@ -1,5 +1,6 @@
 package org.mauritania.main4ino.models
 
+import io.circe.Json
 import org.mauritania.main4ino.Fixtures._
 import org.mauritania.main4ino.Repository.ReqType
 import org.mauritania.main4ino.models.Description.VersionJson
@@ -186,10 +187,10 @@ class RepositoryIOSpec extends DbSuite {
   it should "create and retrieve descriptions" in {
     val repo = new RepositoryIO(transactor)
     repo.getDescription("dev1").unsafeRunSync() shouldBe Left("No description for 'dev1'")
-    repo.setDescription("dev1", VersionJson("1", "{}"), 0L).unsafeRunSync() shouldBe 1
-    repo.getDescription("dev1").unsafeRunSync() shouldBe Right(Description("dev1", 0L, VersionJson("1", "{}")))
-    repo.setDescription("dev1", VersionJson("2", ""), 0L).unsafeRunSync() shouldBe 1
-    repo.getDescription("dev1").unsafeRunSync() shouldBe Right(Description("dev1", 0L, VersionJson("2", "")))
+    repo.setDescription("dev1", VersionJson("1", Json.Null), 0L).unsafeRunSync() shouldBe 1
+    repo.getDescription("dev1").unsafeRunSync() shouldBe Right(Description("dev1", 0L, VersionJson("1", Json.Null)))
+    repo.setDescription("dev1", VersionJson("2", Json.Null), 0L).unsafeRunSync() shouldBe 1
+    repo.getDescription("dev1").unsafeRunSync() shouldBe Right(Description("dev1", 0L, VersionJson("2", Json.Null)))
   }
 
 }

@@ -8,6 +8,7 @@ import doobie.free.connection.{ConnectionOp, raw}
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import fs2.Stream
+import io.circe.Json
 import org.mauritania.main4ino.Repository.{ActorTup, ActorTupIdLess, Attempt, Device1}
 import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.ErrMsg
@@ -39,7 +40,7 @@ trait Repository[F[_]] {
 
   def selectRequestIdsWhereDevice(table: ReqType, d: DeviceName): Stream[F, RequestId]
 
-  def updateDeviceWhereRequestId(table: ReqType, dev: DeviceName, requestId: RequestId, status: Status): F[Either[ErrMsg,Int]]
+  def updateDeviceWhereRequestId(table: ReqType, dev: DeviceName, requestId: RequestId, status: Status): F[Either[ErrMsg, Int]]
 
 }
 
@@ -47,6 +48,11 @@ trait Repository[F[_]] {
 class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
 
   implicit val StatusMeta: Meta[Status] = Meta[String].xmap(Status.apply, _.code)
+
+  implicit val CompositeJson: Composite[Json] = {
+    val m: Meta[Json] = Meta[String].xmap(io.circe.parser.parse(_).toOption.getOrElse(Json.Null), _.noSpaces)
+    Composite.fromMeta(m)
+  }
 
   def setDescription(d: DeviceName, v: VersionJson, ts: EpochSecTimestamp): IO[Int] = {
     val transaction = for {
@@ -91,8 +97,8 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
   def insertDeviceActor(table: ReqType, dev: DeviceName, actor: ActorName, requestId: RequestId, p: ActorProps, ts: EpochSecTimestamp): IO[Attempt[Int]] = {
     val transaction = for {
       mtd <- sqlSelectMetadataWhereRequestId(table, requestId)
-      safe = mtd.exists{case (i, m) => m.device == dev}
-      transit = mtd.exists{case (i, m) => m.status == Status.Open}
+      safe = mtd.exists { case (i, m) => m.device == dev }
+      transit = mtd.exists { case (i, m) => m.status == Status.Open }
       inserts: ConnectionIO[Attempt[Int]] = if (!safe)
         Free.pure[ConnectionOp, Attempt[Int]](Left.apply[ErrMsg, Int](s"Request $requestId does not relate to $dev"))
       else if (!transit)
@@ -112,11 +118,11 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
     }
   }
 
-  def updateDeviceWhereRequestId(table: ReqType, dev: DeviceName, requestId: RequestId, status: Status): IO[Either[ErrMsg,Int]] = {
+  def updateDeviceWhereRequestId(table: ReqType, dev: DeviceName, requestId: RequestId, status: Status): IO[Either[ErrMsg, Int]] = {
     val transaction = for {
       mtd <- sqlSelectMetadataWhereRequestId(table, requestId)
-      safe = mtd.exists{case (i, m) => (m.device == dev)}
-      trans = mtd.exists{case (i, m) => transitionAllowed(m.status, status)}
+      safe = mtd.exists { case (i, m) => (m.device == dev) }
+      trans = mtd.exists { case (i, m) => transitionAllowed(m.status, status) }
       inserts: ConnectionIO[Attempt[Int]] = if (!safe)
         Free.pure[ConnectionOp, Attempt[Int]](Left.apply[ErrMsg, Int](s"Request $requestId does not relate to $dev"))
       else if (!trans)
@@ -132,9 +138,9 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
   def selectDeviceWhereRequestId(table: ReqType, dev: DeviceName, requestId: RequestId): IO[Attempt[DeviceId]] = {
     val transaction = for {
       t <- sqlSelectMetadataWhereRequestId(table, requestId)
-      k = t.exists{case (i, m) => m.device == dev}
+      k = t.exists { case (i, m) => m.device == dev }
       p <- sqlSelectActorTupWhereRequestIdActorStatus(table, requestId)
-      j = t.map{case (i, m) => Repository.toDevice(i, m, p)}.filter(_.metadata.device == dev).toRight(s"Request $requestId does not belong to $dev")
+      j = t.map { case (i, m) => Repository.toDevice(i, m, p) }.filter(_.metadata.device == dev).toRight(s"Request $requestId does not belong to $dev")
     } yield (j)
     transaction.transact(transactor)
   }
@@ -179,7 +185,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
   }
 
   private def sqlInsertDescription(dev: DeviceName, d: VersionJson, ts: EpochSecTimestamp): ConnectionIO[Int] = {
-    (fr"INSERT INTO descriptions (device_name, updated, version, json) VALUES (${dev}, ${ts}, ${d.version}, ${d.json})").update.run
+    (fr"INSERT INTO descriptions (device_name, updated, version, json) VALUES (${dev}, ${ts}, ${d.version}, ${d.json.noSpaces})").update.run
   }
 
   private def sqlSelectDescription(d: DeviceName): ConnectionIO[Option[Description]] = {
@@ -304,7 +310,9 @@ object Repository {
     creation: EpochSecTimestamp
   ) {
     def actor = more.actor
+
     def prop = more.prop
+
     def value = more.value
   }
 
@@ -320,11 +328,11 @@ object Repository {
       ActorTup(id, ActorTupIdLess(actor, prop, value), creation)
 
     def asActorMap(ats: Iterable[ActorTup]): DeviceProps = {
-      ats.groupBy(_.actor).mapValues{ byActor =>
+      ats.groupBy(_.actor).mapValues { byActor =>
         val indexed = byActor.zipWithIndex
-        val byProp = indexed.groupBy{case (t, i) => t.prop}
-        byProp.mapValues{ a =>
-          val (latestPropValue, _) = a.maxBy{case (t, i) => i}
+        val byProp = indexed.groupBy { case (t, i) => t.prop }
+        byProp.mapValues { a =>
+          val (latestPropValue, _) = a.maxBy { case (t, i) => i }
           latestPropValue.value
         }
       }
