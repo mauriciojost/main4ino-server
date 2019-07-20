@@ -207,6 +207,24 @@ class ServiceFuncSpec extends DbSuite {
 
   }
 
+  it should "retrieve correctly last device view per actor and status" in {
+
+    implicit val s = defaultService
+
+    // Add a few targets
+    postExpectCreated("/devices/dev1/targets", """{"clock":{"h":"7"}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
+    postExpectCreated("/devices/dev1/targets", """{"body":{"mv1":"Zz."}}""").noSpaces shouldBe IdResponse(2).asJson.noSpaces
+
+    // Check the responses
+    val dev1a = getExpectOk("/devices/dev1/targets/actors/clock/last?status=C")
+    dev1a.noSpaces shouldBe """{"h":"7"}"""
+
+    val dev1b = getExpectOk("/devices/dev1/targets/actors/body/last?status=C")
+    dev1b.noSpaces shouldBe """{"mv1":"Zz."}"""
+
+  }
+
+
   it should "respond with no expectation failed when no records are found" in {
 
     implicit val s = defaultService

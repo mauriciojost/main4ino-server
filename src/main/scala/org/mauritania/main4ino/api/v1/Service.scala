@@ -356,14 +356,14 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Example: GET /devices/dev1/targets/actors/clock/last?status=C
       *
-      * Retrieve the last target created for such actor with such status.
+      * Retrieve the last target created containing such actor with such status.
       *
       * To be used by devices to see the last status of a given actor (status = C, used upon restart).
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
     case a@GET -> _ / "devices" / Dev(device) / Req(table) / "actors" / Act(actor) / "last" :? StatusParam(status) as _ => {
-      val x: F[Option[DeviceId]] = tr.getDeviceLast(device, table, status)
+      val x: F[Option[DeviceId]] = tr.getDeviceActorLast(device, actor, table, status)
       x.flatMap { m =>
         val v = m.flatMap(_.device.actor(actor))
         v match {
