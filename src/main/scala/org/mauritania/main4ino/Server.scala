@@ -18,16 +18,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 
 object Server extends StreamApp[IO] {
-  final val DefaultConfigDir = "."
 
   // TODO use better IOApp as StreamApp is being removed from fs2
   def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
-    val configDir = new File(args.headOption.getOrElse(DefaultConfigDir))
-
-    val applicationConf = new File(configDir, "application.conf")
-    val securityConf = new File(configDir, "security.conf")
 
     for {
+      configDir <- Stream.eval[IO, File](arguments(args))
+      applicationConf = new File(configDir, "application.conf")
+      securityConf = new File(configDir, "security.conf")
+
       configApp <- Stream.eval(config.Config.load(applicationConf))
       configUsers <- Stream.eval(security.Config.load(securityConf))
       transactor <- Stream.eval(Database.transactor(configApp.database))
@@ -52,5 +51,14 @@ object Server extends StreamApp[IO] {
         .serve
 
     } yield exitCodeServer
+  }
+
+  private def arguments(args: List[String]): IO[File] = IO {
+    val arg1 = args match {
+      case Nil => throw new IllegalArgumentException("Missing config directory")
+      case a1 :: Nil => a1
+      case _ => throw new IllegalArgumentException("Too many arguments")
+    }
+    new File(arg1)
   }
 }
