@@ -209,6 +209,7 @@ webPortalApp.controller(
                         $log.log('Found: ' + JSON.stringify(data));
                         $scope.queriedDevice = $scope.device;
                         $scope.result = data;
+                        $scope.result.reverse();
                     }
                 ).error(
                     function(data) {
