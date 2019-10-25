@@ -9,9 +9,9 @@ import doobie.implicits._
 import doobie.util.transactor.Transactor
 import fs2.Stream
 import io.circe.Json
-import org.mauritania.main4ino.Repository.{ActorTup, ActorTupIdLess, Attempt, Device1}
+import org.mauritania.main4ino.Repository.{ActorTup, ActorTupIdLess, Device1}
 import org.mauritania.main4ino.Repository.ReqType.ReqType
-import org.mauritania.main4ino.api.ErrMsg
+import org.mauritania.main4ino.api.{Attempt, ErrMsg}
 import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models.Device.{DbId, Metadata}
@@ -148,9 +148,7 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
   }
 
   def selectDevicesWhereTimestampStatus(table: ReqType, device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], st: Option[Status]): IO[Iterable[DeviceId]] = {
-    val transaction = for {
-      d <- sqlSelectMetadataActorTupWhereDeviceStatus(table, device, from, to, st)
-    } yield (d)
+    val transaction = sqlSelectMetadataActorTupWhereDeviceStatus(table, device, from, to, st)
     val s = transaction.transact(transactor)
     val iol = s.compile.toList
     iol.map(l => Device1.asDeviceHistory(l).toSeq.sortBy(_.dbId.creation))
@@ -288,8 +286,6 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
 }
 
 object Repository {
-
-  type Attempt[T] = Either[ErrMsg, T]
 
   def toDevice(dbId: DbId, metadata: Metadata, ats: Iterable[ActorTup]): DeviceId = DeviceId(dbId, Device(metadata, ActorTup.asActorMap(ats)))
 

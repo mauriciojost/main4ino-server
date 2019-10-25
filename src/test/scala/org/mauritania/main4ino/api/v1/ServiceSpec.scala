@@ -1,5 +1,6 @@
 package org.mauritania.main4ino.api.v1
 
+import java.nio.file.Paths
 import java.time._
 import java.time.zone.ZoneRulesException
 
@@ -15,7 +16,7 @@ import org.mauritania.main4ino.Repository.ReqType
 import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.TimeResponse
-import org.mauritania.main4ino.helpers.Time
+import org.mauritania.main4ino.helpers.{DevLoggerIO, Time}
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.ForTestRicherClasses._
 import org.mauritania.main4ino.models.{Device, EpochSecTimestamp}
@@ -131,7 +132,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with DecodersI
   }
 
   private def defaultService(r: Repository[IO], t: Time[IO]) = {
-    new Service(new AutherIO(AuthConfig), new Translator(r, t), t)(Sync[IO])
+    new Service(new AutherIO(AuthConfig), new Translator(r, t, new DevLoggerIO(Paths.get("/tmp"))), t)(Sync[IO])
   }
 
   it should {

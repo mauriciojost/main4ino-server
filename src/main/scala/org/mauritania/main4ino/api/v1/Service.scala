@@ -1,5 +1,6 @@
 package org.mauritania.main4ino.api.v1
 
+import java.nio.file.Paths
 import java.time.{ZoneId, ZonedDateTime}
 
 import cats.data.{Kleisli, OptionT}
@@ -17,7 +18,7 @@ import org.http4s.headers.`Content-Type`
 import org.http4s.server.AuthMiddleware
 import org.http4s.{AuthedService, HttpService, MediaType, Request, Response}
 import org.mauritania.main4ino.Repository
-import org.mauritania.main4ino.Repository.Attempt
+import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.CountResponse
@@ -28,8 +29,7 @@ import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models._
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
 import org.mauritania.main4ino.security.{Auther, User}
-
-import scala.util.{Failure, Success, Try}
+import java.nio.file.{Path => JavaPath}
 
 class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) extends Http4sDsl[F] {
 
@@ -127,6 +127,25 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       val x: F[Translator.CountResponse] = tr.deleteDevice(device, table)
       Ok(x.map(_.asJson), ContentTypeAppJson)
     }
+
+    /**
+      * POST /devices/<dev>/logs
+      *
+      * Example: POST /devices/dev1/logs
+      *
+      * Update the device's logs.
+      *
+      * Returns: OK (200)
+      */
+    case a@POST -> _ / "devices" / Dev(device) / "logs" as _ => {
+      val d = a.req.bodyAsText
+      val r: F[Attempt[Unit]] = tr.updateLogs(device, d)
+      r.flatMap {
+        case Right(_) => Ok()
+        case Left(m) => InternalServerError(m)
+      }
+    }
+
     /**
       * POST /devices/<dev>/descriptions
       *

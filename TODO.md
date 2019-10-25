@@ -4,6 +4,7 @@
 - Document the return type of each method of the REST API
 - Make the naming for deviceName/dev/device homogeneous: dev
 - Make the naming for actor/act/a homogeneous: act
+- Make the DevLogger tests write to a temporary directory that is afterwards cleaned up
 
 # DONE
 

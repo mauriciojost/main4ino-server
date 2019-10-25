@@ -4,4 +4,6 @@ package object api {
 
   type ErrMsg = String
 
+  type Attempt[T] = Either[ErrMsg, T]
+
 }

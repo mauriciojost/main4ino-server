@@ -1,21 +1,30 @@
 package org.mauritania.main4ino.api
 
-import java.time.{ZoneId, ZonedDateTime}
+import java.nio.file.{Paths, StandardOpenOption}
+import java.time.ZoneId
 
 import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.main4ino.Repository
-import org.mauritania.main4ino.Repository.Attempt
 import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.Translator.{CountResponse, IdResponse, IdsOnlyResponse, TimeResponse}
-import org.mauritania.main4ino.helpers.Time
+import org.mauritania.main4ino.helpers.{DevLogger, Time}
 import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status.Status
 import org.mauritania.main4ino.models._
+import fs2.Stream
 
-class Translator[F[_] : Sync](repository: Repository[F], time: Time[F]) extends Http4sDsl[F] {
+class Translator[F[_] : Sync](repository: Repository[F], time: Time[F], devLogger: DevLogger[F]) extends Http4sDsl[F] {
+
+  def updateLogs(device: String, body: Stream[F, String]): F[Attempt[Unit]] = {
+    for {
+      logger <- Slf4jLogger.fromClass[F](Translator.getClass)
+      d <- devLogger.updateLogs(device, body)
+      _ <- logger.debug(s"Appended logs for $device: $d")
+    } yield (d)
+  }
 
   def getLastDescription(device: String): F[Attempt[Description]] = {
     for {

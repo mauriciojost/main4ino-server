@@ -1,5 +1,6 @@
 package org.mauritania.main4ino.api.v1
 
+import java.nio.file.Paths
 import java.time.{Instant, ZoneId, ZonedDateTime}
 
 import cats.effect.IO
@@ -13,7 +14,7 @@ import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, EntityBody, Headers, Method, Request, Response, Status, Uri}
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.{CountResponse, IdResponse, IdsOnlyResponse}
-import org.mauritania.main4ino.helpers.{Time, TimeIO}
+import org.mauritania.main4ino.helpers.{DevLoggerIO, Time, TimeIO}
 import org.mauritania.main4ino.models.Description
 import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata
@@ -34,7 +35,15 @@ class ServiceFuncSpec extends DbSuite {
 
   def defaultService: Service[IO] = {
     val t = new FixedTimeIO()
-    new Service(new AutherIO(DefaultSecurityConfig), new Translator(new RepositoryIO(transactor), t), t)
+    new Service(
+      new AutherIO(DefaultSecurityConfig),
+      new Translator(
+        new RepositoryIO(transactor),
+        t,
+        new DevLoggerIO(Paths.get("/tmp/"))
+      ),
+      t
+    )
   }
 
   implicit val statusEncoder = JsonEncoding.StatusEncoder
@@ -237,7 +246,14 @@ class ServiceFuncSpec extends DbSuite {
 
   }
 
-  "The service from both" should "create and read description by device name" in {
+  it should "store logs coming from a device" in {
+    implicit val s = defaultService
+
+    postExpectOk("/devices/dev1/logs", """failure""")
+  }
+
+
+  "The service from both web ui and device" should "create and read description by device name" in {
     implicit val s = defaultService
 
     val r0 = get("/devices/dev1/descriptions")
@@ -267,6 +283,11 @@ class ServiceFuncSpec extends DbSuite {
     val r = post(path, body)
     r.status shouldBe Status.Created
     r.as[Json].unsafeRunSync()
+  }
+
+  private[this] def postExpectOk(path: String, body: String)(implicit service: Service[IO]): Unit = {
+    val r = post(path, body)
+    r.status shouldBe Status.Ok
   }
 
   private[this] def putExpect(path: String, body: String, status: Status)(implicit service: Service[IO]): Unit = {
