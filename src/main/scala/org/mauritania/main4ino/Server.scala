@@ -44,10 +44,11 @@ object Server extends StreamApp[IO] {
       _ <- Stream.eval(Database.initialize(transactor))
       cleanupPeriodSecs = FiniteDuration(configApp.database.cleanup.periodSecs, TimeUnit.SECONDS)
       _ <- Stream.eval(Scheduler.periodicIO(cleanupRepoTask, cleanupPeriodSecs))
+      translator <- Stream.eval(Translator.create(repo, time))
       exitCodeServer <- BlazeBuilder[IO]
         .bindHttp(configApp.server.port, configApp.server.host)
         .mountService(new webapp.Service("/webapp/index.html").service, "/")
-        .mountService(new v1.Service(auth, new Translator(repo, time), time).serviceWithAuthentication, "/api/v1")
+        .mountService(new v1.Service(auth, translator, time).serviceWithAuthentication, "/api/v1")
         .serve
 
     } yield exitCodeServer
