@@ -1,3 +1,5 @@
+val ProjectVersion = "0.1.0-SNAPSHOT"
+
 val ScalaVersion = "2.12.8"
 val Http4sVersion = "0.18.14"
 val Specs2Version = "4.2.0"
@@ -18,7 +20,7 @@ lazy val root = (project in file("."))
   .settings(
     organization := "org.mauritania",
     name := "botinobe",
-    version := "0.1.0-SNAPSHOT",
+    version := ProjectVersion,
     scalaVersion := ScalaVersion,
     scalacOptions ++= Seq("-Ypartial-unification"),
     libraryDependencies ++= Seq(
