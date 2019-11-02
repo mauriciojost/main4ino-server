@@ -18,6 +18,8 @@ import org.mauritania.main4ino.models.{DeviceId, RequestId}
 
 class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
+  val BaseWaitMs = 1000
+
   Sequential
   var appThread: Thread = _
   var httpClient: Client[IO] = _
@@ -29,7 +31,7 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     appThread = launchAsync(Array("src/test/resources/config01"))
     httpClient = Http1Client[IO]().unsafeRunSync
-    Thread.sleep(3000)
+    Thread.sleep(3 * BaseWaitMs)
   }
 
   override def afterAll(): Unit = {
@@ -59,7 +61,7 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
     val dev1t0 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
     jsonAs[DeviceId](dev1t0.unsafeRunSync()).dbId.id shouldBe id1
 
-    Thread.sleep(2000)
+    Thread.sleep(2 * BaseWaitMs)
 
     // check that dev1 still exists
     val dev1t2 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
@@ -73,9 +75,9 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
     val dev2t2 = httpClient.expect[String](devGetRequest("dev2", "targets", id2))
     jsonAs[DeviceId](dev2t2.unsafeRunSync()).dbId.id shouldBe (id2)
 
-    Thread.sleep(3000)
+    Thread.sleep(3 * BaseWaitMs)
     // cleanup every 5s
-    Thread.sleep(1000)
+    Thread.sleep(BaseWaitMs)
 
     // check that dev2 exists
     val dev2t6 = httpClient.expect[String](devGetRequest("dev2", "targets", id2))
