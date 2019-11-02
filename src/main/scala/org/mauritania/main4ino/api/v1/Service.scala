@@ -128,15 +128,26 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       Ok(x.map(_.asJson), ContentTypeAppJson)
     }
 
+
     /**
-      * POST /devices/<dev>/logs
+      * PUT /devices/<dev>/logs
       *
-      * Example: POST /devices/dev1/logs
+      * Example: PUT /devices/dev1/logs
       *
       * Update the device's logs.
       *
       * Returns: OK (200)
       */
+    case a@PUT -> _ / "devices" / Dev(device) / "logs" as _ => {
+      val d = a.req.bodyAsText
+      val r: F[Attempt[Unit]] = tr.updateLogs(device, d)
+      r.flatMap {
+        case Right(_) => Ok()
+        case Left(m) => InternalServerError(m)
+      }
+    }
+
+    // TODO DEPRECATED, to be removed (and adapt arduino part consequently)
     case a@POST -> _ / "devices" / Dev(device) / "logs" as _ => {
       val d = a.req.bodyAsText
       val r: F[Attempt[Unit]] = tr.updateLogs(device, d)
