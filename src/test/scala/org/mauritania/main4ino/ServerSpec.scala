@@ -18,7 +18,7 @@ import org.mauritania.main4ino.models.{DeviceId, RequestId}
 
 class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
-  val BaseWaitMs = 1000
+  val BaseWaitMs = 3000
 
   Sequential
   var appThread: Thread = _
