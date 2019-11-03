@@ -1,6 +1,6 @@
 package org.mauritania.main4ino.api.v1
 
-import java.nio.file.Paths
+import java.nio.file.{Path, Paths}
 import java.time.{Instant, ZoneId, ZonedDateTime}
 
 import cats.effect.IO
@@ -20,10 +20,10 @@ import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security._
-import org.mauritania.main4ino.{DbSuite, RepositoryIO}
+import org.mauritania.main4ino.{DbSuite, RepositoryIO, TmpDir}
 import org.scalatest.Sequential
 
-class ServiceFuncSpec extends DbSuite {
+class ServiceFuncSpec extends DbSuite with TmpDir {
 
   Sequential
 
@@ -33,17 +33,22 @@ class ServiceFuncSpec extends DbSuite {
     def nowUtc: IO[ZonedDateTime] = IO.pure(TheTime)
   }
 
-  def defaultService: Service[IO] = {
+  def defaultServiceWithTmp(tmp: Path): Service[IO] = {
     val t = new FixedTimeIO()
     new Service(
       new AutherIO(DefaultSecurityConfig),
       new Translator(
         new RepositoryIO(transactor),
         t,
-        new DevLoggerIO(Paths.get("/tmp/"))
+        new DevLoggerIO(tmp)
       ),
       t
     )
+  }
+
+  def defaultService: Service[IO] = {
+    val tmp = Paths.get("/tmp/")
+    defaultServiceWithTmp(tmp)
   }
 
   implicit val statusEncoder = JsonEncoding.StatusEncoder
@@ -247,9 +252,10 @@ class ServiceFuncSpec extends DbSuite {
   }
 
   it should "store logs coming from a device" in {
-    implicit val s = defaultService
-
-    postExpectOk("/devices/dev1/logs", """failure""")
+    withTmpDir { tmp =>
+      implicit val s = defaultServiceWithTmp(tmp)
+      postExpectOk("/devices/dev1/logs", """failure""")
+    }
   }
 
 
