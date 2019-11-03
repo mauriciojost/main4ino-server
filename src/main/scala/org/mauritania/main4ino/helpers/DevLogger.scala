@@ -24,15 +24,13 @@ trait DevLogger[F[_]] {
 
 class DevLoggerIO(basePath: JavaPath) extends DevLogger[IO] {
   final val ConcatChar = '&'
-  final val NewLine = "\n"
 
   final val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
   def updateLogs(device: String, body: Stream[IO, String]): IO[Attempt[Unit]] = {
     val path = basePath.resolve(s"$device.log")
 
-    val text = body.intersperse(NewLine)
-    val encoded = text.through(fs2text.utf8Encode)
+    val encoded = body.through(fs2text.utf8Encode)
     val written = encoded.to(io.file.writeAll(path, CreateAndAppend))
     val eithers = written.attempt.compile.toList
     val attempts = eithers.map {
