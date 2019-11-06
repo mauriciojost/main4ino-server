@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# Launch me from root-directory
+
+set -e -x
+
+root_dir=$(readlink -e `dirname $0`/../..)
+config_dir=`readlink -e $1`
+
+cd $root_dir
+rm -fr unzipped
+sbt clean universal:packageBin
+find -name main4ino-server*.zip | xargs -I% unzip % -d unzipped
+unzipped/bin/server $config_dir
+
+
