@@ -2,6 +2,11 @@ val ProjectVersion = "0.1.0-SNAPSHOT"
 
 val ScalaVersion = "2.12.8"
 
+enablePlugins(JavaServerAppPackaging)
+
+maintainer := "Mauricio Jost <mauriciojostx@gmail.com>"
+packageSummary := "Properties management for main4ino-enabled embedded systems."
+mainClass in Compile := Some("org.mauritania.main4ino.Server")
 
 lazy val root = (project in file("."))
   .settings(
