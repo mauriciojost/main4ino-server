@@ -19,7 +19,7 @@ val BcryptVersion = "3.1"
 lazy val root = (project in file("."))
   .settings(
     organization := "org.mauritania",
-    name := "botinobe",
+    name := "main4ino-server",
     version := ProjectVersion,
     scalaVersion := ScalaVersion,
     scalacOptions ++= Seq("-Ypartial-unification"),
