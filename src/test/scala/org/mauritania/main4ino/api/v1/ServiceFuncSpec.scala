@@ -40,7 +40,7 @@ class ServiceFuncSpec extends DbSuite with TmpDir {
       new Translator(
         new RepositoryIO(transactor),
         t,
-        new DevLoggerIO(tmp)
+        new DevLoggerIO(tmp, t)
       ),
       t
     )

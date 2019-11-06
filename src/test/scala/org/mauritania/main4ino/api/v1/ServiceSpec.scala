@@ -132,7 +132,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with DecodersI
   }
 
   private def defaultService(r: Repository[IO], t: Time[IO]) = {
-    new Service(new AutherIO(AuthConfig), new Translator(r, t, new DevLoggerIO(Paths.get("/tmp"))), t)(Sync[IO])
+    new Service(new AutherIO(AuthConfig), new Translator(r, t, new DevLoggerIO(Paths.get("/tmp"), t)), t)(Sync[IO])
   }
 
   it should {

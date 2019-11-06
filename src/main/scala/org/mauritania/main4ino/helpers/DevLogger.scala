@@ -22,29 +22,30 @@ trait DevLogger[F[_]] {
   def updateLogs(device: String, body: Stream[F, String]): F[Attempt[Unit]]
 }
 
-class DevLoggerIO(basePath: JavaPath) extends DevLogger[IO] {
-  final val ConcatChar = '&'
+class DevLoggerIO(basePath: JavaPath, time: Time[IO]) extends DevLogger[IO] {
 
   final val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
   def updateLogs(device: String, body: Stream[IO, String]): IO[Attempt[Unit]] = {
     val path = basePath.resolve(s"$device.log")
 
-    val encoded = body.through(fs2text.utf8Encode)
-    val written = encoded.to(io.file.writeAll(path, CreateAndAppend))
-    val eithers = written.attempt.compile.toList
-    val attempts = eithers.map {
+    for {
+      timestamp <- time.nowUtc
+      timedBody = body.map(message => s"$timestamp $message")
+      encoded = timedBody.through(fs2text.utf8Encode)
+      written = encoded.to(io.file.writeAll(path, CreateAndAppend))
+      eithers = written.attempt.compile.toList
+      attempts <- eithers.map {
 
-      // Not clear. This pattern matching is done based on non-documented observed
-      // behaviour of io.file.WriteAll whose expected output was a single element
-      // containing a Right(()) or a Left(e). Observed: no element if success, one
-      // element Left(e) if failure.
-      case Nil => Right()
-      case Left(e) :: Nil => Left(e.getMessage)
-      case _ => Left("Unexpected scenario")
-    }
-
-    attempts
+        // Not clear. This pattern matching is done based on non-documented observed
+        // behaviour of io.file.WriteAll whose expected output was a single element
+        // containing a Right(()) or a Left(e). Observed: no element if success, one
+        // element Left(e) if failure.
+        case Nil => Right()
+        case Left(e) :: Nil => Left(e.getMessage)
+        case _ => Left("Unexpected scenario")
+      }
+    } yield attempts
   }
 
 }

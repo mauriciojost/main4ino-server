@@ -34,7 +34,7 @@ object Server extends StreamApp[IO] {
       auth = new AutherIO(configUsers)
       repo = new RepositoryIO(transactor)
       time = new TimeIO()
-      devLogger = new DevLoggerIO(Paths.get(configApp.devLogger.logsBasePath))
+      devLogger = new DevLoggerIO(Paths.get(configApp.devLogger.logsBasePath), time)
       cleanupRepoTask = for {
         logger <- Slf4jLogger.fromClass[IO](Server.getClass)
         now <- time.nowUtc
