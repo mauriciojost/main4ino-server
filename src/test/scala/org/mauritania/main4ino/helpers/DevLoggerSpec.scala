@@ -22,21 +22,24 @@ class DevLoggerSpec extends FlatSpec with Matchers with TmpDir {
     withTmpDir { tmp =>
       val expectedFile = tmp.resolve("device.log")
       val logger = new DevLoggerIO(tmp, new FixedTimeIO())
-      val s1 = Stream("hey\n", "you\n") // creates and appends
+      val s1 = Stream("hey\nyou\n") // creates and appends
       logger.updateLogs("device", s1).unsafeRunSync() should be(Right(()))
       Source.fromFile(expectedFile.toFile).getLines.toList should be(
         List(
-          "1970-01-01T00:00Z[UTC] hey",
-          "1970-01-01T00:00Z[UTC] you"
+          "### 1970-01-01T00:00Z[UTC]",
+          "hey",
+          "you"
         )
       )
       val s2 = Stream("guy\n") // appends
       logger.updateLogs("device", s2).unsafeRunSync() should be(Right(()))
       Source.fromFile(expectedFile.toFile).getLines.toList should be(
         List(
-          "1970-01-01T00:00Z[UTC] hey",
-          "1970-01-01T00:00Z[UTC] you",
-          "1970-01-01T00:00Z[UTC] guy" // << extra line appended
+          "### 1970-01-01T00:00Z[UTC]",
+          "hey",
+          "you",
+          "### 1970-01-01T00:00Z[UTC]",  // << extra appended section from here
+          "guy"
         )
       ) // appends
     }
