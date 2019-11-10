@@ -16,7 +16,7 @@ import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.`Content-Type`
 import org.http4s.server.AuthMiddleware
-import org.http4s.{AuthedService, Entity, HttpService, MediaType, Request, Response, StaticFile}
+import org.http4s.{AuthedService, Entity, Headers, HttpService, MediaType, Request, Response, StaticFile}
 import org.mauritania.main4ino.Repository
 import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.Repository.ReqType.ReqType
@@ -209,7 +209,8 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       * Returns: OK (200) | NO_CONTENT (204)
       */
     case a@GET -> _ / "devices" / Dev(device) / "firmwares" / Proj(project) / Firm(firmwareId) as _ => {
-      val x: F[Attempt[Stream[F, Byte]]] = tr.getFirmware(project, firmwareId)
+      val h: Headers = a.req.headers
+      val x: F[Attempt[Stream[F, Byte]]] = tr.getFirmware(project, firmwareId, h)
       x.flatMap {
         case Right(v) => Ok(v)
         case Left(_) => NoContent()

@@ -15,15 +15,16 @@ import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status.Status
 import org.mauritania.main4ino.models._
 import fs2.Stream
+import org.http4s.Headers
 import org.mauritania.main4ino.firmware.Store
 
 class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger: DevLogger[F], firmware: Store[F]) extends Http4sDsl[F] {
 
-  def getFirmware(project: ProjectName, firmwareId: FirmwareId): F[Attempt[Stream[F, Byte]]] = {
+  def getFirmware(project: ProjectName, firmwareId: FirmwareId, headers: Headers): F[Attempt[Stream[F, Byte]]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       y <- firmware.getFirmware(project, firmwareId)
-      _ <- logger.debug(s"Lookup firmware $project/$firmwareId")
+      _ <- logger.debug(s"Lookup firmware $project/$firmwareId (headers: $headers)")
     } yield (y)
   }
 

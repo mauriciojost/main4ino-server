@@ -34,7 +34,7 @@ class ServiceFuncSpec extends DbSuite with TmpDir {
     def nowUtc: IO[ZonedDateTime] = IO.pure(TheTime)
   }
 
-  def defaultServiceWithTmp(tmp: Path): Service[IO] = {
+  def defaultServiceWithDirectory(tmp: Path): Service[IO] = {
     val t = new FixedTimeIO()
     new Service(
       new AutherIO(DefaultSecurityConfig),
@@ -50,7 +50,7 @@ class ServiceFuncSpec extends DbSuite with TmpDir {
 
   def defaultService: Service[IO] = {
     val tmp = Paths.get("/tmp/")
-    defaultServiceWithTmp(tmp)
+    defaultServiceWithDirectory(tmp)
   }
 
   implicit val statusEncoder = JsonEncoding.StatusEncoder
@@ -255,10 +255,21 @@ class ServiceFuncSpec extends DbSuite with TmpDir {
 
   it should "store logs coming from a device" in {
     withTmpDir { tmp =>
-      implicit val s = defaultServiceWithTmp(tmp)
+      implicit val s = defaultServiceWithDirectory(tmp)
       postExpectOk("/devices/dev1/logs", """failure""")
     }
   }
+
+  it should "read a firmware" in {
+    val Byte0: Byte = '0'.toByte
+    val Byte1: Byte = '1'.toByte
+    val ByteEnd: Byte = 10.toByte
+    implicit val s = defaultServiceWithDirectory(Paths.get("src", "test", "resources", "firmwares", "1"))
+    val r = get("/devices/dev1/firmwares/botino/firmware")
+    r.status shouldBe Status.Ok
+    r.body.compile.toList.unsafeRunSync() shouldBe List(Byte0, Byte0, Byte1, Byte1, ByteEnd)
+  }
+
 
 
   "The service from both web ui and device" should "create and read description by device name" in {
