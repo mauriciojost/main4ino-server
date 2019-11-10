@@ -13,6 +13,10 @@ import scala.util.Try
 
 object Url {
 
+  final val AlphaNumericAndUnderscoreRegex = raw"^([a-zA-Z0-9_]{4,20})$$".r
+
+  def extractSafeStringFrom(s: String): Option[String] = AlphaNumericAndUnderscoreRegex.findFirstIn(s)
+
   // Parameters
 
   implicit val statusDecoder: QueryParamDecoder[Status] = new QueryParamDecoder[Status] {
@@ -33,14 +37,21 @@ object Url {
   }
 
   object Dev { // device section
-    final val DeviceRegex = raw"^([a-zA-Z0-9_]{4,20})$$".r
-    def unapply(dev: String): Option[String] = DeviceRegex.findFirstIn(dev)
+    def unapply(devId: String): Option[String] = extractSafeStringFrom(devId)
   }
 
   object Act { // actor section
-    final val ActorRegex = raw"^([a-zA-Z0-9_]{4,20})$$".r
-    def unapply(dev: String): Option[String] = ActorRegex.findFirstIn(dev)
+    def unapply(actorId: String): Option[String] = extractSafeStringFrom(actorId)
   }
+
+  object Proj { // project section
+    def unapply(projectId: String): Option[String] = extractSafeStringFrom(projectId)
+  }
+
+  object Firm { // firmware id section
+    def unapply(firmwareId: String): Option[String] = extractSafeStringFrom(firmwareId)
+  }
+
 
   object ReqId { // request ID secction
     def unapply(id: String): Option[RequestId] = Try(id.toLong).toOption

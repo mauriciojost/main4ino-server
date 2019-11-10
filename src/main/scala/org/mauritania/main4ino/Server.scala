@@ -12,6 +12,7 @@ import org.http4s.server.blaze.BlazeBuilder
 import org.mauritania.main4ino.Repository.ReqType
 import org.mauritania.main4ino.api.{Translator, v1}
 import org.mauritania.main4ino.db.Database
+import org.mauritania.main4ino.firmware.{Store, StoreIO}
 import org.mauritania.main4ino.helpers.{DevLoggerIO, TimeIO}
 import org.mauritania.main4ino.security.AutherIO
 
@@ -35,6 +36,7 @@ object Server extends StreamApp[IO] {
       repo = new RepositoryIO(transactor)
       time = new TimeIO()
       devLogger = new DevLoggerIO(Paths.get(configApp.devLogger.logsBasePath), time)
+      firmware = new StoreIO(Paths.get(configApp.firmware.firmwareBasePath))
       cleanupRepoTask = for {
         logger <- Slf4jLogger.fromClass[IO](Server.getClass)
         now <- time.nowUtc
@@ -49,7 +51,7 @@ object Server extends StreamApp[IO] {
       exitCodeServer <- BlazeBuilder[IO]
         .bindHttp(configApp.server.port, configApp.server.host)
         .mountService(new webapp.Service("/webapp/index.html").service, "/")
-        .mountService(new v1.Service(auth, new Translator(repo, time, devLogger), time).serviceWithAuthentication, "/api/v1")
+        .mountService(new v1.Service(auth, new Translator(repo, time, devLogger, firmware), time).serviceWithAuthentication, "/api/v1")
         .serve
 
     } yield exitCodeServer

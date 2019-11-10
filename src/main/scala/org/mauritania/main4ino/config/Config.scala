@@ -3,13 +3,14 @@ package org.mauritania.main4ino.config
 import java.io.File
 
 import cats.effect.IO
-import org.mauritania.main4ino.config.Config.{DevLoggerConfig, ServerConfig}
+import org.mauritania.main4ino.config.Config.{DevLoggerConfig, FirmwareConfig, ServerConfig}
 import org.mauritania.main4ino.db.{Config => DbConfig}
 
 case class Config(
   server: ServerConfig,
   database: DbConfig,
-  devLogger: DevLoggerConfig
+  devLogger: DevLoggerConfig,
+  firmware: FirmwareConfig
 )
 
 object Config {
@@ -26,5 +27,10 @@ object Config {
   case class DevLoggerConfig(
     logsBasePath: String
   )
+
+  case class FirmwareConfig(
+    firmwareBasePath: String
+  )
+
 
 }

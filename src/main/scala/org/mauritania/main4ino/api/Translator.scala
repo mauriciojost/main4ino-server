@@ -1,6 +1,6 @@
 package org.mauritania.main4ino.api
 
-import java.nio.file.{Paths, StandardOpenOption}
+import java.nio.file.Paths
 import java.time.ZoneId
 
 import cats.effect.Sync
@@ -15,10 +15,19 @@ import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status.Status
 import org.mauritania.main4ino.models._
 import fs2.Stream
+import org.mauritania.main4ino.firmware.Store
 
-class Translator[F[_] : Sync](repository: Repository[F], time: Time[F], devLogger: DevLogger[F]) extends Http4sDsl[F] {
+class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger: DevLogger[F], firmware: Store[F]) extends Http4sDsl[F] {
 
-  def updateLogs(device: String, body: Stream[F, String]): F[Attempt[Unit]] = {
+  def getFirmware(project: ProjectName, firmwareId: FirmwareId): F[Attempt[Stream[F, Byte]]] = {
+    for {
+      logger <- Slf4jLogger.fromClass[F](Translator.getClass)
+      y <- firmware.getFirmware(project, firmwareId)
+      _ <- logger.debug(s"Lookup firmware $project/$firmwareId")
+    } yield (y)
+  }
+
+  def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Unit]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       d <- devLogger.updateLogs(device, body)
@@ -26,7 +35,7 @@ class Translator[F[_] : Sync](repository: Repository[F], time: Time[F], devLogge
     } yield (d)
   }
 
-  def getLastDescription(device: String): F[Attempt[Description]] = {
+  def getLastDescription(device: DeviceName): F[Attempt[Description]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       d <- repository.getDescription(device)

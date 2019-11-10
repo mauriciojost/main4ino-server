@@ -14,6 +14,7 @@ import org.http4s.headers.Authorization
 import org.http4s.{BasicCredentials, EntityBody, Headers, Method, Request, Response, Status, Uri}
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.{CountResponse, IdResponse, IdsOnlyResponse}
+import org.mauritania.main4ino.firmware.{Store, StoreIO}
 import org.mauritania.main4ino.helpers.{DevLoggerIO, Time, TimeIO}
 import org.mauritania.main4ino.models.Description
 import org.mauritania.main4ino.models.Description.VersionJson
@@ -40,8 +41,9 @@ class ServiceFuncSpec extends DbSuite with TmpDir {
       new Translator(
         new RepositoryIO(transactor),
         t,
-        new DevLoggerIO(tmp, t)
-      ),
+        new DevLoggerIO(tmp, t),
+        new StoreIO(tmp)
+    ),
       t
     )
   }

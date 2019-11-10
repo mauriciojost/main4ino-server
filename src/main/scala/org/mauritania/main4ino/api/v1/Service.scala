@@ -16,7 +16,7 @@ import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.`Content-Type`
 import org.http4s.server.AuthMiddleware
-import org.http4s.{AuthedService, HttpService, MediaType, Request, Response}
+import org.http4s.{AuthedService, Entity, HttpService, MediaType, Request, Response, StaticFile}
 import org.mauritania.main4ino.Repository
 import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.Repository.ReqType.ReqType
@@ -30,6 +30,8 @@ import org.mauritania.main4ino.models._
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
 import org.mauritania.main4ino.security.{Auther, User}
 import java.nio.file.{Path => JavaPath}
+
+import fs2.Stream
 
 class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) extends Http4sDsl[F] {
 
@@ -195,6 +197,24 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       }
     }
 
+    /**
+      * WORK IN PROGRESS
+      *
+      * GET /devices/<dev>/firmwares/<proj>/<firmid>
+      *
+      * Example: GET /devices/dev1/firmwares/botino/3.1.8
+      *
+      * Retrieve a firmware given a firmware id and the project name.
+      *
+      * Returns: OK (200) | NO_CONTENT (204)
+      */
+    case a@GET -> _ / "devices" / Dev(device) / "firmwares" / Proj(project) / Firm(firmwareId) as _ => {
+      val x: F[Attempt[Stream[F, Byte]]] = tr.getFirmware(project, firmwareId)
+      x.flatMap {
+        case Right(v) => Ok(v)
+        case Left(_) => NoContent()
+      }
+    }
 
     // Targets & Reports (at device level)
 

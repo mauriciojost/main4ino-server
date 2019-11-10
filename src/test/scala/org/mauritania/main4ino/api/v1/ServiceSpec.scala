@@ -28,6 +28,7 @@ import org.scalatest.{Matchers, WordSpec}
 import org.scalatest.EitherValues._
 import org.http4s.circe._
 import org.mauritania.main4ino.DecodersIO
+import org.mauritania.main4ino.firmware.{Store, StoreIO}
 
 import scala.reflect.ClassTag
 
@@ -132,7 +133,21 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with DecodersI
   }
 
   private def defaultService(r: Repository[IO], t: Time[IO]) = {
-    new Service(new AutherIO(AuthConfig), new Translator(r, t, new DevLoggerIO(Paths.get("/tmp"), t)), t)(Sync[IO])
+    new Service(
+      auth = new AutherIO(AuthConfig),
+      tr = new Translator(
+        repository = r,
+        time = t,
+        devLogger = new DevLoggerIO(
+          basePath = Paths.get("/tmp"),
+          time = t
+        ),
+        firmware = new StoreIO(
+          basePath = Paths.get("/tmp")
+        )
+      ),
+      time = t
+    )(Sync[IO])
   }
 
   it should {

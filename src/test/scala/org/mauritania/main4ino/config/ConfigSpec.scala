@@ -2,7 +2,7 @@ package org.mauritania.main4ino.config
 
 import java.io.File
 
-import org.mauritania.main4ino.config.Config.{DevLoggerConfig, ServerConfig}
+import org.mauritania.main4ino.config.Config.{DevLoggerConfig, FirmwareConfig, ServerConfig}
 import org.mauritania.main4ino.db.Config.Cleanup
 import org.scalatest._
 import org.mauritania.main4ino.db.{Config => DbConfig}
@@ -25,6 +25,9 @@ class ConfigSpec extends FlatSpec with Matchers {
       ),
       devLogger = DevLoggerConfig(
         logsBasePath = "/tmp"
+      ),
+      firmware = FirmwareConfig(
+        firmwareBasePath = "/tmp"
       )
     )
   }

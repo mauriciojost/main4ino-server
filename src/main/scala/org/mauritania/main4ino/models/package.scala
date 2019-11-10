@@ -20,4 +20,10 @@ package object models {
 	// Timestamp in seconds from the epoch (in UTC)
 	type EpochSecTimestamp = Long
 
+	// Project name (like botino, sleepino, etc.)
+	type ProjectName = String
+
+	// Id of the firmware
+	type FirmwareId = String
+
 }
