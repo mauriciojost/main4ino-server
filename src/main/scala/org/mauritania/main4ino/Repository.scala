@@ -38,8 +38,6 @@ trait Repository[F[_]] {
 
   def selectMaxDevice(table: ReqType, device: DeviceName, status: Option[Status]): F[Option[DeviceId]]
 
-  def selectMaxDeviceActor(table: ReqType, device: DeviceName, actor: ActorName, status: Option[Status]): F[Option[DeviceId]]
-
   def selectRequestIdsWhereDevice(table: ReqType, d: DeviceName): Stream[F, RequestId]
 
   def updateDeviceWhereRequestId(table: ReqType, dev: DeviceName, requestId: RequestId, status: Status): F[Either[ErrMsg, Int]]
@@ -168,21 +166,6 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
     transaction.transact(transactor)
   }
 
-  def selectMaxDeviceActor(table: ReqType, device: DeviceName, actor: ActorName, status: Option[Status]): IO[Option[DeviceId]] = {
-    val transaction = for {
-      i <- sqlSelectLastRequestIdWhereDeviceActorStatus(table, device, actor, status)
-      t <- i.map(sqlSelectMetadataWhereRequestId(table, _)).getOrElse(raw[Option[(DbId, Metadata)]](x => None))
-      p <- i.map(sqlSelectActorTupWhereRequestIdActorStatus(table, _)).getOrElse(raw[List[ActorTup]](x => List.empty[ActorTup]))
-    } yield {
-      (t, p) match {
-        case (Some((i, m)), l) => Some(Repository.toDevice(i, m, l))
-        case _ => None
-      }
-    }
-    transaction.transact(transactor)
-  }
-
-
   def selectRequestIdsWhereDevice(table: ReqType, d: DeviceName): Stream[IO, RequestId] = {
     (fr"SELECT id FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE device_name=$d").query[RequestId].stream.transact(transactor)
   }
@@ -257,17 +240,6 @@ class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
       case None => fr""
     }
     (fr"SELECT MAX(id) FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE device_name=$device" ++ statusFr).query[Option[RequestId]].unique
-  }
-
-  private def sqlSelectLastRequestIdWhereDeviceActorStatus(table: ReqType, d: DeviceName, a: ActorName, s: Option[Status]): ConnectionIO[Option[RequestId]] = {
-    val stFr = s match {
-      case Some(i) => fr"AND r.status = $i"
-      case None => fr""
-    }
-    (fr"SELECT MAX(r.id) FROM" ++ Fragment.const(table.code + "_requests") ++ fr"as r LEFT OUTER JOIN" ++ Fragment.const(table.code) ++ fr"as t" ++
-      fr"ON r.id = t.request_id" ++
-      fr"WHERE r.device_name=$d AND t.actor_name=$a" ++ stFr)
-      .query[Option[RequestId]].unique
   }
 
   private def sqlSelectActorTupWhereRequestIdActorStatus(

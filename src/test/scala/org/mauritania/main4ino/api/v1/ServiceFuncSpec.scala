@@ -227,15 +227,16 @@ class ServiceFuncSpec extends DbSuite with TmpDir {
 
     implicit val s = defaultService
 
-    // Add a few targets
-    postExpectCreated("/devices/dev1/targets", """{"clock":{"h":"7"}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
-    postExpectCreated("/devices/dev1/targets", """{"body":{"mv1":"Zz."}}""").noSpaces shouldBe IdResponse(2).asJson.noSpaces
+    // Add a few reports (mind that this is not the regular situation, reports should be complete so that they can be
+    // picked up as last status)
+    postExpectCreated("/devices/dev1/reports", """{"clock":{"h":"7"}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
+    postExpectCreated("/devices/dev1/reports", """{"body":{"mv1":"Zz."}}""").noSpaces shouldBe IdResponse(2).asJson.noSpaces
 
     // Check the responses
-    val dev1a = getExpectOk("/devices/dev1/targets/actors/clock/last?status=C")
-    dev1a.noSpaces shouldBe """{"h":"7"}"""
+    val dev1a = get("/devices/dev1/reports/actors/clock/last?status=C")
+    dev1a.status shouldBe Status.NoContent // not present in the last report
 
-    val dev1b = getExpectOk("/devices/dev1/targets/actors/body/last?status=C")
+    val dev1b = getExpectOk("/devices/dev1/reports/actors/body/last?status=C")
     dev1b.noSpaces shouldBe """{"mv1":"Zz."}"""
 
   }

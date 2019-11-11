@@ -61,20 +61,6 @@ class RepositoryIOSpec extends DbSuite {
     repo.selectMaxDevice(ReqType.Targets, "dev1", None).unsafeRunSync() shouldBe Some(DeviceId(DbId(2L, 88L), Device1Modified))
   }
 
-  it should "create targets with two actors and read the latest image of each" in {
-    val Device1Base = Device1
-    val Device1ModifiedActorY = Device1.copy(actors = Map("actory" -> Map("yprop1" -> "yvalue1updated")))
-    val Device1ModifiedActorX = Device1.copy(actors = Map("actorx" -> Map("xprop1" -> "xvalue1updated")))
-    val repo = new RepositoryIO(transactor)
-
-    repo.insertDevice(ReqType.Targets, Device1Base, 77L).unsafeRunSync() shouldBe 1L
-    repo.insertDevice(ReqType.Targets, Device1ModifiedActorY, 78L).unsafeRunSync() shouldBe 2L
-    repo.insertDevice(ReqType.Targets, Device1ModifiedActorX, 79L).unsafeRunSync() shouldBe 3L
-
-    repo.selectMaxDeviceActor(ReqType.Targets, "dev1", "actory", None).unsafeRunSync().map(_.dbId) shouldBe Some(DbId(2L, 78L))
-    repo.selectMaxDeviceActor(ReqType.Targets, "dev1", "actorx", None).unsafeRunSync().map(_.dbId) shouldBe Some(DbId(3L, 79L))
-  }
-
   it should "read devices respecting from and to criteria" in {
 
     val snap1 = Device1.withActorPropValue("a1", "v", "k")
