@@ -270,7 +270,14 @@ class ServiceFuncSpec extends DbSuite with TmpDir {
     r.body.compile.toList.unsafeRunSync() shouldBe List(Byte0, Byte0, Byte1, Byte1, ByteEnd)
   }
 
-
+  it should "report a menaningful failure if cannot find a requested firmware" in {
+    val Byte0: Byte = '0'.toByte
+    val Byte1: Byte = '1'.toByte
+    val ByteEnd: Byte = 10.toByte
+    implicit val s = defaultServiceWithDirectory(Paths.get("src", "test", "resources", "firmwares", "1"))
+    val r = get("/devices/dev1/firmwares/botino/firmware2")
+    r.status shouldBe Status.NoContent
+  }
 
   "The service from both web ui and device" should "create and read description by device name" in {
     implicit val s = defaultService
