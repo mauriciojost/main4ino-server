@@ -16,18 +16,6 @@ case class DeviceId(
   def creation: EpochSecTimestamp = dbId.creation
   def metadata: Metadata = device.metadata
   def actors: DeviceProps = device.actors
-  def onlyWithActor(a: ActorName): Option[DeviceId] = {
-    val actor = actors.get(a)
-    actor.map{ act =>
-      DeviceId(
-        dbId = dbId,
-        device = Device(
-          metadata = metadata,
-          actors = Map(a -> act)
-        )
-      )
-    }
-  }
 }
 
 /**

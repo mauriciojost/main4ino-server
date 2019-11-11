@@ -118,10 +118,9 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
   def getDeviceActorLast(dev: DeviceName, act: ActorName, table: ReqType, status: Option[Status]): F[Option[DeviceId]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
-      device <- repository.selectMaxDevice(table, dev, status)
-      deviceActor = device.flatMap(_.onlyWithActor(act))
-      _ <- logger.debug(s"GET last device $dev actor $act from table $table with status $status: $deviceActor")
-    } yield (deviceActor)
+      device <- repository.selectMaxDeviceActor(table, dev, act, status)
+      _ <- logger.debug(s"GET last device $dev actor $act from table $table with status $status: $device")
+    } yield (device)
   }
 
   def getDevicesIds(dev: DeviceName, table: ReqType, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], status: Option[Status]): F[IdsOnlyResponse] = {
