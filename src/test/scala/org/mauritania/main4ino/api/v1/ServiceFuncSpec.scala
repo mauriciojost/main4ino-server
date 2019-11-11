@@ -265,7 +265,7 @@ class ServiceFuncSpec extends DbSuite with TmpDir {
     val Byte1: Byte = '1'.toByte
     val ByteEnd: Byte = 10.toByte
     implicit val s = defaultServiceWithDirectory(Paths.get("src", "test", "resources", "firmwares", "1"))
-    val r = get("/devices/dev1/firmwares/botino/firmware")
+    val r = get("/devices/dev1/firmwares/botino?version=firmware")
     r.status shouldBe Status.Ok
     r.body.compile.toList.unsafeRunSync() shouldBe List(Byte0, Byte0, Byte1, Byte1, ByteEnd)
   }
@@ -275,7 +275,7 @@ class ServiceFuncSpec extends DbSuite with TmpDir {
     val Byte1: Byte = '1'.toByte
     val ByteEnd: Byte = 10.toByte
     implicit val s = defaultServiceWithDirectory(Paths.get("src", "test", "resources", "firmwares", "1"))
-    val r = get("/devices/dev1/firmwares/botino/firmware2")
+    val r = get("/devices/dev1/firmwares/botino?version=firmware2")
     r.status shouldBe Status.NoContent
   }
 

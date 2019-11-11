@@ -2,7 +2,7 @@ package org.mauritania.main4ino.api.v1
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.http4s.{ParseFailure, QueryParamDecoder, QueryParameterValue}
-import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
+import org.http4s.dsl.impl.{OptionalQueryParamDecoderMatcher, QueryParamDecoderMatcher}
 import org.mauritania.main4ino.Repository.ReqType
 import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.models.Device.Metadata.Status
@@ -31,6 +31,8 @@ object Url {
 
   object TimezoneParam extends OptionalQueryParamDecoderMatcher[String]("timezone")
 
+  object FirmVersionParam extends QueryParamDecoderMatcher[String]("version")
+
   // Url sections
   object Req { // request type section
     def unapply(str: String): Option[ReqType] = ReqType.resolve(str)
@@ -46,10 +48,6 @@ object Url {
 
   object Proj { // project section
     def unapply(projectId: String): Option[String] = extractSafeStringFrom(projectId)
-  }
-
-  object Firm { // firmware id section
-    def unapply(firmwareId: String): Option[String] = extractSafeStringFrom(firmwareId)
   }
 
 

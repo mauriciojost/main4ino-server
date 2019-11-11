@@ -208,7 +208,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a@GET -> _ / "devices" / Dev(device) / "firmwares" / Proj(project) / Firm(firmwareId) as _ => {
+    case a@GET -> _ / "devices" / Dev(device) / "firmwares" / Proj(project) :? FirmVersionParam(firmwareId) as _ => {
       val h: Headers = a.req.headers
       val x: F[Attempt[Stream[F, Byte]]] = tr.getFirmware(project, firmwareId, h)
       x.flatMap {
