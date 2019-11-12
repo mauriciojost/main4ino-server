@@ -28,12 +28,12 @@ class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
       * Returns: OK (200) | NO_CONTENT (204)
       */
     case a@GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? FirmVersionParam(version) => {
-      val S = implicitly[Sync[F]]
       val attempt: F[Attempt[Stream[F, Byte]]] = for {
         logger <- Slf4jLogger.fromClass[F](getClass)
-        fa <- st.getFirmware(FirmwareCoords(project, version, platform))
+        coords = FirmwareCoords(project, version, platform)
+        fa <- st.getFirmware(coords)
         _ <- fa match {
-          case Right(_) => S.delay(())
+          case Right(_) => logger.debug(s"Found firmware for coordinates $coords")
           case Left(msg) => logger.warn(msg)
         }
       } yield fa
@@ -51,13 +51,13 @@ class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
       *
       * Retrieve a list of firmware coordinates available for download.
       *
-      * Returns: OK (200) | NO_CONTENT (204)
+      * Returns: OK (200)
       */
     case a@GET -> Root / "firmwares" / Proj(project) => {
       for {
         logger <- Slf4jLogger.fromClass[F](getClass)
         fa <- st.listFirmwares(project)
-        _ <- logger.debug(s"Listing firmwares: $fa")
+        _ <- logger.debug(s"Listing firmwares for $project: $fa")
         r <- Ok(fa.asJson, ContentTypeAppJson)
       } yield r
     }
