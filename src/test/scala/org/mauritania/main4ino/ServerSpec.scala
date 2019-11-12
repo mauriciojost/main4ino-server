@@ -113,6 +113,11 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
     help.unsafeRunSync() should include("</body>")
   }
 
+  it should "start and expose the firmware files" in {
+    val help = httpClient.expect[String](s"http://localhost:8080/firmwares/botino")
+    help.unsafeRunSync() should include("esp8266")
+  }
+
   it should "fail if started with bad arduments" in {
     // accepts only one argument
     assertThrows[IllegalArgumentException](Server.stream(List(), IO.pure()).take(1).compile.last.unsafeRunSync())
