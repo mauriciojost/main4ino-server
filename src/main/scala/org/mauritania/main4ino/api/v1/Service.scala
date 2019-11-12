@@ -1,41 +1,28 @@
 package org.mauritania.main4ino.api.v1
 
-import java.nio.file.Paths
-import java.time.{ZoneId, ZonedDateTime}
-
 import cats.data.{Kleisli, OptionT}
 import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import io.circe.Decoder.Result
-import io.circe.Json.JString
-import io.circe.{Decoder, Encoder, HCursor, Json}
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.headers.`Content-Type`
 import org.http4s.server.AuthMiddleware
-import org.http4s.{AuthedService, Entity, Headers, HttpService, MediaType, Request, Response, StaticFile}
-import org.mauritania.main4ino.Repository
+import org.http4s.{AuthedService, HttpService, Request, Response}
 import org.mauritania.main4ino.api.Attempt
-import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.CountResponse
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Description.VersionJson
-import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models._
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
 import org.mauritania.main4ino.security.{Auther, User}
-import java.nio.file.{Path => JavaPath}
-
-import fs2.Stream
+import org.mauritania.main4ino.{ContentTypeAppJson, ContentTypeTextPlain}
 
 class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) extends Http4sDsl[F] {
 
-  import Service._
   import Url._
 
   type ErrMsg = String
@@ -193,26 +180,6 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       val x: F[Attempt[Description]] = tr.getLastDescription(device)
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
-        case Left(_) => NoContent()
-      }
-    }
-
-    /**
-      * WORK IN PROGRESS
-      *
-      * GET /devices/<dev>/firmwares/<proj>/<firmid>
-      *
-      * Example: GET /devices/dev1/firmwares/botino/3.1.8
-      *
-      * Retrieve a firmware given a firmware id and the project name.
-      *
-      * Returns: OK (200) | NO_CONTENT (204)
-      */
-    case a@GET -> _ / "devices" / Dev(device) / "firmwares" / Proj(project) :? FirmVersionParam(firmwareId) as _ => {
-      val h: Headers = a.req.headers
-      val x: F[Attempt[Stream[F, Byte]]] = tr.getFirmware(project, firmwareId, h)
-      x.flatMap {
-        case Right(v) => Ok(v)
         case Left(_) => NoContent()
       }
     }
@@ -446,7 +413,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
 
   private[v1] def logAuthentication(user: AccessAttempt): F[AccessAttempt] = {
     for {
-      logger <- Slf4jLogger.fromClass[F](Service.getClass)
+      logger <- Slf4jLogger.fromClass[F](getClass)
       msg = user match {
         case Right(i) => s">>> Authenticated: ${i.name} ${i.email}"
         case Left(m) => s">>> Failed to authenticate: $m"
@@ -461,13 +428,6 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
   val serviceWithAuthentication: HttpService[F] = customAuthMiddleware(service)
 
   private[v1] def request(r: Request[F]): F[Response[F]] = serviceWithAuthentication.orNotFound(r)
-
-}
-
-object Service {
-
-  final val ContentTypeAppJson = `Content-Type`(MediaType.`application/json`)
-  final val ContentTypeTextPlain = `Content-Type`(MediaType.`text/plain`)
 
 }
 

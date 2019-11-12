@@ -24,6 +24,9 @@ package object models {
 	type ProjectName = String
 
 	// Id of the firmware
-	type FirmwareId = String
+	type FirmwareVersion = String
+
+	// Embedded platform identifier (esp8266, esp32, etc.)
+	type Platform = String
 
 }

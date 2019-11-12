@@ -20,14 +20,6 @@ import org.mauritania.main4ino.firmware.Store
 
 class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger: DevLogger[F], firmware: Store[F]) extends Http4sDsl[F] {
 
-  def getFirmware(project: ProjectName, firmwareId: FirmwareId, headers: Headers): F[Attempt[Stream[F, Byte]]] = {
-    for {
-      logger <- Slf4jLogger.fromClass[F](Translator.getClass)
-      y <- firmware.getFirmware(project, firmwareId)
-      _ <- logger.debug(s"Lookup firmware $project/$firmwareId (headers: $headers)")
-    } yield (y)
-  }
-
   def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Unit]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)

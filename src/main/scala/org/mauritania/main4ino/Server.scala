@@ -36,7 +36,7 @@ object Server extends StreamApp[IO] {
       repo = new RepositoryIO(transactor)
       time = new TimeIO()
       devLogger = new DevLoggerIO(Paths.get(configApp.devLogger.logsBasePath), time)
-      firmware = new StoreIO(Paths.get(configApp.firmware.firmwareBasePath))
+      fwStore = new StoreIO(Paths.get(configApp.firmware.firmwareBasePath))
       cleanupRepoTask = for {
         logger <- Slf4jLogger.fromClass[IO](Server.getClass)
         now <- time.nowUtc
@@ -51,7 +51,8 @@ object Server extends StreamApp[IO] {
       exitCodeServer <- BlazeBuilder[IO]
         .bindHttp(configApp.server.port, configApp.server.host)
         .mountService(new webapp.Service("/webapp/index.html").service, "/")
-        .mountService(new v1.Service(auth, new Translator(repo, time, devLogger, firmware), time).serviceWithAuthentication, "/api/v1")
+        .mountService(new firmware.Service(fwStore).service, "/")
+        .mountService(new v1.Service(auth, new Translator(repo, time, devLogger, fwStore), time).serviceWithAuthentication, "/api/v1")
         .serve
 
     } yield exitCodeServer

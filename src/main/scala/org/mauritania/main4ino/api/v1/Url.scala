@@ -50,6 +50,10 @@ object Url {
     def unapply(projectId: String): Option[String] = extractSafeStringFrom(projectId)
   }
 
+  object Platf { // platform section (esp8266, esp32, etc.)
+    def unapply(platform: String): Option[String] = extractSafeStringFrom(platform)
+  }
+
 
   object ReqId { // request ID secction
     def unapply(id: String): Option[RequestId] = Try(id.toLong).toOption
