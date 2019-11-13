@@ -1,6 +1,8 @@
 package org.mauritania.main4ino.firmware
 
-import cats.effect.{Sync}
+import java.io.File
+
+import cats.effect.Sync
 import fs2.Stream
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.{HttpService, Request, Response}
@@ -28,7 +30,7 @@ class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
       * Returns: OK (200) | NO_CONTENT (204)
       */
     case a@GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? FirmVersionParam(version) => {
-      val attempt: F[Attempt[Stream[F, Byte]]] = for {
+      val attempt: F[Attempt[File]] = for {
         logger <- Slf4jLogger.fromClass[F](getClass)
         coords = FirmwareCoords(project, version, platform)
         fa <- st.getFirmware(coords)

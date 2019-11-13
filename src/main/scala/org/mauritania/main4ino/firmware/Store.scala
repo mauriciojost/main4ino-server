@@ -4,13 +4,12 @@ import java.io.File
 import java.nio.file.Path
 
 import cats.effect.IO
-import fs2.Stream
 import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.firmware.Store.FirmwareCoords
 import org.mauritania.main4ino.models.{FirmwareVersion, Platform, ProjectName}
 
 trait Store[F[_]] {
-  def getFirmware(coords: FirmwareCoords): F[Attempt[Stream[F, Byte]]]
+  def getFirmware(coords: FirmwareCoords): F[Attempt[File]]
 
   def listFirmwares(project: ProjectName): F[Set[FirmwareCoords]]
 }
@@ -40,26 +39,24 @@ object Store {
 
 class StoreIO(basePath: Path) extends Store[IO] {
 
-  final val ChunkSize = 2048
+  private def canRead(f: File): IO[Boolean] = IO(f.canRead)
+  private def listFiles(base: File): IO[Array[File]] = IO(base.listFiles())
 
-  override def getFirmware(coords: FirmwareCoords): IO[Attempt[Stream[IO, Byte]]] = {
+  override def getFirmware(coords: FirmwareCoords): IO[Attempt[File]] = {
     val filename = s"firmware-${coords.version}.${coords.platform}.bin"
     val file = basePath.resolve(coords.project).resolve(filename)
-    val resp: IO[Attempt[Stream[IO, Byte]]] = IO {
-      if (file.toFile.canRead) {
-        Right(fs2.io.file.readAll[IO](file, ChunkSize))
-      } else {
-        Left(s"Could not locate/read firmware: ${coords.project}/$filename (resolved to $file)")
-      }
+    val resp: IO[Attempt[File]] = canRead(file.toFile).map {
+      case true => Right(file.toFile)
+      case false => Left(s"Could not locate/read firmware: ${coords.project}/$filename (resolved to $file)")
     }
     resp
   }
 
-  override def listFirmwares(project: ProjectName): IO[Set[FirmwareCoords]] = IO {
+  override def listFirmwares(project: ProjectName): IO[Set[FirmwareCoords]] = {
     val path = basePath.resolve(project)
-    val files = path.toFile.listFiles()
-    val coords = files.flatMap(FirmwareCoords.fromFile).toSet
-    coords
+    listFiles(path.toFile).map { files =>
+      files.flatMap(FirmwareCoords.fromFile).toSet
+    }
   }
 
 }

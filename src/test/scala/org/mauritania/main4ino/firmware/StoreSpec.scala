@@ -9,16 +9,10 @@ import org.scalatest.EitherValues._
 
 class StoreSpec extends FlatSpec with Matchers with TmpDir {
 
-  final val Byte0: Byte = '0'.toByte
-  final val Byte1: Byte = '1'.toByte
-  final val ByteEnd: Byte = 10.toByte
-
-  "The store" should "read an existent file" in {
-    val file = Paths.get("src", "test", "resources", "firmwares", "1")
-    val store = new StoreIO(file)
-    store.getFirmware(FirmwareCoords("botino", "1.0.0", "esp8266"))
-      .unsafeRunSync().right.value
-      .compile.toList.unsafeRunSync() should be(List(Byte0, Byte0, Byte1, Byte1, ByteEnd))
+  "The store" should "point to an existent file given the coordinates" in {
+    val path = Paths.get("src", "test", "resources", "firmwares", "1")
+    val store = new StoreIO(path)
+    store.getFirmware(FirmwareCoords("botino", "1.0.0", "esp8266")).unsafeRunSync().right.value.getName should be("firmware-1.0.0.esp8266.bin")
   }
 
   it should "report a meaningful failure when cannot find a file" in {
