@@ -12,7 +12,7 @@ class StoreSpec extends FlatSpec with Matchers with TmpDir {
   "The store" should "point to an existent file given the coordinates" in {
     val path = Paths.get("src", "test", "resources", "firmwares", "1")
     val store = new StoreIO(path)
-    store.getFirmware(FirmwareCoords("botino", "1.0.0", "esp8266")).unsafeRunSync().right.value.getName should be("firmware-1.0.0.esp8266.bin")
+    store.getFirmware(FirmwareCoords("botino", "1.0.0", "esp8266")).unsafeRunSync().right.value.file.getName should be("firmware-1.0.0.esp8266.bin")
   }
 
   it should "report a meaningful failure when cannot find a file" in {

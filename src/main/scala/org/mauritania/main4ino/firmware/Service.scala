@@ -6,11 +6,12 @@ import cats.effect.Sync
 import fs2.Stream
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.{HttpService, Request, Response}
+import org.http4s.headers.`Content-Length`
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.api.v1.Url.{FirmVersionParam, Platf, Proj}
 import cats.implicits._
-import org.mauritania.main4ino.firmware.Store.FirmwareCoords
+import org.mauritania.main4ino.firmware.Store.{Firmware, FirmwareCoords}
 import org.mauritania.main4ino.ContentTypeAppJson
 import io.circe.syntax._
 import org.http4s.circe._
@@ -30,7 +31,7 @@ class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
       * Returns: OK (200) | NO_CONTENT (204)
       */
     case a@GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? FirmVersionParam(version) => {
-      val attempt: F[Attempt[File]] = for {
+      val attempt: F[Attempt[Firmware]] = for {
         logger <- Slf4jLogger.fromClass[F](getClass)
         coords = FirmwareCoords(project, version, platform)
         fa <- st.getFirmware(coords)
@@ -41,7 +42,7 @@ class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
       } yield fa
 
       attempt.flatMap {
-        case Right(v) => Ok(v)
+        case Right(Firmware(f, l)) => Ok(f, `Content-Length`.unsafeFromLong(l))
         case Left(_) => NoContent()
       }
     }
