@@ -23,8 +23,13 @@ class StoreSpec extends FlatSpec with Matchers with TmpDir {
   it should "list firmware coordinates" in {
     val file = Paths.get("src", "test", "resources", "firmwares", "1")
     val store = new StoreIO(file)
-    store.listFirmwares("botino")
-      .unsafeRunSync() should be(Set(FirmwareCoords("botino", "1.0.0", "esp8266")))
+    store.listFirmwares("botino", "esp8266").unsafeRunSync() should be(Set(FirmwareCoords("botino", "1.0.0", "esp8266")))
+  }
+
+  it should "resolve latest version" in {
+    val file = Paths.get("src", "test", "resources", "firmwares", "2")
+    val store = new StoreIO(file)
+    store.getFirmware(FirmwareCoords("botino", "LATEST", "esp8266")).unsafeRunSync().right.value.file.getName should be("firmware-2.0.0.esp8266.bin")
   }
 
 }

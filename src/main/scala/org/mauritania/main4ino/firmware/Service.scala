@@ -50,17 +50,17 @@ class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
     /**
       * GET /firmwares/<project>/<platform>
       *
-      * Example: GET /firmwares/botino
+      * Example: GET /firmwares/botino/esp8266
       *
       * Retrieve a list of firmware coordinates available for download.
       *
       * Returns: OK (200)
       */
-    case a@GET -> Root / "firmwares" / Proj(project) => {
+    case a@GET -> Root / "firmwares" / Proj(project) / Platf(platform) => {
       for {
         logger <- Slf4jLogger.fromClass[F](getClass)
-        fa <- st.listFirmwares(project)
-        _ <- logger.debug(s"Listing firmwares for $project: $fa")
+        fa <- st.listFirmwares(project, platform)
+        _ <- logger.debug(s"Listing firmwares for $project/$platform: $fa")
         r <- Ok(fa.asJson, ContentTypeAppJson)
       } yield r
     }

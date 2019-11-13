@@ -17,6 +17,7 @@ object Dependencies {
         val slf4jLog4j12Version = "1.8.0-beta2"
         val CryptobitsVersion = "1.2"
         val BcryptVersion = "3.1"
+        val GfcSemver = "0.0.5"
     }
 
     val Dependencies = Seq(
@@ -38,6 +39,7 @@ object Dependencies {
           "com.h2database" % "h2" % Versions.H2Version,
           "org.flywaydb" % "flyway-core" % Versions.FlywayVersion,
           "com.github.pureconfig" %% "pureconfig" % Versions.PureConfigVersion,
+          "com.gilt" %% "gfc-semver" % Versions.GfcSemver,
           "org.scalatest" %% "scalatest" % Versions.ScalaTestVersion % "test",
           "org.scalamock" %% "scalamock" % Versions.ScalaMockVersion % "test"
         )

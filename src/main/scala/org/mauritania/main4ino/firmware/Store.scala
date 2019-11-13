@@ -4,16 +4,19 @@ import java.io.File
 import java.nio.file.Path
 
 import cats.effect.IO
+import com.gilt.gfc.semver.SemVer
 import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.firmware.Store.{Firmware, FirmwareCoords}
 import org.mauritania.main4ino.models.{FirmwareVersion, Platform, ProjectName}
 
 trait Store[F[_]] {
   def getFirmware(coords: FirmwareCoords): F[Attempt[Firmware]]
-  def listFirmwares(project: ProjectName): F[Set[FirmwareCoords]]
+  def listFirmwares(project: ProjectName, platform: Platform): F[Set[FirmwareCoords]]
 }
 
 object Store {
+
+  final val BySemVer = Ordering.ordered[SemVer]
 
   case class FirmwareCoords(
     project: ProjectName,
@@ -45,12 +48,14 @@ class StoreIO(basePath: Path) extends Store[IO] {
 
   private def length(f: File): IO[Long] = IO(f.length)
   private def canRead(f: File): IO[Boolean] = IO(f.canRead)
-  private def listFiles(base: File): IO[Array[File]] = IO(base.listFiles())
+  private def listFiles(base: File): IO[List[File]] = IO(Option(base.listFiles()).toList.flatMap(_.toList))
 
   override def getFirmware(coords: FirmwareCoords): IO[Attempt[Firmware]] = {
-    val filename = s"firmware-${coords.version}.${coords.platform}.bin"
-    val file = basePath.resolve(coords.project).resolve(filename).toFile
     val resp: IO[Attempt[Firmware]] = for {
+      available <- listFirmwares(coords.project, coords.platform)
+      version = resolveVersion(coords, available)
+      filename = s"firmware-${version}.${coords.platform}.bin"
+      file = basePath.resolve(coords.project).resolve(filename).toFile
       readable <- canRead(file)
       length <- length(file)
       r = readable match {
@@ -61,11 +66,22 @@ class StoreIO(basePath: Path) extends Store[IO] {
     resp
   }
 
-  override def listFirmwares(project: ProjectName): IO[Set[FirmwareCoords]] = {
+  override def listFirmwares(project: ProjectName, platform: Platform): IO[Set[FirmwareCoords]] = {
     val path = basePath.resolve(project)
     listFiles(path.toFile).map { files =>
-      files.flatMap(FirmwareCoords.fromFile).toSet
+      files.flatMap(FirmwareCoords.fromFile).filter(_.platform == platform).toSet
     }
   }
+
+  private def resolveVersion(target: FirmwareCoords, available: Set[FirmwareCoords]): FirmwareVersion = {
+    import Store._
+    target match {
+      case FirmwareCoords(_, ver, _) if (ver == "LATEST" && available.nonEmpty) =>
+        val semvers = available.map(c => SemVer.apply(c.version))
+        semvers.max(BySemVer).original
+      case t => t.version
+    }
+  }
+
 
 }
