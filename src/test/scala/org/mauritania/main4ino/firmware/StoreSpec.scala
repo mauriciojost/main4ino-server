@@ -16,7 +16,7 @@ class StoreSpec extends FlatSpec with Matchers with TmpDir {
   }
 
   it should "report a meaningful failure when cannot find a file" in {
-    val store = new StoreIO(Paths.get("/non/existent/path"))
+    val store = new StoreIO(Paths.get("non", "existent", "path"))
     store.getFirmware(FirmwareCoords("botino", "2.0.0", "esp8266")).unsafeRunSync().left.value should (include("2.0.0") and include("botino"))
   }
 
@@ -31,5 +31,12 @@ class StoreSpec extends FlatSpec with Matchers with TmpDir {
     val store = new StoreIO(file)
     store.getFirmware(FirmwareCoords("botino", "LATEST", "esp8266")).unsafeRunSync().right.value.file.getName should be("firmware-2.0.0.esp8266.bin")
   }
+
+  it should "report a meaningful failure when cannot download a file" in {
+    val file = Paths.get("src", "test", "resources", "firmwares", "3")
+    val store = new StoreIO(file)
+    store.getFirmware(FirmwareCoords("botino", "1.1.0", "esp8266")).unsafeRunSync().left.value should (include("Could not locate/read"))
+  }
+
 
 }

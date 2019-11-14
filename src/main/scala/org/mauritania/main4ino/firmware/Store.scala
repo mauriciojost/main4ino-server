@@ -47,8 +47,8 @@ object Store {
 class StoreIO(basePath: Path) extends Store[IO] {
 
   private def length(f: File): IO[Long] = IO(f.length)
-  private def canRead(f: File): IO[Boolean] = IO(f.canRead)
-  private def listFiles(base: File): IO[List[File]] = IO(Option(base.listFiles()).toList.flatMap(_.toList))
+  private def isReadableFile(f: File): IO[Boolean] = IO(f.canRead && f.isFile)
+  private def listFiles(dir: File): IO[List[File]] = IO(Option(dir.listFiles()).toList.flatMap(_.toList))
 
   override def getFirmware(coords: FirmwareCoords): IO[Attempt[Firmware]] = {
     val resp: IO[Attempt[Firmware]] = for {
@@ -73,7 +73,7 @@ class StoreIO(basePath: Path) extends Store[IO] {
     val filename = s"firmware-${coords.version}.${coords.platform}.bin"
     val file = basePath.resolve(coords.project).resolve(filename).toFile
     for {
-      readable <- canRead(file)
+      readable <- isReadableFile(file)
       length <- length(file)
       located = readable match {
         case true => Right(Firmware(file, length))
