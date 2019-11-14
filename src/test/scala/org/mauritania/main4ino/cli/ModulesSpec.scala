@@ -37,7 +37,7 @@ class ModulesSpec extends WordSpec with Matchers with DecodersIO {
 
     "read a file" in {
       val fs = new FilesystemSync[IO]()
-      val p = Paths.get("src", "test", "resources", "atextfile.txt")
+      val p = Paths.get("src", "test", "resources", "misc", "atextfile.txt")
       val content = fs.readFile(p)
       content.unsafeRunSync() shouldBe "file content"
     }

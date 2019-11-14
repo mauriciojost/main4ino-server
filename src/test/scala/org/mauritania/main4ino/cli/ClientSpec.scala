@@ -18,7 +18,7 @@ class ClientSpec extends WordSpec with Matchers with DecodersIO {
     "add correctly a user and then another one" in {
 
       val input1 = Paths.get("src", "main", "resources", "security.conf")
-      val modif1 = Paths.get("src", "test", "resources", "adduser1.conf")
+      val modif1 = Paths.get("src", "test", "resources", "configs", "4", "adduser1.conf")
       val output1 = Files.createTempFile("security", "conf")
       output1.toFile.deleteOnExit()
       val args1 = Array(input1.toFile.getAbsolutePath, modif1.toFile.getAbsolutePath, output1.toFile.getAbsolutePath)
@@ -35,7 +35,7 @@ class ClientSpec extends WordSpec with Matchers with DecodersIO {
       )
 
       val input2 = output1
-      val modif2 = Paths.get("src", "test", "resources", "adduser2.conf")
+      val modif2 = Paths.get("src", "test", "resources", "configs", "4" ,"adduser2.conf")
       val output2 = output1
       val args2 = Array(input2.toFile.getAbsolutePath, modif2.toFile.getAbsolutePath, output2.toFile.getAbsolutePath)
 
