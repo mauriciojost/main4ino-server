@@ -39,12 +39,12 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TmpDir {
 
   it should "reply with not found when mandatory parameters are not provided" in {
     implicit val s = defaultServiceWithDirectory(Paths.get("xxx"))
-    get("/firmwares/botino/esp8266").status shouldBe Status.NotFound
+    get("/firmwares/botino/esp8266/content")(s).status shouldBe Status.NotFound
   }
 
   it should "list firmware coordinates" in {
     implicit val s = defaultServiceWithDirectory(Dataset1)
-    val r = get("/firmwares/botino")
+    val r = get("/firmwares/botino/esp8266")
     r.status shouldBe Status.Ok
     r.bodyAsText.compile.toList.unsafeRunSync().head shouldBe Set(FirmwareCoords("botino", "1.0.0", "esp8266")).asJson.noSpaces
   }
