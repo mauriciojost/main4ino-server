@@ -29,7 +29,7 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
   implicit val statusDecoder = JsonEncoding.StatusDecoder
 
   override def beforeAll(): Unit = {
-    appThread = launchAsync(Array("src/test/resources/config01"))
+    appThread = launchAsync(Array("src/test/resources/configs/1"))
     httpClient = Http1Client[IO]().unsafeRunSync
     Thread.sleep(3 * BaseWaitMs)
   }
@@ -114,8 +114,8 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "start and expose the firmware files" in {
-    val help = httpClient.expect[String](s"http://localhost:8080/firmwares/botino")
-    help.unsafeRunSync() should include("esp8266")
+    val help = httpClient.expect[String](s"http://localhost:8080/firmwares/botino/esp8266")
+    help.unsafeRunSync() should include("1.0.0")
   }
 
   it should "fail if started with bad arduments" in {
