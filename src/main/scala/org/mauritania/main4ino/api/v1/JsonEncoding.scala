@@ -12,21 +12,25 @@ object JsonEncoding {
 
   /**
     * The main4ino-arduino library exchanges JSON messages with main4ino-server.
-    * The schemas of those messages are generated from strongly typed classes. Among other messages, there are
-    * messages containing values of actor's properties. The types of such values can be a string, an integer, a timing, any primitive
-    * Value of main4ino. The only assumption made regarding such types is that they are serializable as a string (reason, the need of storing
-    * it into a database). For such, for example, when a value comes as an integer, it's immediately interpreted at JSON
-    * parsing level as a string.
+    * Among other messages, there are messages containing actors' properties. Their types be a string, integer, timing,
+    * or any other primitive Value of main4ino.
+    * The only assumption made regarding such types is that they can be serialized as string (reason: the will be eventually
+    * stored in a database all together in the same column of type TEXT, for simplicity).
+    * For such, for example, when a value comes as an integer, it's immediately interpreted at JSON parsing level as a string.
     */
   val StringDecoder: Decoder[String] = { v =>
     val st = Decoder[String].tryDecode(v)
     val in = Decoder[Int].tryDecode(v)
     val bo = Decoder[Boolean].tryDecode(v)
     (st, in, bo) match {
-      case (Right(s), _, _) => Right[DecodingFailure, String](s)
-      case (_, Right(i), _) => Right[DecodingFailure, String](i.toString)
-      case (_, _, Right(b)) => Right[DecodingFailure, String](b.toString)
-      case (Left(s), Left(i), Left(b)) => Left[DecodingFailure, String](DecodingFailure.apply(v + s.getMessage() + i.getMessage() + b.getMessage(), Nil))
+      case (Right(s), _, _) =>
+        Right[DecodingFailure, String](s)
+      case (_, Right(i), _) =>
+        Right[DecodingFailure, String](i.toString)
+      case (_, _, Right(b)) =>
+        Right[DecodingFailure, String](b.toString)
+      case (Left(s), Left(i), Left(b)) =>
+        Left[DecodingFailure, String](DecodingFailure.apply(s"Cannot decode '${v}' as none of string/int/bool", Nil))
     }
   }
 
