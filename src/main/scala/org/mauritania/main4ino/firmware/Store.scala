@@ -53,16 +53,12 @@ class StoreIO(basePath: Path) extends Store[IO] {
   override def getFirmware(coords: FirmwareCoords): IO[Attempt[Firmware]] = {
     val resp: IO[Attempt[Firmware]] = for {
       available <- listFirmwares(coords.project, coords.platform)
-      version = resolveVersion(coords, available)
-      filename = s"firmware-${version}.${coords.platform}.bin"
-      file = basePath.resolve(coords.project).resolve(filename).toFile
-      readable <- canRead(file)
-      length <- length(file)
-      r = readable match {
-        case true => Right(Firmware(file, length))
-        case false => Left(s"Could not locate/read firmware: ${coords.project}/$filename (resolved to $file)")
+      resolved = resolveVersion(coords, available)
+      checked <- resolved match {
+        case Some(v) => checkVersion(v)
+        case None => IO.pure[Attempt[Firmware]](Left(s"Could not resolve: $coords"))
       }
-    } yield r
+    } yield checked
     resp
   }
 
@@ -73,13 +69,37 @@ class StoreIO(basePath: Path) extends Store[IO] {
     }
   }
 
-  private def resolveVersion(target: FirmwareCoords, available: Set[FirmwareCoords]): FirmwareVersion = {
+  private def checkVersion(coords: FirmwareCoords): IO[Attempt[Firmware]] = {
+    val filename = s"firmware-${coords.version}.${coords.platform}.bin"
+    val file = basePath.resolve(coords.project).resolve(filename).toFile
+    for {
+      readable <- canRead(file)
+      length <- length(file)
+      located = readable match {
+        case true => Right(Firmware(file, length))
+        case false => Left(s"Could not locate/read firmware: ${coords.project}/$filename (resolved to $file)")
+      }
+    } yield located
+  }
+
+  private def resolveVersion(target: FirmwareCoords, available: Set[FirmwareCoords]): Option[FirmwareCoords] = {
     import Store._
     target match {
-      case FirmwareCoords(_, ver, _) if (ver == "LATEST" && available.nonEmpty) =>
+      case _ if available.isEmpty =>
+        None
+      case c if (c.version == "LATEST") =>
         val semvers = available.map(c => SemVer.apply(c.version))
-        semvers.max(BySemVer).original
-      case t => t.version
+        Some(
+          FirmwareCoords(
+            project = target.project,
+            version = semvers.max(BySemVer).original,
+            platform = target.platform
+          )
+        )
+      case t if available.contains(t) =>
+        Some(t)
+      case _ =>
+        None
     }
   }
 
