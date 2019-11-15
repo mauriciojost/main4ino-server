@@ -33,6 +33,7 @@ class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
     case a@GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? FirmVersionParam(version) => {
       val attempt: F[Attempt[Firmware]] = for {
         logger <- Slf4jLogger.fromClass[F](getClass)
+        _ <- logger.debug(s"Requested firmware: $project / $platform / $version / ${a.headers}")
         coords = FirmwareCoords(project, version, platform)
         fa <- st.getFirmware(coords)
         _ <- fa match {
