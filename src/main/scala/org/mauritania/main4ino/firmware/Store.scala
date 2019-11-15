@@ -80,7 +80,7 @@ class StoreIO(basePath: Path) extends Store[IO] {
       logger <- Slf4jLogger.fromClass[IO](getClass)
       readable <- isReadableFile(file)
       length <- length(file)
-      _ <- logger.debug(s"Checked firmware $coords: readable=$readable length=$lengh")
+      _ <- logger.debug(s"Checked firmware $coords: readable=$readable length=$length")
       located = readable match {
         case true => Right(Firmware(file, length))
         case false => Left(s"Could not locate/read firmware: ${coords.project}/$filename (resolved to $file)")
