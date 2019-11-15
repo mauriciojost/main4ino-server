@@ -5,7 +5,7 @@ import java.io.File
 import cats.effect.Sync
 import fs2.Stream
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.http4s.{HttpService, Request, Response}
+import org.http4s.{Header, Headers, HttpService, Request, Response}
 import org.http4s.headers.`Content-Length`
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.main4ino.api.Attempt
@@ -16,8 +16,20 @@ import org.mauritania.main4ino.ContentTypeAppJson
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
+import org.http4s.util.CaseInsensitiveString
+import org.mauritania.main4ino.models.FirmwareVersion
 
 class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
+
+  // TODO make configurable
+  /**
+    * Headers that are used by different platforms to report the current firmware version they are running.
+    * This allows the device to report the current version, and let the server tell if such version is the most
+    * up to date or not.
+    */
+  val VersionHeaders: List[CaseInsensitiveString] = List(
+    "x-ESP8266-version" // from ESP8266
+  ).map(CaseInsensitiveString.apply)
 
   val service = HttpService[F] {
 
@@ -31,20 +43,25 @@ class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
       * Returns: OK (200) | NO_CONTENT (204)
       */
     case a@GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? FirmVersionParam(version) => {
+      val headers = a.headers
       val attempt: F[Attempt[Firmware]] = for {
         logger <- Slf4jLogger.fromClass[F](getClass)
-        _ <- logger.debug(s"Requested firmware: $project / $platform / $version / ${a.headers}")
+        _ <- logger.debug(s"Requested firmware: $project / $platform / $version / ${headers}")
         coords = FirmwareCoords(project, version, platform)
         fa <- st.getFirmware(coords)
         _ <- fa match {
-          case Right(_) => logger.debug(s"Found firmware for coordinates $coords")
+          case Right(_) => logger.debug(s"Found firmware for coordinates $coords, serving ...")
           case Left(msg) => logger.warn(msg)
         }
       } yield fa
 
       attempt.flatMap {
-        case Right(Firmware(f, l)) => Ok(f, `Content-Length`.unsafeFromLong(l))
-        case Left(_) => NoContent()
+        case Right(Firmware(f, l, c)) if (extractCurrentVersion(headers).exists(_ == c.version)) =>
+          NotModified()
+        case Right(Firmware(f, l, c)) =>
+          Ok(f, `Content-Length`.unsafeFromLong(l))
+        case Left(_) =>
+          NoContent()
       }
     }
 
@@ -66,6 +83,15 @@ class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
       } yield r
     }
 
+  }
+
+  private[firmware] def extractCurrentVersion(h: Headers): Option[FirmwareVersion] = {
+    val currentVersions: List[Header] = VersionHeaders.flatMap(i => h.get(i).toList)
+    currentVersions match {
+      case Nil => None // unknown firmware version in requester
+      case one :: Nil => Some(one.value) // a single (as expected) header reported the firmware version in requester
+      case _ => None // multiple (unexpected) headers reported the firmware version in requester (config problem?)
+    }
   }
 
   private[firmware] def request(r: Request[F]): F[Response[F]] = service.orNotFound(r)
