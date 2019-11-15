@@ -5,6 +5,7 @@ import java.nio.file.Path
 
 import cats.effect.IO
 import com.gilt.gfc.semver.SemVer
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.firmware.Store.{Firmware, FirmwareCoords}
 import org.mauritania.main4ino.models.{FirmwareVersion, Platform, ProjectName}
@@ -52,8 +53,11 @@ class StoreIO(basePath: Path) extends Store[IO] {
 
   override def getFirmware(coords: FirmwareCoords): IO[Attempt[Firmware]] = {
     val resp: IO[Attempt[Firmware]] = for {
+      logger <- Slf4jLogger.fromClass[IO](getClass)
+      _ <- logger.debug(s"Retrieving firmware: $coords")
       available <- listFirmwares(coords.project, coords.platform)
       resolved = resolveVersion(coords, available)
+      _ <- logger.debug(s"Resolved firmware: $coords")
       checked <- resolved match {
         case Some(v) => checkVersion(v)
         case None => IO.pure[Attempt[Firmware]](Left(s"Could not resolve: $coords"))
@@ -73,8 +77,10 @@ class StoreIO(basePath: Path) extends Store[IO] {
     val filename = s"firmware-${coords.version}.${coords.platform}.bin"
     val file = basePath.resolve(coords.project).resolve(filename).toFile
     for {
+      logger <- Slf4jLogger.fromClass[IO](getClass)
       readable <- isReadableFile(file)
       length <- length(file)
+      _ <- logger.debug(s"Checked firmware $coords: readable=$readable length=$lengh")
       located = readable match {
         case true => Right(Firmware(file, length))
         case false => Left(s"Could not locate/read firmware: ${coords.project}/$filename (resolved to $file)")

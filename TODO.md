@@ -4,6 +4,8 @@
 - Document the return type of each method of the REST API
 - Make the naming for deviceName/dev/device homogeneous: dev
 - Make the naming for actor/act/a homogeneous: act
+- Optimize GET 'last' request from device as it takes way too long (>10secs !!!)
+- Speed up 'last' request from device as it takes way too long (>10secs !!!)
 
 # DONE
 
