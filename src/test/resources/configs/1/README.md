@@ -1,0 +1,1 @@
+Regular valid server configuration files.

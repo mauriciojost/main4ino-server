@@ -10,24 +10,24 @@ import org.mauritania.main4ino.db.{Config => DbConfig}
 class ConfigSpec extends FlatSpec with Matchers {
 
   "The app config" should "load correctly a configuration file" in {
-    val c = Config.load(new File("src/test/resources/configs/3/application-valid.conf")).unsafeRunSync()
+    val c = Config.load(new File("src/test/resources/configs/1/application.conf")).unsafeRunSync()
     c shouldBe Config(
       server = ServerConfig("0.0.0.0", 8080),
       database = DbConfig(
         driver = "org.h2.Driver",
-        url = "jdbc:h2:./db",
+        url = "jdbc:h2:mem:test-db",
         user = "sa",
         password = "",
         cleanup = Cleanup(
-          periodSecs = 86400,
-          retentionSecs = 604800
+          periodSecs = 5,
+          retentionSecs = 2
         )
       ),
       devLogger = DevLoggerConfig(
         logsBasePath = "/tmp"
       ),
       firmware = FirmwareConfig(
-        firmwareBasePath = "/tmp"
+        firmwareBasePath = "src/test/resources/firmwares/1/"
       )
     )
   }

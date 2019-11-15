@@ -1,0 +1,1 @@
+Directory with a simple readable regular firmware file.

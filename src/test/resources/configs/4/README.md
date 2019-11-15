@@ -1,0 +1,1 @@
+Regular valid client configuration files.
