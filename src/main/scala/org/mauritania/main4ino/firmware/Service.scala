@@ -21,15 +21,7 @@ import org.mauritania.main4ino.models.FirmwareVersion
 
 class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
 
-  // TODO make configurable
-  /**
-    * Headers that are used by different platforms to report the current firmware version they are running.
-    * This allows the device to report the current version, and let the server tell if such version is the most
-    * up to date or not.
-    */
-  val VersionHeaders: List[CaseInsensitiveString] = List(
-    "x-ESP8266-version" // from ESP8266
-  ).map(CaseInsensitiveString.apply)
+  import Service._
 
   val service = HttpService[F] {
 
@@ -44,24 +36,26 @@ class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
       */
     case a@GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? FirmVersionParam(version) => {
       val headers = a.headers
+      val currentVersion = extractCurrentVersion(headers)
+
       val attempt: F[Attempt[Firmware]] = for {
         logger <- Slf4jLogger.fromClass[F](getClass)
-        _ <- logger.debug(s"Requested firmware: $project / $platform / $version / ${headers}")
         coords = FirmwareCoords(project, version, platform)
+        _ <- logger.debug(s"Requested firmware: $coords / $headers / $currentVersion")
         fa <- st.getFirmware(coords)
         _ <- fa match {
-          case Right(_) => logger.debug(s"Found firmware for coordinates $coords, serving ...")
+          case Right(_) => logger.debug(s"Found firmware for $coords, serving ...")
           case Left(msg) => logger.warn(msg)
         }
       } yield fa
 
       attempt.flatMap {
-        case Right(Firmware(f, l, c)) if (extractCurrentVersion(headers).exists(_ == c.version)) =>
+        case Right(Firmware(f, l, c)) if (currentVersion.exists(_ == c.version)) => // same version as current
           NotModified()
-        case Right(Firmware(f, l, c)) =>
+        case Right(Firmware(f, l, c)) => // different version than current, serving...
           Ok(f, `Content-Length`.unsafeFromLong(l))
-        case Left(_) =>
-          NoContent()
+        case Left(_) => // no such version
+          NotFound()
       }
     }
 
@@ -98,3 +92,19 @@ class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
 
 }
 
+object Service {
+
+  // TODO make this all configurable
+  /**
+    * Headers that are used by different platforms to report the current firmware version they are running.
+    * This allows the device to report the current version, and let the server tell if such version is the most
+    * up to date or not.
+    */
+  val Esp8266VersionHeader = "x-ESP8266-version"
+  val Esp32VersionHeader = "x-ESP32-version"
+  val VersionHeaders: List[CaseInsensitiveString] = List(
+  Esp8266VersionHeader,
+  Esp32VersionHeader
+  ).map(CaseInsensitiveString.apply)
+
+}

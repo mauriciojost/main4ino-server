@@ -3,11 +3,10 @@ package org.mauritania.main4ino.firmware
 import java.nio.file.{Path, Paths}
 
 import cats.effect.IO
-import org.http4s.{Method, Request, Response, Status, Uri}
+import org.http4s.{Header, Headers, Method, Request, Response, Status, Uri}
 import org.mauritania.main4ino.TmpDir
 import org.mauritania.main4ino.firmware.Store.FirmwareCoords
 import org.scalatest._
-
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
@@ -32,7 +31,7 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TmpDir {
     rs.body.compile.toList.unsafeRunSync() shouldBe List(Byte0, Byte0, Byte1, Byte1, ByteEnd)
 
     val rf = get("/firmwares/botino/esp32/content?version=1.0.0") // not available
-    rf.status shouldBe Status.NoContent
+    rf.status shouldBe Status.NotFound
     rf.body.compile.toList.unsafeRunSync() shouldBe List()
 
   }
@@ -49,8 +48,35 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TmpDir {
     r.bodyAsText.compile.toList.unsafeRunSync().head shouldBe Set(FirmwareCoords("botino", "1.0.0", "esp8266")).asJson.noSpaces
   }
 
-  private[this] def get(path: String)(implicit service: Service[IO]): Response[IO] = {
-    val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path))
+  it should "tell that current version is up to date" in {
+    implicit val s = defaultServiceWithDirectory(Dataset1)
+    val rs = get(
+      path = "/firmwares/botino/esp8266/content?version=1.0.0",
+      headers = Headers(Header(Service.Esp8266VersionHeader, "1.0.0"))
+    )
+    rs.status shouldBe Status.NotModified // already up to date
+  }
+
+  it should "handle scenario of firmware providing no version" in {
+    implicit val s = defaultServiceWithDirectory(Dataset1)
+    val rs = get(
+      path = "/firmwares/botino/esp8266/content?version=1.0.0"
+      //headers = Headers(Header(Service.Esp8266VersionHeader, "1.0.0"))
+    )
+    rs.status shouldBe Status.Ok // can be downloaded
+  }
+
+  it should "handle scenario of firmware providing too many versions" in {
+    implicit val s = defaultServiceWithDirectory(Dataset1)
+    val rs = get(
+      path = "/firmwares/botino/esp8266/content?version=1.0.0",
+      headers = Headers(Header(Service.Esp8266VersionHeader, "1.0.0"), Header(Service.Esp32VersionHeader, "2.0.0"))
+    )
+    rs.status shouldBe Status.Ok // can be downloaded
+  }
+
+  private[this] def get(path: String, headers: Headers = Headers.empty)(implicit service: Service[IO]): Response[IO] = {
+    val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path), headers = headers)
     service.request(request).unsafeRunSync()
   }
 
