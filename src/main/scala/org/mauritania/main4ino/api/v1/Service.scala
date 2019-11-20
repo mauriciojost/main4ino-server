@@ -13,7 +13,7 @@ import org.http4s.{AuthedService, HttpService, Request, Response}
 import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.CountResponse
-import org.mauritania.main4ino.helpers.Time
+import org.mauritania.main4ino.helpers.{AuthLogger, HttpMeter, Time}
 import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models._
@@ -411,21 +411,10 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     }
   }
 
-  private[v1] def logAuthentication(user: AccessAttempt): F[AccessAttempt] = {
-    for {
-      logger <- Slf4jLogger.fromClass[F](getClass)
-      msg = user match {
-        case Right(i) => s">>> Authenticated: ${i.name} ${i.email}"
-        case Left(m) => s">>> Failed to authenticate: $m"
-      }
-      _ <- logger.debug(msg)
-    } yield (user)
-  }
-
   private[v1] val onFailure: AuthedService[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
   private[v1] val customAuthMiddleware: AuthMiddleware[F, User] =
-    AuthMiddleware(Kleisli(auth.authenticateAndCheckAccessFromRequest) andThen Kleisli(logAuthentication), onFailure)
-  val serviceWithAuthentication: HttpService[F] = customAuthMiddleware(service)
+    AuthMiddleware(Kleisli(auth.authenticateAndCheckAccessFromRequest) andThen Kleisli(AuthLogger.logAuthentication[F] _), onFailure)
+  val serviceWithAuthentication: HttpService[F] = HttpMeter.timedHttpMiddleware[F].apply(customAuthMiddleware(service))
 
   private[v1] def request(r: Request[F]): F[Response[F]] = serviceWithAuthentication.orNotFound(r)
 

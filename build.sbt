@@ -2,6 +2,8 @@ val ProjectVersion = "0.1.0-SNAPSHOT"
 
 val ScalaVersion = "2.12.8"
 
+addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full)
+
 enablePlugins(JavaServerAppPackaging)
 
 maintainer := "Mauricio Jost <mauriciojostx@gmail.com>"

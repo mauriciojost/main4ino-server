@@ -1,15 +1,18 @@
 package org.mauritania.main4ino.firmware
 
 import java.io.File
+import java.time.{ZoneOffset, ZonedDateTime}
 
-import cats.effect.Sync
+import cats.Applicative
+import cats.data.{Kleisli, OptionT}
+import cats.effect.{IO, Sync}
 import fs2.Stream
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.{Header, Headers, HttpService, Request, Response}
 import org.http4s.headers.`Content-Length`
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.main4ino.api.Attempt
-import org.mauritania.main4ino.api.v1.Url.{FirmVersionParam, Platf, Proj}
+import org.mauritania.main4ino.api.v1.Url.{Act, Dev, FirmVersionParam, Platf, Proj, Req, ReqId}
 import cats.implicits._
 import org.mauritania.main4ino.firmware.Store.{Firmware, FirmwareCoords}
 import org.mauritania.main4ino.ContentTypeAppJson
@@ -18,12 +21,16 @@ import org.http4s.circe._
 import io.circe.generic.auto._
 import org.http4s.util.CaseInsensitiveString
 import org.mauritania.main4ino.models.FirmwareVersion
+import cats._
+import cats.data._
+import org.http4s.server.{HttpMiddleware, Middleware}
+import org.mauritania.main4ino.helpers.{HttpMeter, Time}
 
 class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
 
   import Service._
 
-  val service = HttpService[F] {
+  val serviceUntimed = HttpService[F] {
 
     /**
       * GET /firmwares/<project>/<platform>/content?version=<version>
@@ -87,6 +94,8 @@ class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
       case _ => None // multiple (unexpected) headers reported the firmware version in requester (config problem?)
     }
   }
+
+  val service = HttpMeter.timedHttpMiddleware[F].apply(serviceUntimed)
 
   private[firmware] def request(r: Request[F]): F[Response[F]] = service.orNotFound(r)
 
