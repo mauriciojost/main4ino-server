@@ -16,7 +16,10 @@ lazy val root = (project in file("."))
     name := "main4ino-server",
     version := ProjectVersion,
     scalaVersion := ScalaVersion,
-    scalacOptions ++= Seq("-Ypartial-unification"),
+    scalacOptions ++= Seq(
+      "-Ypartial-unification",
+      "-language:higherKinds"
+    ),
     libraryDependencies ++= Dependencies.Dependencies,
     parallelExecution in Test := false,
 
