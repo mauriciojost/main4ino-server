@@ -31,21 +31,16 @@ The corresponding REST API is [here](/src/main/scala/org/mauritania/main4ino/api
 
 ## Run
 
-### CLI
-
-The cli allows to create the configuration files for the server.
-
-```
-sbt "runMain org.mauritania.main4ino.cli.Client input.conf add.conf output.conf"
-```
 
 ### Server
 
 Run the server to let it be accessible by your devices:
 
 ```
-sbt run
+sbt 'runMain org.mauritania.main4ino.Server src/main/resources/defaultconfig/'
 ```
+
+Default credentials are: `admin` / `password`
 
 Interact with it via the webapp:
 
@@ -56,11 +51,16 @@ http://localhost:8080/
 or via the REST API: 
 
 ```
-# remember to pass credentials via Basic Auth
-curl -X POST http://localhost:8080/api/v1/devices/dev1/actors/clock/targets -d '{"h":5}'
-# or via uri
-curl -X POST http://localhost:8080/api/v1/devices/dev1/actors/clock/targets -d '{"h":5}'
+curl -u admin:password -X GET  http://localhost:8080/api/v1/time
+curl -u admin:password -X POST http://localhost:8080/api/v1/devices/dev1/targets/actors/clock -d '{"h":5}';
+```
 
+### Config generator
+
+It allows to create the configuration files for the server.
+
+```
+sbt "runMain org.mauritania.main4ino.cli.Client input.conf add.conf output.conf"
 ```
 
 ## Contribute
@@ -70,10 +70,13 @@ Contributions can be done via PRs. Broken PRs are not taken into account.
 ```
 # clean
 sbt clean
+
 # compile
 sbt compile
+
 # launch tests
 sbt test
+
 # check coverage
 sbt "set every coverageEnabled := true" test coverageReport
 sbt coverageAggregate
