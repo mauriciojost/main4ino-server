@@ -17,7 +17,7 @@ class ClientSpec extends WordSpec with Matchers with DecodersIO {
   "The client" should {
     "add correctly a user and then another one" in {
 
-      val input1 = Paths.get("src", "main", "resources", "security.conf")
+      val input1 = Paths.get("src", "main", "resources", "defaultconfig", "security.conf")
       val modif1 = Paths.get("src", "test", "resources", "configs", "4", "adduser1.conf")
       val output1 = Files.createTempFile("security", "conf")
       output1.toFile.deleteOnExit()
