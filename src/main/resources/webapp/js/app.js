@@ -31,15 +31,15 @@ function eraseCookie(name) {
 }
 webPortalApp.config(function($stateProvider, $urlRouterProvider) {
     
-    $urlRouterProvider.otherwise('/home');
+    $urlRouterProvider.otherwise('/login');
     
     // Examples from https://scotch.io/tutorials/angular-routing-using-ui-router
 
     $stateProvider
         
-        .state('home', {
-            url: '/home?device',
-            templateUrl: 'partial-home.html'
+        .state('login', {
+            url: '/login?device',
+            templateUrl: 'partial-login.html'
         })
         
         .state('history', {
@@ -47,15 +47,15 @@ webPortalApp.config(function($stateProvider, $urlRouterProvider) {
             templateUrl: 'partial-history.html'
         })
 
-        .state('summary', {
-            url: '/summary?device',
-            templateUrl: 'partial-summary.html'
+        .state('control', {
+            url: '/control?device',
+            templateUrl: 'partial-control.html'
         })
 
 });
 
 webPortalApp.controller(
-    'HomeController',
+    'LoginController',
         function($scope, $http, $log, $location, $state) {
 
             $scope.logged = null;
@@ -115,9 +115,9 @@ webPortalApp.controller(
               $scope.logged = null;
             }
 
-            $scope.goHome = function() {
-              $log.log('Going home');
-              $state.go('home', {session: $scope.session})
+            $scope.goLogin = function() {
+              $log.log('Going to login');
+              $state.go('login', {session: $scope.session})
             }
 
             $scope.goHistory = function() {
@@ -125,9 +125,9 @@ webPortalApp.controller(
               $state.go('history', {session: $scope.session})
             }
 
-            $scope.goSummary = function() {
-              $log.log('Going to summary');
-              $state.go('summary', {session: $scope.session})
+            $scope.goControl = function() {
+              $log.log('Going to control');
+              $state.go('control', {session: $scope.session})
             }
 
             $scope.loginUsingSession();
@@ -235,7 +235,7 @@ webPortalApp.controller(
 );
 
 webPortalApp.controller(
-    'SummaryController',
+    'ControlController',
         function($scope, $http, $log, $location) {
 
             $scope.session = getCookie("session");
