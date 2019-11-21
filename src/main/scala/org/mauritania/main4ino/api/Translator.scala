@@ -28,6 +28,14 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     } yield (d)
   }
 
+  def getLogs(device: DeviceName): F[Attempt[Stream[F, String]]] = {
+    for {
+      logger <- Slf4jLogger.fromClass[F](Translator.getClass)
+      d <- devLogger.getLogs(device)
+      _ <- logger.debug(s"Appended logs for $device: $d")
+    } yield (d)
+  }
+
   def getLastDescription(device: DeviceName): F[Attempt[Description]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)

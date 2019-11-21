@@ -7,6 +7,7 @@ import cats.effect.IO
 import fs2.Stream
 import org.mauritania.main4ino.TmpDir
 import org.scalatest._
+import org.scalatest.EitherValues._
 
 import scala.io.Source
 
@@ -18,7 +19,7 @@ class DevLoggerSpec extends FlatSpec with Matchers with TmpDir {
     def nowUtc: IO[ZonedDateTime] = IO.pure(TheTime)
   }
 
-  "The logger" should "append a message to a file" in {
+  "The logger" should "append a message to a file and read it" in {
     withTmpDir { tmp =>
       val expectedFile = tmp.resolve("device.log")
       val logger = new DevLoggerIO(tmp, new FixedTimeIO())
@@ -42,6 +43,17 @@ class DevLoggerSpec extends FlatSpec with Matchers with TmpDir {
           "guy"
         )
       ) // appends
+
+      val read = logger.getLogs("device").unsafeRunSync()
+      val successfulRead = read.right.value
+      successfulRead.compile.toList.unsafeRunSync().mkString should be(
+        """### 1970-01-01T00:00Z[UTC]
+          |hey
+          |you
+          |### 1970-01-01T00:00Z[UTC]
+          |guy
+          |""".stripMargin
+      )
     }
   }
 
@@ -49,6 +61,11 @@ class DevLoggerSpec extends FlatSpec with Matchers with TmpDir {
     val logger = new DevLoggerIO(Paths.get("/non/existent/path"), new FixedTimeIO())
     val s = Stream("hey")
     logger.updateLogs("device", s).unsafeRunSync().left.get should include("/non/existent/path")
+  }
+
+  it should "report a meaningful failure when cannot read file" in {
+    val logger = new DevLoggerIO(Paths.get("/non/existent/path"), new FixedTimeIO())
+    logger.getLogs("device1").unsafeRunSync().left.get should include("device1")
   }
 
 }

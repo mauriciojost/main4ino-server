@@ -20,6 +20,7 @@ import org.mauritania.main4ino.models._
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
 import org.mauritania.main4ino.security.{Auther, User}
 import org.mauritania.main4ino.{ContentTypeAppJson, ContentTypeTextPlain}
+import fs2.Stream
 
 class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) extends Http4sDsl[F] {
 
@@ -143,6 +144,23 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       r.flatMap {
         case Right(_) => Ok()
         case Left(m) => InternalServerError(m)
+      }
+    }
+
+    /**
+      * GET /devices/<dev>/logs
+      *
+      * Example: GET /devices/dev1/logs
+      *
+      * Retrieve the logs provided by the device
+      *
+      * Returns: OK (200) | NO_CONTENT (204)
+      */
+    case a@GET -> _ / "devices" / Dev(device) / "logs" as _ => {
+      val r: F[Attempt[Stream[F, String]]] = tr.getLogs(device)
+      r.flatMap {
+        case Right(l) => Ok(l)
+        case Left(m) => NoContent()
       }
     }
 
