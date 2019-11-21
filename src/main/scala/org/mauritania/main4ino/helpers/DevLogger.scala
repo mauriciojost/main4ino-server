@@ -28,9 +28,11 @@ trait DevLogger[F[_]] {
   /**
     * Retrieve full logs for the given device
     * @param device device name
+    * @param from for pagination, amount of bytes to discard from beginning
+    * @param length for pagination, amount of bytes to take until the end
     * @return the [[Attempt]] with the stream containing the lines of the logs
     */
-  def getLogs(device: DeviceName): F[Attempt[Stream[F, String]]]
+  def getLogs(device: DeviceName, from: Long, length: Long): F[Attempt[Stream[F, String]]]
 
 }
 
@@ -39,7 +41,7 @@ class DevLoggerIO(basePath: JavaPath, time: Time[IO]) extends DevLogger[IO] {
   final val ChunkSize = 1024 * 2
   final val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
-  def pathFromDevice(device: DeviceName): JavaPath = basePath.resolve(s"$device.log")
+  private def pathFromDevice(device: DeviceName): JavaPath = basePath.resolve(s"$device.log")
 
   def updateLogs(device: DeviceName, body: Stream[IO, String]): IO[Attempt[Unit]] = {
     val timedBody = Stream.eval[IO, String](time.nowUtc.map("### " + _ + "\n")) ++ body
@@ -61,13 +63,18 @@ class DevLoggerIO(basePath: JavaPath, time: Time[IO]) extends DevLogger[IO] {
 
   private def isReadableFile(f: File): IO[Boolean] = IO(f.canRead && f.isFile)
 
-  def getLogs(device: DeviceName): IO[Attempt[Stream[IO, String]]] = {
+  def getLogs(device: DeviceName, from: Long, length: Long): IO[Attempt[Stream[IO, String]]] = {
     val path = pathFromDevice(device)
     for {
       readable <- isReadableFile(path.toFile)
       located: Attempt[Stream[IO, String]] = readable match {
         case true =>
-          Right(io.file.readAll[IO](pathFromDevice(device), ChunkSize).through(fs2text.utf8Decode))
+          Right{
+            val bytes = io.file.readAll[IO](pathFromDevice(device), ChunkSize)
+            val filteredBytes = bytes.drop(from).takeRight(length)
+            val text = filteredBytes.through(fs2text.utf8Decode)
+            text
+          }
         case false =>
           Left(s"Could not locate/read logs for device: ${device}")
       }

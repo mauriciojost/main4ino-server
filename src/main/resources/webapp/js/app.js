@@ -178,6 +178,35 @@ webPortalApp.controller(
 
             };
 
+            $scope.getLogs = function() {
+                $log.log('Getting logs for device ' + $scope.device);
+                var req = {
+                    method: 'GET',
+                    url: 'api/v1/devices/' + $scope.device + '/logs',
+                    headers: {'Session': $scope.session}
+                };
+
+                $log.log('Executing request...');
+
+                $http(req).success(
+                    function(data) {
+                        $log.log('Logs obtained.');
+                        $scope.logs = data;
+                    }
+                ).error(
+                    function(data) {
+                        $log.log('Could not retrieve logs.');
+                        $scope.logs = '-';
+                        BootstrapDialog.show({
+                            title: 'Error',
+                            message: 'Failed to retrieve logs.'
+                        });
+                    }
+                );
+
+                $log.log('Executed request.');
+
+            };
 
             $scope.search = function() {
 
