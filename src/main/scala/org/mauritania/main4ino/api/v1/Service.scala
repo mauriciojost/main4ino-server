@@ -30,9 +30,6 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
   type ErrMsg = String
 
   private val HelpMsg = "See: https://github.com/mauriciojost/main4ino-server/blob/master/src/main/scala/org/mauritania/main4ino/api/v1/Service.scala"
-  private val DefaultLengthLogs = 1024L * 10
-  private val DefaultIgnoreLogs = 0L
-  private val MaxLengthLogs = 1024L * 512 // 0.5 MiB
 
   implicit val jsonStringDecoder = JsonEncoding.StringDecoder
   implicit val jsonStatusDecoder = JsonEncoding.StatusDecoder
@@ -164,9 +161,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       * Returns: OK (200) | NO_CONTENT (204)
       */
     case a@GET -> _ / "devices" / Dev(device) / "logs" :? IgnoreParam(ignore) +& LengthParam(length) as _ => {
-      val i = ignore.getOrElse(DefaultIgnoreLogs)
-      val l = length.filter(_ < MaxLengthLogs).getOrElse(DefaultLengthLogs)
-      val r: F[Attempt[Stream[F, String]]] = tr.getLogs(device, i, l)
+      val r: F[Attempt[Stream[F, String]]] = tr.getLogs(device, ignore, length)
       r.flatMap {
         case Right(l) => Ok(l)
         case Left(m) => NoContent()

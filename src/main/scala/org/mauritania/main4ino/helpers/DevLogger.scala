@@ -39,14 +39,17 @@ trait DevLogger[F[_]] {
     * @param length for pagination, amount of bytes to take counting backwards from the end
     * @return the [[Attempt]] with the stream containing the chunks of the logs
     */
-  def getLogs(device: DeviceName, ignore: Long, length: Long): F[Attempt[Stream[F, String]]]
+  def getLogs(device: DeviceName, ignore: Option[Long], length: Option[Long]): F[Attempt[Stream[F, String]]]
 
 }
 
 class DevLoggerIO(basePath: JavaPath, time: Time[IO]) extends DevLogger[IO] {
 
-  final val ChunkSize = 1024
-  final val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+  final private val ChunkSize = 1024
+  final private val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+  final private val DefaultLengthLogs = 1024L * 10
+  final private val DefaultIgnoreLogs = 0L
+  final private val MaxLengthLogs = 1024L * 512 // 0.5 MiB
 
   private def pathFromDevice(device: DeviceName): JavaPath = basePath.resolve(s"$device.log")
 
@@ -70,15 +73,17 @@ class DevLoggerIO(basePath: JavaPath, time: Time[IO]) extends DevLogger[IO] {
 
   private def isReadableFile(f: File): IO[Boolean] = IO(f.canRead && f.isFile)
 
-  def getLogs(device: DeviceName, ignore: Long, length: Long): IO[Attempt[Stream[IO, String]]] = {
+  def getLogs(device: DeviceName, ignore: Option[Long], length: Option[Long]): IO[Attempt[Stream[IO, String]]] = {
     val path = pathFromDevice(device)
+    val i = ignore.getOrElse(DefaultIgnoreLogs)
+    val l = length.map(i => if (i < MaxLengthLogs) i else MaxLengthLogs).getOrElse(DefaultLengthLogs)
     for {
       readable <- isReadableFile(path.toFile)
       located: Attempt[Stream[IO, String]] = readable match {
         case true =>
           Right{
             val bytes = io.file.readAll[IO](pathFromDevice(device), ChunkSize)
-            val filteredBytes = bytes.dropRight(ignore.toInt).takeRight(length)
+            val filteredBytes = bytes.dropRight(i.toInt).takeRight(l)
             val text = filteredBytes.through(fs2text.utf8Decode)
             text
           }
