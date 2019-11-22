@@ -253,10 +253,15 @@ class ServiceFuncSpec extends DbSuite with TmpDir {
 
   }
 
-  it should "store logs coming from a device" in {
+  it should "store and read logs coming from a device" in {
     withTmpDir { tmp =>
       implicit val s = defaultServiceWithDirectory(tmp)
-      postExpectOk("/devices/dev1/logs", """failure""")
+      val logMsg = """failure"""
+      postExpectOk("/devices/dev1/logs", logMsg)
+
+      val log = get(s"/devices/dev1/logs?length=${logMsg.size}")
+      log.status should be(Status.Ok)
+      log.bodyAsText.compile.toList.unsafeRunSync() should be(List("failure"))
     }
   }
 

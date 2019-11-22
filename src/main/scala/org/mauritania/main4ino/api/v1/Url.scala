@@ -29,6 +29,7 @@ object Url {
   object FromParam extends OptionalQueryParamDecoderMatcher[Long]("from")
   object ToParam extends OptionalQueryParamDecoderMatcher[Long]("to")
   object LengthParam extends OptionalQueryParamDecoderMatcher[Long]("length")
+  object IgnoreParam extends OptionalQueryParamDecoderMatcher[Long]("ignore")
 
   object TimezoneParam extends OptionalQueryParamDecoderMatcher[String]("timezone")
 

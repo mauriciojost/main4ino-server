@@ -44,9 +44,9 @@ class DevLoggerSpec extends FlatSpec with Matchers with TmpDir {
         )
       ) // appends
 
-      val read = logger.getLogs("device").unsafeRunSync()
-      val successfulRead = read.right.value
-      successfulRead.compile.toList.unsafeRunSync().mkString should be(
+      val readFull = logger.getLogs("device", 0L, 1024L).unsafeRunSync()
+      val successfulReadFull = readFull.right.value
+      successfulReadFull.compile.toList.unsafeRunSync().mkString should be(
         """### 1970-01-01T00:00Z[UTC]
           |hey
           |you
@@ -54,6 +54,16 @@ class DevLoggerSpec extends FlatSpec with Matchers with TmpDir {
           |guy
           |""".stripMargin
       )
+
+      val readIngoreLength1 =
+        logger.getLogs("device", 1L/*new line*/, 3L).unsafeRunSync()
+      val successfulReadIgnoreLength1 = readIngoreLength1.right.value
+      successfulReadIgnoreLength1.compile.toList.unsafeRunSync().mkString should be("guy")
+
+      val readIngoreLength2 =
+        logger.getLogs("device", 2L /*new lines*/ + 3L /*guy*/, 5L).unsafeRunSync()
+      val successfulReadIgnoreLength2 = readIngoreLength2.right.value
+      successfulReadIgnoreLength2.compile.toList.unsafeRunSync().mkString should be("[UTC]")
     }
   }
 
@@ -65,7 +75,7 @@ class DevLoggerSpec extends FlatSpec with Matchers with TmpDir {
 
   it should "report a meaningful failure when cannot read file" in {
     val logger = new DevLoggerIO(Paths.get("/non/existent/path"), new FixedTimeIO())
-    logger.getLogs("device1").unsafeRunSync().left.get should include("device1")
+    logger.getLogs("device1", 0L, 1024L).unsafeRunSync().left.get should include("device1")
   }
 
 }

@@ -27,18 +27,25 @@ trait DevLogger[F[_]] {
 
   /**
     * Retrieve full logs for the given device
+    *
+    * Examples:
+    * - stream=0123456789
+    * - lenght=4 && ignore=0 => 6789
+    * - lenght=4 && ignore=1 => 5678
+    * - lenght=4 && ignore=2 => 4567
+    *
     * @param device device name
-    * @param from for pagination, amount of bytes to discard from beginning
-    * @param length for pagination, amount of bytes to take until the end
-    * @return the [[Attempt]] with the stream containing the lines of the logs
+    * @param ignore for pagination, amount of bytes to discard from the end
+    * @param length for pagination, amount of bytes to take counting backwards from the end
+    * @return the [[Attempt]] with the stream containing the chunks of the logs
     */
-  def getLogs(device: DeviceName, from: Long, length: Long): F[Attempt[Stream[F, String]]]
+  def getLogs(device: DeviceName, ignore: Long, length: Long): F[Attempt[Stream[F, String]]]
 
 }
 
 class DevLoggerIO(basePath: JavaPath, time: Time[IO]) extends DevLogger[IO] {
 
-  final val ChunkSize = 1024 * 2
+  final val ChunkSize = 1024
   final val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
   private def pathFromDevice(device: DeviceName): JavaPath = basePath.resolve(s"$device.log")
@@ -63,7 +70,7 @@ class DevLoggerIO(basePath: JavaPath, time: Time[IO]) extends DevLogger[IO] {
 
   private def isReadableFile(f: File): IO[Boolean] = IO(f.canRead && f.isFile)
 
-  def getLogs(device: DeviceName, from: Long, length: Long): IO[Attempt[Stream[IO, String]]] = {
+  def getLogs(device: DeviceName, ignore: Long, length: Long): IO[Attempt[Stream[IO, String]]] = {
     val path = pathFromDevice(device)
     for {
       readable <- isReadableFile(path.toFile)
@@ -71,7 +78,7 @@ class DevLoggerIO(basePath: JavaPath, time: Time[IO]) extends DevLogger[IO] {
         case true =>
           Right{
             val bytes = io.file.readAll[IO](pathFromDevice(device), ChunkSize)
-            val filteredBytes = bytes.drop(from).takeRight(length)
+            val filteredBytes = bytes.dropRight(ignore.toInt).takeRight(length)
             val text = filteredBytes.through(fs2text.utf8Decode)
             text
           }
