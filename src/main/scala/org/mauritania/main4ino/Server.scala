@@ -32,26 +32,24 @@ import scala.concurrent.ExecutionContext
 
 object Server extends IOApp {
 
-  def createServer(args: List[String]): Resource[IO, H4Server[IO]] = {
+  def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](args: List[String]): Resource[F, H4Server[F]] = {
 
     for {
-      ec <- ExecutionContexts.cachedThreadPool[IO]
+      ec <- ExecutionContexts.cachedThreadPool[F]
       blocker = Blocker.liftExecutionContext(ec)
-
-      configDir <- Resource.liftF[IO, File](resolveConfigDir(args))
+      configDir <- Resource.liftF[F, File](resolveConfigDir(args))
       applicationConf = new File(configDir, "application.conf")
       securityConf = new File(configDir, "security.conf")
-
-      configApp <- Resource.liftF[IO, config.Config](config.Config.load(applicationConf))
-      configUsers <- Resource.liftF[IO, security.Config](security.Config.load(securityConf))
+      configApp <- Resource.liftF(config.Config.load(applicationConf))
+      configUsers <- Resource.liftF(security.Config.load(securityConf))
       transactor <- Resource.liftF(Database.transactor(configApp.database, ec, blocker))
-      auth = new AutherIO(configUsers)
-      repo = new RepositoryIO(transactor)
-      time = new TimeIO()
+      auth = new AutherIO[F](configUsers)
+      repo = new RepositoryIO[F](transactor)
+      time = new TimeIO[F]()
       devLogger = new DevLoggerIO(Paths.get(configApp.devLogger.logsBasePath), time, blocker, ec)
       fwStore = new StoreIO(Paths.get(configApp.firmware.firmwareBasePath))
       cleanupRepoTask = for {
-        logger <- Slf4jLogger.fromClass[IO](Server.getClass)
+        logger <- Slf4jLogger.fromClass[F](Server.getClass)
         now <- time.nowUtc
         epSecs = now.toEpochSecond
         cleaned <- repo.cleanup(ReqType.Reports, epSecs, configApp.database.cleanup.retentionSecs)
@@ -74,7 +72,7 @@ object Server extends IOApp {
     } yield exitCodeServer
   }
 
-  private def resolveConfigDir(args: List[String]): IO[File] = IO {
+  private def resolveConfigDir[F[_]: Sync](args: List[String]): F[File] = Sync[F].delay {
     val arg1 = args match {
       case Nil => throw new IllegalArgumentException("Missing config directory")
       case a1 :: Nil => a1

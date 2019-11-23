@@ -2,7 +2,7 @@ package org.mauritania.main4ino.security
 
 import java.time.Clock
 
-import cats.effect.IO
+import cats.effect.Sync
 import org.http4s.{BasicCredentials, Credentials, Headers, Request, Uri}
 import org.http4s.Uri.Path
 import org.http4s.util.CaseInsensitiveString
@@ -42,13 +42,13 @@ trait Auther[F[_]] {
 
 }
 
-class AutherIO(config: Config) extends Auther[IO] {
+class AutherIO[F[_]: Sync](config: Config) extends Auther[F] {
 
-  def authenticateAndCheckAccessFromRequest(request: Request[IO]): IO[AccessAttempt] =
-    IO.pure(Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path))
+  def authenticateAndCheckAccessFromRequest(request: Request[F]): F[AccessAttempt] =
+    Sync[F].delay(Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path))
 
-  def generateSession(user: User): IO[UserSession] =
-    IO.pure(Auther.sessionFromUser(user, config.privateKeyBits, config.nonceStartupTime))
+  def generateSession(user: User): F[UserSession] =
+    Sync[F].delay(Auther.sessionFromUser(user, config.privateKeyBits, config.nonceStartupTime))
 }
 
 object Auther {
