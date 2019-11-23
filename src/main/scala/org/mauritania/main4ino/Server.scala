@@ -36,12 +36,12 @@ object Server extends IOApp {
 
     for {
       ec <- ExecutionContexts.cachedThreadPool[F]
-      blocker = Blocker.liftExecutionContext(ec)
       configDir <- Resource.liftF[F, File](resolveConfigDir(args))
       applicationConf = new File(configDir, "application.conf")
       securityConf = new File(configDir, "security.conf")
       configApp <- Resource.liftF(config.Config.load(applicationConf))
       configUsers <- Resource.liftF(security.Config.load(securityConf))
+      blocker = Blocker.liftExecutionContext(ec)
       transactor <- Resource.liftF(Database.transactor(configApp.database, ec, blocker))
       auth = new AutherIO[F](configUsers)
       repo = new RepositoryIO[F](transactor)
@@ -64,7 +64,7 @@ object Server extends IOApp {
 
       _ <- Resource.liftF(Database.initialize(transactor))
       cleanupPeriodSecs = FiniteDuration(configApp.database.cleanup.periodSecs, TimeUnit.SECONDS)
-      _ <- Resource.liftF(IO.sleep(cleanupPeriodSecs) *> cleanupRepoTask)
+      _ <- Resource.liftF(Timer[F].sleep(cleanupPeriodSecs) *> cleanupRepoTask)
       exitCodeServer <- BlazeServerBuilder[IO]
         .bindHttp(configApp.server.port, configApp.server.host)
         .withHttpApp(httpApp)
