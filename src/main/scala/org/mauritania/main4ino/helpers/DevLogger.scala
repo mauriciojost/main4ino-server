@@ -2,13 +2,15 @@ package org.mauritania.main4ino.helpers
 
 import java.io.File
 
-import cats.effect.IO
+import cats.effect.{Blocker, IO}
 import java.nio.file.{StandardOpenOption, Path => JavaPath}
 
 import org.mauritania.main4ino.api.Attempt
 import fs2.{Stream, io, text => fs2text}
 import org.mauritania.main4ino.firmware.Store.Firmware
 import org.mauritania.main4ino.models.DeviceName
+
+import scala.concurrent.ExecutionContext
 
 /**
   * Defines a way to handle logs coming from Devices, so that
@@ -43,20 +45,21 @@ trait DevLogger[F[_]] {
 
 }
 
-class DevLoggerIO(basePath: JavaPath, time: Time[IO]) extends DevLogger[IO] {
+class DevLoggerIO(basePath: JavaPath, time: Time[IO], blocker: Blocker, ec: ExecutionContext) extends DevLogger[IO] {
 
   final private val ChunkSize = 1024
   final private val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
   final private val DefaultLengthLogs = 1024L * 10
   final private val DefaultIgnoreLogs = 0L
   final private val MaxLengthLogs = 1024L * 512 // 0.5 MiB
+  final private implicit val cs = IO.contextShift(ec)
 
   private def pathFromDevice(device: DeviceName): JavaPath = basePath.resolve(s"$device.log")
 
   def updateLogs(device: DeviceName, body: Stream[IO, String]): IO[Attempt[Unit]] = {
     val timedBody = Stream.eval[IO, String](time.nowUtc.map("### " + _ + "\n")) ++ body
     val encoded = timedBody.through(fs2text.utf8Encode)
-    val written = encoded.to(io.file.writeAll(pathFromDevice(device), CreateAndAppend))
+    val written = encoded.through(io.file.writeAll[IO](pathFromDevice(device), blocker, CreateAndAppend))
     val eithers = written.attempt.compile.toList
     val attempts = eithers.map {
       // Not clear why this behavior. This pattern matching is done based on non-documented observed
@@ -82,8 +85,8 @@ class DevLoggerIO(basePath: JavaPath, time: Time[IO]) extends DevLogger[IO] {
       located: Attempt[Stream[IO, String]] = readable match {
         case true =>
           Right{
-            val bytes = io.file.readAll[IO](pathFromDevice(device), ChunkSize)
-            val filteredBytes = bytes.dropRight(i.toInt).takeRight(l)
+            val bytes = io.file.readAll[IO](pathFromDevice(device), blocker, ChunkSize)
+            val filteredBytes = bytes.dropRight(i.toInt).takeRight(l.toInt)
             val text = filteredBytes.through(fs2text.utf8Decode)
             text
           }

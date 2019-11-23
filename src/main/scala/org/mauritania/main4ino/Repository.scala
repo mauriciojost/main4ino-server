@@ -49,11 +49,16 @@ trait Repository[F[_]] {
 // Naming regarding to SQL
 class RepositoryIO(transactor: Transactor[IO]) extends Repository[IO] {
 
-  implicit val StatusMeta: Meta[Status] = Meta[String].xmap(Status.apply, _.code)
+  implicit val StatusMeta: Meta[Status] = Meta[String].timap[Status](Status.apply(_))(_.code)
 
-  implicit val CompositeJson: Composite[Json] = {
-    val m: Meta[Json] = Meta[String].xmap(io.circe.parser.parse(_).toOption.getOrElse(Json.Null), _.noSpaces)
-    Composite.fromMeta(m)
+  implicit val ReadCompositeJson: Read[Json] = {
+    val m: Get[Json] = Get[String].map(io.circe.parser.parse(_).toOption.getOrElse(Json.Null))
+    Read.fromGet(m)
+  }
+
+  implicit val WriteCompositeJson: Write[Json] = {
+    val m: Put[Json] = Put[String].contramap(_.noSpaces)
+    Write.fromPut(m)
   }
 
   def setDescription(d: DeviceName, v: VersionJson, ts: EpochSecTimestamp): IO[Int] = {

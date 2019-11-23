@@ -3,17 +3,17 @@ import sbt._
 object Dependencies {
 
     object Versions {
-        val Http4sVersion = "0.18.14"
+        val Http4sVersion = "0.21.0-M5"
         val Specs2Version = "4.2.0"
         val LogbackVersion = "1.2.3"
-        val DoobieVersion = "0.5.2"
-        val H2Version = "1.4.192"
-        val FlywayVersion = "4.2.0"
-        val CirceVersion = "0.9.3"
+        val DoobieVersion = "0.8.6"
+        val H2Version = "1.4.200"
+        val FlywayVersion = "6.0.8"
+        val CirceVersion = "0.12.3"
         val PureConfigVersion = "0.10.2"
         val ScalaTestVersion = "3.0.4"
         val ScalaMockVersion = "4.0.0"
-        val log4CatsSlf4jVersion = "0.1.0"
+        val log4CatsSlf4jVersion = "1.0.1"
         val slf4jLog4j12Version = "1.8.0-beta2"
         val CryptobitsVersion = "1.2"
         val BcryptVersion = "3.1"

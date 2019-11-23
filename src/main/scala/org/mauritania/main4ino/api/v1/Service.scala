@@ -7,9 +7,17 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.circe._
+
+import cats.implicits._
+import io.circe.generic.auto._
+import io.circe.syntax._
+import org.http4s._
+import org.http4s.circe._
+import org.http4s.dsl.Http4sDsl
+
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
-import org.http4s.{AuthedService, HttpService, Request, Response}
+import org.http4s.{AuthedService, EntityDecoder, EntityEncoder, HttpService, Request, Response}
 import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.CountResponse
@@ -34,6 +42,14 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
   implicit val jsonStringDecoder = JsonEncoding.StringDecoder
   implicit val jsonStatusDecoder = JsonEncoding.StatusDecoder
   implicit val jsonStatusEncoder = JsonEncoding.StatusEncoder
+
+  implicit val CoundResponseEncoder: EntityEncoder[F, CountResponse] = jsonEncoderOf
+  implicit val IdsOnlyResponseEncoder: EntityEncoder[F, Translator.IdsOnlyResponse] = jsonEncoderOf
+  implicit val DeviceIdEncoder: EntityEncoder[F, DeviceId] = jsonEncoderOf
+  implicit val IterableDeviceIdEncoder: EntityEncoder[F, Iterable[DeviceId]] = jsonEncoderOf
+  implicit val IdResponseEncoder: EntityEncoder[F, Translator.IdResponse] = jsonEncoderOf
+
+  //implicit val j = EntityEncoder.stringEncoder[F]
 
   private[v1] val service = AuthedService[User, F] {
 
@@ -116,7 +132,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       */
     case a@DELETE -> _ / "administrator" / "devices" / Dev(device) / Req(table) as _ => {
       val x: F[Translator.CountResponse] = tr.deleteDevice(device, table)
-      Ok(x.map(_.asJson), ContentTypeAppJson)
+      x.flatMap(i => Ok(i, ContentTypeAppJson))
     }
 
 
@@ -230,7 +246,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
         de = Device(device, a)
       } yield (de)
       val x: F[Translator.IdResponse] = tr.postDevice(d, table)
-      Created(x.map(_.asJson), ContentTypeAppJson)
+      x.flatMap(i => Created(i.asJson, ContentTypeAppJson))
     }
 
     /**
@@ -251,10 +267,10 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       val idsOnly = ids.exists(identity)
       if (idsOnly) {
         val x: F[Translator.IdsOnlyResponse] = tr.getDevicesIds(device, table, from, to, st)
-        Ok(x.map(_.asJson), ContentTypeAppJson)
+        x.flatMap(i => Ok(i.asJson, ContentTypeAppJson))
       } else {
         val x: F[Iterable[DeviceId]] = tr.getDevices(device, table, from, to, st)
-        Ok(x.map(_.asJson), ContentTypeAppJson)
+        x.flatMap(i => Ok(i.asJson, ContentTypeAppJson))
       }
     }
 
@@ -367,7 +383,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
         dev = Device(device, Map(actor -> p))
       } yield (dev)
       val x: F[Translator.IdResponse] = tr.postDevice(dev, table)
-      Created(x.map(_.asJson), ContentTypeAppJson)
+      x.flatMap(i => Created(i, ContentTypeAppJson))
     }
 
     /**
@@ -438,7 +454,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     AuthMiddleware(Kleisli(auth.authenticateAndCheckAccessFromRequest) andThen Kleisli(AuthLogger.logAuthentication[F] _), onFailure)
   val serviceWithAuthentication: HttpService[F] = HttpMeter.timedHttpMiddleware[F].apply(customAuthMiddleware(service))
 
-  private[v1] def request(r: Request[F]): F[Response[F]] = serviceWithAuthentication.orNotFound(r)
+  private[v1] def request(r: Request[F]): F[Response[F]] = serviceWithAuthentication(r).getOrElseF(NotFound())
 
 }
 
