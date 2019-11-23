@@ -58,16 +58,19 @@ object Server extends IOApp {
         _ <- logger.info(s"Repository cleanup at $now ($epSecs): $cleaned requests cleaned")
       } yield (cleaned)
 
+      httpApp = Router(
+        "/" -> new webapp.Service("/webapp/index.html", ec, blocker).service,
+        "/" -> new firmware.Service(fwStore, blocker).service,
+        "/api/v1" -> new v1.Service(auth, new Translator(repo, time, devLogger, fwStore), time).serviceWithAuthentication
+      ).orNotFound
+
       _ <- Resource.liftF(Database.initialize(transactor))
       cleanupPeriodSecs = FiniteDuration(configApp.database.cleanup.periodSecs, TimeUnit.SECONDS)
       _ <- Resource.liftF(IO.sleep(cleanupPeriodSecs) *> cleanupRepoTask)
-      exitCodeServer <- BlazeBuilder[IO]
+      exitCodeServer <- BlazeServerBuilder[IO]
         .bindHttp(configApp.server.port, configApp.server.host)
-        .mountService(new webapp.Service("/webapp/index.html", ec, blocker).service, "/")
-        .mountService(new firmware.Service(fwStore, blocker).service, "/")
-        .mountService(new v1.Service(auth, new Translator(repo, time, devLogger, fwStore), time).serviceWithAuthentication, "/api/v1")
-        .serve
-
+        .withHttpApp(httpApp)
+        .resource
     } yield exitCodeServer
   }
 
