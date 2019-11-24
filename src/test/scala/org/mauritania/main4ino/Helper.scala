@@ -7,7 +7,7 @@ import fs2.Stream
 object Helper {
 
   def asEntityBody[F[_]: Sync](content: String): EntityBody[F] = {
-    Stream.fromIterator[F, Byte](content.toCharArray.map(_.toByte).toIterator)
+    Stream.fromIterator[F](content.toCharArray.map(_.toByte).toIterator)
   }
 
 }

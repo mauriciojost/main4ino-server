@@ -2,7 +2,7 @@ package org.mauritania.main4ino
 
 import cats.effect.IO
 import io.circe.Json
-import org.http4s.client.blaze.Http1Client
+import org.http4s.client.blaze.{BlazeClientBuilder, Http1Client}
 import org.http4s.client.{Client, UnexpectedStatus}
 import org.http4s.{BasicCredentials, Method, Request, Uri}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, Sequential}
@@ -15,6 +15,8 @@ import io.circe.parser._
 import org.mauritania.main4ino.api.v1.JsonEncoding
 import org.mauritania.main4ino.api.Translator.IdResponse
 import org.mauritania.main4ino.models.{DeviceId, RequestId}
+
+import scala.concurrent.ExecutionContext
 
 class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
@@ -30,13 +32,12 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
     appThread = launchAsync(Array("src/test/resources/configs/1"))
-    httpClient = Http1Client[IO]().unsafeRunSync
+    httpClient = BlazeClientBuilder[IO](ExecutionContext.global)(IO.ioConcurrentEffect(IO.contextShift(ExecutionContext.global))).resource.use(_ => IO.never).unsafeRunSync
     Thread.sleep(3 * BaseWaitMs)
   }
 
   override def afterAll(): Unit = {
     appThread.interrupt()
-    httpClient.shutdownNow()
   }
 
   "The server" should "start and expose rest the api (v1)" in {
@@ -120,8 +121,8 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   it should "fail if started with bad arduments" in {
     // accepts only one argument
-    assertThrows[IllegalArgumentException](Server.stream(List(), IO.pure()).take(1).compile.last.unsafeRunSync())
-    assertThrows[IllegalArgumentException](Server.stream(List("", ""), IO.pure()).take(1).compile.last.unsafeRunSync())
+    assertThrows[IllegalArgumentException](Server.run(List()).unsafeRunSync())
+    assertThrows[IllegalArgumentException](Server.run(List("", "")).unsafeRunSync())
   }
 
   private def launchAsync(args: Array[String]): Thread = {

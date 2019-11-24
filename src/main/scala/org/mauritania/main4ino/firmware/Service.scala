@@ -26,9 +26,13 @@ import cats.data._
 import org.http4s.server.{HttpMiddleware, Middleware}
 import org.mauritania.main4ino.helpers.{HttpMeter, Time}
 
-class Service[F[_] : Sync: Effect: ContextShift](st: Store[F], blocker: Blocker) extends Http4sDsl[F] {
+import scala.concurrent.ExecutionContext
+
+class Service[F[_] : Sync: Effect: ContextShift](st: Store[F], ec: ExecutionContext) extends Http4sDsl[F] {
 
   import Service._
+
+  final private val blocker = Blocker.liftExecutionContext(ec)
   implicit val fileEntityEncoder = EntityEncoder.fileEncoder[F](blocker)
 
   val serviceUntimed = HttpRoutes.of[F] {

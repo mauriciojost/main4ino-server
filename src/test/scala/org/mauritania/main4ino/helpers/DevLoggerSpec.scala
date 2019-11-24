@@ -1,14 +1,15 @@
 package org.mauritania.main4ino.helpers
 
-import java.nio.file.Paths
+import java.nio.file.{Path, Paths}
 import java.time.{Instant, ZoneId, ZonedDateTime}
 
-import cats.effect.IO
+import cats.effect.{IO, Sync}
 import fs2.Stream
 import org.mauritania.main4ino.TmpDir
 import org.scalatest._
 import org.scalatest.EitherValues._
 
+import scala.concurrent.ExecutionContext
 import scala.io.Source
 
 class DevLoggerSpec extends FlatSpec with Matchers with TmpDir {
@@ -22,7 +23,7 @@ class DevLoggerSpec extends FlatSpec with Matchers with TmpDir {
   "The logger" should "append a message to a file and read it" in {
     withTmpDir { tmp =>
       val expectedFile = tmp.resolve("device.log")
-      val logger = new DevLoggerIO(tmp, new FixedTimeIO())
+      val logger= buildLogger(tmp)
       val s1 = Stream("hey\nyou\n") // creates and appends
       logger.updateLogs("device", s1).unsafeRunSync() should be(Right(()))
       Source.fromFile(expectedFile.toFile).getLines.toList should be(
@@ -68,14 +69,20 @@ class DevLoggerSpec extends FlatSpec with Matchers with TmpDir {
   }
 
   it should "report a meaningful failure when cannot write file" in {
-    val logger = new DevLoggerIO(Paths.get("/non/existent/path"), new FixedTimeIO())
+    val logger = buildLogger(Paths.get("/non/existent/path"))
     val s = Stream("hey")
     logger.updateLogs("device", s).unsafeRunSync().left.get should include("/non/existent/path")
   }
 
   it should "report a meaningful failure when cannot read file" in {
-    val logger = new DevLoggerIO(Paths.get("/non/existent/path"), new FixedTimeIO())
+    val logger = buildLogger(Paths.get("/non/existent/path"))
     logger.getLogs("device1", None, None).unsafeRunSync().left.get should include("device1")
+  }
+
+  private def buildLogger(tmp: Path) = {
+    val ec = ExecutionContext.global
+    val logger = new DevLoggerIO[IO](tmp, new FixedTimeIO(), ec)(Sync[IO], IO.contextShift(ec))
+    logger
   }
 
 }

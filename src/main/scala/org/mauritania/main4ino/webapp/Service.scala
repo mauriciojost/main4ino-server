@@ -8,9 +8,13 @@ import org.http4s.server.staticcontent
 import org.http4s.server.staticcontent.ResourceService.Config
 import org.mauritania.main4ino.helpers.HttpMeter
 
-class Service[F[_]: Effect: Sync: ContextShift](resourceIndexHtml: String, blocker: Blocker) extends Http4sDsl[F] {
+import scala.concurrent.ExecutionContext
 
-  private val StaticResource = staticcontent.resourceService[F](
+class Service[F[_]: Effect: Sync: ContextShift](resourceIndexHtml: String, ec: ExecutionContext) extends Http4sDsl[F] {
+
+  final private val blocker = Blocker.liftExecutionContext(ec)
+
+  final private val StaticResource = staticcontent.resourceService[F](
     Config(
       basePath = "/webapp",
       pathPrefix = "/",

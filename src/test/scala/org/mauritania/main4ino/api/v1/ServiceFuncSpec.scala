@@ -3,7 +3,7 @@ package org.mauritania.main4ino.api.v1
 import java.nio.file.{Path, Paths}
 import java.time.{Instant, ZoneId, ZonedDateTime}
 
-import cats.effect.IO
+import cats.effect.{IO, Sync}
 import fs2.Stream
 import io.circe.{Encoder, Json}
 import io.circe.syntax._
@@ -24,6 +24,8 @@ import org.mauritania.main4ino.security._
 import org.mauritania.main4ino.{DbSuite, RepositoryIO, TmpDir}
 import org.scalatest.Sequential
 
+import scala.concurrent.ExecutionContext
+
 class ServiceFuncSpec extends DbSuite with TmpDir {
 
   Sequential
@@ -41,7 +43,7 @@ class ServiceFuncSpec extends DbSuite with TmpDir {
       new Translator(
         new RepositoryIO(transactor),
         t,
-        new DevLoggerIO(tmp, t),
+        new DevLoggerIO[IO](tmp, t, ExecutionContext.global)(Sync[IO], IO.contextShift(ExecutionContext.global)),
         new StoreIO(tmp)
     ),
       t
@@ -323,7 +325,7 @@ class ServiceFuncSpec extends DbSuite with TmpDir {
   }
 
   private[this] def asEntityBody(content: String): EntityBody[IO] = {
-    Stream.fromIterator[IO, Byte](content.toCharArray.map(_.toByte).toIterator)
+    Stream.fromIterator[IO](content.toCharArray.map(_.toByte).toIterator)
   }
 
   final val DefaultHeaders = Headers(Authorization(BasicCredentials(User1.id, User1Pass)))

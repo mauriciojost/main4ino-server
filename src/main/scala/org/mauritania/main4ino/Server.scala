@@ -27,26 +27,22 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.implicits._
 import doobie.util.ExecutionContexts
 
-import scala.concurrent.ExecutionContext
-
-
 object Server extends IOApp {
 
   def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](args: List[String]): Resource[F, H4Server[F]] = {
 
     for {
-      ec <- ExecutionContexts.cachedThreadPool[F]
+      blockingSafeEc <- ExecutionContexts.cachedThreadPool[F]
       configDir <- Resource.liftF[F, File](resolveConfigDir(args))
       applicationConf = new File(configDir, "application.conf")
       securityConf = new File(configDir, "security.conf")
       configApp <- Resource.liftF(config.Config.load(applicationConf))
       configUsers <- Resource.liftF(security.Config.load(securityConf))
-      blocker = Blocker.liftExecutionContext(ec)
-      transactor <- Database.transactor[F](configApp.database, ec, blocker)
+      transactor <- Database.transactor[F](configApp.database, blockingSafeEc)
       auth = new AutherIO[F](configUsers)
       repo = new RepositoryIO[F](transactor)
       time = new TimeIO[F]()
-      devLogger = new DevLoggerIO(Paths.get(configApp.devLogger.logsBasePath), time, blocker, ec)
+      devLogger = new DevLoggerIO(Paths.get(configApp.devLogger.logsBasePath), time, blockingSafeEc)
       fwStore = new StoreIO(Paths.get(configApp.firmware.firmwareBasePath))
       cleanupRepoTask = for {
         logger <- Slf4jLogger.fromClass[F](Server.getClass)
@@ -57,8 +53,8 @@ object Server extends IOApp {
       } yield (cleaned)
 
       httpApp = Router(
-        "/" -> new webapp.Service("/webapp/index.html", blocker).service,
-        "/" -> new firmware.Service(fwStore, blocker).service,
+        "/" -> new webapp.Service("/webapp/index.html", blockingSafeEc).service,
+        "/" -> new firmware.Service(fwStore, blockingSafeEc).service,
         "/api/v1" -> new v1.Service(auth, new Translator(repo, time, devLogger, fwStore), time).serviceWithAuthentication
       ).orNotFound
 

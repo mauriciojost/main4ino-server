@@ -48,8 +48,9 @@ trait DevLogger[F[_]] {
 
 }
 
-class DevLoggerIO[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], blocker: Blocker, ec: ExecutionContext) extends DevLogger[F] {
+class DevLoggerIO[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], ec: ExecutionContext) extends DevLogger[F] {
 
+  final private val blocker = Blocker.liftExecutionContext(ec)
   final private val ChunkSize = 1024
   final private val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
   final private val DefaultLengthLogs = 1024L * 10

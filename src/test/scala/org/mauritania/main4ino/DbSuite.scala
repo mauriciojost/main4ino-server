@@ -1,7 +1,8 @@
 package org.mauritania.main4ino
 
-import cats.effect.IO
+import cats.effect.{Async, Blocker, IO, Resource, Sync}
 import doobie.hikari.HikariTransactor
+import doobie.util.ExecutionContexts
 import org.mauritania.main4ino.db.Config.Cleanup
 import org.mauritania.main4ino.db.{Config, Database}
 import org.mauritania.main4ino.helpers.{Time, TimeIO}
@@ -22,12 +23,14 @@ trait DbSuite extends FlatSpec with Matchers with BeforeAndAfterEach {
     )
   )
 
+
   override def beforeEach() = {
     val k = for {
-      t <- Database.transactor(transactorConfig)
-      d <- Database.initialize(t, true)
+      ec <- ExecutionContexts.cachedThreadPool[IO]
+      t <- Database.transactor[IO](transactorConfig, ec)(Sync[IO], IO.contextShift(ec), Async[IO])
+      d <- Resource.liftF(Database.initialize[IO](t, true))
     } yield(t)
-    transactor = k.unsafeRunSync
+    transactor = k.use(_ => IO.never).unsafeRunSync()
   }
 
   override def afterEach() = {

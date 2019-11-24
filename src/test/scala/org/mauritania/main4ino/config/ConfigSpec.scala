@@ -2,6 +2,7 @@ package org.mauritania.main4ino.config
 
 import java.io.File
 
+import cats.effect.IO
 import org.mauritania.main4ino.config.Config.{DevLoggerConfig, FirmwareConfig, ServerConfig}
 import org.mauritania.main4ino.db.Config.Cleanup
 import org.scalatest._
@@ -10,7 +11,7 @@ import org.mauritania.main4ino.db.{Config => DbConfig}
 class ConfigSpec extends FlatSpec with Matchers {
 
   "The app config" should "load correctly a configuration file" in {
-    val c = Config.load(new File("src/test/resources/configs/1/application.conf")).unsafeRunSync()
+    val c = Config.load[IO](new File("src/test/resources/configs/1/application.conf")).unsafeRunSync()
     c shouldBe Config(
       server = ServerConfig("0.0.0.0", 8080),
       database = DbConfig(
