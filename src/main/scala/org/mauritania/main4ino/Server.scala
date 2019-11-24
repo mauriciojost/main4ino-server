@@ -32,7 +32,8 @@ import scala.concurrent.ExecutionContext
 
 object Server extends IOApp {
 
-  def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](args: List[String]): Resource[F, H4Server[F]] = {
+  //def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](args: List[String]): Resource[F, H4Server[F]] = {
+  def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](args: List[String]): Resource[F, File] = {
 
     for {
       ec <- ExecutionContexts.cachedThreadPool[F]
@@ -42,7 +43,7 @@ object Server extends IOApp {
       configApp <- Resource.liftF(config.Config.load(applicationConf))
       configUsers <- Resource.liftF(security.Config.load(securityConf))
       blocker = Blocker.liftExecutionContext(ec)
-      transactor <- Resource.liftF(Database.transactor(configApp.database, ec, blocker))
+      transactor <- Database.transactor[F](configApp.database, ec, blocker)
       auth = new AutherIO[F](configUsers)
       repo = new RepositoryIO[F](transactor)
       time = new TimeIO[F]()
@@ -56,20 +57,26 @@ object Server extends IOApp {
         _ <- logger.info(s"Repository cleanup at $now ($epSecs): $cleaned requests cleaned")
       } yield (cleaned)
 
+      /*
       httpApp = Router(
         "/" -> new webapp.Service("/webapp/index.html", ec, blocker).service,
         "/" -> new firmware.Service(fwStore, blocker).service,
         "/api/v1" -> new v1.Service(auth, new Translator(repo, time, devLogger, fwStore), time).serviceWithAuthentication
       ).orNotFound
+      */
 
       _ <- Resource.liftF(Database.initialize(transactor))
       cleanupPeriodSecs = FiniteDuration(configApp.database.cleanup.periodSecs, TimeUnit.SECONDS)
       _ <- Resource.liftF(Timer[F].sleep(cleanupPeriodSecs) *> cleanupRepoTask)
+      /*
       exitCodeServer <- BlazeServerBuilder[IO]
         .bindHttp(configApp.server.port, configApp.server.host)
         .withHttpApp(httpApp)
         .resource
-    } yield exitCodeServer
+
+       */
+    } yield configDir
+    //} yield exitCodeServer
   }
 
   private def resolveConfigDir[F[_]: Sync](args: List[String]): F[File] = Sync[F].delay {
@@ -81,5 +88,5 @@ object Server extends IOApp {
     new File(arg1)
   }
 
-  def run(args: List[String]): IO[ExitCode] = createServer(args).use(_ => IO.never).as(ExitCode.Success)
+  def run(args: List[String]): IO[ExitCode] = createServer[IO](args).use(_ => IO.never).as(ExitCode.Success)
 }
