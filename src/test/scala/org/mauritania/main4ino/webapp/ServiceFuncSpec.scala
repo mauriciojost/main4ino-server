@@ -21,7 +21,7 @@ class ServiceFuncSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
   }
 
   it should "fail to read non-existent index.html (from root)" in {
-    get("/")(buildService()).status shouldBe Status.InternalServerError
+    get("/")(buildService("/somewhere/index.html")).status shouldBe Status.InternalServerError
   }
 
   it should "read existent app.js" in {
@@ -40,9 +40,9 @@ class ServiceFuncSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
     service.request(request).unsafeRunSync()
   }
 
-  private def buildService(): Service[IO] = {
+  private def buildService(resourceIndexHtml: String = "/webapp/index.html"): Service[IO] = {
     val ec = ExecutionContext.global
-    new Service[IO]("/webapp/index.html", ec)(Effect[IO], Sync[IO], IO.contextShift(ec))
+    new Service[IO](resourceIndexHtml, ec)(Effect[IO], Sync[IO], IO.contextShift(ec))
   }
 
 }
