@@ -8,7 +8,7 @@ import cats.data.{Kleisli, OptionT}
 import cats.effect.{Blocker, ContextShift, Effect, IO, Sync}
 import fs2.Stream
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.http4s.{EntityEncoder, Header, Headers, HttpService, Request, Response}
+import org.http4s.{EntityEncoder, Header, Headers, HttpRoutes, HttpService, Request, Response}
 import org.http4s.headers.`Content-Length`
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.main4ino.api.Attempt
@@ -31,7 +31,7 @@ class Service[F[_] : Sync: Effect: ContextShift](st: Store[F], blocker: Blocker)
   import Service._
   implicit val fileEntityEncoder = EntityEncoder.fileEncoder[F](blocker)
 
-  val serviceUntimed = HttpService[F] {
+  val serviceUntimed = HttpRoutes.of[F] {
 
     /**
       * GET /firmwares/<project>/<platform>/content?version=<version>

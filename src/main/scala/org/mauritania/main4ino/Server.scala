@@ -32,8 +32,7 @@ import scala.concurrent.ExecutionContext
 
 object Server extends IOApp {
 
-  //def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](args: List[String]): Resource[F, H4Server[F]] = {
-  def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](args: List[String]): Resource[F, File] = {
+  def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](args: List[String]): Resource[F, H4Server[F]] = {
 
     for {
       ec <- ExecutionContexts.cachedThreadPool[F]
@@ -57,26 +56,21 @@ object Server extends IOApp {
         _ <- logger.info(s"Repository cleanup at $now ($epSecs): $cleaned requests cleaned")
       } yield (cleaned)
 
-      /*
       httpApp = Router(
-        "/" -> new webapp.Service("/webapp/index.html", ec, blocker).service,
+        "/" -> new webapp.Service("/webapp/index.html", blocker).service,
         "/" -> new firmware.Service(fwStore, blocker).service,
         "/api/v1" -> new v1.Service(auth, new Translator(repo, time, devLogger, fwStore), time).serviceWithAuthentication
       ).orNotFound
-      */
 
       _ <- Resource.liftF(Database.initialize(transactor))
       cleanupPeriodSecs = FiniteDuration(configApp.database.cleanup.periodSecs, TimeUnit.SECONDS)
       _ <- Resource.liftF(Timer[F].sleep(cleanupPeriodSecs) *> cleanupRepoTask)
-      /*
-      exitCodeServer <- BlazeServerBuilder[IO]
+      exitCodeServer <- BlazeServerBuilder[F]
         .bindHttp(configApp.server.port, configApp.server.host)
         .withHttpApp(httpApp)
         .resource
 
-       */
-    } yield configDir
-    //} yield exitCodeServer
+    } yield exitCodeServer
   }
 
   private def resolveConfigDir[F[_]: Sync](args: List[String]): F[File] = Sync[F].delay {

@@ -1,19 +1,16 @@
 package org.mauritania.main4ino.webapp
 
 import cats.implicits._
-import cats.effect.{Blocker, IO}
-import org.http4s.{HttpService, Request, Response, StaticFile}
+import cats.effect.{Blocker, ContextShift, Effect, Sync}
+import org.http4s.{HttpRoutes, HttpService, Request, Response, StaticFile}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.staticcontent
 import org.http4s.server.staticcontent.ResourceService.Config
 import org.mauritania.main4ino.helpers.HttpMeter
 
-import scala.concurrent.ExecutionContext
+class Service[F[_]: Effect: Sync: ContextShift](resourceIndexHtml: String, blocker: Blocker) extends Http4sDsl[F] {
 
-class Service(resourceIndexHtml: String, ec: ExecutionContext, blocker: Blocker) extends Http4sDsl[IO] {
-
-  private implicit val cs = IO.contextShift(ec)
-  private val StaticResource = staticcontent.resourceService[IO](
+  private val StaticResource = staticcontent.resourceService[F](
     Config(
       basePath = "/webapp",
       pathPrefix = "/",
@@ -22,19 +19,19 @@ class Service(resourceIndexHtml: String, ec: ExecutionContext, blocker: Blocker)
     )
   )
 
-  val serviceUntimed = HttpService[IO] {
+  val serviceUntimed = HttpRoutes.of[F] {
 
       case a@GET -> Root =>
         StaticFile.fromResource(resourceIndexHtml, blocker, Some(a)).getOrElseF(InternalServerError())
 
       case a@GET -> _ =>
-        StaticResource(a).value.map(_.getOrElse(Response.notFound[IO]))
+        StaticResource(a).value.map(_.getOrElse(Response.notFound[F]))
 
     }
 
-  val service = HttpMeter.timedHttpMiddleware[IO].apply(serviceUntimed)
+  val service = HttpMeter.timedHttpMiddleware[F].apply(serviceUntimed)
 
-	private[webapp] def request(r: Request[IO]): IO[Response[IO]] = service(r).getOrElseF(NotFound())
+	private[webapp] def request(r: Request[F]): F[Response[F]] = service(r).getOrElseF(NotFound())
 
 }
 

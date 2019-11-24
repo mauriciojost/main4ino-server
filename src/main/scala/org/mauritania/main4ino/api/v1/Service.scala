@@ -49,9 +49,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
   implicit val IterableDeviceIdEncoder: EntityEncoder[F, Iterable[DeviceId]] = jsonEncoderOf
   implicit val IdResponseEncoder: EntityEncoder[F, Translator.IdResponse] = jsonEncoderOf
 
-  //implicit val j = EntityEncoder.stringEncoder[F]
-
-  private[v1] val service = AuthedService[User, F] {
+  private[v1] val service = AuthedRoutes.of[User, F] {
 
     /**
       * GET /help
@@ -449,10 +447,10 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     }
   }
 
-  private[v1] val onFailure: AuthedService[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
+  private[v1] val onFailure: AuthedRoutes[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
   private[v1] val customAuthMiddleware: AuthMiddleware[F, User] =
     AuthMiddleware(Kleisli(auth.authenticateAndCheckAccessFromRequest) andThen Kleisli(AuthLogger.logAuthentication[F] _), onFailure)
-  val serviceWithAuthentication: HttpService[F] = HttpMeter.timedHttpMiddleware[F].apply(customAuthMiddleware(service))
+  val serviceWithAuthentication: HttpRoutes[F] = HttpMeter.timedHttpMiddleware[F].apply(customAuthMiddleware(service))
 
   private[v1] def request(r: Request[F]): F[Response[F]] = serviceWithAuthentication(r).getOrElseF(NotFound())
 
