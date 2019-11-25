@@ -27,7 +27,8 @@ trait DbSuite extends FlatSpec with Matchers with BeforeAndAfterEach {
   override def beforeEach() = {
     val k = for {
       ec <- ExecutionContexts.cachedThreadPool[IO]
-      t <- Database.transactor[IO](transactorConfig, ec)(Sync[IO], IO.contextShift(ec), Async[IO])
+      ecBlocker <- ExecutionContexts.cachedThreadPool[IO]
+      t <- Database.transactor[IO](transactorConfig, ec, Blocker.liftExecutionContext(ecBlocker))(Sync[IO], IO.contextShift(ec), Async[IO])
       d <- Resource.liftF(Database.initialize[IO](t, true))
     } yield(t)
     transactor = k.use(_ => IO.never).unsafeRunSync()

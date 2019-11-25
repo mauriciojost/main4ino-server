@@ -9,9 +9,9 @@ import cats.effect.implicits._
 import scala.concurrent.ExecutionContext
 
 object Database {
-  def transactor[F[_]: Sync: ContextShift: Async](config: Config, ec: ExecutionContext): Resource[F, HikariTransactor[F]] = {
+  def transactor[F[_]: Sync: ContextShift: Async](config: Config, ec: ExecutionContext, blocker: Blocker): Resource[F, HikariTransactor[F]] = {
     HikariTransactor
-      .newHikariTransactor[F](config.driver, config.url, config.user, config.password, ec, Blocker.liftExecutionContext(ec))
+      .newHikariTransactor[F](config.driver, config.url, config.user, config.password, ec, blocker)
   }
 
   def initialize[F[_]: Sync](transactor: HikariTransactor[F], clean: Boolean = false): F[Unit] = {
