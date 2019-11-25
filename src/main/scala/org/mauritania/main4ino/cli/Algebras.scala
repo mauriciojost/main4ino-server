@@ -2,8 +2,12 @@ package org.mauritania.main4ino.cli
 
 import java.nio.file.Path
 
+import cats.Monad
+import cats.implicits._
 import org.mauritania.main4ino.cli.Actions.{AddRawUser, CliAction}
 import org.mauritania.main4ino.security.{Auther, Config, User}
+import tsec.passwordhashers._
+import tsec.passwordhashers.jca._
 
 object Algebras {
 
@@ -14,13 +18,11 @@ object Algebras {
 
   trait Configs[F[_]]  {
 
-    def user(c: Config, u: AddRawUser): User = {
-      val hashed = Auther.hashPassword(u.pass, c.salt)
-      User(u.name, hashed, u.email, u.granted)
-    }
+    def user(c: Config, u: AddRawUser)(implicit P: PasswordHasher[F, BCrypt], M: Monad[F]): F[User] = for {
+      hashed <- Auther.hashPassword[F](u.pass, c.salt)
+    } yield User(u.name, hashed, u.email, u.granted)
 
-   // No F[_] returned as they are not meant to have side effects
-    def performAction(c: Config, a: CliAction): Config
+    def performAction(c: Config, a: CliAction): F[Config]
     def asString(c: Config): String
   }
 

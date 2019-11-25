@@ -20,7 +20,7 @@ lazy val root = (project in file("."))
       "-Ypartial-unification",
       "-language:higherKinds"
     ),
-    libraryDependencies ++= Dependencies.Dependencies,
+    libraryDependencies ++= Dependencies.Dependencies ++ tsec,
     parallelExecution in Test := false,
 
     coverageMinimum := 95,
@@ -28,5 +28,18 @@ lazy val root = (project in file("."))
 
   )
 
-
-
+val tsecV = "0.0.1-M11"
+val tsec = Seq(
+  "io.github.jmcardon" %% "tsec-common" % tsecV,
+  "io.github.jmcardon" %% "tsec-password" % tsecV,
+//  "io.github.jmcardon" %% "tsec-cipher-jca" % tsecV,
+//  "io.github.jmcardon" %% "tsec-cipher-bouncy" % tsecV,
+//  "io.github.jmcardon" %% "tsec-mac" % tsecV,
+//  "io.github.jmcardon" %% "tsec-signatures" % tsecV,
+//  "io.github.jmcardon" %% "tsec-hash-jca" % tsecV,
+//  "io.github.jmcardon" %% "tsec-hash-bouncy" % tsecV,
+//  "io.github.jmcardon" %% "tsec-libsodium" % tsecV,
+  "io.github.jmcardon" %% "tsec-jwt-mac" % tsecV,
+//  "io.github.jmcardon" %% "tsec-jwt-sig" % tsecV,
+//  "io.github.jmcardon" %% "tsec-http4s" % tsecV
+)

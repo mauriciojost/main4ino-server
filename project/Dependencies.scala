@@ -15,14 +15,10 @@ object Dependencies {
         val ScalaMockVersion = "4.0.0"
         val log4CatsSlf4jVersion = "0.1.0"
         val slf4jLog4j12Version = "1.8.0-beta2"
-        val CryptobitsVersion = "1.2"
-        val BcryptVersion = "3.1"
         val GfcSemver = "0.0.5"
     }
 
     val Dependencies = Seq(
-          "org.reactormonk" %% "cryptobits" % Versions.CryptobitsVersion,
-          "com.github.t3hnar" %% "scala-bcrypt" % Versions.BcryptVersion,
           "org.http4s" %% "http4s-blaze-server" % Versions.Http4sVersion,
           "org.http4s" %% "http4s-circe" % Versions.Http4sVersion,
           "io.circe" %% "circe-core" % Versions.CirceVersion,
