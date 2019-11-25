@@ -4,7 +4,10 @@ import java.io.{BufferedWriter, FileWriter}
 import java.nio.file.Path
 
 import cats.effect.Sync
-import cats.{ApplicativeError, Monad}
+import cats._
+import cats.syntax._
+import cats.implicits._
+import cats.instances._
 import com.typesafe.config.{ConfigFactory, Config => TypeSafeConfig}
 import io.circe.generic.auto._
 import io.circe.syntax._
@@ -22,22 +25,24 @@ import pureconfig._
 import pureconfig.generic.auto._
 import enumeratum._
 import io.circe.Encoder
+import tsec.passwordhashers.PasswordHasher
+import tsec.passwordhashers.jca.BCrypt
 
 object Modules {
 
   import ConfigLoader.CirceImplicits._
   import ConfigLoader.PureConfigImplicits._
 
-  class ConfigsAppErr[F[_]: Monad](implicit A: ApplicativeError[F, Throwable]) extends Configs[F] {
+  class ConfigsAppErr[F[_]: Monad](implicit H: PasswordHasher[F, BCrypt]) extends Configs[F] {
 
-    def performAction(c: Config, action: CliAction): Config = {
+    def performAction(c: Config, action: CliAction): F[Config] = {
       action match {
         case rus : Actions.AddRawUsers => {
-          val nUsers: List[User] = rus.users.map(u => user(c, u))
-          val nConf = c.copy(users = nUsers ++ c.users)
+          val nUsers: F[List[User]] = rus.users.map(u => user(c, u)).sequence
+          val nConf = Monad[F].map(nUsers)(nu => c.copy(users = nu ++ c.users))
           nConf
         }
-        case _ => c
+        case _ => Monad[F].pure(c)
       }
     }
 
