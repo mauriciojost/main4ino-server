@@ -32,7 +32,6 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
     appThread = launchAsync(Array("src/test/resources/configs/1"))
-    httpClient = BlazeClientBuilder[IO](ExecutionContext.global)(IO.ioConcurrentEffect(IO.contextShift(ExecutionContext.global))).resource.use(_ => IO.never).unsafeRunSync
     Thread.sleep(3 * BaseWaitMs)
   }
 
@@ -41,8 +40,11 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   "The server" should "start and expose rest the api (v1)" in {
-    val help = httpClient.expect[String](s"http://localhost:8080/api/v1/token/${UserPass.token}/help")
-    help.unsafeRunSync() should include("https")
+    BlazeClientBuilder[IO](Helper.global)(IO.ioConcurrentEffect(IO.contextShift(Helper.global))).resource.use{httpClient =>
+      val help = httpClient.expect[String](s"http://localhost:8080/api/v1/token/${UserPass.token}/help")
+      help.unsafeRunSync() should include("https")
+      IO.pure("")
+    }.unsafeRunSync()
 
   }
 
