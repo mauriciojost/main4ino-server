@@ -5,9 +5,7 @@ import java.nio.file.Paths
 import java.util.concurrent._
 
 import cats.effect.{ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, Resource, Timer}
-import fs2.Stream
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.http4s.server.blaze.BlazeBuilder
 import org.mauritania.main4ino.Repository.ReqType
 import org.mauritania.main4ino.api.{Translator, v1}
 import org.mauritania.main4ino.db.Database
@@ -15,7 +13,6 @@ import org.mauritania.main4ino.firmware.{Store, StoreIO}
 import org.mauritania.main4ino.helpers.{DevLoggerIO, TimeIO}
 import org.mauritania.main4ino.security.AutherIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 
 
@@ -32,18 +29,29 @@ object Server extends IOApp {
   def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](args: List[String]): Resource[F, H4Server[F]] = {
 
     for {
-      blockingSafeEc <- ExecutionContexts.cachedThreadPool[F]
+
+      logger <- Resource.liftF(Slf4jLogger.fromClass[F](Translator.getClass))
+      transactorEc <- ExecutionContexts.cachedThreadPool[F]
+      blockerTransactorEc <- ExecutionContexts.cachedThreadPool[F]
+      devLoggerEc <- ExecutionContexts.cachedThreadPool[F]
+      webappServiceEc <- ExecutionContexts.cachedThreadPool[F]
+      firmwareServiceEc <- ExecutionContexts.cachedThreadPool[F]
+      _ <- Resource.liftF(logger.debug(s"Cached thread pools created"))
       configDir <- Resource.liftF[F, File](resolveConfigDir(args))
       applicationConf = new File(configDir, "application.conf")
       securityConf = new File(configDir, "security.conf")
       configApp <- Resource.liftF(config.Config.load(applicationConf))
       configUsers <- Resource.liftF(security.Config.load(securityConf))
-      transactor <- Database.transactor[F](configApp.database, blockingSafeEc)
+      _ <- Resource.liftF(logger.debug(s"Configs created"))
+      transactor <- Database.transactor[F](configApp.database, transactorEc, Blocker.liftExecutionContext(blockerTransactorEc))
+      _ <- Resource.liftF(logger.debug(s"Transactor created"))
       auth = new AutherIO[F](configUsers)
       repo = new RepositoryIO[F](transactor)
       time = new TimeIO[F]()
-      devLogger = new DevLoggerIO(Paths.get(configApp.devLogger.logsBasePath), time, blockingSafeEc)
+      devLogger = new DevLoggerIO(Paths.get(configApp.devLogger.logsBasePath), time, devLoggerEc)
+      _ <- Resource.liftF(logger.debug(s"DevLogger created"))
       fwStore = new StoreIO(Paths.get(configApp.firmware.firmwareBasePath))
+      _ <- Resource.liftF(logger.debug(s"Store created"))
       cleanupRepoTask = for {
         logger <- Slf4jLogger.fromClass[F](Server.getClass)
         now <- time.nowUtc
@@ -52,19 +60,23 @@ object Server extends IOApp {
         _ <- logger.info(s"Repository cleanup at $now ($epSecs): $cleaned requests cleaned")
       } yield (cleaned)
 
+      _ <- Resource.liftF(logger.debug(s"Cleanup created"))
       httpApp = Router(
-        "/" -> new webapp.Service("/webapp/index.html", blockingSafeEc).service,
-        "/" -> new firmware.Service(fwStore, blockingSafeEc).service,
+        "/" -> new webapp.Service("/webapp/index.html", webappServiceEc).service,
+        "/" -> new firmware.Service(fwStore, firmwareServiceEc).service,
         "/api/v1" -> new v1.Service(auth, new Translator(repo, time, devLogger, fwStore), time).serviceWithAuthentication
       ).orNotFound
 
       _ <- Resource.liftF(Database.initialize(transactor))
+      _ <- Resource.liftF(logger.debug(s"Database initialized"))
       cleanupPeriodSecs = FiniteDuration(configApp.database.cleanup.periodSecs, TimeUnit.SECONDS)
       _ <- Resource.liftF(Timer[F].sleep(cleanupPeriodSecs) *> cleanupRepoTask)
+      _ <- Resource.liftF(logger.debug(s"Server initialized"))
       exitCodeServer <- BlazeServerBuilder[F]
         .bindHttp(configApp.server.port, configApp.server.host)
         .withHttpApp(httpApp)
         .resource
+      _ <- Resource.liftF(logger.debug(s"Server initialized"))
 
     } yield exitCodeServer
   }
