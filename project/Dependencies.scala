@@ -20,11 +20,10 @@ object Dependencies {
         val GfcSemverVersion = "0.0.5"
         val EnumeratumVersion = "1.5.15"
         val RefinedVersion = "0.9.12"
+        val GfcSemver = "0.0.5"
     }
 
     val Dependencies = Seq(
-          "org.reactormonk" %% "cryptobits" % Versions.CryptobitsVersion,
-          "com.github.t3hnar" %% "scala-bcrypt" % Versions.BcryptVersion,
           "org.http4s" %% "http4s-blaze-server" % Versions.Http4sVersion,
           "org.http4s" %% "http4s-circe" % Versions.Http4sVersion,
           "eu.timepit" %% "refined"                 % Versions.RefinedVersion,

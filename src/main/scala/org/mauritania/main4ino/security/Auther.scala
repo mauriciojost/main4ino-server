@@ -7,16 +7,32 @@ import org.http4s.{AuthedRequest, BasicCredentials, Credentials, Headers, Method
 import org.http4s.Uri.Path
 import org.http4s.util.CaseInsensitiveString
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, ErrorMsg, UserSession}
-import org.reactormonk.CryptoBits
-import com.github.t3hnar.bcrypt._
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.headers.Authorization
 import org.mauritania.main4ino.security.Config.UsersBy
 import cats._
 import cats.implicits._
+import cats._
+import cats.syntax._
+import cats.instances._
+import cats.implicits._
+import cats.effect.{IO, Sync}
+import org.http4s.{BasicCredentials, Headers, Request, Uri}
+import org.http4s.Uri.Path
+import org.http4s.util.CaseInsensitiveString
+import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
+import org.http4s.headers.Authorization
+import org.mauritania.main4ino.security.Config.UsersBy
+import tsec.jws.mac.JWTMac
+import tsec.jwt.JWTClaims
+import tsec.mac.jca.HMACSHA256
+import tsec.passwordhashers._
+import tsec.passwordhashers.jca._
 
+import scala.concurrent.duration._
 import scala.util.Try
 import scala.util.matching.Regex
+
 
 /**
   * Authorization and authentication
@@ -55,14 +71,24 @@ class Auther[F[_]: Sync](config: Config) {
   /**
     * Provide a session given a user
     */
-  def generateSession(user: User): F[UserSession] =
-    Sync[F].delay(Auther.sessionFromUser(user, config.privateKeyBits, config.nonceStartupTime))
+  def generateSession(user: User): F[UserSession]
+
+}
+
+class AutherIO(config: Config) extends Auther[IO] {
+
+  def authenticateAndCheckAccessFromRequest(request: Request[IO]): IO[AccessAttempt] =
+    Auther.authenticateAndCheckAccess[IO](config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path)
+
+  def generateSession(user: User): IO[UserSession] =
+    Auther.sessionFromUser[IO](user, config.privateKeyBits, config.nonceStartupTime)
 }
 
 object Auther {
 
   type UserId = String // username
-  type UserHashedPass = String // hashed password
+  type UserHashedPass = PasswordHash[BCrypt]
+//  type UserHashedPass = String
   type UserSession = String // generated after login
 
   type ErrorMsg = String
@@ -76,14 +102,15 @@ object Auther {
   private final val GroupThe = 2
   private final val GroupPos = 3
 
-  def authenticateAndCheckAccess(usersBy: UsersBy, encry: EncryptionConfig, headers: Headers, method: Method, uri: Uri): AccessAttempt = {
+  def authenticateAndCheckAccess[F[_]: Sync : Monad](usersBy: UsersBy, encry: EncryptionConfig, headers: Headers, method: Method, uri: Uri)(implicit H: PasswordHasher[F, BCrypt]): F[AccessAttempt] = {
     val resource = uri.path
     val credentials = userCredentialsFromRequest(encry, headers, uri)
+    val c = credentials.map(c => c._2.map(p => (c._1, p))).sequence
     val session = sessionFromRequest(headers, uri)
     for {
-      user <- authenticatedUserFromSessionOrCredentials(encry, usersBy, session, credentials)
-      authorized <- checkAccess(user, method, resource)
-    } yield authorized
+      cc <- c
+      user <- authenticatedUserFromSessionOrCredentials(encry, usersBy, session, cc)
+    } yield user.flatMap(u => checkAccess(u, method, resource))
   }
 
   /**
@@ -94,13 +121,34 @@ object Auther {
     * @param time time used to generate the session id
     * @return a user session id
     */
-  def sessionFromUser(user: User, privateKey: CryptoBits, time: Clock): UserSession =
-    privateKey.signToken(user.id, time.millis.toString())
+  def sessionFromUser[F[_]: Sync : Monad](user: User, privateKey: CryptoBits, time: Clock): F[UserSession] = {
+    val claims = JWTClaims(subject = Some(user.id))
+    for {
+      key             <- HMACSHA256.buildKey[F](privateKey)
+      stringjwt       <- JWTMac.buildToString[F, HMACSHA256](claims, key)
+    } yield stringjwt
+  }
 
-  def authenticatedUserFromSessionOrCredentials(encry: EncryptionConfig, usersBy: UsersBy, session: Option[UserSession], creds: Option[(UserId, UserHashedPass)]): AuthenticationAttempt = {
-    session.flatMap(v => encry.pkey.validateSignedToken(v)).flatMap(usersBy.byId.get)
-      .orElse(creds.flatMap(usersBy.byIdPass.get))
-      .toRight(s"Could not authenticate user (user:${creds.map(_._1)} / session:${session.map(_.slice(0, 5))}...)")
+  def userIdFromSession[F[_] : Sync : Monad](session: UserSession, privateKey: CryptoBits): F[Option[String]] = {
+    for {
+      key             <- HMACSHA256.buildKey[F](privateKey)
+      parsed          <- JWTMac.verifyAndParse[F, HMACSHA256](session, key)
+    } yield parsed.body.subject
+  }
+
+  def userFromSession[F[_]: Sync](session: UserSession, privateKey: CryptoBits, usersBy: UsersBy): F[Option[User]] = {
+    for {
+      id <- userIdFromSession(session, privateKey)
+    } yield id.flatMap(usersBy.byId.get)
+
+  }
+
+  def authenticatedUserFromSessionOrCredentials[F[_]: Sync](encry: EncryptionConfig, usersBy: UsersBy,
+                                                session: Option[UserSession], creds: Option[(UserId, UserHashedPass)]): F[AuthenticationAttempt] = {
+    val a = creds.flatMap(usersBy.byIdPass.get)
+    for {
+      b <- session.map(s => userFromSession(s, encry.pkey, usersBy)).sequence.map(_.flatten)
+    } yield a.orElse(b).toRight(s"Could not find related user (user:${creds.map(_._1)} / session:$session)")
   }
 
   /**
@@ -111,7 +159,7 @@ object Auther {
       .toRight(s"User '${user.name}' is not authorized to ${method} '${resourceUriPath}'")
   }
 
-  def userCredentialsFromRequest(encry: EncryptionConfig, headers: Headers, uri: Uri): Option[(UserId, UserHashedPass)] = {
+  def userCredentialsFromRequest[F[_]](encry: EncryptionConfig, headers: Headers, uri: Uri)(implicit H: PasswordHasher[F, BCrypt]): Option[(UserId, F[UserHashedPass])] = {
     // Basic auth
     val credsFromHeader = headers.get(Authorization).collect {
       case Authorization(BasicCredentials(username, password)) => (username, hashPassword(password, encry.salt))
@@ -136,7 +184,7 @@ object Auther {
     headerSession.orElse(uriSession)
   }
 
-  def hashPassword(password: String, salt: String): String = password.bcrypt(salt)
+  def hashPassword[F[_]](password: String, salt: String)(implicit P: PasswordHasher[F, BCrypt]): F[UserHashedPass] = BCrypt.hashpw[F](password)
 
   private[security] def dropTokenAndSessionFromPath(path: Path): Path = {
     def drop(r: Regex, p: Path) = r.findFirstMatchIn(p).map(m => m.group(GroupPre) + "/" + m.group(GroupPos)).getOrElse(p)
@@ -155,4 +203,5 @@ object Auther {
     salt: String
   )
 
+  type CryptoBits = Array[Byte]
 }
