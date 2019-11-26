@@ -56,9 +56,10 @@ object Server extends IOApp {
         logger <- Slf4jLogger.fromClass[F](Server.getClass)
         now <- time.nowUtc
         epSecs = now.toEpochSecond
-        cleaned <- repo.cleanup(ReqType.Reports, epSecs, configApp.database.cleanup.retentionSecs)
-        _ <- logger.info(s"Repository cleanup at $now ($epSecs): $cleaned requests cleaned")
-      } yield (cleaned)
+        reportsCleaned <- repo.cleanup(ReqType.Reports, epSecs, configApp.database.cleanup.retentionSecs)
+        targetsCleaned <- repo.cleanup(ReqType.Targets, epSecs, configApp.database.cleanup.retentionSecs)
+        _ <- logger.info(s"Repository cleanup at $now ($epSecs): $reportsCleaned+$targetsCleaned requests cleaned")
+      } yield (reportsCleaned + targetsCleaned)
 
       httpApp = Router(
         "/" -> new webapp.Service("/webapp/index.html", webappServiceEc).service,

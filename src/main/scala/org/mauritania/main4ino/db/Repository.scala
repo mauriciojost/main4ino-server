@@ -190,7 +190,7 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
   }
 
   private def sqlDeleteMetadataWhereCreationIsLess(table: ReqType, upperbound: EpochSecTimestamp): ConnectionIO[Int] = {
-    (fr"DELETE FROM" ++ Fragment.const(table.code + "_requests") ++ fr"WHERE creation < $upperbound")
+    (fr"DELETE FROM" ++ Fragment.const(table.code + "_requests") ++ fr"WHERE creation <= $upperbound")
       .update.run
   }
 

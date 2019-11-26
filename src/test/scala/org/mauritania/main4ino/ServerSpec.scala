@@ -4,7 +4,7 @@ import cats.effect.IO
 import io.circe.Json
 import org.http4s.client.blaze.{BlazeClientBuilder, Http1Client}
 import org.http4s.client.{Client, UnexpectedStatus}
-import org.http4s.{BasicCredentials, Method, Request, Uri}
+import org.http4s.{BasicCredentials, Method, Request, Status, Uri}
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, Sequential}
 import io.circe.syntax._
 import org.http4s.circe._
@@ -14,7 +14,7 @@ import io.circe._
 import io.circe.parser._
 import org.mauritania.main4ino.api.v1.JsonEncoding
 import org.mauritania.main4ino.api.Translator.IdResponse
-import org.mauritania.main4ino.models.{DeviceId, RequestId}
+import org.mauritania.main4ino.models.{DeviceId, DeviceName, RequestId}
 
 class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll with HttpClient {
 
@@ -54,52 +54,42 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll with Http
   it should "perform cleanup of old entries regularly" in {
     withHttpClient { httpClient =>
 
+      def checkRecord(dev: DeviceName, id: Long, status: Status) = {
+        val s = httpClient.status(devGetRequest(dev, "targets", id))
+        s.unsafeRunSync() shouldBe status
+      }
+      def checkExists(dev: DeviceName, id: Long) = checkRecord(dev, id, Status.Ok)
+      def checkDoesNotExist(dev: DeviceName, id: Long) = checkRecord(dev, id, Status.NoContent)
+
       // T0sec
 
-      // inject dev1
+      // inject dev1 (at ~T0sec, cleanup will take place at ~T10sec)
       val dev1ResponseJson = httpClient.expect[String](devPostRequest("dev1", "targets"))
-      val id1 = jsonAs[IdResponse](dev1ResponseJson.unsafeRunSync()).id
+      val idDev1 = jsonAs[IdResponse](dev1ResponseJson.unsafeRunSync()).id
 
-      // check that dev1 exists
-      val dev1t0 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
-      jsonAs[DeviceId](dev1t0.unsafeRunSync()).dbId.id shouldBe id1
+      checkExists("dev1", idDev1) // just created
 
-      Thread.sleep(4 * OneSecond)
+      Thread.sleep(5 * OneSecond) // T5sec
 
-      // T4sec
-
-      // inject dev2
+      // inject dev2 (at ~T5sec, cleanup will take place at ~T15sec)
       val dev2ResponseJson = httpClient.expect[String](devPostRequest("dev2", "targets"))
-      val id2 = jsonAs[IdResponse](dev2ResponseJson.unsafeRunSync()).id
+      val idDev2 = jsonAs[IdResponse](dev2ResponseJson.unsafeRunSync()).id
 
-      // check that dev2 exists
-      val dev2t2 = httpClient.expect[String](devGetRequest("dev2", "targets", id2))
-      jsonAs[DeviceId](dev2t2.unsafeRunSync()).dbId.id shouldBe (id2)
+      checkExists("dev2", idDev2) // just created
+      checkExists("dev1", idDev1) // still exists
 
-      // check that dev1 still exists
-      val dev1t2 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
-      jsonAs[DeviceId](dev1t2.unsafeRunSync()).dbId.id shouldBe (id1)
-
-      // T4sec
-
-      Thread.sleep(6 * OneSecond)
-
-      // T10sec
+      Thread.sleep(5 * OneSecond) // T10sec
 
       // cleanup every 10s
 
-      Thread.sleep(3 * OneSecond)
+      Thread.sleep(2 * OneSecond) // T12sec
 
-      // T13sec
+      checkDoesNotExist("dev1", idDev1) // cleaned up
+      checkExists("dev2", idDev2) // still there
 
-      // check that dev1 does not exist anymore (cleaned up, as 13secs > 10secs + 2 secs retention)
-      val dev1t6 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
-      val dev1t6R = dev1t6.unsafeRunSync()
-      dev1t6R shouldBe 11
+      Thread.sleep(6 * OneSecond) // T17sec
 
-      // check that dev2 exists
-      val dev2t6 = httpClient.expect[String](devGetRequest("dev2", "targets", id2))
-      jsonAs[DeviceId](dev2t6.unsafeRunSync()).dbId.id shouldBe (id2)
+      checkDoesNotExist("dev2", idDev2) // cleaned up too
 
     }
 
