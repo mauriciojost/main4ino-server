@@ -52,6 +52,7 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll with Http
   }
 
   it should "perform cleanup of old entries regularly" in {
+    // TODO BROKEN TEST
     withHttpClient { httpClient =>
       // inject dev1
       val dev1ResponseJson = httpClient.expect[String](devPostRequest("dev1", "targets"))
@@ -85,7 +86,7 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll with Http
 
       // check that dev1 does not exist anymore (cleaned up)
       val dev1t6 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
-      jsonAs[DeviceId](dev1t6.unsafeRunSync()).dbId.id shouldBe (id1)
+      jsonAs[DeviceId](dev1t6.unsafeRunSync()).dbId.id shouldBe (id1) // WRONG, checkint that IT IS there :(
     }
 
   }

@@ -52,6 +52,7 @@ object Server extends IOApp {
       _ <- Resource.liftF(logger.debug(s"DevLogger created"))
       fwStore = new StoreIO(Paths.get(configApp.firmware.firmwareBasePath))
       _ <- Resource.liftF(logger.debug(s"Store created"))
+      /*
       cleanupRepoTask = for {
         logger <- Slf4jLogger.fromClass[F](Server.getClass)
         now <- time.nowUtc
@@ -59,6 +60,7 @@ object Server extends IOApp {
         cleaned <- repo.cleanup(ReqType.Reports, epSecs, configApp.database.cleanup.retentionSecs)
         _ <- logger.info(s"Repository cleanup at $now ($epSecs): $cleaned requests cleaned")
       } yield (cleaned)
+       */
 
       _ <- Resource.liftF(logger.debug(s"Cleanup created"))
       httpApp = Router(
@@ -70,7 +72,7 @@ object Server extends IOApp {
       _ <- Resource.liftF(Database.initialize(transactor))
       _ <- Resource.liftF(logger.debug(s"Database initialized"))
       cleanupPeriodSecs = FiniteDuration(configApp.database.cleanup.periodSecs, TimeUnit.SECONDS)
-      //_ <- Resource.liftF(Timer[F].sleep(cleanupPeriodSecs) *> cleanupRepoTask)
+      //_ <- Resource.liftF(Timer[F].sleep(cleanupPeriodSecs) *> cleanupRepoTask) // TODO BROKEN TEST
       _ <- Resource.liftF(logger.debug(s"Server initialized"))
       exitCodeServer <- BlazeServerBuilder[F]
         .bindHttp(configApp.server.port, configApp.server.host)
