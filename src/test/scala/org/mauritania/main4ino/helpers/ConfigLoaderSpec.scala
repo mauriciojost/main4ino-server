@@ -25,8 +25,8 @@ class ConfigLoaderSpec extends FlatSpec with Matchers {
         user = "sa",
         password = "",
         cleanup = Cleanup(
-          periodSecs = 5,
-          retentionSecs = 2
+          periodSecs = 1,
+          retentionSecs = 10
         )
       ),
       devLogger = DevLoggerConfig(
