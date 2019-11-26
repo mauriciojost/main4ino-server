@@ -11,11 +11,6 @@ import org.mauritania.main4ino.firmware.Store.{Firmware, FirmwareCoords}
 import org.mauritania.main4ino.models.{FirmwareVersion, Platform, ProjectName}
 import cats.implicits._
 
-trait Store[F[_]] {
-  def getFirmware(coords: FirmwareCoords): F[Attempt[Firmware]]
-  def listFirmwares(project: ProjectName, platform: Platform): F[Set[FirmwareCoords]]
-}
-
 object Store {
 
   final val BySemVer = Ordering.ordered[SemVer]
@@ -47,13 +42,13 @@ object Store {
 
 }
 
-class StoreIO[F[_]: Sync](basePath: Path) extends Store[F] {
+class Store[F[_]: Sync](basePath: Path) {
 
   private def length(f: File): F[Long] = Sync[F].delay(f.length)
   private def isReadableFile(f: File): F[Boolean] = Sync[F].delay(f.canRead && f.isFile)
   private def listFiles(dir: File): F[List[File]] = Sync[F].delay(Option(dir.listFiles()).toList.flatMap(_.toList))
 
-  override def getFirmware(coords: FirmwareCoords): F[Attempt[Firmware]] = {
+  def getFirmware(coords: FirmwareCoords): F[Attempt[Firmware]] = {
     val resp: F[Attempt[Firmware]] = for {
       logger <- Slf4jLogger.fromClass[F](getClass)
       _ <- logger.debug(s"Retrieving firmware: $coords")
@@ -68,7 +63,7 @@ class StoreIO[F[_]: Sync](basePath: Path) extends Store[F] {
     resp
   }
 
-  override def listFirmwares(project: ProjectName, platform: Platform): F[Set[FirmwareCoords]] = {
+  def listFirmwares(project: ProjectName, platform: Platform): F[Set[FirmwareCoords]] = {
     val path = basePath.resolve(project)
     listFiles(path.toFile).map { files =>
       files.flatMap(FirmwareCoords.fromFile).filter(_.platform == platform).toSet

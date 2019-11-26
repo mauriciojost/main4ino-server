@@ -1,4 +1,4 @@
-package org.mauritania.main4ino.config
+package org.mauritania.main4ino.helpers
 
 import java.io.File
 
@@ -8,10 +8,17 @@ import pureconfig.error.ConfigReaderException
 
 import scala.reflect.ClassTag
 
-object Loadable {
+object ConfigLoader {
 
   import pureconfig._
 
+  /**
+    * Load a configuration from a file
+    *
+    * Ensure to have these imports before using:
+    *   import pureconfig._
+    *   import pureconfig.generic.auto._
+    */
   def loadFromFile[F[_] : Sync, T: ClassTag](configFile: File)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
     val f = configFile.getAbsoluteFile
     implicitly[Sync[F]].fromEither {

@@ -6,29 +6,31 @@ import java.time.zone.ZoneRulesException
 
 import cats._
 import cats.effect._
+import doobie.util.transactor.Transactor
 import fs2.Stream
 import io.circe.Json
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.headers.Authorization
 import org.http4s.{Request, Response, Uri, Status => HttpStatus, _}
-import org.mauritania.main4ino.Repository.ReqType
-import org.mauritania.main4ino.Repository.ReqType.ReqType
+import org.mauritania.main4ino.db.Repository.ReqType
+import org.mauritania.main4ino.db.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.TimeResponse
-import org.mauritania.main4ino.helpers.{DevLoggerIO, Time}
+import org.mauritania.main4ino.helpers.{DevLogger, Time}
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.ForTestRicherClasses._
 import org.mauritania.main4ino.models.{Device, EpochSecTimestamp}
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
 import org.mauritania.main4ino.security.{Auther, Config, User}
-import org.mauritania.main4ino.{Fixtures, Helper, Repository}
+import org.mauritania.main4ino.{Fixtures, Helper}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Matchers, WordSpec}
 import org.scalatest.EitherValues._
 import org.http4s.circe._
 import org.mauritania.main4ino.DecodersIO
-import org.mauritania.main4ino.firmware.{Store, StoreIO}
+import org.mauritania.main4ino.db.Repository
+import org.mauritania.main4ino.firmware.Store
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
@@ -50,9 +52,12 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with DecodersI
   implicit val statusEncoder = JsonEncoding.StatusEncoder
   implicit val statusDecoder = JsonEncoding.StatusDecoder
 
+  class RepositoryIO(tr: Transactor[IO]) extends Repository[IO](tr)
+  class TimeIO extends Time[IO]
+
   "Help request" should {
-    val r = stub[Repository[IO]]
-    val t = stub[Time[IO]]
+    val r = stub[RepositoryIO]
+    val t = stub[TimeIO]
     val s = defaultService(r, t)
     "return 200" in {
       val q = getApiV1("/help")(s).unsafeRunSync()
@@ -70,8 +75,8 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with DecodersI
   }
 
   "Create target request" should {
-    val r = stub[Repository[IO]]
-    val t = stub[Time[IO]]
+    val r = stub[RepositoryIO]
+    val t = stub[TimeIO]
     val s = defaultService(r, t)
     "return 201 with empty properties" in {
       (t.nowUtc _).when().returns(IO.pure(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC))).anyNumberOfTimes() // mock
@@ -104,8 +109,8 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with DecodersI
 
 
   "The service" should {
-    val r = stub[Repository[IO]]
-    val t = stub[Time[IO]]
+    val r = stub[RepositoryIO]
+    val t = stub[TimeIO]
     val s = defaultService(r, t)
     "return 200 with an existent target/request when reading target/report requests" in {
       (r.selectDeviceWhereRequestId _).when(ReqType.Targets, Dev1.metadata.device, 1L).returns(IO.pure(Right(DevId1))).once // mock
@@ -121,8 +126,8 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with DecodersI
   }
 
   it should {
-    val r = stub[Repository[IO]]
-    val t = stub[Time[IO]]
+    val r = stub[RepositoryIO]
+    val t = stub[TimeIO]
     val s = defaultService(r, t)
     "return 200 with a list of existent targets when reading all targets request" in {
       (r.selectDevicesWhereTimestampStatus _).when(ReqType.Targets, "dev1", None, None, None).returns(IO.pure(Iterable(DevId1, DevId2))).once // mock
@@ -139,12 +144,12 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with DecodersI
       tr = new Translator[IO](
         repository = r,
         time = t,
-        devLogger = new DevLoggerIO[IO](
+        devLogger = new DevLogger[IO](
           basePath = Paths.get("/tmp"),
           time = t,
           ExecutionContext.global
         )(Sync[IO], IO.contextShift(ExecutionContext.global)),
-        firmware = new StoreIO[IO](
+        firmware = new Store[IO](
           basePath = Paths.get("/tmp")
         )
       ),
@@ -153,8 +158,8 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with DecodersI
   }
 
   it should {
-    val r = stub[Repository[IO]]
-    val t = stub[Time[IO]]
+    val r = stub[RepositoryIO]
+    val t = stub[TimeIO]
     val s = defaultService(r, t)
     "return 400 when invalid timezone provided" in {
       (t.nowUtc _).when().returns(IO.pure(ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC))).once // mock
@@ -180,13 +185,13 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with DecodersI
 
   it should {
 
-    val r = stub[Repository[IO]]
-    val t = stub[Time[IO]]
+    val r = stub[RepositoryIO]
+    val t = stub[TimeIO]
     val s = defaultService(r, t)
 
     "when invalid token" should {
-      val r = stub[Repository[IO]]
-      val t = stub[Time[IO]]
+      val r = stub[RepositoryIO]
+      val t = stub[TimeIO]
       val s = defaultService(r, t)
       "return 403 (forbidden) if invalid credentials" in {
         getApiV1("/help", HeadersCredsInvalid)(s).unsafeRunSync().status shouldBe (HttpStatus.Forbidden)

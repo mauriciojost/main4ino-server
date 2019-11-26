@@ -1,4 +1,4 @@
-package org.mauritania.main4ino
+package org.mauritania.main4ino.db
 
 import cats.effect.Sync
 import cats.free.Free
@@ -9,45 +9,17 @@ import doobie.implicits._
 import doobie.util.transactor.Transactor
 import fs2.Stream
 import io.circe.Json
-import org.mauritania.main4ino.Repository.{ActorTup, ActorTupIdLess, Device1}
-import org.mauritania.main4ino.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.{Attempt, ErrMsg}
+import org.mauritania.main4ino.db.Repository.ReqType.ReqType
+import org.mauritania.main4ino.db.Repository.{ActorTup, ActorTupIdLess, Device1}
 import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status
-import org.mauritania.main4ino.models.Device.{DbId, Metadata}
 import org.mauritania.main4ino.models.Device.Metadata.Status.Status
+import org.mauritania.main4ino.models.Device.{DbId, Metadata}
 import org.mauritania.main4ino.models._
 
-trait Repository[F[_]] {
-
-  def setDescription(d: DeviceName, v: VersionJson, ts: EpochSecTimestamp): F[Int]
-
-  def getDescription(device: String): F[Attempt[Description]]
-
-  def insertDeviceActor(table: ReqType, device: DeviceName, actor: ActorName, requestId: RequestId, r: ActorProps, ts: EpochSecTimestamp): F[Attempt[Int]]
-
-  def cleanup(table: ReqType, now: EpochSecTimestamp, preserveWindowSecs: Int): F[Int]
-
-  def deleteDeviceWhereName(table: ReqType, device: DeviceName): F[Int]
-
-  def insertDevice(table: ReqType, t: Device, ts: EpochSecTimestamp): F[RequestId]
-
-  def selectDeviceWhereRequestId(table: ReqType, dev: DeviceName, requestId: RequestId): F[Attempt[DeviceId]]
-
-  def selectDevicesWhereTimestampStatus(table: ReqType, device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], st: Option[Status]): F[Iterable[DeviceId]]
-
-  def selectMaxDevice(table: ReqType, device: DeviceName, status: Option[Status]): F[Option[DeviceId]]
-
-  def selectMaxDeviceActor(table: ReqType, device: DeviceName, actor: ActorName, status: Option[Status]): F[Option[DeviceId]]
-
-  def selectRequestIdsWhereDevice(table: ReqType, d: DeviceName): Stream[F, RequestId]
-
-  def updateDeviceWhereRequestId(table: ReqType, dev: DeviceName, requestId: RequestId, status: Status): F[Either[ErrMsg, Int]]
-
-}
-
 // Naming regarding to SQL
-class RepositoryIO[F[_]: Sync](transactor: Transactor[F]) extends Repository[F] {
+class Repository[F[_]: Sync](transactor: Transactor[F]) {
 
   implicit val StatusMeta: Meta[Status] = Meta[String].timap[Status](Status.apply(_))(_.code)
 

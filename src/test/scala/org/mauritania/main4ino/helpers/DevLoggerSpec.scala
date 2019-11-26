@@ -5,19 +5,19 @@ import java.time.{Instant, ZoneId, ZonedDateTime}
 
 import cats.effect.{IO, Sync}
 import fs2.Stream
-import org.mauritania.main4ino.TmpDir
+import org.mauritania.main4ino.TmpDirCtx
 import org.scalatest._
 import org.scalatest.EitherValues._
 
 import scala.concurrent.ExecutionContext
 import scala.io.Source
 
-class DevLoggerSpec extends FlatSpec with Matchers with TmpDir {
+class DevLoggerSpec extends FlatSpec with Matchers with TmpDirCtx {
 
   val TheTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("UTC"))
 
-  class FixedTimeIO extends Time[IO] {
-    def nowUtc: IO[ZonedDateTime] = IO.pure(TheTime)
+  class FixedTime extends Time[IO] {
+    override def nowUtc: IO[ZonedDateTime] = IO.pure(TheTime)
   }
 
   "The logger" should "append a message to a file and read it" in {
@@ -81,7 +81,7 @@ class DevLoggerSpec extends FlatSpec with Matchers with TmpDir {
 
   private def buildLogger(tmp: Path) = {
     val ec = ExecutionContext.global
-    val logger = new DevLoggerIO[IO](tmp, new FixedTimeIO(), ec)(Sync[IO], IO.contextShift(ec))
+    val logger = new DevLogger[IO](tmp, new FixedTime(), ec)(Sync[IO], IO.contextShift(ec))
     logger
   }
 

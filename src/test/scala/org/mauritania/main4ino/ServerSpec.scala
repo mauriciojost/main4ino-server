@@ -18,7 +18,7 @@ import org.mauritania.main4ino.models.{DeviceId, RequestId}
 
 class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll with HttpClient {
 
-  val BaseWaitMs = 3000
+  val OneSecond = 1000
 
   Sequential
   var appThread: Thread = _
@@ -29,7 +29,7 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll with Http
 
   override def beforeAll(): Unit = {
     appThread = launchAsync(Array("src/test/resources/configs/1"))
-    Thread.sleep(3 * BaseWaitMs)
+    Thread.sleep(5 * OneSecond)
   }
 
   override def afterAll(): Unit = {
@@ -52,8 +52,10 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll with Http
   }
 
   it should "perform cleanup of old entries regularly" in {
-    // TODO BROKEN TEST
     withHttpClient { httpClient =>
+
+      // T0sec
+
       // inject dev1
       val dev1ResponseJson = httpClient.expect[String](devPostRequest("dev1", "targets"))
       val id1 = jsonAs[IdResponse](dev1ResponseJson.unsafeRunSync()).id
@@ -62,11 +64,9 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll with Http
       val dev1t0 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
       jsonAs[DeviceId](dev1t0.unsafeRunSync()).dbId.id shouldBe id1
 
-      Thread.sleep(2 * BaseWaitMs)
+      Thread.sleep(4 * OneSecond)
 
-      // check that dev1 still exists
-      val dev1t2 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
-      jsonAs[DeviceId](dev1t2.unsafeRunSync()).dbId.id shouldBe (id1)
+      // T4sec
 
       // inject dev2
       val dev2ResponseJson = httpClient.expect[String](devPostRequest("dev2", "targets"))
@@ -76,17 +76,31 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll with Http
       val dev2t2 = httpClient.expect[String](devGetRequest("dev2", "targets", id2))
       jsonAs[DeviceId](dev2t2.unsafeRunSync()).dbId.id shouldBe (id2)
 
-      Thread.sleep(3 * BaseWaitMs)
-      // cleanup every 5s
-      Thread.sleep(BaseWaitMs)
+      // check that dev1 still exists
+      val dev1t2 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
+      jsonAs[DeviceId](dev1t2.unsafeRunSync()).dbId.id shouldBe (id1)
+
+      // T4sec
+
+      Thread.sleep(6 * OneSecond)
+
+      // T10sec
+
+      // cleanup every 10s
+
+      Thread.sleep(3 * OneSecond)
+
+      // T13sec
+
+      // check that dev1 does not exist anymore (cleaned up, as 13secs > 10secs + 2 secs retention)
+      val dev1t6 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
+      val dev1t6R = dev1t6.unsafeRunSync()
+      dev1t6R shouldBe 11
 
       // check that dev2 exists
       val dev2t6 = httpClient.expect[String](devGetRequest("dev2", "targets", id2))
       jsonAs[DeviceId](dev2t6.unsafeRunSync()).dbId.id shouldBe (id2)
 
-      // check that dev1 does not exist anymore (cleaned up)
-      val dev1t6 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
-      jsonAs[DeviceId](dev1t6.unsafeRunSync()).dbId.id shouldBe (id1) // WRONG, checkint that IT IS there :(
     }
 
   }

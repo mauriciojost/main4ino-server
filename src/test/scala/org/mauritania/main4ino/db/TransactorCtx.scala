@@ -1,11 +1,11 @@
-package org.mauritania.main4ino
+package org.mauritania.main4ino.db
 
 import cats.effect.{Async, Blocker, IO, Resource, Sync}
 import doobie.hikari.HikariTransactor
+import org.mauritania.main4ino.Helper
 import org.mauritania.main4ino.db.Config.Cleanup
-import org.mauritania.main4ino.db.{Config, Database}
 
-trait Transactor {
+trait TransactorCtx {
 
   val TransactorConfig = Config(
     driver = "org.h2.Driver",

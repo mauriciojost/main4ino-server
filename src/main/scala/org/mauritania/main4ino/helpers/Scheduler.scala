@@ -1,11 +1,9 @@
-package org.mauritania.main4ino
+package org.mauritania.main4ino.helpers
 
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.duration.MILLISECONDS
-import cats.effect.Clock
-import cats.effect.Timer
-import cats.effect.Sync
+import cats.effect.{Clock, Sync, Timer}
 import cats.implicits._
+
+import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
 
 object Scheduler {
   def periodic[F[_] : Sync : Timer, A](interval: FiniteDuration, task: F[A]): F[A] = for {

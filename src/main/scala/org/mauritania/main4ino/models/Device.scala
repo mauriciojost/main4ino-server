@@ -1,6 +1,6 @@
 package org.mauritania.main4ino.models
 
-import org.mauritania.main4ino.Repository.{ActorTup, ActorTupIdLess}
+import org.mauritania.main4ino.db.Repository.{ActorTup, ActorTupIdLess}
 import org.mauritania.main4ino.models.Device.{DbId, Metadata}
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models.Device.Metadata.Status.Status

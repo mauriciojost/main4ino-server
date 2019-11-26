@@ -14,35 +14,36 @@ import org.http4s.headers.Authorization
 import org.http4s._
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.{CountResponse, IdResponse, IdsOnlyResponse}
-import org.mauritania.main4ino.firmware.StoreIO
-import org.mauritania.main4ino.helpers.{DevLoggerIO, Time}
+import org.mauritania.main4ino.db.{Repository, TransactorCtx}
+import org.mauritania.main4ino.firmware.Store
+import org.mauritania.main4ino.helpers.{DevLogger, Time}
 import org.mauritania.main4ino.models.Description
 import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security._
-import org.mauritania.main4ino.{Helper, RepositoryIO, TmpDir, Transactor}
+import org.mauritania.main4ino.{Helper, TmpDirCtx}
 import org.scalatest.{FlatSpec, Matchers, Sequential}
 
-class ServiceFuncSpec extends FlatSpec with Matchers with Transactor with TmpDir {
+class ServiceFuncSpec extends FlatSpec with Matchers with TransactorCtx with TmpDirCtx {
 
   Sequential
 
   val TheTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("UTC"))
 
-  class FixedTimeIO extends Time[IO] {
-    def nowUtc: IO[ZonedDateTime] = IO.pure(TheTime)
+  class FixedTime extends Time[IO] {
+    override def nowUtc: IO[ZonedDateTime] = IO.pure(TheTime)
   }
 
   def defaultServiceWithDirectory(transactor: HikariTransactor[IO], tmp: Path): Service[IO] = {
-    val t = new FixedTimeIO()
+    val t = new FixedTime()
     new Service(
       new AutherIO(DefaultSecurityConfig),
       new Translator(
-        new RepositoryIO(transactor),
+        new Repository(transactor),
         t,
-        new DevLoggerIO[IO](tmp, t, Helper.testExecutionContext)(Sync[IO], IO.contextShift(Helper.testExecutionContext)),
-        new StoreIO(tmp)
+        new DevLogger[IO](tmp, t, Helper.testExecutionContext)(Sync[IO], IO.contextShift(Helper.testExecutionContext)),
+        new Store(tmp)
       ),
       t
     )

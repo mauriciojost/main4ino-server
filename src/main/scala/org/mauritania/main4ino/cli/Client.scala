@@ -9,7 +9,7 @@ import cats.syntax.functor._
 import org.mauritania.main4ino.cli.Algebras.{Configs, Filesystem}
 import org.mauritania.main4ino.cli.Actions.{AddRawUser, AddRawUsers}
 import org.mauritania.main4ino.cli.Modules.{ConfigsAppErr, FilesystemSync}
-import org.mauritania.main4ino.config.Loadable
+import org.mauritania.main4ino.helpers.ConfigLoader
 import org.mauritania.main4ino.security.Config
 import pureconfig._
 import pureconfig.generic.auto._
@@ -22,9 +22,9 @@ object Client {
     val modif = Paths.get(args(1))
     val output = Paths.get(args(2))
     for {
-      conf <- Loadable.loadFromFile[F, Config](input.toFile)
+      conf <- ConfigLoader.loadFromFile[F, Config](input.toFile)
        // TODO support other actions too
-      user <- Loadable.loadFromFile[F, AddRawUsers](modif.toFile)
+      user <- ConfigLoader.loadFromFile[F, AddRawUsers](modif.toFile)
       newConf = O.performAction(conf, user)
       newConfStr = O.asString(newConf)
       _ <- S.writeFile(output, newConfStr)

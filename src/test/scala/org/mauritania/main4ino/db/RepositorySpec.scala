@@ -1,22 +1,22 @@
-package org.mauritania.main4ino.models
+package org.mauritania.main4ino.db
 
 import io.circe.Json
 import org.mauritania.main4ino.Fixtures._
-import org.mauritania.main4ino.Repository.ReqType
+import org.mauritania.main4ino.db.Repository.ReqType
 import org.mauritania.main4ino.models.Description.VersionJson
-import org.mauritania.main4ino.models.Device.{DbId, Metadata}
 import org.mauritania.main4ino.models.Device.Metadata.Status.Closed
+import org.mauritania.main4ino.models.Device.{DbId, Metadata}
 import org.mauritania.main4ino.models.ForTestRicherClasses._
-import org.mauritania.main4ino.{RepositoryIO, Transactor}
+import org.mauritania.main4ino.models.{Description, DeviceId}
 import org.scalatest.{FlatSpec, Matchers, Sequential}
 
-class RepositoryIOSpec extends FlatSpec with Matchers with Transactor {
+class RepositorySpec extends FlatSpec with Matchers with TransactorCtx {
 
   Sequential
 
   "The repository" should "create and read a report" in {
     withTransactor { transactor =>
-      val repo = new RepositoryIO(transactor)
+      val repo = new Repository(transactor)
       repo.insertDevice(ReqType.Reports, Device1, 0L).unsafeRunSync() shouldBe 1L
       repo.selectDeviceWhereRequestId(ReqType.Reports, Device1.metadata.device, 1L).unsafeRunSync() shouldBe
         Right(DeviceId1.withId(1L))
@@ -25,7 +25,7 @@ class RepositoryIOSpec extends FlatSpec with Matchers with Transactor {
 
   it should "create and read a target" in {
     withTransactor { transactor =>
-      val repo = new RepositoryIO(transactor)
+      val repo = new Repository(transactor)
       repo.insertDevice(ReqType.Targets, Device1, 0L).unsafeRunSync() shouldBe 1L
       repo.selectDeviceWhereRequestId(ReqType.Targets, Device1.metadata.device, 1L).unsafeRunSync() shouldBe
         Right(DeviceId1.withId(1L))
@@ -34,7 +34,7 @@ class RepositoryIOSpec extends FlatSpec with Matchers with Transactor {
 
   it should "create and read a target actor" in {
     withTransactor { transactor =>
-      val repo = new RepositoryIO(transactor)
+      val repo = new Repository(transactor)
       val d = Device1.withoutActors().withStatus(Metadata.Status.Open)
       val dAfterInsert = DeviceId(DbId(1L, 0L), d.withStatus(Closed).withActorPropValue("actorx", "prop1", "val1"))
 
@@ -62,7 +62,7 @@ class RepositoryIOSpec extends FlatSpec with Matchers with Transactor {
   it should "create a target and read the latest image of it" in {
     withTransactor { transactor =>
       val Device1Modified = Device1.copy(actors = Device1.actors.updated("actory", Map("yprop1" -> "yvalue1updated")))
-      val repo = new RepositoryIO(transactor)
+      val repo = new Repository(transactor)
       repo.insertDevice(ReqType.Targets, Device1, 77L).unsafeRunSync() shouldBe 1L
       repo.insertDevice(ReqType.Targets, Device1Modified, 88L).unsafeRunSync() shouldBe 2L
       repo.selectMaxDevice(ReqType.Targets, "dev1", None).unsafeRunSync() shouldBe Some(DeviceId(DbId(2L, 88L), Device1Modified))
@@ -74,7 +74,7 @@ class RepositoryIOSpec extends FlatSpec with Matchers with Transactor {
       val Device1Base = Device1
       val Device1ModifiedActorY = Device1.copy(actors = Map("actory" -> Map("yprop1" -> "yvalue1updated")))
       val Device1ModifiedActorX = Device1.copy(actors = Map("actorx" -> Map("xprop1" -> "xvalue1updated")))
-      val repo = new RepositoryIO(transactor)
+      val repo = new Repository(transactor)
 
       repo.insertDevice(ReqType.Targets, Device1Base, 77L).unsafeRunSync() shouldBe 1L
       repo.insertDevice(ReqType.Targets, Device1ModifiedActorY, 78L).unsafeRunSync() shouldBe 2L
@@ -92,7 +92,7 @@ class RepositoryIOSpec extends FlatSpec with Matchers with Transactor {
       val snap2 = Device1.withActorPropValue("a2", "v", "k")
       val snap3 = Device1.withActorPropValue("a3", "v", "k")
 
-      val repo = new RepositoryIO(transactor)
+      val repo = new Repository(transactor)
       repo.insertDevice(ReqType.Targets, snap1, 11L).unsafeRunSync() shouldBe 1L
       repo.insertDevice(ReqType.Targets, snap2, 12L).unsafeRunSync() shouldBe 2L
       repo.insertDevice(ReqType.Targets, snap3, 13L).unsafeRunSync() shouldBe 3L
@@ -124,7 +124,7 @@ class RepositoryIOSpec extends FlatSpec with Matchers with Transactor {
     val snap4 = Device1.withActorPropValue("d", "v", "0") // fourth
     val snap5 = Device1.withActorPropValue("e", "v", "0") // fifth
 
-      val repo = new RepositoryIO(transactor)
+      val repo = new Repository(transactor)
       repo.insertDevice(ReqType.Targets, snap1, 73L).unsafeRunSync() shouldBe 1L
       repo.insertDevice(ReqType.Targets, snap2, 71L).unsafeRunSync() shouldBe 2L
       repo.insertDevice(ReqType.Targets, snap3, 72L).unsafeRunSync() shouldBe 3L
@@ -139,7 +139,7 @@ class RepositoryIOSpec extends FlatSpec with Matchers with Transactor {
 
   it should "read target/report ids from a device name" in {
     withTransactor { transactor =>
-      val repo = new RepositoryIO(transactor)
+      val repo = new Repository(transactor)
 
       val t1 = Device1.withDeviceName("device1")
       val t2 = Device1.withDeviceName("device2")
@@ -157,7 +157,7 @@ class RepositoryIOSpec extends FlatSpec with Matchers with Transactor {
 
   it should "delete target/reports" in {
     withTransactor { transactor =>
-      val repo = new RepositoryIO(transactor)
+      val repo = new Repository(transactor)
 
       val d1 = Device1.withDeviceName("device1")
       val d2 = Device1.withDeviceName("device2")
@@ -181,7 +181,7 @@ class RepositoryIOSpec extends FlatSpec with Matchers with Transactor {
 
   it should "delete old target/reports and keep last one per device" in {
     withTransactor { transactor =>
-      val repo = new RepositoryIO(transactor)
+      val repo = new Repository(transactor)
 
       val d1 = Device1.withDeviceName("device1")
       val d2 = Device1.withDeviceName("device2")
@@ -221,7 +221,7 @@ class RepositoryIOSpec extends FlatSpec with Matchers with Transactor {
 
   it should "create and retrieve descriptions" in {
     withTransactor { transactor =>
-      val repo = new RepositoryIO(transactor)
+      val repo = new Repository(transactor)
       repo.getDescription("dev1").unsafeRunSync() shouldBe Left("No description for 'dev1'")
       repo.setDescription("dev1", VersionJson("1", Json.Null), 0L).unsafeRunSync() shouldBe 1
       repo.getDescription("dev1").unsafeRunSync() shouldBe Right(Description("dev1", 0L, VersionJson("1", Json.Null)))

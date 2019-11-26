@@ -13,7 +13,7 @@ import org.mauritania.main4ino.cli.Actions.{AddRawUser, CliAction}
 import org.mauritania.main4ino.security.{Auther, Config, User}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import org.mauritania.main4ino.config.Loadable
+import org.mauritania.main4ino.helpers.ConfigLoader
 import pureconfig.error.ConfigReaderException
 
 import scala.io.Source

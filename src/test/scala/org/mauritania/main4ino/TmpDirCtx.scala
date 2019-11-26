@@ -5,7 +5,7 @@ import java.nio.file.Path
 
 import scala.reflect.io.Directory
 
-trait TmpDir {
+trait TmpDirCtx {
   def withTmpDir[T](test: Path => T) = {
 
     val tmp = Files.createTempDirectory("scala-tmp-dir")

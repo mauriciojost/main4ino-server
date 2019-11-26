@@ -3,10 +3,10 @@ package org.mauritania.main4ino.security
 import java.io.File
 
 import cats.effect.Sync
-import org.mauritania.main4ino.config.Loadable
 import org.reactormonk.{CryptoBits, PrivateKey}
 import java.time.Clock
 
+import org.mauritania.main4ino.helpers.ConfigLoader
 import pureconfig._
 import pureconfig.generic.auto._
 import org.mauritania.main4ino.security.Auther.{EncryptionConfig, UserHashedPass, UserId}
@@ -29,9 +29,6 @@ case class Config(
 }
 
 object Config {
-
-  def load[F[_]: Sync](configFile: File): F[Config] =
-    Loadable.loadFromFile[F, Config](configFile)
 
   case class UsersBy(
     byId: Map[UserId, User],

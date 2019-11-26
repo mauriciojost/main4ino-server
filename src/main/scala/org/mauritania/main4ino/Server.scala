@@ -6,23 +6,23 @@ import java.util.concurrent._
 
 import cats.effect.{ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, Resource, Timer}
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.mauritania.main4ino.Repository.ReqType
+import org.mauritania.main4ino.db.Repository.ReqType
 import org.mauritania.main4ino.api.{Translator, v1}
-import org.mauritania.main4ino.db.Database
-import org.mauritania.main4ino.firmware.{Store, StoreIO}
-import org.mauritania.main4ino.helpers.{DevLoggerIO, TimeIO}
+import org.mauritania.main4ino.db.{Database, Repository}
+import org.mauritania.main4ino.firmware.Store
+import org.mauritania.main4ino.helpers.{ConfigLoader, DevLogger, Scheduler, Time}
 import org.mauritania.main4ino.security.AutherIO
 
 import scala.concurrent.duration.FiniteDuration
-
-
-import config._
 import cats.effect._
 import cats.implicits._
 import org.http4s.server.{Router, Server => H4Server}
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.implicits._
 import doobie.util.ExecutionContexts
+
+import pureconfig._
+import pureconfig.generic.auto._
 
 object Server extends IOApp {
 
@@ -40,17 +40,17 @@ object Server extends IOApp {
       configDir <- Resource.liftF[F, File](resolveConfigDir(args))
       applicationConf = new File(configDir, "application.conf")
       securityConf = new File(configDir, "security.conf")
-      configApp <- Resource.liftF(config.Config.load(applicationConf))
-      configUsers <- Resource.liftF(security.Config.load(securityConf))
+      configApp <- Resource.liftF(ConfigLoader.loadFromFile[F, Config](applicationConf))
+      configUsers <- Resource.liftF(ConfigLoader.loadFromFile[F, security.Config](securityConf))
       _ <- Resource.liftF(logger.debug(s"Configs created"))
       transactor <- Database.transactor[F](configApp.database, transactorEc, Blocker.liftExecutionContext(blockerTransactorEc))
       _ <- Resource.liftF(logger.debug(s"Transactor created"))
       auth = new AutherIO[F](configUsers)
-      repo = new RepositoryIO[F](transactor)
-      time = new TimeIO[F]()
-      devLogger = new DevLoggerIO(Paths.get(configApp.devLogger.logsBasePath), time, devLoggerEc)
+      repo = new Repository[F](transactor)
+      time = new Time[F]()
+      devLogger = new DevLogger(Paths.get(configApp.devLogger.logsBasePath), time, devLoggerEc)
       _ <- Resource.liftF(logger.debug(s"DevLogger created"))
-      fwStore = new StoreIO(Paths.get(configApp.firmware.firmwareBasePath))
+      fwStore = new Store(Paths.get(configApp.firmware.firmwareBasePath))
       _ <- Resource.liftF(logger.debug(s"Store created"))
       cleanupRepoTask = for { // TODO move away
         logger <- Slf4jLogger.fromClass[F](Server.getClass)

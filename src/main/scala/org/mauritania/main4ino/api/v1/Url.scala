@@ -3,8 +3,8 @@ package org.mauritania.main4ino.api.v1
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.http4s.{ParseFailure, QueryParamDecoder, QueryParameterValue}
 import org.http4s.dsl.impl.{OptionalQueryParamDecoderMatcher, QueryParamDecoderMatcher}
-import org.mauritania.main4ino.Repository.ReqType
-import org.mauritania.main4ino.Repository.ReqType.ReqType
+import org.mauritania.main4ino.db.Repository.ReqType
+import org.mauritania.main4ino.db.Repository.ReqType.ReqType
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models.Device.Metadata.Status.Status
 import org.mauritania.main4ino.models.{EpochSecTimestamp, RequestId}

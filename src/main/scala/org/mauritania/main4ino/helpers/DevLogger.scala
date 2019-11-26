@@ -5,10 +5,8 @@ import java.io.File
 import cats.effect.{Blocker, ContextShift, Sync}
 import java.nio.file.{StandardOpenOption, Path => JavaPath}
 
-import cats.{Applicative, Functor}
 import org.mauritania.main4ino.api.Attempt
 import fs2.{Stream, io, text => fs2text}
-import org.mauritania.main4ino.firmware.Store.Firmware
 import org.mauritania.main4ino.models.DeviceName
 import cats.effect.implicits._
 import cats.implicits._
@@ -21,34 +19,7 @@ import scala.concurrent.ExecutionContext
   * having to pollute the actors' properties.
   * @tparam F
   */
-trait DevLogger[F[_]] {
-  /**
-    * Update logs, provided the device name and the log messages to be appended
-    * @param device device name
-    * @param body body containing the logs to be appended
-    * @return [[Attempt]] telling if it was possible to perform the operation
-    */
-  def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Unit]]
-
-  /**
-    * Retrieve full logs for the given device
-    *
-    * Examples:
-    * - stream=0123456789
-    * - lenght=4 && ignore=0 => 6789
-    * - lenght=4 && ignore=1 => 5678
-    * - lenght=4 && ignore=2 => 4567
-    *
-    * @param device device name
-    * @param ignore for pagination, amount of bytes to discard from the end
-    * @param length for pagination, amount of bytes to take counting backwards from the end
-    * @return the [[Attempt]] with the stream containing the chunks of the logs
-    */
-  def getLogs(device: DeviceName, ignore: Option[Long], length: Option[Long]): F[Attempt[Stream[F, String]]]
-
-}
-
-class DevLoggerIO[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], ec: ExecutionContext) extends DevLogger[F] {
+class DevLogger[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], ec: ExecutionContext) {
 
   final private val blocker = Blocker.liftExecutionContext(ec)
   final private val ChunkSize = 1024
@@ -59,6 +30,12 @@ class DevLoggerIO[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], e
 
   private def pathFromDevice(device: DeviceName): JavaPath = basePath.resolve(s"$device.log")
 
+  /**
+    * Update logs, provided the device name and the log messages to be appended
+    * @param device device name
+    * @param body body containing the logs to be appended
+    * @return [[Attempt]] telling if it was possible to perform the operation
+    */
   def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Unit]] = {
     val timedBody = Stream.eval[F, String](time.nowUtc.map("### " + _ + "\n")) ++ body
     val encoded = timedBody.through(fs2text.utf8Encode)
@@ -79,6 +56,20 @@ class DevLoggerIO[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], e
 
   private def isReadableFile(f: File): F[Boolean] = Sync[F].delay(f.canRead && f.isFile)
 
+  /**
+    * Retrieve full logs for the given device
+    *
+    * Examples:
+    * - stream=0123456789
+    * - lenght=4 && ignore=0 => 6789
+    * - lenght=4 && ignore=1 => 5678
+    * - lenght=4 && ignore=2 => 4567
+    *
+    * @param device device name
+    * @param ignore for pagination, amount of bytes to discard from the end
+    * @param length for pagination, amount of bytes to take counting backwards from the end
+    * @return the [[Attempt]] with the stream containing the chunks of the logs
+    */
   def getLogs(device: DeviceName, ignore: Option[Long], length: Option[Long]): F[Attempt[Stream[F, String]]] = {
     val path = pathFromDevice(device)
     val i = ignore.getOrElse(DefaultIgnoreLogs)
