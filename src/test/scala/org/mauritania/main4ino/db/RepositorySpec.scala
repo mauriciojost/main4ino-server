@@ -210,10 +210,7 @@ class RepositorySpec extends FlatSpec with Matchers with TransactorCtx {
         repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe List(2L, 3L, 4L)
         repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe List(6L, 7L, 8L)
 
-        repo.cleanup(table, 10, 0).unsafeRunSync() shouldBe 4 // preserve only last updates
-
-        repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe List(4L)
-        repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe List(8L)
+        repo.cleanup(table, 10, 0).unsafeRunSync() shouldBe 6 // remove all updates
 
       }
     }
