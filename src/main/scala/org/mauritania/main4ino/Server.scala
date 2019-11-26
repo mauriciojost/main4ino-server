@@ -60,7 +60,6 @@ object Server extends IOApp {
         _ <- logger.info(s"Repository cleanup at $now ($epSecs): $cleaned requests cleaned")
       } yield (cleaned)
 
-      _ <- Resource.liftF(logger.debug(s"Cleanup created"))
       httpApp = Router(
         "/" -> new webapp.Service("/webapp/index.html", webappServiceEc).service,
         "/" -> new firmware.Service(fwStore, firmwareServiceEc).service,
