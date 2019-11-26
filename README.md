@@ -87,6 +87,7 @@ sbt coverageAggregate
 ### Inpiration
 
 - https://github.com/jaspervz/todo-http4s-doobie
+- https://github.com/pauljamescleary/scala-pet-store
 
 ### Guidelines for REST
 

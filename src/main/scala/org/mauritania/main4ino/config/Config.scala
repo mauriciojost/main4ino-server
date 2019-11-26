@@ -2,7 +2,7 @@ package org.mauritania.main4ino.config
 
 import java.io.File
 
-import cats.effect.IO
+import cats.effect.Sync
 import org.mauritania.main4ino.config.Config.{DevLoggerConfig, FirmwareConfig, ServerConfig}
 import org.mauritania.main4ino.db.{Config => DbConfig}
 
@@ -17,7 +17,7 @@ object Config {
   import pureconfig._
   import pureconfig.generic.auto._
 
-  def load(configFile: File): IO[Config] = Loadable.loadFromFile[IO, Config](configFile)
+  def load[F[_]: Sync](configFile: File): F[Config] = Loadable.loadFromFile[F, Config](configFile)
 
   case class ServerConfig(
     host: String,

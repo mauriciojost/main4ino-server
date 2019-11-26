@@ -2,8 +2,8 @@ package org.mauritania.main4ino.security
 
 import java.time.Clock
 
-import cats.effect.IO
-import org.http4s.{BasicCredentials, Headers, Request, Uri}
+import cats.effect.Sync
+import org.http4s.{BasicCredentials, Credentials, Headers, Request, Uri}
 import org.http4s.Uri.Path
 import org.http4s.util.CaseInsensitiveString
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
@@ -42,13 +42,13 @@ trait Auther[F[_]] {
 
 }
 
-class AutherIO(config: Config) extends Auther[IO] {
+class AutherIO[F[_]: Sync](config: Config) extends Auther[F] {
 
-  def authenticateAndCheckAccessFromRequest(request: Request[IO]): IO[AccessAttempt] =
-    IO.pure(Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path))
+  def authenticateAndCheckAccessFromRequest(request: Request[F]): F[AccessAttempt] =
+    Sync[F].delay(Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path))
 
-  def generateSession(user: User): IO[UserSession] =
-    IO.pure(Auther.sessionFromUser(user, config.privateKeyBits, config.nonceStartupTime))
+  def generateSession(user: User): F[UserSession] =
+    Sync[F].delay(Auther.sessionFromUser(user, config.privateKeyBits, config.nonceStartupTime))
 }
 
 object Auther {
@@ -101,7 +101,7 @@ object Auther {
   def userCredentialsFromRequest(encry: EncryptionConfig, headers: Headers, uri: Uri): Option[(UserId, UserHashedPass)] = {
     // Basic auth
     val credsFromHeader = headers.get(Authorization).collect {
-      case Authorization(BasicCredentials(token)) => (token.username, hashPassword(token.password, encry.salt))
+      case Authorization(BasicCredentials(username, password)) => (username, hashPassword(password, encry.salt))
     }
     // URI auth: .../token/<token>/... authentication (some services like IFTTT do not support yet headers, only URI credentials...)
     val tokenFromUri = UriTokenRegex.findFirstMatchIn(uri.path).flatMap(a => Try(a.group(2)).toOption)

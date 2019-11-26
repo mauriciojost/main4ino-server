@@ -2,7 +2,7 @@ package org.mauritania.main4ino.firmware
 
 import java.nio.file.{Path, Paths}
 
-import cats.effect.IO
+import cats.effect.{Effect, IO, Sync}
 import org.http4s.{Header, Headers, Method, Request, Response, Status, Uri}
 import org.mauritania.main4ino.TmpDir
 import org.mauritania.main4ino.firmware.Store.FirmwareCoords
@@ -10,6 +10,8 @@ import org.scalatest._
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
+
+import scala.concurrent.ExecutionContext
 
 class ServiceFuncSpec extends FlatSpec with Matchers with TmpDir {
 
@@ -19,7 +21,9 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TmpDir {
 
   final val Dataset1 = Paths.get("src", "test", "resources", "firmwares", "1")
 
-  def defaultServiceWithDirectory(tmp: Path): Service[IO] = new Service(new StoreIO(tmp))
+
+  def defaultServiceWithDirectory(tmp: Path): Service[IO] =
+    new Service[IO](new StoreIO[IO](tmp), ExecutionContext.global)(Sync[IO], Effect[IO], IO.contextShift(ExecutionContext.global))
 
   "The service" should "download a given firmware" in {
 

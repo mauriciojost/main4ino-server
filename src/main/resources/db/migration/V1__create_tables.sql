@@ -35,5 +35,5 @@ CREATE TABLE descriptions (
   device_name TEXT,
   updated LONG,
   version TEXT,
-  json TEXT,
+  json TEXT
 );

@@ -4,11 +4,8 @@ import java.io.File
 import java.nio.file.Paths
 import java.util.concurrent._
 
-import cats.effect.IO
-import fs2.StreamApp.ExitCode
-import fs2.{Stream, StreamApp}
+import cats.effect.{ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, Resource, Timer}
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.http4s.server.blaze.BlazeBuilder
 import org.mauritania.main4ino.Repository.ReqType
 import org.mauritania.main4ino.api.{Translator, v1}
 import org.mauritania.main4ino.db.Database
@@ -16,49 +13,74 @@ import org.mauritania.main4ino.firmware.{Store, StoreIO}
 import org.mauritania.main4ino.helpers.{DevLoggerIO, TimeIO}
 import org.mauritania.main4ino.security.AutherIO
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 
-object Server extends StreamApp[IO] {
 
-  // TODO use better IOApp as StreamApp is being removed from fs2
-  def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
+import config._
+import cats.effect._
+import cats.implicits._
+import org.http4s.server.{Router, Server => H4Server}
+import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.implicits._
+import doobie.util.ExecutionContexts
+
+object Server extends IOApp {
+
+  def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](args: List[String]): Resource[F, H4Server[F]] = {
 
     for {
-      configDir <- Stream.eval[IO, File](arguments(args))
+
+      logger <- Resource.liftF(Slf4jLogger.fromClass[F](Translator.getClass))
+      transactorEc <- ExecutionContexts.cachedThreadPool[F] // See thread pools gist from djspiewak
+      blockerTransactorEc <- ExecutionContexts.cachedThreadPool[F]
+      devLoggerEc <- ExecutionContexts.cachedThreadPool[F]
+      webappServiceEc <- ExecutionContexts.cachedThreadPool[F]
+      firmwareServiceEc <- ExecutionContexts.cachedThreadPool[F]
+      _ <- Resource.liftF(logger.debug(s"Cached thread pools created"))
+      configDir <- Resource.liftF[F, File](resolveConfigDir(args))
       applicationConf = new File(configDir, "application.conf")
       securityConf = new File(configDir, "security.conf")
-
-      configApp <- Stream.eval(config.Config.load(applicationConf))
-      configUsers <- Stream.eval(security.Config.load(securityConf))
-      transactor <- Stream.eval(Database.transactor(configApp.database))
-      auth = new AutherIO(configUsers)
-      repo = new RepositoryIO(transactor)
-      time = new TimeIO()
-      devLogger = new DevLoggerIO(Paths.get(configApp.devLogger.logsBasePath), time)
+      configApp <- Resource.liftF(config.Config.load(applicationConf))
+      configUsers <- Resource.liftF(security.Config.load(securityConf))
+      _ <- Resource.liftF(logger.debug(s"Configs created"))
+      transactor <- Database.transactor[F](configApp.database, transactorEc, Blocker.liftExecutionContext(blockerTransactorEc))
+      _ <- Resource.liftF(logger.debug(s"Transactor created"))
+      auth = new AutherIO[F](configUsers)
+      repo = new RepositoryIO[F](transactor)
+      time = new TimeIO[F]()
+      devLogger = new DevLoggerIO(Paths.get(configApp.devLogger.logsBasePath), time, devLoggerEc)
+      _ <- Resource.liftF(logger.debug(s"DevLogger created"))
       fwStore = new StoreIO(Paths.get(configApp.firmware.firmwareBasePath))
-      cleanupRepoTask = for {
-        logger <- Slf4jLogger.fromClass[IO](Server.getClass)
+      _ <- Resource.liftF(logger.debug(s"Store created"))
+      cleanupRepoTask = for { // TODO move away
+        logger <- Slf4jLogger.fromClass[F](Server.getClass)
         now <- time.nowUtc
         epSecs = now.toEpochSecond
         cleaned <- repo.cleanup(ReqType.Reports, epSecs, configApp.database.cleanup.retentionSecs)
         _ <- logger.info(s"Repository cleanup at $now ($epSecs): $cleaned requests cleaned")
       } yield (cleaned)
 
-      _ <- Stream.eval(Database.initialize(transactor))
+      httpApp = Router(
+        "/" -> new webapp.Service("/webapp/index.html", webappServiceEc).service,
+        "/" -> new firmware.Service(fwStore, firmwareServiceEc).service,
+        "/api/v1" -> new v1.Service(auth, new Translator(repo, time, devLogger, fwStore), time).serviceWithAuthentication
+      ).orNotFound
+
+      _ <- Resource.liftF(Database.initialize(transactor))
+      _ <- Resource.liftF(logger.debug(s"Database initialized"))
       cleanupPeriodSecs = FiniteDuration(configApp.database.cleanup.periodSecs, TimeUnit.SECONDS)
-      _ <- Stream.eval(Scheduler.periodicIO(cleanupRepoTask, cleanupPeriodSecs))
-      exitCodeServer <- BlazeBuilder[IO]
+      _ <- Resource.liftF(Concurrent[F].start(Scheduler.periodic[F, Int](cleanupPeriodSecs, cleanupRepoTask)))
+      _ <- Resource.liftF(logger.debug(s"Server initialized"))
+      exitCodeServer <- BlazeServerBuilder[F]
         .bindHttp(configApp.server.port, configApp.server.host)
-        .mountService(new webapp.Service("/webapp/index.html").service, "/")
-        .mountService(new firmware.Service(fwStore).service, "/")
-        .mountService(new v1.Service(auth, new Translator(repo, time, devLogger, fwStore), time).serviceWithAuthentication, "/api/v1")
-        .serve
+        .withHttpApp(httpApp)
+        .resource
+      _ <- Resource.liftF(logger.debug(s"Server initialized"))
 
     } yield exitCodeServer
   }
 
-  private def arguments(args: List[String]): IO[File] = IO {
+  private def resolveConfigDir[F[_]: Sync](args: List[String]): F[File] = Sync[F].delay {
     val arg1 = args match {
       case Nil => throw new IllegalArgumentException("Missing config directory")
       case a1 :: Nil => a1
@@ -66,4 +88,6 @@ object Server extends StreamApp[IO] {
     }
     new File(arg1)
   }
+
+  def run(args: List[String]): IO[ExitCode] = createServer[IO](args).use(_ => IO.never).as(ExitCode.Success)
 }

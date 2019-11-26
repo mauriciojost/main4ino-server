@@ -2,7 +2,7 @@ package org.mauritania.main4ino.security
 
 import java.io.File
 
-import cats.effect.IO
+import cats.effect.Sync
 import org.mauritania.main4ino.config.Loadable
 import org.reactormonk.{CryptoBits, PrivateKey}
 import java.time.Clock
@@ -30,8 +30,8 @@ case class Config(
 
 object Config {
 
-  def load(configFile: File): IO[Config] =
-    Loadable.loadFromFile[IO, Config](configFile)
+  def load[F[_]: Sync](configFile: File): F[Config] =
+    Loadable.loadFromFile[F, Config](configFile)
 
   case class UsersBy(
     byId: Map[UserId, User],

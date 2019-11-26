@@ -5,10 +5,10 @@ import java.time.{ZoneOffset, ZonedDateTime}
 
 import cats.Applicative
 import cats.data.{Kleisli, OptionT}
-import cats.effect.{IO, Sync}
+import cats.effect.{Blocker, ContextShift, Effect, IO, Sync}
 import fs2.Stream
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.http4s.{Header, Headers, HttpService, Request, Response}
+import org.http4s.{EntityEncoder, Header, Headers, HttpRoutes, HttpService, Request, Response}
 import org.http4s.headers.`Content-Length`
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.main4ino.api.Attempt
@@ -26,11 +26,16 @@ import cats.data._
 import org.http4s.server.{HttpMiddleware, Middleware}
 import org.mauritania.main4ino.helpers.{HttpMeter, Time}
 
-class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
+import scala.concurrent.ExecutionContext
+
+class Service[F[_] : Sync: Effect: ContextShift](st: Store[F], ec: ExecutionContext) extends Http4sDsl[F] {
 
   import Service._
 
-  val serviceUntimed = HttpService[F] {
+  final private val blocker = Blocker.liftExecutionContext(ec)
+  implicit val fileEntityEncoder = EntityEncoder.fileEncoder[F](blocker)
+
+  val serviceUntimed = HttpRoutes.of[F] {
 
     /**
       * GET /firmwares/<project>/<platform>/content?version=<version>
@@ -60,7 +65,7 @@ class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
         case Right(Firmware(f, l, c)) if (currentVersion.exists(_ == c.version)) => // same version as current
           NotModified()
         case Right(Firmware(f, l, c)) => // different version than current, serving...
-          Ok(f, `Content-Length`.unsafeFromLong(l))
+          Ok.apply(f, `Content-Length`.unsafeFromLong(l))
         case Left(_) => // no such version
           NotFound()
       }
@@ -97,7 +102,7 @@ class Service[F[_] : Sync](st: Store[F]) extends Http4sDsl[F] {
 
   val service = HttpMeter.timedHttpMiddleware[F].apply(serviceUntimed)
 
-  private[firmware] def request(r: Request[F]): F[Response[F]] = service.orNotFound(r)
+  private[firmware] def request(r: Request[F]): F[Response[F]] = service(r).getOrElseF(NotFound())
 
 }
 
