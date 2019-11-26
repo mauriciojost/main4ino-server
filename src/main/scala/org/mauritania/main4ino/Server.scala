@@ -31,7 +31,7 @@ object Server extends IOApp {
     for {
 
       logger <- Resource.liftF(Slf4jLogger.fromClass[F](Translator.getClass))
-      transactorEc <- ExecutionContexts.cachedThreadPool[F]
+      transactorEc <- ExecutionContexts.cachedThreadPool[F] // See thread pools gist from djspiewak
       blockerTransactorEc <- ExecutionContexts.cachedThreadPool[F]
       devLoggerEc <- ExecutionContexts.cachedThreadPool[F]
       webappServiceEc <- ExecutionContexts.cachedThreadPool[F]
@@ -52,15 +52,13 @@ object Server extends IOApp {
       _ <- Resource.liftF(logger.debug(s"DevLogger created"))
       fwStore = new StoreIO(Paths.get(configApp.firmware.firmwareBasePath))
       _ <- Resource.liftF(logger.debug(s"Store created"))
-      /*
-      cleanupRepoTask = for {
+      cleanupRepoTask = for { // TODO move away
         logger <- Slf4jLogger.fromClass[F](Server.getClass)
         now <- time.nowUtc
         epSecs = now.toEpochSecond
         cleaned <- repo.cleanup(ReqType.Reports, epSecs, configApp.database.cleanup.retentionSecs)
         _ <- logger.info(s"Repository cleanup at $now ($epSecs): $cleaned requests cleaned")
       } yield (cleaned)
-       */
 
       _ <- Resource.liftF(logger.debug(s"Cleanup created"))
       httpApp = Router(
@@ -72,7 +70,7 @@ object Server extends IOApp {
       _ <- Resource.liftF(Database.initialize(transactor))
       _ <- Resource.liftF(logger.debug(s"Database initialized"))
       cleanupPeriodSecs = FiniteDuration(configApp.database.cleanup.periodSecs, TimeUnit.SECONDS)
-      //_ <- Resource.liftF(Timer[F].sleep(cleanupPeriodSecs) *> cleanupRepoTask) // TODO BROKEN TEST
+      _ <- Resource.liftF(Scheduler.periodic[F, Int](cleanupPeriodSecs, cleanupRepoTask))
       _ <- Resource.liftF(logger.debug(s"Server initialized"))
       exitCodeServer <- BlazeServerBuilder[F]
         .bindHttp(configApp.server.port, configApp.server.host)
