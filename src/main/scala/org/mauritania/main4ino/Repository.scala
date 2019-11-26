@@ -56,11 +56,6 @@ class RepositoryIO[F[_]: Sync](transactor: Transactor[F]) extends Repository[F] 
     Read.fromGet(m)
   }
 
-  implicit val WriteCompositeJson: Write[Json] = {
-    val m: Put[Json] = Put[String].contramap(_.noSpaces)
-    Write.fromPut(m)
-  }
-
   def setDescription(d: DeviceName, v: VersionJson, ts: EpochSecTimestamp): F[Int] = {
     val transaction = for {
       i <- sqlInsertDescription(d, v, ts)
