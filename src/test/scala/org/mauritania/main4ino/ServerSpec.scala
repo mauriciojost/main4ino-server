@@ -18,13 +18,12 @@ import org.mauritania.main4ino.models.{DeviceId, RequestId}
 
 import scala.concurrent.ExecutionContext
 
-class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
+class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll with HttpClient {
 
   val BaseWaitMs = 3000
 
   Sequential
   var appThread: Thread = _
-  var httpClient: Client[IO] = _
   val UserPass = BasicCredentials(Fixtures.User1.id, Fixtures.User1Pass)
 
   implicit val statusEncoder = JsonEncoding.StatusEncoder
@@ -40,55 +39,56 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   "The server" should "start and expose rest the api (v1)" in {
-    BlazeClientBuilder[IO](Helper.global)(IO.ioConcurrentEffect(IO.contextShift(Helper.global))).resource.use{httpClient =>
+    withHttpClient { httpClient =>
       val help = httpClient.expect[String](s"http://localhost:8080/api/v1/token/${UserPass.token}/help")
       help.unsafeRunSync() should include("https")
-      IO.pure("")
-    }.unsafeRunSync()
-
+    }
   }
 
   it should "reject unauthorized requests" in {
-    assertThrows[UnexpectedStatus] { // forbidden
-      httpClient.expect[String]("http://localhost:8080/api/v1/help").unsafeRunSync()
+    withHttpClient { httpClient =>
+      assertThrows[UnexpectedStatus] { // forbidden
+        httpClient.expect[String]("http://localhost:8080/api/v1/help").unsafeRunSync()
+      }
     }
   }
 
   it should "perform cleanup of old entries regularly" in {
+    withHttpClient { httpClient =>
+      // inject dev1
+      val dev1ResponseJson = httpClient.expect[String](devPostRequest("dev1", "targets"))
+      val id1 = jsonAs[IdResponse](dev1ResponseJson.unsafeRunSync()).id
 
-    // inject dev1
-    val dev1ResponseJson = httpClient.expect[String](devPostRequest("dev1", "targets"))
-    val id1 = jsonAs[IdResponse](dev1ResponseJson.unsafeRunSync()).id
+      // check that dev1 exists
+      val dev1t0 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
+      jsonAs[DeviceId](dev1t0.unsafeRunSync()).dbId.id shouldBe id1
 
-    // check that dev1 exists
-    val dev1t0 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
-    jsonAs[DeviceId](dev1t0.unsafeRunSync()).dbId.id shouldBe id1
+      Thread.sleep(2 * BaseWaitMs)
 
-    Thread.sleep(2 * BaseWaitMs)
+      // check that dev1 still exists
+      val dev1t2 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
+      jsonAs[DeviceId](dev1t2.unsafeRunSync()).dbId.id shouldBe (id1)
 
-    // check that dev1 still exists
-    val dev1t2 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
-    jsonAs[DeviceId](dev1t2.unsafeRunSync()).dbId.id shouldBe (id1)
+      // inject dev2
+      val dev2ResponseJson = httpClient.expect[String](devPostRequest("dev2", "targets"))
+      val id2 = jsonAs[IdResponse](dev2ResponseJson.unsafeRunSync()).id
 
-    // inject dev2
-    val dev2ResponseJson = httpClient.expect[String](devPostRequest("dev2", "targets"))
-    val id2 = jsonAs[IdResponse](dev2ResponseJson.unsafeRunSync()).id
+      // check that dev2 exists
+      val dev2t2 = httpClient.expect[String](devGetRequest("dev2", "targets", id2))
+      jsonAs[DeviceId](dev2t2.unsafeRunSync()).dbId.id shouldBe (id2)
 
-    // check that dev2 exists
-    val dev2t2 = httpClient.expect[String](devGetRequest("dev2", "targets", id2))
-    jsonAs[DeviceId](dev2t2.unsafeRunSync()).dbId.id shouldBe (id2)
+      Thread.sleep(3 * BaseWaitMs)
+      // cleanup every 5s
+      Thread.sleep(BaseWaitMs)
 
-    Thread.sleep(3 * BaseWaitMs)
-    // cleanup every 5s
-    Thread.sleep(BaseWaitMs)
+      // check that dev2 exists
+      val dev2t6 = httpClient.expect[String](devGetRequest("dev2", "targets", id2))
+      jsonAs[DeviceId](dev2t6.unsafeRunSync()).dbId.id shouldBe (id2)
 
-    // check that dev2 exists
-    val dev2t6 = httpClient.expect[String](devGetRequest("dev2", "targets", id2))
-    jsonAs[DeviceId](dev2t6.unsafeRunSync()).dbId.id shouldBe (id2)
-
-    // check that dev1 does not exist anymore (cleaned up)
-    val dev1t6 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
-    jsonAs[DeviceId](dev1t6.unsafeRunSync()).dbId.id shouldBe (id1)
+      // check that dev1 does not exist anymore (cleaned up)
+      val dev1t6 = httpClient.expect[String](devGetRequest("dev1", "targets", id1))
+      jsonAs[DeviceId](dev1t6.unsafeRunSync()).dbId.id shouldBe (id1)
+    }
 
   }
 
@@ -112,13 +112,17 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll {
   }
 
   it should "start and expose the webapp files" in {
-    val help = httpClient.expect[String](s"http://localhost:8080/index.html")
-    help.unsafeRunSync() should include("</body>")
+    withHttpClient { httpClient =>
+      val help = httpClient.expect[String](s"http://localhost:8080/index.html")
+      help.unsafeRunSync() should include("</body>")
+    }
   }
 
   it should "start and expose the firmware files" in {
-    val help = httpClient.expect[String](s"http://localhost:8080/firmwares/botino/esp8266")
-    help.unsafeRunSync() should include("1.0.0")
+    withHttpClient { httpClient =>
+      val help = httpClient.expect[String](s"http://localhost:8080/firmwares/botino/esp8266")
+      help.unsafeRunSync() should include("1.0.0")
+    }
   }
 
   it should "fail if started with bad arduments" in {
