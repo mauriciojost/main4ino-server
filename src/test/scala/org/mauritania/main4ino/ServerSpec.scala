@@ -16,8 +16,6 @@ import org.mauritania.main4ino.api.v1.JsonEncoding
 import org.mauritania.main4ino.api.Translator.IdResponse
 import org.mauritania.main4ino.models.{DeviceId, RequestId}
 
-import scala.concurrent.ExecutionContext
-
 class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll with HttpClient {
 
   val BaseWaitMs = 3000

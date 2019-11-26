@@ -14,6 +14,6 @@ object Helper {
     Stream.fromIterator[F](content.toCharArray.map(_.toByte).toIterator)
   }
 
-  def global: ExecutionContext = ExecutionContext.fromExecutor(Executors.newScheduledThreadPool(20))
+  def testExecutionContext: ExecutionContext = ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
 
 }

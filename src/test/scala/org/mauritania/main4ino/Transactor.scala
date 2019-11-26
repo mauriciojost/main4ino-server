@@ -19,7 +19,7 @@ trait Transactor {
   )
 
   def withTransactor[T](f: HikariTransactor[IO] => T): T = {
-    val ec = Helper.global
+    val ec = Helper.testExecutionContext
     val cs = IO.contextShift(ec)
     val re = for {
       t <- Database.transactor[IO](TransactorConfig, ec, Blocker.liftExecutionContext(ec))(Sync[IO], IO.contextShift(ec), Async[IO])

@@ -6,23 +6,22 @@ import java.time.{Instant, ZoneId, ZonedDateTime}
 import cats.effect.{IO, Sync}
 import doobie.hikari.HikariTransactor
 import fs2.Stream
-import io.circe.{Encoder, Json}
-import io.circe.syntax._
-import org.http4s.circe._
+import io.circe.Json
 import io.circe.generic.auto._
 import io.circe.syntax._
+import org.http4s.circe._
 import org.http4s.headers.Authorization
-import org.http4s.{BasicCredentials, EntityBody, Headers, Method, Request, Response, Status, Uri}
+import org.http4s._
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.{CountResponse, IdResponse, IdsOnlyResponse}
-import org.mauritania.main4ino.firmware.{Store, StoreIO}
-import org.mauritania.main4ino.helpers.{DevLoggerIO, Time, TimeIO}
+import org.mauritania.main4ino.firmware.StoreIO
+import org.mauritania.main4ino.helpers.{DevLoggerIO, Time}
 import org.mauritania.main4ino.models.Description
 import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security._
-import org.mauritania.main4ino.{Transactor, Helper, RepositoryIO, TmpDir}
+import org.mauritania.main4ino.{Helper, RepositoryIO, TmpDir, Transactor}
 import org.scalatest.{FlatSpec, Matchers, Sequential}
 
 class ServiceFuncSpec extends FlatSpec with Matchers with Transactor with TmpDir {
@@ -42,9 +41,9 @@ class ServiceFuncSpec extends FlatSpec with Matchers with Transactor with TmpDir
       new Translator(
         new RepositoryIO(transactor),
         t,
-        new DevLoggerIO[IO](tmp, t, Helper.global)(Sync[IO], IO.contextShift(Helper.global)),
+        new DevLoggerIO[IO](tmp, t, Helper.testExecutionContext)(Sync[IO], IO.contextShift(Helper.testExecutionContext)),
         new StoreIO(tmp)
-    ),
+      ),
       t
     )
   }
@@ -90,7 +89,7 @@ class ServiceFuncSpec extends FlatSpec with Matchers with Transactor with TmpDir
 
       val s = post("/session", "")
       s.status shouldBe Status.Ok
-      s.as[String].unsafeRunSync() should include ("-" + User1.name)
+      s.as[String].unsafeRunSync() should include("-" + User1.name)
 
       val u = get("/user")
       u.status shouldBe Status.Ok
