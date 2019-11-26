@@ -69,7 +69,7 @@ object Server extends IOApp {
       _ <- Resource.liftF(Database.initialize(transactor))
       _ <- Resource.liftF(logger.debug(s"Database initialized"))
       cleanupPeriodSecs = FiniteDuration(configApp.database.cleanup.periodSecs, TimeUnit.SECONDS)
-      _ <- Resource.liftF(Scheduler.periodic[F, Int](cleanupPeriodSecs, cleanupRepoTask))
+      _ <- Resource.liftF(Concurrent[F].start(Scheduler.periodic[F, Int](cleanupPeriodSecs, cleanupRepoTask)))
       _ <- Resource.liftF(logger.debug(s"Server initialized"))
       exitCodeServer <- BlazeServerBuilder[F]
         .bindHttp(configApp.server.port, configApp.server.host)
