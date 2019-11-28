@@ -5,12 +5,11 @@
 set -e -x
 
 root_dir=$(readlink -e `dirname $0`/../..)
-config_dir=`readlink -e $1`
 
 cd $root_dir
 rm -fr unzipped
 sbt universal:packageBin
 find -name main4ino-server*.zip | xargs -I% unzip % -d unzipped
-find unzipped -name main4ino-server -type f | xargs -I% bash % $config_dir
+find unzipped -name main4ino-server -type f | xargs -I% bash % $@
 
 

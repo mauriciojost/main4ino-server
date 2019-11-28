@@ -2,7 +2,7 @@ package org.mauritania.main4ino.webapp
 
 import cats.implicits._
 import cats.effect.{Blocker, ContextShift, Effect, Sync}
-import org.http4s.{HttpRoutes, HttpService, Request, Response, StaticFile}
+import org.http4s.{HttpRoutes, Request, Response, StaticFile}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.staticcontent
 import org.http4s.server.staticcontent.ResourceService.Config
