@@ -116,7 +116,7 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll with Http
 
   it should "start and expose the webapp files" in {
     withHttpClient { httpClient =>
-      val help = httpClient.expect[String](s"http://localhost:8080/index.html")
+      val help = httpClient.expect[String](s"http://localhost:8080/webapp/index.html")
       help.unsafeRunSync() should include("</body>")
     }
   }

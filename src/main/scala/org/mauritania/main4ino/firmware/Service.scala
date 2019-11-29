@@ -38,15 +38,15 @@ class Service[F[_] : Sync: Effect: ContextShift](st: Store[F], ec: ExecutionCont
   val serviceUntimed = HttpRoutes.of[F] {
 
     /**
-      * GET /firmwares/<project>/<platform>/content?version=<version>
+      * GET /<project>/<platform>/content?version=<version>
       *
-      * Example: GET /firmwares/botino/esp8266/content?version=3.1.8
+      * Example: GET /botino/esp8266/content?version=3.1.8
       *
       * Retrieve a firmware given a the version, the platform and the project it belongs to.
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a@GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? FirmVersionParam(version) => {
+    case a@GET -> Root / Proj(project) / Platf(platform) / "content" :? FirmVersionParam(version) => {
       val headers = a.headers
       val currentVersion = extractCurrentVersion(headers)
 
@@ -72,15 +72,15 @@ class Service[F[_] : Sync: Effect: ContextShift](st: Store[F], ec: ExecutionCont
     }
 
     /**
-      * GET /firmwares/<project>/<platform>
+      * GET /<project>/<platform>
       *
-      * Example: GET /firmwares/botino/esp8266
+      * Example: GET /botino/esp8266
       *
       * Retrieve a list of firmware coordinates available for download.
       *
       * Returns: OK (200)
       */
-    case a@GET -> Root / "firmwares" / Proj(project) / Platf(platform) => {
+    case a@GET -> Root / Proj(project) / Platf(platform) => {
       for {
         logger <- Slf4jLogger.fromClass[F](getClass)
         fa <- st.listFirmwares(project, platform)

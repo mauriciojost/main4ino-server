@@ -62,8 +62,8 @@ object Server extends IOApp {
       } yield (reportsCleaned + targetsCleaned)
 
       httpApp = Router(
-        "/" -> new webapp.Service("/webapp/index.html", webappServiceEc).service,
-        "/" -> new firmware.Service(fwStore, firmwareServiceEc).service,
+        "/webapp" -> new webapp.Service("/webapp/index.html", webappServiceEc).service,
+        "/firmwares" -> new firmware.Service(fwStore, firmwareServiceEc).service,
         "/api/v1" -> new v1.Service(auth, new Translator(repo, time, devLogger, fwStore), time).serviceWithAuthentication
       ).orNotFound
 
