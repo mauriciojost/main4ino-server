@@ -19,6 +19,6 @@ case class Description(
 object Description {
   case class VersionJson(
     version: String,
-    json: Json
+    json: Json // TODO define a proper description type as schema well defined
   )
 }

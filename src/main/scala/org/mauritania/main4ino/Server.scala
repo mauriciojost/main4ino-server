@@ -31,7 +31,7 @@ object Server extends IOApp {
     for {
 
       logger <- Resource.liftF(Slf4jLogger.fromClass[F](Translator.getClass))
-      transactorEc <- ExecutionContexts.cachedThreadPool[F] // See thread pools gist from djspiewak
+      transactorEc <- ExecutionContexts.cachedThreadPool[F] // TODO See "thread pools" GIST from djspiewak
       blockerTransactorEc <- ExecutionContexts.cachedThreadPool[F]
       devLoggerEc <- ExecutionContexts.cachedThreadPool[F]
       webappServiceEc <- ExecutionContexts.cachedThreadPool[F]
@@ -71,7 +71,7 @@ object Server extends IOApp {
       _ <- Resource.liftF(logger.debug(s"Database initialized"))
       cleanupPeriodSecs = FiniteDuration(configApp.database.cleanup.periodSecs, TimeUnit.SECONDS)
       _ <- Resource.liftF(Concurrent[F].start(Scheduler.periodic[F, Int](cleanupPeriodSecs, cleanupRepoTask)))
-      _ <- Resource.liftF(logger.debug(s"Server initialized"))
+      _ <- Resource.liftF(logger.debug(s"Cleanup task initialized"))
       exitCodeServer <- BlazeServerBuilder[F]
         .bindHttp(configApp.server.port, configApp.server.host)
         .withHttpApp(httpApp)
