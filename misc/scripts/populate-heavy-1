@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -e -x
+
+USER_PASSWORD="admin:password"
+SERVER_ADDRESS="localhost:8080"
+DESCRIPTION='{"version":"1.0.0", "json":[{"patterns": ["^actor1.p1$"], "descriptions": ["Property 1 xx."], "examples": ["1", "2", "3"]}]}'
+
+
+function insert() {
+  local device="$1"
+  local actor="$2"
+  local body="$3"
+
+  curl -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$device/descriptions" -d "$DESCRIPTION"
+
+  for i in `seq 1 1000`
+  do
+    echo "$i"
+    time \
+      curl -X POST \
+      $USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor \
+      -d "$body"
+  done
+}
+
+for l in `seq 1 10`
+do
+  insert dev$l actor$l '{"prop1":9,"prop2":10}' &
+  insert dev$l clock$l '{"hour":5}' &
+  insert dev$l clock2$l '{"hour":3,"minute":4,"second":5}' &
+  insert dev$l clock2$l '{"h":5}' &
+  insert dev$l clock2$l '{"b":9}' &
+  insert dev$l clock$l '{"h":5}' &
+  insert dev$l clock2$l '{"hour":7,"minute":9,"second":1}' &
+  insert dev$l clock2$l '{"h":1}' &
+  insert dev$l clock2$l '{"b":4}' &
+  insert dev$l clock$l '{"h":7}' &
+done
+
+
+
