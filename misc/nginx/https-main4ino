@@ -2,9 +2,7 @@
 # | Local service | Local|
 # |               | port |
 # +---------------+------+
-# | Jenkins       | 5555 |
 # | Main4ino (PRD)| 8080 |
-# | Webfs         | 8081 |
 # | Main4ino (DEV)| 8082 |
 # +---------------+------+
 
@@ -16,15 +14,6 @@ server {
         ssl on;
         ssl_certificate /etc/nginx/ssl/server.crt;
         ssl_certificate_key /etc/nginx/ssl/server.key;
-        location / {
-                proxy_pass http://localhost:5555/;
-        }
-        location /jenkins/ {
-                proxy_pass http://localhost:5555/;
-        }
-        location /main4ino/ {
-                proxy_pass http://localhost:8080/;
-        }
         location /main4ino/prd/ {
                 proxy_pass http://localhost:8080/;
         }
@@ -33,41 +22,15 @@ server {
         }
 }
 
-# To be deprecated
-#server {
-#        listen 6780; 
-#        server_name localhost;
-#        location /firmwares/ {
-#                proxy_pass http://localhost:8081/;
-#        }
-#        location / {
-#                proxy_pass http://localhost:8080/;
-#        }
-#        location /prd/ {
-#                proxy_pass http://localhost:8080/;
-#        }
-#        location /dev/ {
-#                proxy_pass http://localhost:8082/;
- #       }
-#}
-  
 # HTTP server (port 80)
 server {
         listen 80; 
         server_name localhost;
-
         location /main4ino/prd/ {
                 proxy_pass http://localhost:8080/;
         }
-        location /main4ino/prd/firmwares/ {
-                proxy_pass http://localhost:8081/;
-        }
-
         location /main4ino/dev/ {
                 proxy_pass http://localhost:8082/;
-        }
-        location /main4ino/dev/firmwares/ {
-                proxy_pass http://localhost:8081/;
         }
 }
   
