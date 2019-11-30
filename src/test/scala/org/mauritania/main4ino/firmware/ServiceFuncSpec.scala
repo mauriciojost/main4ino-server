@@ -29,12 +29,12 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TmpDirCtx {
 
     implicit val s = defaultServiceWithDirectory(Dataset1)
 
-    val rs = get("/botino/esp8266/content?version=1.0.0") // available
+    val rs = get("/firmwares/botino/esp8266/content?version=1.0.0") // available
     rs.status shouldBe Status.Ok
     rs.contentLength shouldBe Some(5L)
     rs.body.compile.toList.unsafeRunSync() shouldBe List(Byte0, Byte0, Byte1, Byte1, ByteEnd)
 
-    val rf = get("/botino/esp32/content?version=1.0.0") // not available
+    val rf = get("/firmwares/botino/esp32/content?version=1.0.0") // not available
     rf.status shouldBe Status.NotFound
     rf.body.compile.toList.unsafeRunSync() shouldBe List()
 
@@ -42,12 +42,12 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TmpDirCtx {
 
   it should "reply with not found when mandatory parameters are not provided" in {
     implicit val s = defaultServiceWithDirectory(Paths.get("xxx"))
-    get("/botino/esp8266/content")(s).status shouldBe Status.NotFound
+    get("/firmwares/botino/esp8266/content")(s).status shouldBe Status.NotFound
   }
 
   it should "list firmware coordinates" in {
     implicit val s = defaultServiceWithDirectory(Dataset1)
-    val r = get("/botino/esp8266")
+    val r = get("/firmwares/botino/esp8266")
     r.status shouldBe Status.Ok
     r.bodyAsText.compile.toList.unsafeRunSync().head shouldBe Set(FirmwareCoords("botino", "1.0.0", "esp8266")).asJson.noSpaces
   }
@@ -55,7 +55,7 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TmpDirCtx {
   it should "tell that current version is up to date" in {
     implicit val s = defaultServiceWithDirectory(Dataset1)
     val rs = get(
-      path = "/botino/esp8266/content?version=1.0.0",
+      path = "/firmwares/botino/esp8266/content?version=1.0.0",
       headers = Headers(Header(Service.Esp8266VersionHeader, "1.0.0"))
     )
     rs.status shouldBe Status.NotModified // already up to date
@@ -64,7 +64,7 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TmpDirCtx {
   it should "handle scenario of firmware providing no version" in {
     implicit val s = defaultServiceWithDirectory(Dataset1)
     val rs = get(
-      path = "/botino/esp8266/content?version=1.0.0"
+      path = "/firmwares/botino/esp8266/content?version=1.0.0"
       //headers = Headers(Header(Service.Esp8266VersionHeader, "1.0.0"))
     )
     rs.status shouldBe Status.Ok // can be downloaded
@@ -73,7 +73,7 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TmpDirCtx {
   it should "handle scenario of firmware providing too many versions" in {
     implicit val s = defaultServiceWithDirectory(Dataset1)
     val rs = get(
-      path = "/botino/esp8266/content?version=1.0.0",
+      path = "/firmwares/botino/esp8266/content?version=1.0.0",
       headers = Headers(Header(Service.Esp8266VersionHeader, "1.0.0"), Header(Service.Esp32VersionHeader, "2.0.0"))
     )
     rs.status shouldBe Status.Ok // can be downloaded
