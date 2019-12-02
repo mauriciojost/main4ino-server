@@ -37,3 +37,10 @@ CREATE TABLE descriptions (
   version TEXT,
   json TEXT
 );
+
+CREATE INDEX targets_requests_id_index ON targets_requests (id);
+CREATE INDEX targets_request_id_index ON targets (request_id);
+
+CREATE INDEX reports_requests_id_index ON reports_requests (id);
+CREATE INDEX reports_request_id_index ON reports (request_id);
+
