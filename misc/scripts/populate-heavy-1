@@ -100,18 +100,26 @@ function iterationwrite() {
   done
 }
 
-k=10
 
-time iterationmix dev1 $k
-time iterationmix dev2 $k
-time iterationmix dev3 $k
+function fullbenchmark() {
 
-time iterationwrite dev1 $k
-time iterationwrite dev2 $k
-time iterationwrite dev3 $k
+  k=10
 
-time iterationread dev1 $k
-time iterationread dev2 $k
-time iterationread dev3 $k
+  echo "### MIX"
+  time iterationmix dev1 $k
+  time iterationmix dev2 $k
+  time iterationmix dev3 $k
 
+  echo "### WRITE"
+  time iterationwrite dev1 $k
+  time iterationwrite dev2 $k
+  time iterationwrite dev3 $k
+
+  echo "### READ"
+  time iterationread dev1 $k
+  time iterationread dev2 $k
+  time iterationread dev3 $k
+}
+
+fullbenchmark &> misc/benchmarks/db/`git rev-parse HEAD`.benchmark.log
 
