@@ -1,42 +1,117 @@
 #!/usr/bin/env bash
 
-set -e -x
+set -e
 
 USER_PASSWORD="admin:password"
 SERVER_ADDRESS="localhost:8080"
 DESCRIPTION='{"version":"1.0.0", "json":[{"patterns": ["^actor1.p1$"], "descriptions": ["Property 1 xx."], "examples": ["1", "2", "3"]}]}'
+CURL='curl -s -o /tmp/file'
 
+
+function description() {
+  local device="$1"
+  $CURL -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$device/descriptions" -d "$DESCRIPTION"
+}
 
 function insert() {
   local device="$1"
   local actor="$2"
   local body="$3"
 
-  curl -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$device/descriptions" -d "$DESCRIPTION"
+  $CURL -X POST \
+    $USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor \
+    -d "$body"
+}
 
-  for i in `seq 1 1000`
+function getlast() {
+  local device="$1"
+  local actor="$2"
+  $CURL -X GET \
+    $USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor/last
+}
+
+function getlastall() {
+  local device="$1"
+  $CURL -X GET \
+    $USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$device/reports/last
+}
+
+
+function iterationmix() {
+  local dev=$1
+  local n=$2
+
+  for l in `seq 1 $n`
   do
-    echo "$i"
-    time \
-      curl -X POST \
-      $USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor \
-      -d "$body"
+    description dev$l
+    insert $dev body$l '{"command1":"command1text'$l'","command2":"command2text"}'
+    insert $dev body$l '{"mv1":"move1text'$l'","mv2":"move2text"}'
+    insert $dev clock$l '{"hour":5, "minute":'$l'}'
+    insert $dev clock$l '{"hour":3,"minute":4,"second":5}'
+    insert $dev clocksync$l '{"freq":"~1'$l'h"}'
+    insert $dev clocksync$l '{"freq":"~2'$l'h"}'
+    insert $dev clocksync$l '{"freq":"~4'$l'h"}'
+
+    getlast $dev body$l
+    getlast $dev clock$l
+    getlast $dev clocksync$l
+    getlastall $dev
+    getlastall $dev
+    getlastall $dev
   done
 }
 
-for l in `seq 1 10`
-do
-  insert dev$l actor$l '{"prop1":9,"prop2":10}' &
-  insert dev$l clock$l '{"hour":5}' &
-  insert dev$l clock2$l '{"hour":3,"minute":4,"second":5}' &
-  insert dev$l clock2$l '{"h":5}' &
-  insert dev$l clock2$l '{"b":9}' &
-  insert dev$l clock$l '{"h":5}' &
-  insert dev$l clock2$l '{"hour":7,"minute":9,"second":1}' &
-  insert dev$l clock2$l '{"h":1}' &
-  insert dev$l clock2$l '{"b":4}' &
-  insert dev$l clock$l '{"h":7}' &
-done
+function iterationread() {
+  local dev=$1
+  local n=$2
 
+  for l in `seq 1 $n`
+  do
+    getlast $dev body$l
+    getlast $dev clock$l
+    getlast $dev clocksync$l
+    getlastall $dev
+    getlastall $dev
+    getlastall $dev
+  done
+}
+
+function iterationwrite() {
+  local dev=$1
+  local n=$2
+
+  for l in `seq 1 $n`
+  do
+    description dev$l
+    insert $dev body$l '{"command1":"command1text'$l'","command2":"command2text"}'
+    insert $dev body$l '{"mv1":"move1text'$l'","mv2":"move2text"}'
+    insert $dev clock$l '{"hour":5, "minute":'$l'}'
+    insert $dev clock$l '{"hour":3,"minute":4,"second":5}'
+    insert $dev clocksync$l '{"freq":"~1'$l'h"}'
+    insert $dev clocksync$l '{"freq":"~2'$l'h"}'
+    insert $dev clocksync$l '{"freq":"~4'$l'h"}'
+    insert $dev body$l '{"command3":"command1text'$l'","command2":"command2text"}'
+    insert $dev body$l '{"mv3":"move1text'$l'","mv2":"move2text"}'
+    insert $dev clock$l '{"hour":8, "minute":'$l'}'
+    insert $dev clock$l '{"hour":8,"minute":4,"second":5}'
+    insert $dev clocksync$l '{"freq":"~2'$l'h"}'
+    insert $dev clocksync$l '{"freq":"~3'$l'h"}'
+    insert $dev clocksync$l '{"freq":"~4'$l'h"}'
+  done
+}
+
+k=10
+
+time iterationmix dev1 $k
+time iterationmix dev2 $k
+time iterationmix dev3 $k
+
+time iterationwrite dev1 $k
+time iterationwrite dev2 $k
+time iterationwrite dev3 $k
+
+time iterationread dev1 $k
+time iterationread dev2 $k
+time iterationread dev3 $k
 
 
