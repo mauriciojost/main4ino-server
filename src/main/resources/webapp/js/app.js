@@ -52,6 +52,17 @@ webPortalApp.config(function($stateProvider, $urlRouterProvider) {
             templateUrl: 'partial-control.html'
         })
 
+        .state('log', {
+            url: '/log?device',
+            templateUrl: 'partial-log.html'
+        })
+
+        .state('administrate', {
+            url: '/administrate?device',
+            templateUrl: 'partial-administrate.html'
+        })
+
+
 });
 
 webPortalApp.controller(
@@ -145,68 +156,8 @@ webPortalApp.controller(
             $scope.queriedDevice = '...';
 
             $scope.tabl = 'reports'; // table to get records from
-            $scope.from = -0.5; // in days, lower-bound to filter history records
+            $scope.from = -0.1; // in days, lower-bound to filter history records
             $scope.until = 0.0; // in days, upper-bound to filter history records
-
-            $scope.deleteDev = function() {
-                $log.log('Deleting device ' + $scope.device + ' in ' + $scope.tabl);
-                var req = {
-                    method: 'DELETE',
-                    url: 'api/v1/administrator/devices/' + $scope.device + '/' + $scope.tabl,
-                    headers: {'Content-Type': 'application/json', 'Session': $scope.session},
-                    data: $scope.request
-                };
-
-                $log.log('Executing request...');
-
-                $http(req).success(
-                    function(data) {
-                        $log.log('Deleted: ' + JSON.stringify(data));
-                        $scope.result = '[]';
-                    }
-                ).error(
-                    function(data) {
-                        $log.log('Problem requesting delete: ' + JSON.stringify(data));
-                        BootstrapDialog.show({
-                            title: 'Error',
-                            message: 'Failed to delete: ' + data
-                        });
-                    }
-                );
-
-                $log.log('Executed request.');
-
-            };
-
-            $scope.getLogs = function() {
-                $log.log('Getting logs for device ' + $scope.device);
-                var req = {
-                    method: 'GET',
-                    url: 'api/v1/devices/' + $scope.device + '/logs',
-                    headers: {'Session': $scope.session}
-                };
-
-                $log.log('Executing request...');
-
-                $http(req).success(
-                    function(data) {
-                        $log.log('Logs obtained.');
-                        $scope.logs = data;
-                    }
-                ).error(
-                    function(data) {
-                        $log.log('Could not retrieve logs.');
-                        $scope.logs = '-';
-                        BootstrapDialog.show({
-                            title: 'Error',
-                            message: 'Failed to retrieve logs.'
-                        });
-                    }
-                );
-
-                $log.log('Executed request.');
-
-            };
 
             $scope.search = function() {
 
@@ -481,5 +432,92 @@ webPortalApp.controller(
             }
 
         }
+);
+
+
+webPortalApp.controller(
+    'LogController',
+    function($scope, $http, $log, $location) {
+
+        $scope.session = getCookie("session");
+        $scope.device = getCookie("device");
+
+        $scope.logsIgnore = 0; // in days, lower-bound to filter history records
+        $scope.logsLength = 2000; // in days, upper-bound to filter history records
+
+        $scope.getLogs = function() {
+            $log.log('Getting logs for device ' + $scope.device);
+            var req = {
+                method: 'GET',
+                url: 'api/v1/devices/' + $scope.device + '/logs?ignore=' + $scope.logsIgnore + '&length=' + $scope.logsLength,
+                headers: {'Session': $scope.session}
+            };
+
+            $log.log('Executing request...');
+
+            $http(req).success(
+                function(data) {
+                    $log.log('Logs obtained.');
+                    $scope.logs = data;
+                }
+            ).error(
+                function(data) {
+                    $log.log('Could not retrieve logs.');
+                    $scope.logs = '-';
+                    BootstrapDialog.show({
+                        title: 'Error',
+                        message: 'Failed to retrieve logs.'
+                    });
+                }
+            );
+
+            $log.log('Executed request.');
+
+        };
+
+    }
+);
+
+
+webPortalApp.controller(
+    'AdministrateController',
+    function($scope, $http, $log, $location) {
+
+        $scope.session = getCookie("session");
+        $scope.device = getCookie("device");
+
+        $scope.tabl = 'reports'; // table to get records from
+
+        $scope.deleteDev = function() {
+            $log.log('Deleting device ' + $scope.device + ' in ' + $scope.tabl);
+            var req = {
+                method: 'DELETE',
+                url: 'api/v1/administrator/devices/' + $scope.device + '/' + $scope.tabl,
+                headers: {'Content-Type': 'application/json', 'Session': $scope.session},
+                data: $scope.request
+            };
+
+            $log.log('Executing request...');
+
+            $http(req).success(
+                function(data) {
+                    $log.log('Deleted: ' + JSON.stringify(data));
+                    $scope.result = '[]';
+                }
+            ).error(
+                function(data) {
+                    $log.log('Problem requesting delete: ' + JSON.stringify(data));
+                    BootstrapDialog.show({
+                        title: 'Error',
+                        message: 'Failed to delete: ' + data
+                    });
+                }
+            );
+
+            $log.log('Executed request.');
+
+        };
+
+    }
 );
 

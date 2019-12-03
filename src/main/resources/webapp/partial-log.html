@@ -1,0 +1,46 @@
+<div class="page-header">
+    <h2>Log</h2>
+</div>
+
+<div ng-controller="LogController">
+
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <container>
+                <h3>1. Specify your device information</h3>
+                <br/>
+                <div>
+                    <input type="text" name="device" class="form-control" ng-model="device" placeholder="Device Name"/>
+                    <div class="col-md-2">
+                        <input type="number" name="logsIgnore" class="form-control" ng-model="logsIgnore" placeholder="Ignore [bytes]"/>
+                        <input type="number" name="logsLength" class="form-control" ng-model="logsLength" placeholder="Length [bytes]"/>
+                    </div>
+                </div>
+            </container>
+        </div>
+    </div>
+
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <container>
+                <h3>2. Get logs</h3>
+                <br/>
+                <div class="text-center">
+                    <button ng-click="getLogs();" type="button" class="btn btn-lg btn-primary">Get</button>
+                </div>
+                <br/>
+            </container>
+        </div>
+    </div>
+
+    <div class="panel panel-info">
+        <div class="panel-heading">
+            <container>
+                <h3>3. Investigate logs</h3>
+                <br/>
+                <div class="text-left" style="white-space:pre-wrap;">{{ logs }}</div>
+            </container>
+        </div>
+    </div>
+
+</div>
