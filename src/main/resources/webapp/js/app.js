@@ -231,6 +231,11 @@ webPortalApp.controller(
             $scope.session = getCookie("session");
             $scope.device = getCookie("device");
 
+            $scope.includeStatus = true;
+            $scope.includeDebug = true;
+            $scope.includeSensitive = true;
+            $scope.includeAdvanced = true;
+
             $scope.queriedDevice = '...';
 
             $log.log('Device: ' + $scope.device);
