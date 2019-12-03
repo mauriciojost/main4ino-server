@@ -48,9 +48,9 @@ function iterationmix() {
     insert $dev body$l '{"mv1":"move1text'$l'","mv2":"move2text"}'
     insert $dev clock$l '{"hour":5, "minute":'$l'}'
     insert $dev clock$l '{"hour":3,"minute":4,"second":5}'
-    insert $dev clocksync$l '{"freq":"~1'$l'h"}'
-    insert $dev clocksync$l '{"freq":"~2'$l'h"}'
-    insert $dev clocksync$l '{"freq":"~4'$l'h"}'
+    insert $dev clocksync$l '{"+freq":"~1'$l'h"}'
+    insert $dev clocksync$l '{"+freq":"~2'$l'h"}'
+    insert $dev clocksync$l '{"+freq":"~4'$l'h"}'
 
     getlast $dev body$l
     getlast $dev clock$l
