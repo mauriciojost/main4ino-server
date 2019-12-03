@@ -490,6 +490,9 @@ webPortalApp.controller(
 
         };
 
+        if ($scope.device) { // proceed if device is provided
+            $scope.getLogs();
+        }
     }
 );
 
