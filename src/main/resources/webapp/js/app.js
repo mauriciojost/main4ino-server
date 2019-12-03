@@ -141,6 +141,16 @@ webPortalApp.controller(
               $state.go('control', {session: $scope.session})
             }
 
+            $scope.goLog = function() {
+                $log.log('Going to log');
+                $state.go('log', {session: $scope.session})
+            }
+
+            $scope.goAdministrate = function() {
+                $log.log('Going to administrate');
+                $state.go('administrate', {session: $scope.session})
+            }
+
             $scope.loginUsingSession();
 
         }
