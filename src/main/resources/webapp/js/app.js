@@ -80,14 +80,13 @@ webPortalApp.controller(
                     url: 'api/v1/user',
                     headers: {'Session': $scope.session}
                 };
-                $http(requs).success(
-                    function(usname) {
-                        $log.log('Found: ' + usname);
-                        $scope.logged = usname;
-                    }
-                ).error(
-                    function(data) {
-                        $log.log('Not logged in: ' + data);
+                $http(requs).then(
+                    function(r) {
+                        $log.log('Found: ' + r.data);
+                        $scope.logged = r.data;
+                    },
+                    function(r) {
+                        $log.log('Not logged in: ' + r.data);
                     }
                 );
             }
@@ -102,19 +101,18 @@ webPortalApp.controller(
                     url: 'api/v1/session',
                     headers: {'Authorization': 'Basic ' + btoa($scope.username + ":" + $scope.password)}
                 };
-                $http(req).success(
-                    function(sessn) {
-                        $log.log('Logged in correctly: ' + sessn);
+                $http(req).then(
+                    function(r) {
+                        $log.log('Logged in correctly: ' + r.data);
                         setCookie("device", $scope.device, 100);
-                        setCookie("session", sessn, 100);
+                        setCookie("session", r.data, 100);
                         $scope.loginUsingSession();
-                    }
-                ).error(
-                    function(data) {
-                        $log.log('Invalid session: ' + data);
+                    },
+                    function(r) {
+                        $log.log('Invalid session: ' + r.data);
                         BootstrapDialog.show({
                             title: 'Error',
-                            message: 'Failed to log in: ' + data
+                            message: 'Failed to log in: ' + r.data
                         });
                     }
                 );
@@ -194,21 +192,20 @@ webPortalApp.controller(
 
                 $log.log('Executing request...');
 
-                $http(req).success(
-                    function(data) {
-                        $log.log('Found: ' + JSON.stringify(data));
+                $http(req).then(
+                    function(r) {
+                        $log.log('Found: ' + JSON.stringify(r.data));
                         $scope.queriedDevice = $scope.device;
-                        $scope.result = data;
+                        $scope.result = r.data;
                         $scope.result.reverse();
-                    }
-                ).error(
-                    function(data) {
-                        $log.log('Problem requesting: ' + JSON.stringify(data));
+                    },
+                    function(r) {
+                        $log.log('Problem requesting: ' + JSON.stringify(r.data));
                         $scope.queriedDevice = 'Failed query for ' + $scope.device;
                         $scope.result = '[]'
                         BootstrapDialog.show({
                             title: 'Error',
-                            message: 'Failed to retrieve history: ' + data
+                            message: 'Failed to retrieve history: ' + r.data
                         });
                     }
                 );
@@ -268,11 +265,11 @@ webPortalApp.controller(
                     data: $scope.request
                 };
 
-                $http(reqDescs).success(
-                    function(dataRawJson) {
+                $http(reqDescs).then(
+                    function(r) {
 
-                        $log.log('Data raw json: ' + JSON.stringify(dataRawJson));
-                        data = dataRawJson["versionJson"]["json"]
+                        $log.log('Data raw json: ' + JSON.stringify(r.data));
+                        data = r.data.data["versionJson"]["json"]
                         $log.log('Json parsed: ' + JSON.stringify(data));
 
                         $log.log('Initialize property legends');
@@ -315,10 +312,9 @@ webPortalApp.controller(
                         }
 
 
-                    }
-                ).error(
-                    function(data) {
-                        $log.log('Failed descritpion: ' + data);
+                    },
+                    function(r) {
+                        $log.log('Failed descritpion: ' + r.data);
                         $scope.propDescriptions = function(actor, propName) {
                           return '?';
                         }
@@ -353,32 +349,30 @@ webPortalApp.controller(
                 $log.log('Executing requests...');
                 $scope.queriedDevice = $scope.device + " (in progress)";
 
-                $http(reqReports).success(
-                    function(data) {
-                        $log.log('Success reports: ' + JSON.stringify(data));
-                        $scope.reportsSummary = data;
-                        $scope.targetsSummaryUserInput = data;
+                $http(reqReports).then(
+                    function(r) {
+                        $log.log('Success reports: ' + JSON.stringify(r.data));
+                        $scope.reportsSummary = r.data;
+                        $scope.targetsSummaryUserInput = r.data;
                         $scope.queriedDevice = $scope.device;
-                    }
-                ).error(
-                    function(data) {
-                        $log.log('Failed reports: ' + data);
+                    },
+                    function(r) {
+                        $log.log('Failed reports: ' + r.data);
                         $scope.reportsSummary = {};
-                        $scope.queriedDevice = $scope.device + " (failed: " + data + ")";
+                        $scope.queriedDevice = $scope.device + " (failed: " + r.data + ")";
                     }
                 );
 
-                $http(reqTargets).success(
-                    function(data) {
-                        $log.log('Success targets: ' + JSON.stringify(data));
-                        $scope.targetsSummary = data;
+                $http(reqTargets).then(
+                    function(r) {
+                        $log.log('Success targets: ' + JSON.stringify(r.data));
+                        $scope.targetsSummary = r.data;
                         $scope.queriedDevice = $scope.device;
-                    }
-                ).error(
-                    function(data) {
-                        $log.log('Failed to retrieve targets: ' + data);
+                    },
+                    function(r) {
+                        $log.log('Failed to retrieve targets: ' + r.data);
                         $scope.targetsSummary = {};
-                        $scope.queriedDevice = $scope.device + " (failed: " + data + ")";
+                        $scope.queriedDevice = $scope.device + " (failed: " + r.data + ")";
                     }
                 );
 
@@ -428,13 +422,12 @@ webPortalApp.controller(
                     data: JSON.stringify(jsn)
                 };
 
-                $http(req).success(
-                    function(data) {
+                $http(req).then(
+                    function(r) {
                         $log.log('Success change');
                         $scope.search();
-                    }
-                ).error(
-                    function(data) {
+                    },
+                    function(r) {
                         $log.log('Failed change');
                     }
                 );
@@ -470,13 +463,12 @@ webPortalApp.controller(
 
             $log.log('Executing request...');
 
-            $http(req).success(
-                function(data) {
+            $http(req).then(
+                function(r) {
                     $log.log('Logs obtained.');
-                    $scope.logs = data;
-                }
-            ).error(
-                function(data) {
+                    $scope.logs = r.data;
+                },
+                function(r) {
                     $log.log('Could not retrieve logs.');
                     $scope.logs = '-';
                     BootstrapDialog.show({
@@ -517,17 +509,16 @@ webPortalApp.controller(
 
             $log.log('Executing request...');
 
-            $http(req).success(
-                function(data) {
-                    $log.log('Deleted: ' + JSON.stringify(data));
+            $http(req).then(
+                function(r) {
+                    $log.log('Deleted: ' + JSON.stringify(r.data));
                     $scope.result = '[]';
-                }
-            ).error(
-                function(data) {
-                    $log.log('Problem requesting delete: ' + JSON.stringify(data));
+                },
+                function(r) {
+                    $log.log('Problem requesting delete: ' + JSON.stringify(r.data));
                     BootstrapDialog.show({
                         title: 'Error',
-                        message: 'Failed to delete: ' + data
+                        message: 'Failed to delete: ' + r.data
                     });
                 }
             );
