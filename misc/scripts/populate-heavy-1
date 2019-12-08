@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 set -e
-set -x
 
 USER_PASSWORD="admin:password"
 SERVER_ADDRESS="localhost:8080"
@@ -111,7 +110,7 @@ function iterationwrite() {
 
 function fullbenchmark() {
 
-  k=100
+  k=10
 
   echo "### MIX"
   time iterationmix dev1 $k
