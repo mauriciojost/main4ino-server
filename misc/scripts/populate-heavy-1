@@ -2,19 +2,22 @@
 
 set -e
 
+echo "Launch me from the root directory..."
+sleep 1
+
 USER_PASSWORD="admin:password"
 SERVER_ADDRESS="localhost:8080"
+DESCRIPTION='{"version":"1.0.0", "json":[{"patterns": ["^actor1.p1$"], "descriptions": ["Property 1 xx."], "examples": ["1", "2", "3"]}]}'
 
-function session() {
-  curl -s -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/session"
-}
+rm -fr db*
+sbt 'runMain org.mauritania.main4ino.Server src/main/resources/defaultconfig/' &
 
-SESSION=`session`
+sleep 20
+
+SESSION=`curl -s -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/session"`
 
 CURL="curl -s -o /tmp/file --header session:$SESSION"
 
-
-DESCRIPTION='{"version":"1.0.0", "json":[{"patterns": ["^actor1.p1$"], "descriptions": ["Property 1 xx."], "examples": ["1", "2", "3"]}]}'
 function description() {
   local device="$1"
   $CURL -X POST "http://$SERVER_ADDRESS/api/v1/devices/$device/descriptions" -d "$DESCRIPTION"
@@ -108,25 +111,26 @@ function iterationwrite() {
 }
 
 
+k=50
+
 function fullbenchmark() {
 
-  k=50
-
-  echo "### MIX"
+  echo "### MIX k=$k"
   time iterationmix dev1 $k
   time iterationmix dev2 $k
   time iterationmix dev3 $k
 
-  echo "### WRITE"
+  echo "### WRITE k=$k"
   time iterationwrite dev1 $k
   time iterationwrite dev2 $k
   time iterationwrite dev3 $k
 
-  echo "### READ"
+  echo "### READ k=$k"
   time iterationread dev1 $k
   time iterationread dev2 $k
   time iterationread dev3 $k
 }
 
-fullbenchmark &> misc/benchmarks/db/`git rev-parse HEAD`.benchmark.log
+mkdir -p misc/benchmarks/db-k$k/
+fullbenchmark &> misc/benchmarks/db-k$k/`git rev-parse HEAD`.benchmark.log
 
