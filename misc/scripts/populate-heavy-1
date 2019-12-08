@@ -110,7 +110,7 @@ function iterationwrite() {
 
 function fullbenchmark() {
 
-  k=10
+  k=50
 
   echo "### MIX"
   time iterationmix dev1 $k
