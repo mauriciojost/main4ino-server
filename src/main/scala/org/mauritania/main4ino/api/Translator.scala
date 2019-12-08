@@ -40,7 +40,7 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       d <- repository.getDescription(device)
-      _ <- logger.debug(s"Got description for $device: $d")
+      _ <- logger.debug(s"Got description for $device")
     } yield (d)
   }
 
@@ -49,7 +49,7 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       timeUtc <- time.nowUtc
       inserts <- repository.setDescription(device, j, Time.asTimestamp(timeUtc))
-      _ <- logger.debug(s"Set description for ${device}: $j")
+      _ <- logger.debug(s"Set description for ${device}")
     } yield (inserts)
   }
 
@@ -67,7 +67,7 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       device <- repository.selectDeviceWhereRequestId(t, dev, id)
-      _ <- logger.debug(s"GET device $id from table $t: $device")
+      _ <- logger.debug(s"GET device $id from table $t")
     } yield (device)
   }
 
@@ -83,7 +83,7 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
       device <- dev
       id <- repository.insertDevice(t, device, Time.asTimestamp(timeUtc))
       response = IdResponse(id)
-      _ <- logger.debug(s"POST device $device into table $t: $response")
+      _ <- logger.debug(s"POST device $device into table $t")
     } yield (response)
   }
 
@@ -111,7 +111,7 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       device <- repository.selectMaxDevice(table, dev, status)
-      _ <- logger.debug(s"GET last device $dev from table $table with status $status: $device")
+      _ <- logger.debug(s"GET last device $dev from table $table with status $status")
     } yield (device)
   }
 
@@ -119,7 +119,7 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       device <- repository.selectMaxDeviceActor(table, dev, act, status)
-      _ <- logger.debug(s"GET last device $dev actor $act from table $table with status $status: $device")
+      _ <- logger.debug(s"GET last device $dev actor $act from table $table with status $status")
     } yield (device)
   }
 
