@@ -1,0 +1,39 @@
+### MIX
+
+real	0m2.884s
+user	0m0.711s
+sys	0m0.349s
+
+real	0m2.418s
+user	0m0.732s
+sys	0m0.326s
+
+real	0m2.351s
+user	0m0.695s
+sys	0m0.363s
+### WRITE
+
+real	0m2.377s
+user	0m0.710s
+sys	0m0.390s
+
+real	0m2.338s
+user	0m0.778s
+sys	0m0.331s
+
+real	0m2.314s
+user	0m0.748s
+sys	0m0.353s
+### READ
+
+real	0m1.520s
+user	0m0.287s
+sys	0m0.180s
+
+real	0m1.477s
+user	0m0.299s
+sys	0m0.154s
+
+real	0m1.457s
+user	0m0.308s
+sys	0m0.150s
