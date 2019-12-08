@@ -1,16 +1,24 @@
 #!/usr/bin/env bash
 
 set -e
+set -x
 
 USER_PASSWORD="admin:password"
 SERVER_ADDRESS="localhost:8080"
+
+function session() {
+  curl -s -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/session"
+}
+
+SESSION=`session`
+
+CURL="curl -s -o /tmp/file --header session:$SESSION"
+
+
 DESCRIPTION='{"version":"1.0.0", "json":[{"patterns": ["^actor1.p1$"], "descriptions": ["Property 1 xx."], "examples": ["1", "2", "3"]}]}'
-CURL='curl -s -o /tmp/file'
-
-
 function description() {
   local device="$1"
-  $CURL -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$device/descriptions" -d "$DESCRIPTION"
+  $CURL -X POST "http://$SERVER_ADDRESS/api/v1/devices/$device/descriptions" -d "$DESCRIPTION"
 }
 
 function insert() {
@@ -19,7 +27,7 @@ function insert() {
   local body="$3"
 
   $CURL -X POST \
-    $USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor \
+    $SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor \
     -d "$body"
 }
 
@@ -27,13 +35,13 @@ function getlast() {
   local device="$1"
   local actor="$2"
   $CURL -X GET \
-    $USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor/last
+    $SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor/last
 }
 
 function getlastall() {
   local device="$1"
   $CURL -X GET \
-    $USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$device/reports/last
+    $SERVER_ADDRESS/api/v1/devices/$device/reports/last
 }
 
 
@@ -103,7 +111,7 @@ function iterationwrite() {
 
 function fullbenchmark() {
 
-  k=10
+  k=100
 
   echo "### MIX"
   time iterationmix dev1 $k
