@@ -268,12 +268,12 @@ webPortalApp.controller(
                     function(r) {
 
                         $log.log('Data raw json: ' + JSON.stringify(r.data));
-                        var data = r.data["versionJson"]["json"]
-                        $log.log('Json parsed: ' + JSON.stringify(data));
+                        var dt = r.data["versionJson"]["json"];
+                        $log.log('Json parsed: ' + JSON.stringify(dt));
 
                         $log.log('Initialize property legends');
-                        for(var i in data) {
-                            var o = data[i];
+                        for(var i in dt) {
+                            var o = dt[i];
                             var legend = {
                                 patterns: o["patterns"],
                                 descriptions: o["descriptions"],
