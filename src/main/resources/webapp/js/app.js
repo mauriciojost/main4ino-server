@@ -261,15 +261,14 @@ webPortalApp.controller(
                 var reqDescs = {
                     method: 'GET',
                     url: 'api/v1/devices/' + $scope.device + '/descriptions',
-                    headers: {'Content-Type': 'application/json', 'Session': $scope.session},
-                    data: $scope.request
+                    headers: {'Content-Type': 'application/json', 'Session': $scope.session}
                 };
 
                 $http(reqDescs).then(
                     function(r) {
 
                         $log.log('Data raw json: ' + JSON.stringify(r.data));
-                        data = r.data.data["versionJson"]["json"]
+                        var data = r.data["versionJson"]["json"]
                         $log.log('Json parsed: ' + JSON.stringify(data));
 
                         $log.log('Initialize property legends');
