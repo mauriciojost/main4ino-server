@@ -66,14 +66,6 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with DecodersI
     }
   }
 
-  class AutherIO(config: Config) extends Auther[IO] {
-    def authenticateAndCheckAccessFromRequest(request: Request[IO]): IO[AccessAttempt] =
-      IO(Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path))
-
-    def generateSession(user: User): IO[UserSession] =
-      IO(Auther.sessionFromUser(user, config.privateKeyBits, config.nonceStartupTime))
-  }
-
   "Create target request" should {
     val r = stub[RepositoryIO]
     val t = stub[TimeIO]
@@ -140,7 +132,7 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with DecodersI
 
   private def defaultService(r: Repository[IO], t: Time[IO]) = {
     new Service(
-      auth = new AutherIO(AuthConfig),
+      auth = new Auther[IO](AuthConfig),
       tr = new Translator[IO](
         repository = r,
         time = t,

@@ -38,7 +38,7 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TransactorCtx with Tmp
   def defaultServiceWithDirectory(transactor: HikariTransactor[IO], tmp: Path): Service[IO] = {
     val t = new FixedTime()
     new Service(
-      new AutherIO(DefaultSecurityConfig),
+      new Auther(DefaultSecurityConfig),
       new Translator(
         new Repository(transactor),
         t,

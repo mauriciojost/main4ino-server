@@ -11,7 +11,7 @@ import org.mauritania.main4ino.api.{Translator, v1}
 import org.mauritania.main4ino.db.{Database, Repository}
 import org.mauritania.main4ino.firmware.Store
 import org.mauritania.main4ino.helpers.{ConfigLoader, DevLogger, Scheduler, Time}
-import org.mauritania.main4ino.security.AutherIO
+import org.mauritania.main4ino.security.Auther
 
 import scala.concurrent.duration.FiniteDuration
 import cats.effect._
@@ -45,7 +45,7 @@ object Server extends IOApp {
       _ <- Resource.liftF(logger.debug(s"Configs created"))
       transactor <- Database.transactor[F](configApp.database, transactorEc, Blocker.liftExecutionContext(blockerTransactorEc))
       _ <- Resource.liftF(logger.debug(s"Transactor created"))
-      auth = new AutherIO[F](configUsers)
+      auth = new Auther[F](configUsers)
       repo = new Repository[F](transactor)
       time = new Time[F]()
       devLogger = new DevLogger(Paths.get(configApp.devLogger.logsBasePath), time, devLoggerEc)

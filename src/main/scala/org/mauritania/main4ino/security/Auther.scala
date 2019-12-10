@@ -18,7 +18,7 @@ import scala.util.Try
   * Authorization and authentication
   * @tparam F
   */
-trait Auther[F[_]] {
+class Auther[F[_]: Sync](config: Config) {
 
   /**
     * Authenticate the user given a request and attempt an access to the resource
@@ -33,20 +33,12 @@ trait Auther[F[_]] {
     *
     * The resource to be accessed is in the uri of the request.
     */
-  def authenticateAndCheckAccessFromRequest(request: Request[F]): F[AccessAttempt]
+  def authenticateAndCheckAccessFromRequest(request: Request[F]): F[AccessAttempt] =
+    Sync[F].delay(Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path))
 
   /**
     * Provide a session given a user
     */
-  def generateSession(user: User): F[UserSession]
-
-}
-
-class AutherIO[F[_]: Sync](config: Config) extends Auther[F] {
-
-  def authenticateAndCheckAccessFromRequest(request: Request[F]): F[AccessAttempt] =
-    Sync[F].delay(Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path))
-
   def generateSession(user: User): F[UserSession] =
     Sync[F].delay(Auther.sessionFromUser(user, config.privateKeyBits, config.nonceStartupTime))
 }
