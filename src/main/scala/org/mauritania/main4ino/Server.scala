@@ -8,7 +8,7 @@ import cats.effect.{ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, Resourc
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.mauritania.main4ino.db.Repository.ReqType
 import org.mauritania.main4ino.api.{Translator, v1}
-import org.mauritania.main4ino.db.{Database, Repository}
+import org.mauritania.main4ino.db.{Cleaner, Database, Repository}
 import org.mauritania.main4ino.firmware.Store
 import org.mauritania.main4ino.helpers.{ConfigLoader, DevLogger, Scheduler, Time}
 import org.mauritania.main4ino.security.Auther
@@ -20,66 +20,63 @@ import org.http4s.server.{Router, Server => H4Server}
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.implicits._
 import doobie.util.ExecutionContexts
-
 import pureconfig._
 import pureconfig.generic.auto._
 
 object Server extends IOApp {
 
-  def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](args: List[String]): Resource[F, H4Server[F]] = {
+  def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](args: List[String]): Resource[F, H4Server[F]] = for {
+    logger <- Resource.liftF(Slf4jLogger.fromClass[F](getClass))
+    _ <- Resource.liftF(logger.info(s"Initializing server..."))
 
-    for {
+    // Thread Pools - https://gist.github.com/djspiewak/46b543800958cf61af6efa8e072bfd5c
+    //cpuBondEc <- ExecutionContexts.fixedThreadPool[F](Runtime.getRuntime().availableProcessors())
+    //nonBlockingIoEc <- ExecutionContexts.cachedThreadPool[F]
+    blockingIoEc <- ExecutionContexts.cachedThreadPool[F]
+    _ <- Resource.liftF(logger.debug(s"Thread pools initialized..."))
 
-      logger <- Resource.liftF(Slf4jLogger.fromClass[F](Translator.getClass))
-      transactorEc <- ExecutionContexts.cachedThreadPool[F] // TODO See "thread pools" GIST from djspiewak
-      blockerTransactorEc <- ExecutionContexts.cachedThreadPool[F]
-      devLoggerEc <- ExecutionContexts.cachedThreadPool[F]
-      webappServiceEc <- ExecutionContexts.cachedThreadPool[F]
-      firmwareServiceEc <- ExecutionContexts.cachedThreadPool[F]
-      _ <- Resource.liftF(logger.debug(s"Cached thread pools created"))
-      configDir <- Resource.liftF[F, File](resolveConfigDir(args))
-      applicationConf = new File(configDir, "application.conf")
-      securityConf = new File(configDir, "security.conf")
-      configApp <- Resource.liftF(ConfigLoader.loadFromFile[F, Config](applicationConf))
-      configUsers <- Resource.liftF(ConfigLoader.loadFromFile[F, security.Config](securityConf))
-      _ <- Resource.liftF(logger.debug(s"Configs created"))
-      transactor <- Database.transactor[F](configApp.database, transactorEc, Blocker.liftExecutionContext(blockerTransactorEc))
-      _ <- Resource.liftF(logger.debug(s"Transactor created"))
-      auth = new Auther[F](configUsers)
-      repo = new Repository[F](transactor)
-      time = new Time[F]()
-      devLogger = new DevLogger(Paths.get(configApp.devLogger.logsBasePath), time, devLoggerEc)
-      _ <- Resource.liftF(logger.debug(s"DevLogger created"))
-      fwStore = new Store(Paths.get(configApp.firmware.firmwareBasePath))
-      _ <- Resource.liftF(logger.debug(s"Store created"))
-      cleanupRepoTask = for { // TODO move away
-        logger <- Slf4jLogger.fromClass[F](Server.getClass)
-        now <- time.nowUtc
-        epSecs = now.toEpochSecond
-        reportsCleaned <- repo.cleanup(ReqType.Reports, epSecs, configApp.database.cleanup.retentionSecs)
-        targetsCleaned <- repo.cleanup(ReqType.Targets, epSecs, configApp.database.cleanup.retentionSecs)
-        _ <- logger.info(s"Repository cleanup at $now ($epSecs): $reportsCleaned+$targetsCleaned requests cleaned")
-      } yield (reportsCleaned + targetsCleaned)
+    configDir <- Resource.liftF[F, File](resolveConfigDir(args))
+    applicationConf = new File(configDir, "application.conf")
+    securityConf = new File(configDir, "security.conf")
+    configApp <- Resource.liftF(ConfigLoader.loadFromFile[F, Config](applicationConf))
+    configUsers <- Resource.liftF(ConfigLoader.loadFromFile[F, security.Config](securityConf))
+    _ <- Resource.liftF(logger.debug(s"Configurations created..."))
 
-      httpApp = Router(
-        "/" -> new webapp.Service("/webapp/index.html", webappServiceEc).service,
-        "/" -> new firmware.Service(fwStore, firmwareServiceEc).service,
-        "/api/v1" -> new v1.Service(auth, new Translator(repo, time, devLogger, fwStore), time).serviceWithAuthentication
-      ).orNotFound
+    transactor <- Database.transactor[F](configApp.database, blockingIoEc, Blocker.liftExecutionContext(blockingIoEc))
+    _ <- Resource.liftF(logger.debug(s"Database initialized..."))
 
-      _ <- Resource.liftF(Database.initialize(transactor))
-      _ <- Resource.liftF(logger.debug(s"Database initialized"))
-      cleanupPeriodSecs = FiniteDuration(configApp.database.cleanup.periodSecs, TimeUnit.SECONDS)
-      _ <- Resource.liftF(Concurrent[F].start(Scheduler.periodic[F, Int](cleanupPeriodSecs, cleanupRepoTask)))
-      _ <- Resource.liftF(logger.debug(s"Cleanup task initialized"))
-      exitCodeServer <- BlazeServerBuilder[F]
-        .bindHttp(configApp.server.port, configApp.server.host)
-        .withHttpApp(httpApp)
-        .resource
-      _ <- Resource.liftF(logger.debug(s"Server initialized"))
+    auth = new Auther[F](configUsers)
+    repo = new Repository[F](transactor)
+    time = new Time[F]()
+    cleaner = new Cleaner[F](repo, time)
+    devLogger = new DevLogger(Paths.get(configApp.devLogger.logsBasePath), time, blockingIoEc)
+    _ <- Resource.liftF(logger.debug(s"Device logger initialized..."))
 
-    } yield exitCodeServer
-  }
+    fwStore = new Store(Paths.get(configApp.firmware.firmwareBasePath))
+    _ <- Resource.liftF(logger.debug(s"Firmware store initialized..."))
+
+    httpApp = Router(
+      "/" -> new webapp.Service("/webapp/index.html", blockingIoEc).service,
+      "/" -> new firmware.Service(fwStore, blockingIoEc).service,
+      "/api/v1" -> new v1.Service(auth, new Translator(repo, time, devLogger, fwStore), time).serviceWithAuthentication
+    ).orNotFound
+    _ <- Resource.liftF(logger.debug(s"Router initialized..."))
+
+    _ <- Resource.liftF(Database.initialize(transactor))
+    _ <- Resource.liftF(logger.debug(s"Database initialized..."))
+
+    cleanupRepoTask = cleaner.cleanupRepo(configApp.database.cleanup.retentionSecs)
+    cleanupPeriodSecs = FiniteDuration(configApp.database.cleanup.periodSecs, TimeUnit.SECONDS)
+    _ <- Resource.liftF(Concurrent[F].start(Scheduler.periodic[F, Int](cleanupPeriodSecs, cleanupRepoTask)))
+    _ <- Resource.liftF(logger.debug(s"Cleanup task initialized..."))
+
+    exitCodeServer <- BlazeServerBuilder[F]
+      .bindHttp(configApp.server.port, configApp.server.host)
+      .withHttpApp(httpApp)
+      .resource
+    _ <- Resource.liftF(logger.info(s"Server initialized."))
+
+  } yield exitCodeServer
 
   private def resolveConfigDir[F[_]: Sync](args: List[String]): F[File] = Sync[F].delay {
     val arg1 = args match {
