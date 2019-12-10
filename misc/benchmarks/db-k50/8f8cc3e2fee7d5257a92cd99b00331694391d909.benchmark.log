@@ -1,0 +1,39 @@
+### MIX k=50
+
+real	0m13.203s
+user	0m3.724s
+sys	0m1.787s
+
+real	0m13.412s
+user	0m3.793s
+sys	0m1.893s
+
+real	0m14.058s
+user	0m3.715s
+sys	0m1.890s
+### WRITE k=50
+
+real	0m11.930s
+user	0m4.112s
+sys	0m2.257s
+
+real	0m12.560s
+user	0m4.603s
+sys	0m2.337s
+
+real	0m11.706s
+user	0m4.327s
+sys	0m2.033s
+### READ k=50
+
+real	1m4.134s
+user	0m1.953s
+sys	0m0.886s
+
+real	0m55.161s
+user	0m1.585s
+sys	0m0.816s
+
+real	0m54.878s
+user	0m1.480s
+sys	0m0.775s
