@@ -8,6 +8,7 @@ object Dependencies {
         val LogbackVersion = "1.2.3"
         val DoobieVersion = "0.8.6"
         val H2Version = "1.4.200"
+        val SqliteVersion = "3.23.1"
         val FlywayVersion = "6.0.8"
         val CirceVersion = "0.12.3"
         val PureConfigVersion = "0.10.2"
@@ -36,7 +37,9 @@ object Dependencies {
           "org.tpolecat" %% "doobie-core" % Versions.DoobieVersion,
           "org.tpolecat" %% "doobie-h2" % Versions.DoobieVersion,
           "org.tpolecat" %% "doobie-hikari" % Versions.DoobieVersion,
+          "org.tpolecat" %% "doobie-postgres" % Versions.DoobieVersion,
           "com.h2database" % "h2" % Versions.H2Version,
+          "org.xerial" % "sqlite-jdbc" % Versions.SqliteVersion,
           "org.flywaydb" % "flyway-core" % Versions.FlywayVersion,
           "com.github.pureconfig" %% "pureconfig" % Versions.PureConfigVersion,
           "com.gilt" %% "gfc-semver" % Versions.GfcSemver,

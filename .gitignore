@@ -7,3 +7,4 @@
 /app.log
 /.ivy2/
 /.sbt/
+/dbsqlite
