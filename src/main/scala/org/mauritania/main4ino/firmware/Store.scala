@@ -14,6 +14,7 @@ import cats.implicits._
 object Store {
 
   final val BySemVer = Ordering.ordered[SemVer]
+  final val ByCoordsVer = Ordering.by[FirmwareCoords, SemVer](i => SemVer(i.version))
 
   case class FirmwareCoords(
     project: ProjectName,
@@ -51,10 +52,9 @@ class Store[F[_]: Sync](basePath: Path) {
   def getFirmware(coords: FirmwareCoords): F[Attempt[Firmware]] = {
     val resp: F[Attempt[Firmware]] = for {
       logger <- Slf4jLogger.fromClass[F](getClass)
-      _ <- logger.debug(s"Retrieving firmware: $coords")
       available <- listFirmwares(coords.project, coords.platform)
       resolved = resolveVersion(coords, available)
-      _ <- logger.debug(s"Resolved firmware: $coords")
+      _ <- logger.debug(s"Requested firmware: $coords, resolved: $resolved")
       checked <- resolved match {
         case Some(v) => checkVersion(v)
         case None => Sync[F].delay[Attempt[Firmware]](Left(s"Could not resolve: $coords"))
@@ -63,10 +63,11 @@ class Store[F[_]: Sync](basePath: Path) {
     resp
   }
 
-  def listFirmwares(project: ProjectName, platform: Platform): F[Set[FirmwareCoords]] = {
+  def listFirmwares(project: ProjectName, platform: Platform): F[Seq[FirmwareCoords]] = {
+    import Store._
     val path = basePath.resolve(project)
     listFiles(path.toFile).map { files =>
-      files.flatMap(FirmwareCoords.fromFile).filter(_.platform == platform).toSet
+      files.flatMap(FirmwareCoords.fromFile).filter(_.platform == platform).sorted(ByCoordsVer)
     }
   }
 
@@ -85,7 +86,7 @@ class Store[F[_]: Sync](basePath: Path) {
     } yield located
   }
 
-  private def resolveVersion(target: FirmwareCoords, available: Set[FirmwareCoords]): Option[FirmwareCoords] = {
+  private def resolveVersion(target: FirmwareCoords, available: Seq[FirmwareCoords]): Option[FirmwareCoords] = {
     import Store._
     target match {
       case _ if available.isEmpty =>

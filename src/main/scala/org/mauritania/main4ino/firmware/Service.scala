@@ -49,26 +49,21 @@ class Service[F[_] : Sync: Effect: ContextShift](st: Store[F], ec: ExecutionCont
     case a@GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? FirmVersionParam(version) => {
       val headers = a.headers
       val currentVersion = extractCurrentVersion(headers)
+      val coords = FirmwareCoords(project, version, platform)
 
-      val attempt: F[Attempt[Firmware]] = for {
+      for {
         logger <- Slf4jLogger.fromClass[F](getClass)
-        coords = FirmwareCoords(project, version, platform)
-        _ <- logger.debug(s"Requested firmware: $coords / $headers / $currentVersion")
+        _ <- logger.debug(s"Requested firmware content: $coords / $headers / $currentVersion")
         fa <- st.getFirmware(coords)
-        _ <- fa match {
-          case Right(_) => logger.debug(s"Found firmware for $coords, serving ...")
-          case Left(msg) => logger.warn(msg)
+        response <- fa match {
+          case Right(Firmware(_, _, c)) if (currentVersion.exists(_ == c.version)) => // same version as current
+            logger.debug(s"Same version as current one: $c...").flatMap(_ => NotModified())
+          case Right(Firmware(f, l, c)) => // different version than current, serving...
+            logger.debug(s"Proposing firmware $c...").flatMap(_ => Ok.apply(f, `Content-Length`.unsafeFromLong(l)))
+          case Left(msg) => // no such version
+            logger.warn(s"Firmware version not found: $msg").flatMap(_ => NotFound())
         }
-      } yield fa
-
-      attempt.flatMap {
-        case Right(Firmware(f, l, c)) if (currentVersion.exists(_ == c.version)) => // same version as current
-          NotModified()
-        case Right(Firmware(f, l, c)) => // different version than current, serving...
-          Ok.apply(f, `Content-Length`.unsafeFromLong(l))
-        case Left(_) => // no such version
-          NotFound()
-      }
+      } yield response
     }
 
     /**
