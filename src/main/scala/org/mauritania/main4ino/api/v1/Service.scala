@@ -81,7 +81,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       val attempt: F[Either[Throwable, Translator.TimeResponse]] = tr.nowAtTimezone(tz.getOrElse("UTC")).attempt
       attempt.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeTextPlain)
-        case Left(f) => BadRequest()
+        case Left(_) => BadRequest()
       }
     }
 
@@ -92,7 +92,9 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Return the session id from the 'basic auth' provided credentials.
       * The provided token can be used to authenticate without providing user/password.
-      * To be used by web ui to retrieve a session token that can be provided via cookies.
+      * To be used by
+      * - web ui to retrieve a session token that can be provided via cookies
+      * - devices to get the session token, and then speed up authentication process using it
       *
       * Returns: OK (200)
       */
