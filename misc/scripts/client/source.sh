@@ -13,13 +13,13 @@ AUTHENTICATED_CURL_CMD="curl $CURL_OPTS --header session:`session`"
 
 echo $AUTHENTICATED_CURL_CMD
 
-function description() {
+function main4ino_post_description() {
   local device="$1"
   local description="$2"
   $AUTHENTICATED_CURL_CMD -X POST "$SERVER_ADDRESS/api/v1/devices/$device/descriptions" -d "$description"
 }
 
-function insert() {
+function main4ino_post_report() {
   local device="$1"
   local actor="$2"
   local body="$3"
@@ -27,14 +27,34 @@ function insert() {
   $AUTHENTICATED_CURL_CMD -X POST $SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor -d "$body"
 }
 
-function getlast() {
+function main4ino_post_target() {
+  local device="$1"
+  local actor="$2"
+  local body="$3"
+
+  $AUTHENTICATED_CURL_CMD -X POST $SERVER_ADDRESS/api/v1/devices/$device/targets/actors/$actor -d "$body"
+}
+
+
+function main4ino_get_last_report() {
+  local device="$1"
+  $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/reports/last
+}
+
+function main4ino_get_last_target() {
+  local device="$1"
+  $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/targets/last
+}
+
+function main4ino_get_last_report_actor() {
   local device="$1"
   local actor="$2"
   $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor/last
 }
 
-function getlastall() {
+function main4ino_get_last_target_actor() {
   local device="$1"
-  $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/reports/last
+  local actor="$2"
+  $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/target/actors/$actor/last
 }
 
