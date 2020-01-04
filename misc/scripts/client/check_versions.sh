@@ -3,7 +3,11 @@ source source.sh
 for i in $DEVICES_LIST
 do 
   echo "## $i:"
-  main4ino_get_summary_report $i | jq . | grep "version\|project\|platform"
+  main4ino_get_summary_report $i | jq . | grep "version\|project\|platform\|utarget\|ufreq\|alias"
+  main4ino_get_last_report $i | jq .dbId.creation | xargs -I% date -d @%
+  main4ino_get_logs $i 0 200
+  echo ""
+  echo ""
 done
 
 for pl in $PLATFORMS_LIST

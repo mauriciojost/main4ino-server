@@ -36,6 +36,14 @@ function main4ino_post_target() {
 }
 
 
+function main4ino_get_logs() {
+  local device="$1"
+  local ignore="${2:-0}"
+  local length="${3:-2000}"
+  $AUTHENTICATED_CURL_CMD -X GET "$SERVER_ADDRESS/api/v1/devices/$device/logs?ignore=$ignore&length=$length"
+}
+
+
 function main4ino_get_last_report() {
   local device="$1"
   $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/reports/last
