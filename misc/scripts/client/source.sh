@@ -46,6 +46,16 @@ function main4ino_get_last_target() {
   $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/targets/last
 }
 
+function main4ino_get_summary_report() {
+  local device="$1"
+  $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/reports/summary
+}
+
+function main4ino_get_summary_target() {
+  local device="$1"
+  $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/targets/summary
+}
+
 function main4ino_get_last_report_actor() {
   local device="$1"
   local actor="$2"
@@ -57,4 +67,11 @@ function main4ino_get_last_target_actor() {
   local actor="$2"
   $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/target/actors/$actor/last
 }
+
+function main4ino_get_firmwares() {
+  local project="$1"
+  local platform="$2"
+  $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/firmwares/$project/$platform
+}
+
 
