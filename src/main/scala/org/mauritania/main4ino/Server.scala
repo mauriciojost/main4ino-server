@@ -28,10 +28,7 @@ object Server extends IOApp {
   def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](args: List[String]): Resource[F, H4Server[F]] = for {
     logger <- Resource.liftF(Slf4jLogger.fromClass[F](getClass))
     _ <- Resource.liftF(logger.info(s"Initializing server..."))
-
     // Thread Pools - https://gist.github.com/djspiewak/46b543800958cf61af6efa8e072bfd5c
-    //cpuBondEc <- ExecutionContexts.fixedThreadPool[F](Runtime.getRuntime().availableProcessors())
-    //nonBlockingIoEc <- ExecutionContexts.cachedThreadPool[F]
     blockingIoEc <- ExecutionContexts.cachedThreadPool[F]
     _ <- Resource.liftF(logger.debug(s"Thread pools initialized..."))
 
