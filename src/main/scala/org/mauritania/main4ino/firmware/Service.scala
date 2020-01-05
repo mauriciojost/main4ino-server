@@ -57,11 +57,11 @@ class Service[F[_] : Sync: Effect: ContextShift](st: Store[F], ec: ExecutionCont
         fa <- st.getFirmware(coords)
         response <- fa match {
           case Right(Firmware(_, _, c)) if (currentVersion.exists(_ == c.version)) => // same version as current
-            logger.debug(s"Same version as current one: $c...").flatMap(_ => NotModified())
+            logger.debug(s"Already up-to-date: $c...").flatMap(_ => NotModified())
           case Right(Firmware(f, l, c)) => // different version than current, serving...
-            logger.debug(s"Proposing firmware $c...").flatMap(_ => Ok.apply(f, `Content-Length`.unsafeFromLong(l)))
+            logger.info(s"Must upgrade. Proposing firmware: $c...").flatMap(_ => Ok.apply(f, `Content-Length`.unsafeFromLong(l)))
           case Left(msg) => // no such version
-            logger.warn(s"Firmware version not found: $msg").flatMap(_ => NotFound())
+            logger.warn(s"Cannot upgrade, version not found: $msg").flatMap(_ => NotFound())
         }
       } yield response
     }
