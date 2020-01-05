@@ -16,6 +16,7 @@ import cats._
 import cats.implicits._
 
 import scala.util.Try
+import scala.util.matching.Regex
 
 /**
   * Authorization and authentication
@@ -45,7 +46,7 @@ class Auther[F[_]: Sync](config: Config) {
         AuthedRequest(
           authInfo = u,
           req = request
-            .withPathInfo(Auther.dropTokenFromPath(request.pathInfo))
+            .withPathInfo(Auther.dropTokenAndSessionFromPath(request.pathInfo))
         )
       }
     } yield authedRequest
@@ -69,12 +70,16 @@ object Auther {
   type AuthenticationAttempt = Either[ErrorMsg, User]
 
   private final val HeaderSession = CaseInsensitiveString("session")
-  private final val UriTokenRegex = ("^/token/(.*?)/(.*)$").r
+  private final val UriTokenRegex = ("^(.*?)/token/(.*?)/(.*)$").r
+  private final val UriSessionRegex = ("^(.*?)/session/(.*?)/(.*)$").r
+  private final val GroupPre = 1
+  private final val GroupThe = 2
+  private final val GroupPos = 3
 
   def authenticateAndCheckAccess(usersBy: UsersBy, encry: EncryptionConfig, headers: Headers, uri: Uri): AccessAttempt = {
     val resource = uri.path
     val credentials = userCredentialsFromRequest(encry, headers, uri)
-    val session = sessionFromRequest(headers)
+    val session = sessionFromRequest(headers, uri)
     for {
       user <- authenticatedUserFromSessionOrCredentials(encry, usersBy, session, credentials)
       authorized <- checkAccess(user, resource)
@@ -102,7 +107,7 @@ object Auther {
     * Check if a user can access a given resource
     */
   def checkAccess(user: User, resourceUriPath: Path): AccessAttempt = {
-    user.authorized(dropTokenFromPath(resourceUriPath))
+    user.authorized(dropTokenAndSessionFromPath(resourceUriPath))
       .toRight(s"User '${user.name}' is not authorized to access resource '${resourceUriPath}'")
   }
 
@@ -113,7 +118,7 @@ object Auther {
     }
     // URI auth: .../token/<token>/... authentication (some services
     // like IFTTT or devices ESP8266 HTTP UPDATE do not support headers, but only URI credentials...)
-    val tokenFromUri = UriTokenRegex.findFirstMatchIn(uri.path).flatMap(a => Try(a.group(1)).toOption)
+    val tokenFromUri = UriTokenRegex.findFirstMatchIn(uri.path).flatMap(a => Try(a.group(GroupThe)).toOption)
     val validCredsFromUri = tokenFromUri
       .map(t => BasicCredentials(t))
       .map(c => (c.username, hashPassword(c.password, encry.salt)))
@@ -122,12 +127,21 @@ object Auther {
       .orElse(validCredsFromUri)
   }
 
-  def sessionFromRequest(headers: Headers): Option[UserSession] = headers.get(HeaderSession).map(_.value)
+  def sessionFromRequest(headers: Headers, uri: Uri): Option[UserSession] = {
+
+    // URI auth: .../session/<session>/... authentication (some services
+    // like IFTTT or devices ESP8266 HTTP UPDATE do not support headers, but only URI credentials...)
+    val uriSession = UriSessionRegex.findFirstMatchIn(uri.path).flatMap(a => Try(a.group(GroupThe)).toOption)
+    val headerSession = headers.get(HeaderSession).map(_.value)
+    headerSession.orElse(uriSession)
+  }
 
   def hashPassword(password: String, salt: String): String = password.bcrypt(salt)
 
-  private def dropTokenFromPath(path: Path): Path = {
-    UriTokenRegex.findFirstMatchIn(path).map(m => "/" + m.group(2)).getOrElse(path)
+  private def dropTokenAndSessionFromPath(path: Path): Path = {
+    def drop(r: Regex, p: Path) = r.findFirstMatchIn(p).map(m => m.group(GroupPre) + "/" + m.group(GroupPos)).getOrElse(p)
+    val res = drop(UriSessionRegex, drop(UriTokenRegex, path))
+    res
   }
 
   /**
