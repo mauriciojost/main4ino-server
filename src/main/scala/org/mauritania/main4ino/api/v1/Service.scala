@@ -7,30 +7,29 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.circe._
-
 import cats.implicits._
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.http4s.{AuthedService, EntityDecoder, EntityEncoder, HttpService, Request, Response}
 import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.CountResponse
-import org.mauritania.main4ino.helpers.{AuthLogger, HttpMeter, Time}
+import org.mauritania.main4ino.helpers.{CustomAuthMiddleware, HttpMeter, Time}
 import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models._
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
 import org.mauritania.main4ino.security.{Auther, User}
 import org.mauritania.main4ino.{ContentTypeAppJson, ContentTypeTextPlain}
+import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import fs2.Stream
 
-class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) extends Http4sDsl[F] {
+class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], firmware: FirmwareService[F]) extends Http4sDsl[F] {
 
   import Url._
 
@@ -77,7 +76,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: OK (200) | BAD_REQUEST (400)
       */
-    case GET -> _ / "time" :? TimezoneParam(tz) as _ => {
+    case GET -> Root / "time" :? TimezoneParam(tz) as _ => {
       val attempt: F[Either[Throwable, Translator.TimeResponse]] = tr.nowAtTimezone(tz.getOrElse("UTC")).attempt
       attempt.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeTextPlain)
@@ -98,7 +97,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: OK (200)
       */
-    case a@POST -> _ / "session" as user => {
+    case a@POST -> Root / "session" as user => {
       val session: F[UserSession] = auth.generateSession(user)
       session.flatMap(s => Ok(s, ContentTypeTextPlain))
     }
@@ -111,7 +110,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: OK (200)
       */
-    case a@GET -> _ / "user" as user => {
+    case a@GET -> Root / "user" as user => {
       Ok(user.name, ContentTypeTextPlain)
     }
 
@@ -129,9 +128,25 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: OK (200)
       */
-    case a@DELETE -> _ / "administrator" / "devices" / Dev(device) / Req(table) as _ => {
+    case a@DELETE -> Root / "administrator" / "devices" / Dev(device) / Req(table) as _ => {
       val x: F[Translator.CountResponse] = tr.deleteDevice(device, table)
       x.flatMap(i => Ok(i, ContentTypeAppJson))
+    }
+
+
+    /**
+      * GET /devices/<dev>/firmware/...
+      *
+      * Forward to firmware store services (i.e. [[firmware.service]]).
+      */
+    case a @ GET -> "devices" /: Dev(device) /: "firmware" /: forwarded as user => {
+      val oldUri = a.req.uri
+      val newUri = oldUri.withPath(forwarded.toString)
+      val newReq = a.req.withUri(newUri)
+      firmware.service(newReq).value.flatMap {
+        case Some(x) => Sync[F].delay(x)
+        case None => NotFound()
+      }
     }
 
 
@@ -144,7 +159,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: OK (200)
       */
-    case a@PUT -> _ / "devices" / Dev(device) / "logs" as _ => {
+    case a@PUT -> Root / "devices" / Dev(device) / "logs" as _ => {
       val d = a.req.bodyAsText
       val r: F[Attempt[Unit]] = tr.updateLogs(device, d)
       r.flatMap {
@@ -154,7 +169,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     }
 
     // TODO DEPRECATED, to be removed (and adapt arduino part consequently)
-    case a@POST -> _ / "devices" / Dev(device) / "logs" as _ => {
+    case a@POST -> Root / "devices" / Dev(device) / "logs" as _ => {
       val d = a.req.bodyAsText
       val r: F[Attempt[Unit]] = tr.updateLogs(device, d)
       r.flatMap {
@@ -175,7 +190,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a@GET -> _ / "devices" / Dev(device) / "logs" :? IgnoreParam(ignore) +& LengthParam(length) as _ => {
+    case a@GET -> Root / "devices" / Dev(device) / "logs" :? IgnoreParam(ignore) +& LengthParam(length) as _ => {
       val r: F[Attempt[Stream[F, String]]] = tr.getLogs(device, ignore, length)
       r.flatMap {
         case Right(l) => Ok(l)
@@ -194,7 +209,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: CREATED (201)
       */
-    case a@POST -> _ / "devices" / Dev(device) / "descriptions" as _ => {
+    case a@POST -> Root / "devices" / Dev(device) / "descriptions" as _ => {
       val d = a.req.decodeJson[VersionJson]
       val r: F[CountResponse] = d.flatMap(i => tr.updateDescription(device, i)).map(CountResponse(_))
       r.flatMap { v =>
@@ -213,7 +228,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a@GET -> _ / "devices" / Dev(device) / "descriptions" as _ => {
+    case a@GET -> Root / "devices" / Dev(device) / "descriptions" as _ => {
       val x: F[Attempt[Description]] = tr.getLastDescription(device)
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -238,7 +253,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: CREATED (201)
       */
-    case a@POST -> _ / "devices" / Dev(device) / Req(table) as _ => {
+    case a@POST -> Root / "devices" / Dev(device) / Req(table) as _ => {
       val am = a.req.decodeJson[DeviceProps]
       val d = for {
         a <- am
@@ -262,7 +277,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: OK (200)
       */
-    case a@GET -> _ / "devices" / Dev(device) / Req(table) :? FromParam(from) +& ToParam(to) +& StatusParam(st) +& IdsParam(ids) as _ => {
+    case a@GET -> Root / "devices" / Dev(device) / Req(table) :? FromParam(from) +& ToParam(to) +& StatusParam(st) +& IdsParam(ids) as _ => {
       val idsOnly = ids.exists(identity)
       if (idsOnly) {
         val x: F[Translator.IdsOnlyResponse] = tr.getDevicesIds(device, table, from, to, st)
@@ -288,7 +303,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       * Returns: OK (200) | NO_CONTENT (204)
       *
       */
-    case a@GET -> _ / "devices" / Dev(device) / Req(table) / "summary" :? FromParam(from) +& ToParam(to) +& StatusParam(st) as _ => {
+    case a@GET -> Root / "devices" / Dev(device) / Req(table) / "summary" :? FromParam(from) +& ToParam(to) +& StatusParam(st) as _ => {
       val x: F[Option[Device]] = tr.getDevicesSummary(device, table, from, to, st)
       x.flatMap {
         case Some(v) => Ok(v.actors.asJson, ContentTypeAppJson)
@@ -308,7 +323,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: OK (200) | NOT_MODIFIED (304)
       */
-    case a@PUT -> _ / "devices" / Dev(device) / Req(table) / ReqId(requestId) :? StatusParam(st) as _ => {
+    case a@PUT -> Root / "devices" / Dev(device) / Req(table) / ReqId(requestId) :? StatusParam(st) as _ => {
       val x: F[Attempt[Translator.CountResponse]] = tr.updateDeviceStatus(table, device, requestId, st.getOrElse(Status.Closed))
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -317,7 +332,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
     }
 
     // TODO DEPRECATED, to be removed (and adapt arduino part consequently)
-    case a@POST -> _ / "devices" / Dev(device) / Req(table) / ReqId(requestId) :? StatusParam(st) as _ => {
+    case a@POST -> Root / "devices" / Dev(device) / Req(table) / ReqId(requestId) :? StatusParam(st) as _ => {
       val x: F[Attempt[Translator.CountResponse]] = tr.updateDeviceStatus(table, device, requestId, st.getOrElse(Status.Closed))
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -336,7 +351,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a@GET -> _ / "devices" / Dev(device) / Req(table) / ReqId(requestId) as _ => {
+    case a@GET -> Root / "devices" / Dev(device) / Req(table) / ReqId(requestId) as _ => {
       val x: F[Attempt[DeviceId]] = tr.getDevice(table, device, requestId)
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -354,7 +369,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a@GET -> _ / "devices" / Dev(device) / Req(table) / "last" :? StatusParam(status) as _ => {
+    case a@GET -> Root / "devices" / Dev(device) / Req(table) / "last" :? StatusParam(status) as _ => {
       val x: F[Option[DeviceId]] = tr.getDeviceLast(device, table, status)
       x.flatMap {
         case Some(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -375,7 +390,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: CREATED (201)
       */
-    case a@POST -> _ / "devices" / Dev(device) / Req(table) / "actors" / Act(actor) as _ => {
+    case a@POST -> Root / "devices" / Dev(device) / Req(table) / "actors" / Act(actor) as _ => {
       val actorProps = a.req.decodeJson[ActorProps]
       val dev = for {
         p <- actorProps
@@ -397,7 +412,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: CREATED (201) | NOT_MODIFIED (304)
       */
-    case a@POST -> _ / "devices" / Dev(device) / Req(table) / ReqId(rid) / "actors" / Act(actor) as _ => {
+    case a@POST -> Root / "devices" / Dev(device) / Req(table) / ReqId(rid) / "actors" / Act(actor) as _ => {
       val pm = a.req.decodeJson[ActorProps]
       val x: F[Attempt[Translator.CountResponse]] = tr.postDeviceActor(pm, device, actor, table, rid)
       x.flatMap {
@@ -417,7 +432,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a@GET -> _ / "devices" / Dev(device) / Req(table) / "actors" / Act(actor) / "last" :? StatusParam(status) as _ => {
+    case a@GET -> Root / "devices" / Dev(device) / Req(table) / "actors" / Act(actor) / "last" :? StatusParam(status) as _ => {
       val x: F[Option[DeviceId]] = tr.getDeviceActorLast(device, actor, table, status)
       x.flatMap { m =>
         val v = m.flatMap(_.device.actor(actor))
@@ -439,7 +454,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a@GET -> _ / "devices" / Dev(device) / Req(table) / ReqId(rid) / "actors" / Act(actor) as _ => {
+    case a@GET -> Root / "devices" / Dev(device) / Req(table) / ReqId(rid) / "actors" / Act(actor) as _ => {
       val x: F[Attempt[ActorProps]] = tr.getDeviceActor(table, device, actor, rid)
       x.flatMap {
         case Right(d) => Ok(d.asJson, ContentTypeAppJson)
@@ -450,7 +465,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F]) ex
 
   private[v1] val onFailure: AuthedRoutes[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
   private[v1] val customAuthMiddleware: AuthMiddleware[F, User] =
-    AuthMiddleware(Kleisli(auth.authenticateAndCheckAccessFromRequest) andThen Kleisli(AuthLogger.logAuthentication[F] _), onFailure)
+    CustomAuthMiddleware(Kleisli(auth.authenticateAndCheckAccess), onFailure)
   val serviceWithAuthentication: HttpRoutes[F] = HttpMeter.timedHttpMiddleware[F].apply(customAuthMiddleware(service))
 
   private[v1] def request(r: Request[F]): F[Response[F]] = serviceWithAuthentication(r).getOrElseF(NotFound())

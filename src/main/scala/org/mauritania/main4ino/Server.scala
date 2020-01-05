@@ -51,11 +51,12 @@ object Server extends IOApp {
 
     fwStore = new Store(Paths.get(configApp.firmware.firmwareBasePath))
     _ <- Resource.liftF(logger.debug(s"Firmware store initialized..."))
+    firmwareService = new firmware.Service(fwStore, blockingIoEc)
 
     httpApp = Router(
       "/" -> new webapp.Service("/webapp/index.html", blockingIoEc).service,
-      "/" -> new firmware.Service(fwStore, blockingIoEc).service,
-      "/api/v1" -> new v1.Service(auth, new Translator(repo, time, devLogger, fwStore), time).serviceWithAuthentication
+      "/" -> firmwareService.service,
+      "/api/v1" -> new v1.Service(auth, new Translator(repo, time, devLogger), time, firmwareService).serviceWithAuthentication
     ).orNotFound
     _ <- Resource.liftF(logger.debug(s"Router initialized..."))
 

@@ -3,14 +3,17 @@ package org.mauritania.main4ino.security
 import java.time.Clock
 
 import cats.effect.Sync
-import org.http4s.{BasicCredentials, Credentials, Headers, Request, Uri}
+import org.http4s.{AuthedRequest, BasicCredentials, Credentials, Headers, Request, Uri}
 import org.http4s.Uri.Path
 import org.http4s.util.CaseInsensitiveString
-import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
+import org.mauritania.main4ino.security.Auther.{AccessAttempt, ErrorMsg, UserSession}
 import org.reactormonk.CryptoBits
 import com.github.t3hnar.bcrypt._
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.headers.Authorization
 import org.mauritania.main4ino.security.Config.UsersBy
+import cats._
+import cats.implicits._
 
 import scala.util.Try
 
@@ -33,8 +36,20 @@ class Auther[F[_]: Sync](config: Config) {
     *
     * The resource to be accessed is in the uri of the request.
     */
-  def authenticateAndCheckAccessFromRequest(request: Request[F]): F[AccessAttempt] =
-    Sync[F].delay(Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path))
+  def authenticateAndCheckAccess(request: Request[F]): F[Either[ErrorMsg, AuthedRequest[F, User]]] = {
+    for {
+      logger <- Slf4jLogger.fromClass[F](getClass)
+      attempt = Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri)
+      _ <- logger.debug(s">>> Authentication: ${attempt.map(_.id)}")
+      authedRequest = attempt.map { u =>
+        AuthedRequest(
+          authInfo = u,
+          req = request
+            .withPathInfo(Auther.dropTokenFromPath(request.pathInfo))
+        )
+      }
+    } yield authedRequest
+  }
 
   /**
     * Provide a session given a user
@@ -54,9 +69,10 @@ object Auther {
   type AuthenticationAttempt = Either[ErrorMsg, User]
 
   private final val HeaderSession = CaseInsensitiveString("session")
-  private final val UriTokenRegex = ("^(.*)/token/(.*?)/(.*)$").r
+  private final val UriTokenRegex = ("^/token/(.*?)/(.*)$").r
 
-  def authenticateAndCheckAccess(usersBy: UsersBy, encry: EncryptionConfig, headers: Headers, uri: Uri, resource: Path): AccessAttempt = {
+  def authenticateAndCheckAccess(usersBy: UsersBy, encry: EncryptionConfig, headers: Headers, uri: Uri): AccessAttempt = {
+    val resource = uri.path
     val credentials = userCredentialsFromRequest(encry, headers, uri)
     val session = sessionFromRequest(headers)
     for {
@@ -95,8 +111,9 @@ object Auther {
     val credsFromHeader = headers.get(Authorization).collect {
       case Authorization(BasicCredentials(username, password)) => (username, hashPassword(password, encry.salt))
     }
-    // URI auth: .../token/<token>/... authentication (some services like IFTTT do not support yet headers, only URI credentials...)
-    val tokenFromUri = UriTokenRegex.findFirstMatchIn(uri.path).flatMap(a => Try(a.group(2)).toOption)
+    // URI auth: .../token/<token>/... authentication (some services
+    // like IFTTT or devices ESP8266 HTTP UPDATE do not support headers, but only URI credentials...)
+    val tokenFromUri = UriTokenRegex.findFirstMatchIn(uri.path).flatMap(a => Try(a.group(1)).toOption)
     val validCredsFromUri = tokenFromUri
       .map(t => BasicCredentials(t))
       .map(c => (c.username, hashPassword(c.password, encry.salt)))
@@ -110,7 +127,7 @@ object Auther {
   def hashPassword(password: String, salt: String): String = password.bcrypt(salt)
 
   private def dropTokenFromPath(path: Path): Path = {
-    UriTokenRegex.findFirstMatchIn(path).map(m => m.group(1) + "/" + m.group(3)).getOrElse(path)
+    UriTokenRegex.findFirstMatchIn(path).map(m => "/" + m.group(2)).getOrElse(path)
   }
 
   /**

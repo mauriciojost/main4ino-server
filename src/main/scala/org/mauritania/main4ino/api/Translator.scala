@@ -16,9 +16,8 @@ import org.mauritania.main4ino.models._
 import fs2.Stream
 import org.http4s.Headers
 import org.mauritania.main4ino.db.Repository
-import org.mauritania.main4ino.firmware.Store
 
-class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger: DevLogger[F], firmware: Store[F]) extends Http4sDsl[F] {
+class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger: DevLogger[F]) extends Http4sDsl[F] {
 
   def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Unit]] = {
     for {

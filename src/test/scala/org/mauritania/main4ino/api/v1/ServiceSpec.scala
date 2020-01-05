@@ -31,6 +31,7 @@ import org.http4s.circe._
 import org.mauritania.main4ino.DecodersIO
 import org.mauritania.main4ino.db.Repository
 import org.mauritania.main4ino.firmware.Store
+import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
@@ -131,6 +132,9 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with DecodersI
   }
 
   private def defaultService(r: Repository[IO], t: Time[IO]) = {
+    implicit val cs = IO.contextShift(Helper.testExecutionContext)
+    val store = new Store[IO](basePath = Paths.get("/tmp"))
+    val firmwareService = new FirmwareService(store, Helper.testExecutionContext)
     new Service(
       auth = new Auther[IO](AuthConfig),
       tr = new Translator[IO](
@@ -140,12 +144,10 @@ class ServiceSpec extends WordSpec with MockFactory with Matchers with DecodersI
           basePath = Paths.get("/tmp"),
           time = t,
           ExecutionContext.global
-        )(Sync[IO], IO.contextShift(ExecutionContext.global)),
-        firmware = new Store[IO](
-          basePath = Paths.get("/tmp")
-        )
+        )(Sync[IO], cs)
       ),
-      time = t
+      time = t,
+      firmwareService
     )(Sync[IO])
   }
 

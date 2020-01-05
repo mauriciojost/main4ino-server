@@ -24,6 +24,9 @@ import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security._
 import org.mauritania.main4ino.{Helper, TmpDirCtx}
 import org.scalatest.{FlatSpec, Matchers, Sequential}
+import org.mauritania.main4ino.firmware.{Service => FirmwareService}
+import cats._
+import cats.implicits._
 
 class ServiceFuncSpec extends FlatSpec with Matchers with TransactorCtx with TmpDirCtx {
 
@@ -37,15 +40,16 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TransactorCtx with Tmp
 
   def defaultServiceWithDirectory(transactor: HikariTransactor[IO], tmp: Path): Service[IO] = {
     val t = new FixedTime()
+    implicit val cs = IO.contextShift(Helper.testExecutionContext)
     new Service(
       new Auther(DefaultSecurityConfig),
       new Translator(
         new Repository(transactor),
         t,
-        new DevLogger[IO](tmp, t, Helper.testExecutionContext)(Sync[IO], IO.contextShift(Helper.testExecutionContext)),
-        new Store(tmp)
+        new DevLogger[IO](tmp, t, Helper.testExecutionContext)(Sync[IO], cs)
       ),
-      t
+      t,
+      new FirmwareService[IO](new Store(Paths.get("src/test/resources/firmwares/1")), Helper.testExecutionContext)
     )
   }
 
@@ -161,6 +165,18 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TransactorCtx with Tmp
 
   }
 
+  it should "list available firmwares" in {
+    withTransactor { tr =>
+      implicit val s = defaultService(tr)
+      val r0 = get("/devices/dev1/firmware/firmwares/botino/esp8266")
+      r0.status shouldBe Status.Ok
+      val r1 = get("/token/234234234234/devi1ces/dev1/firmware/firmwares/botino/esp8266", Headers())
+      r1.status shouldBe Status.Forbidden
+      val r2 = get(s"/token/${DefaultCredentials.token}/devices/dev1/firmware/firmwares/botino/esp8266", Headers())
+      r2.status shouldBe Status.Ok
+    }
+  }
+
   it should "create a target/report and fill it in afterwards" in {
     withTransactor { tr =>
 
@@ -198,8 +214,8 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TransactorCtx with Tmp
       putExpect("/devices/dev1/targets/1?status=O", "{}", Status.NotModified)
 
     }
-  }
 
+  }
 
   it should "create targets and merge the properties correctly" in {
     withTransactor { tr =>
@@ -308,8 +324,8 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TransactorCtx with Tmp
     r.as[Json].unsafeRunSync()
   }
 
-  private[this] def get(path: String)(implicit service: Service[IO]): Response[IO] = {
-    val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path), headers = DefaultHeaders)
+  private[this] def get(path: String, headers: Headers = DefaultHeaders)(implicit service: Service[IO]): Response[IO] = {
+    val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path), headers = headers)
     service.request(request).unsafeRunSync()
   }
 
@@ -348,6 +364,7 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TransactorCtx with Tmp
     Stream.fromIterator[IO](content.toCharArray.map(_.toByte).toIterator)
   }
 
-  final val DefaultHeaders = Headers(Authorization(BasicCredentials(User1.id, User1Pass)))
+  final val DefaultCredentials = BasicCredentials(User1.id, User1Pass)
+  final val DefaultHeaders = Headers(Authorization(DefaultCredentials))
 
 }
