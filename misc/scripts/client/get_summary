@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+source source.sh
+for i in $DEVICES_LIST
+do 
+  echo "### Device $i ###"
+  summary_report=`main4ino_get_summary_report $i`
+  aliase=`echo $summary_report | jq -r  '.settings.alias'`
+  version=`echo $summary_report | jq -r  '.settings."~version"'`
+  project=`echo $summary_report | jq -r  '.settings.project'`
+  platform=`echo $summary_report | jq -r  '.settings.platform'`
+  echo "Last time it provided a report: `main4ino_get_last_report $i | jq -r .dbId.creation | xargs -I% date -d @%`"
+  echo "Logs:"
+  main4ino_get_logs $i 0 $LOG_LENGTH
+  echo "Info:"
+  echo "- alias: $aliase"
+  echo "- project: $project"
+  echo "- platform: $platform"
+  echo "Versions:"
+  echo " - current          : $version"
+  echo " - latest available: "
+  main4ino_get_firmwares $project $platform  | jq -r .[].version | tail -3
+  echo "###"
+  echo ""
+done
+

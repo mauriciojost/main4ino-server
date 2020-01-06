@@ -11,8 +11,6 @@ function session() {
 
 AUTHENTICATED_CURL_CMD="curl $CURL_OPTS --header session:`session`"
 
-echo $AUTHENTICATED_CURL_CMD
-
 function main4ino_post_description() {
   local device="$1"
   local description="$2"

@@ -1,14 +1,13 @@
 # TODO
 
-- Perform cleanup of repository, service v1 and its doc, and url class
 - Document the return type of each method of the REST API
 - Make the naming for deviceName/dev/device homogeneous: dev
 - Make the naming for actor/act/a homogeneous: act
-- Optimize GET 'last' request from device as it takes way too long (>10secs !!!)
-- Speed up 'last' request from device as it takes way too long (>10secs !!!)
 
 # DONE
 
+- Speed up 'last' request from device as it takes way too long (>10secs !!!)
+- Perform cleanup of repository, service v1 and its doc, and url class
 - Make the DevLogger tests write to a temporary directory that is afterwards cleaned up
 - Make a check on status transitions: forbid invalid transitions and document them
 - Migrate HELP as documentation in Service
