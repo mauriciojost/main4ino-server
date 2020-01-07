@@ -292,7 +292,7 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TransactorCtx with Tmp
       withTmpDir { tmp =>
         implicit val s = defaultServiceWithDirectory(tr, tmp)
         val logMsg = """failure"""
-        postExpectOk("/devices/dev1/logs", logMsg)
+        putExpect("/devices/dev1/logs", logMsg, Status.Ok)
 
         val log = get(s"/devices/dev1/logs?length=${logMsg.size}")
         log.status should be(Status.Ok)
