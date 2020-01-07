@@ -5,7 +5,7 @@ import io.circe.Json
 import org.http4s.client.blaze.{BlazeClientBuilder, Http1Client}
 import org.http4s.client.{Client, UnexpectedStatus}
 import org.http4s.{BasicCredentials, Method, Request, Status, Uri}
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers, Sequential}
+import org.scalatest.{BeforeAndAfterAll, Sequential}
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
@@ -15,8 +15,10 @@ import io.circe.parser._
 import org.mauritania.main4ino.api.v1.JsonEncoding
 import org.mauritania.main4ino.api.Translator.IdResponse
 import org.mauritania.main4ino.models.{DeviceId, DeviceName, RequestId}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class ServerSpec extends FlatSpec with Matchers with BeforeAndAfterAll with HttpClient {
+class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with HttpClient {
 
   val OneSecond = 1000
 

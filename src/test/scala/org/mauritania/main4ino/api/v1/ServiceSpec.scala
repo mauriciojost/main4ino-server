@@ -25,7 +25,6 @@ import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
 import org.mauritania.main4ino.security.{Auther, Config, User}
 import org.mauritania.main4ino.{Fixtures, Helper}
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{Matchers, WordSpec}
 import org.scalatest.EitherValues._
 import org.http4s.circe._
 import org.mauritania.main4ino.DecodersIO
@@ -35,8 +34,10 @@ import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class ServiceSpec extends WordSpec with MockFactory with Matchers with DecodersIO {
+class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with DecodersIO {
 
   val User1 = Fixtures.User1
   val User1Pass = Fixtures.User1Pass
