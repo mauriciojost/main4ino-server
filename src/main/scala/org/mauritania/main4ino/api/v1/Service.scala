@@ -168,16 +168,6 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
       }
     }
 
-    // TODO DEPRECATED, to be removed (and adapt arduino part consequently)
-    case a@POST -> Root / "devices" / Dev(device) / "logs" as _ => {
-      val d = a.req.bodyAsText
-      val r: F[Attempt[Unit]] = tr.updateLogs(device, d)
-      r.flatMap {
-        case Right(_) => Ok()
-        case Left(m) => InternalServerError(m)
-      }
-    }
-
     /**
       * GET /devices/<dev>/logs
       *
@@ -199,7 +189,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
     }
 
     /**
-      * POST /devices/<dev>/descriptions
+      * PUT /devices/<dev>/descriptions
       *
       * Example: POST /devices/dev1/descriptions
       *
@@ -209,7 +199,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
       *
       * Returns: CREATED (201)
       */
-    case a@POST -> Root / "devices" / Dev(device) / "descriptions" as _ => {
+    case a@PUT -> Root / "devices" / Dev(device) / "descriptions" as _ => {
       val d = a.req.decodeJson[VersionJson]
       val r: F[CountResponse] = d.flatMap(i => tr.updateDescription(device, i)).map(CountResponse(_))
       r.flatMap { v =>
@@ -324,15 +314,6 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
       * Returns: OK (200) | NOT_MODIFIED (304)
       */
     case a@PUT -> Root / "devices" / Dev(device) / Req(table) / ReqId(requestId) :? StatusParam(st) as _ => {
-      val x: F[Attempt[Translator.CountResponse]] = tr.updateDeviceStatus(table, device, requestId, st.getOrElse(Status.Closed))
-      x.flatMap {
-        case Right(v) => Ok(v.asJson, ContentTypeAppJson)
-        case Left(_) => NotModified()
-      }
-    }
-
-    // TODO DEPRECATED, to be removed (and adapt arduino part consequently)
-    case a@POST -> Root / "devices" / Dev(device) / Req(table) / ReqId(requestId) :? StatusParam(st) as _ => {
       val x: F[Attempt[Translator.CountResponse]] = tr.updateDeviceStatus(table, device, requestId, st.getOrElse(Status.Closed))
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
