@@ -1,15 +1,46 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -e
 
 source settings.conf
 
 set +x 
 
+# for highlighting
+declare -A fg_color_map
+fg_color_map[black]=30
+fg_color_map[red]=31
+fg_color_map[green]=32
+fg_color_map[yellow]=33
+fg_color_map[blue]=34
+fg_color_map[magenta]=35
+fg_color_map[cyan]=36
+fg_color_map[gray]=90
+
+function highlight() {
+    fg_c=$(echo -e "\e[1;${fg_color_map[$1]}m")
+    c_rs=$'\e[0m'
+    sed -u s"/$2/$fg_c\0$c_rs/g"
+}
+
+function info() {
+  echo $1 | highlight green ".*"
+}
+
+function warn() {
+  echo $1 | highlight yellow ".*"
+}
+
+function error() {
+  echo $1 | highlight red ".*"
+  exit 1
+}
+
 function session() {
   curl $CURL_OPTS -s -u $USER_PASSWORD -X POST "$SERVER_ADDRESS/api/v1/session"
 }
 
-
+info "Trying to log in..."
 AUTHENTICATED_CURL_CMD="curl $CURL_OPTS --header session:`session`"
+info "Logged in successfully."
 
 function main4ino_post_description() {
   local device="$1"
@@ -80,4 +111,5 @@ function main4ino_get_firmwares() {
   $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/firmwares/$project/$platform
 }
 
+info "Functions loaded."
 
