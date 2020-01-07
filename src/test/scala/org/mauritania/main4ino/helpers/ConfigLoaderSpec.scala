@@ -12,8 +12,10 @@ import org.mauritania.main4ino.security.{Config => SecurityConfig, Fixtures}
 import org.scalatest._
 import pureconfig._
 import pureconfig.generic.auto._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class ConfigLoaderSpec extends FlatSpec with Matchers {
+class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
 
   "The config loader" should "load correctly a configuration file" in {
     val c = ConfigLoader.loadFromFile[IO, GeneralConfig](new File("src/test/resources/configs/1/application.conf")).unsafeRunSync()
