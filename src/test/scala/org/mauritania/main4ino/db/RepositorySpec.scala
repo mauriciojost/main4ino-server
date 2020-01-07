@@ -8,9 +8,11 @@ import org.mauritania.main4ino.models.Device.Metadata.Status.Closed
 import org.mauritania.main4ino.models.Device.{DbId, Metadata}
 import org.mauritania.main4ino.models.ForTestRicherClasses._
 import org.mauritania.main4ino.models.{Description, DeviceId}
-import org.scalatest.{FlatSpec, Matchers, Sequential}
+import org.scalatest.Sequential
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class RepositorySpec extends FlatSpec with Matchers with TransactorCtx {
+class RepositorySpec extends AnyFlatSpec with Matchers with TransactorCtx {
 
   Sequential
 

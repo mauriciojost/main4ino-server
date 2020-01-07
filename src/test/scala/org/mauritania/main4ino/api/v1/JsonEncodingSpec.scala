@@ -4,10 +4,11 @@ import io.circe.{Decoder, parser}
 import io.circe.generic.auto._
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models.Device.Metadata.Status.Status
-import org.scalatest.{Matchers, WordSpec}
 import org.scalatest.EitherValues._
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class JsonEncodingSpec extends WordSpec with Matchers {
+class JsonEncodingSpec extends AnyWordSpec with Matchers {
 
   case class B(i: Boolean) // object containing a boolean
   case class I(i: Int) // object containing an integer

@@ -5,9 +5,10 @@ import org.http4s.{BasicCredentials, Headers, Uri}
 import org.mauritania.main4ino.security.Auther.EncryptionConfig
 import org.mauritania.main4ino.security.Fixtures._
 import org.reactormonk.{CryptoBits, PrivateKey}
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class AutherSpec extends WordSpec with Matchers {
+class AutherSpec extends AnyWordSpec with Matchers {
 
   def Crypto = CryptoBits(PrivateKey(scala.io.Codec.toUTF8(" " * 20)))
 

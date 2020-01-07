@@ -7,8 +7,10 @@ import org.mauritania.main4ino.TmpDirCtx
 import org.mauritania.main4ino.firmware.Store.FirmwareCoords
 import org.scalatest._
 import org.scalatest.EitherValues._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class StoreSpec extends FlatSpec with Matchers with TmpDirCtx {
+class StoreSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
 
   "The store" should "point to an existent file given the coordinates" in {
     val path = Paths.get("src", "test", "resources", "firmwares", "1")
