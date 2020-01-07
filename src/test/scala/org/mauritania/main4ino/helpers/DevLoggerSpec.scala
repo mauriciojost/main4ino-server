@@ -11,8 +11,10 @@ import org.scalatest.EitherValues._
 
 import scala.concurrent.ExecutionContext
 import scala.io.Source
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class DevLoggerSpec extends FlatSpec with Matchers with TmpDirCtx {
+class DevLoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
 
   val TheTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("UTC"))
 

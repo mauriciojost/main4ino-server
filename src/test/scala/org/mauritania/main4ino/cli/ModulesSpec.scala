@@ -6,11 +6,12 @@ import cats.effect.IO
 import org.mauritania.main4ino.DecodersIO
 import org.mauritania.main4ino.cli.Actions.{AddRawUser, AddRawUsers}
 import org.mauritania.main4ino.cli.Modules.{ConfigsAppErr, FilesystemSync}
-import org.scalatest.{Matchers, WordSpec}
 import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security.{Auther, User}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
-class ModulesSpec extends WordSpec with Matchers with DecodersIO {
+class ModulesSpec extends AnyWordSpec with Matchers with DecodersIO {
 
   "A config handler" should {
 

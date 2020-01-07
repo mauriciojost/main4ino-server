@@ -2,11 +2,13 @@ package org.mauritania.main4ino.webapp
 
 import cats.effect.{Blocker, Effect, IO, Sync}
 import org.http4s.{Method, Request, Response, Status, Uri}
-import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers, Sequential}
+import org.scalatest.{BeforeAndAfterEach, Sequential}
 
 import scala.concurrent.ExecutionContext
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class ServiceFuncSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
+class ServiceFuncSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
 
   Sequential
 
