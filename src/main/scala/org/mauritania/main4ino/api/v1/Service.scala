@@ -197,13 +197,13 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
       *
       * Device describes actors and properties with PUT, web ui uses them via GET.
       *
-      * Returns: CREATED (201)
+      * Returns: OK (200)
       */
     case a@PUT -> Root / "devices" / Dev(device) / "descriptions" as _ => {
       val d = a.req.decodeJson[VersionJson]
       val r: F[CountResponse] = d.flatMap(i => tr.updateDescription(device, i)).map(CountResponse(_))
       r.flatMap { v =>
-        Created(v.asJson, ContentTypeAppJson)
+        Ok(v.asJson, ContentTypeAppJson)
       }
     }
 

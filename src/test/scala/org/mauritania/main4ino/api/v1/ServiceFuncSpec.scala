@@ -301,18 +301,18 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TransactorCtx with Tmp
     }
   }
 
-  "The service from both web ui and device" should "create and read description by device name" in {
+  "The service from both web ui and device" should "create and read descriptions by device name" in {
     withTransactor { tr =>
       implicit val s = defaultService(tr)
 
       val r0 = get("/devices/dev1/descriptions")
       r0.status shouldBe Status.NoContent
 
-      postExpectCreated("/devices/dev1/descriptions", """{"version": "1.0.0", "json":null}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces
+      putExpectOk("/devices/dev1/descriptions", """{"version": "1.0.0", "json":null}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces
 
       getExpectOk("/devices/dev1/descriptions").noSpaces shouldBe Description("dev1", Time.asTimestamp(TheTime), VersionJson("1.0.0", Json.Null)).asJson.noSpaces
 
-      postExpectCreated("/devices/dev1/descriptions", """{"version": "1.1.0", "json":null}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces
+      putExpectOk("/devices/dev1/descriptions", """{"version": "1.1.0", "json":null}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces
 
       getExpectOk("/devices/dev1/descriptions").noSpaces shouldBe Description("dev1", Time.asTimestamp(TheTime), VersionJson("1.1.0", Json.Null)).asJson.noSpaces
     }
@@ -335,9 +335,10 @@ class ServiceFuncSpec extends FlatSpec with Matchers with TransactorCtx with Tmp
     r.as[Json].unsafeRunSync()
   }
 
-  private[this] def postExpectOk(path: String, body: String)(implicit service: Service[IO]): Unit = {
-    val r = post(path, body)
+  private[this] def putExpectOk(path: String, body: String)(implicit service: Service[IO]): Json = {
+    val r = put(path, body)
     r.status shouldBe Status.Ok
+    r.as[Json].unsafeRunSync()
   }
 
   private[this] def putExpect(path: String, body: String, status: Status)(implicit service: Service[IO]): Unit = {
