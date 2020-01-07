@@ -23,12 +23,14 @@ import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security._
 import org.mauritania.main4ino.{Helper, TmpDirCtx}
-import org.scalatest.{FlatSpec, Matchers, Sequential}
+import org.scalatest.Sequential
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import cats._
 import cats.implicits._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class ServiceFuncSpec extends FlatSpec with Matchers with TransactorCtx with TmpDirCtx {
+class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with TmpDirCtx {
 
   Sequential
 

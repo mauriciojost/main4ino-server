@@ -12,8 +12,10 @@ import org.http4s.circe._
 import io.circe.generic.auto._
 
 import scala.concurrent.ExecutionContext
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class ServiceFuncSpec extends FlatSpec with Matchers with TmpDirCtx {
+class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
 
   final val Byte0: Byte = '0'.toByte
   final val Byte1: Byte = '1'.toByte
