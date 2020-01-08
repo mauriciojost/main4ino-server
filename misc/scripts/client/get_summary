@@ -2,6 +2,19 @@
 
 source source.sh
 
+function check_fresh() {
+  local timestamp=$1
+  local threshold=$2
+  local timestamp2=`echo "$timestamp + $threshold" | bc`
+  local now_timestamp="`date '+%s'`"
+  if [ $now_timestamp -gt $timestamp2 ]
+  then
+    echo LATE | highlight red ".*"
+  else
+    echo OK | highlight green ".*"
+  fi
+}
+
 for i in $DEVICES_LIST
 do 
   echo "### Device $i ###" | highlight green ".*"
@@ -10,13 +23,16 @@ do
   version=`echo $summary_report | jq -r  '.settings."~version"'`
   project=`echo $summary_report | jq -r  '.settings.project'`
   platform=`echo $summary_report | jq -r  '.settings.platform'`
+  last_report=`main4ino_get_last_report $i | jq -r '.dbId.creation'`
   logl=`echo $summary_report | jq -r  '.settings."~logl"'`
   logo=`echo $summary_report | jq -r  '.settings."~logo"'`
   echo "Info:"
   echo "- alias          : $aliase" | highlight blue $aliase
   echo "- project        : $project"
   echo "- platform       : $platform"
-  echo "- last report    : `main4ino_get_last_report $i | jq -r .dbId.creation | xargs -I% date -d @%`"
+  echo "- last report    : `date -d @$last_report`"
+  echo "- last report    : $last_report"
+  echo "- last report    : `check_fresh $last_report $FRESHNESS_THRESHOLD`"
   echo "- current version: $version (latest available: `main4ino_get_firmwares $project $platform  | jq -r .[].version | tail -1`)"
   echo "Summary report:"
   echo "$summary_report" | highlight gray ".*"
