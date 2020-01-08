@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
 
 source source.sh
-
+function check_equals() {
+  local a=$1
+  local b=$2
+  if [ "$a" == "$b" ]
+  then
+    echo OK | highlight green ".*"
+  else
+    echo KO | highlight red ".*"
+  fi
+}
 function check_fresh() {
   local timestamp=$1
   local threshold=$2
@@ -9,7 +18,7 @@ function check_fresh() {
   local now_timestamp="`date '+%s'`"
   if [ $now_timestamp -gt $timestamp2 ]
   then
-    echo LATE | highlight red ".*"
+    echo KO | highlight red ".*"
   else
     echo OK | highlight green ".*"
   fi
@@ -24,16 +33,15 @@ do
   project=`echo $summary_report | jq -r  '.settings.project'`
   platform=`echo $summary_report | jq -r  '.settings.platform'`
   last_report=`main4ino_get_last_report $i | jq -r '.dbId.creation'`
+  version_latest=`main4ino_get_firmwares $project $platform  | jq -r .[].version | tail -1`
   logl=`echo $summary_report | jq -r  '.settings."~logl"'`
   logo=`echo $summary_report | jq -r  '.settings."~logo"'`
   echo "Info:"
   echo "- alias          : $aliase" | highlight blue $aliase
   echo "- project        : $project"
   echo "- platform       : $platform"
-  echo "- last report    : `date -d @$last_report`"
-  echo "- last report    : $last_report"
-  echo "- last report    : `check_fresh $last_report $FRESHNESS_THRESHOLD`"
-  echo "- current version: $version (latest available: `main4ino_get_firmwares $project $platform  | jq -r .[].version | tail -1`)"
+  echo "- last report    : `check_fresh $last_report $FRESHNESS_THRESHOLD` (`date -d @$last_report`)"
+  echo "- current version: `check_equals $version $version_latest` (current: $version / latest: $version_latest)"
   echo "Summary report:"
   echo "$summary_report" | highlight gray ".*"
   echo "Logs (log level = $logl / log options = $logo):"
