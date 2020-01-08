@@ -44,7 +44,7 @@ class Auther[F[_]: Sync](config: Config) {
       _ <- logger.debug(s">>> Authentication: ${attempt.map(_.id)}")
       authedRequest = attempt.map { u =>
         AuthedRequest(
-          authInfo = u,
+          context = u,
           req = request
             .withPathInfo(Auther.dropTokenAndSessionFromPath(request.pathInfo))
         )
