@@ -53,13 +53,14 @@ class Service[F[_] : Sync: Effect: ContextShift](st: Store[F], ec: ExecutionCont
 
       for {
         logger <- Slf4jLogger.fromClass[F](getClass)
-        _ <- logger.debug(s"Requested firmware content: $coords / $headers / $currentVersion")
+        _ <- logger.debug(s"Requested firmware content: $coords / $currentVersion")
+        _ <- logger.debug(s"Request headers: $headers")
         fa <- st.getFirmware(coords)
         response <- fa match {
           case Right(Firmware(_, _, c)) if (currentVersion.exists(_ == c.version)) => // same version as current
-            logger.debug(s"Already up-to-date: $c...").flatMap(_ => NotModified())
+            logger.debug(s"Already up-to-date: $currentVersion=$c...").flatMap(_ => NotModified())
           case Right(Firmware(f, l, c)) => // different version than current, serving...
-            logger.info(s"Must upgrade. Proposing firmware: $c...").flatMap(_ => Ok.apply(f, `Content-Length`.unsafeFromLong(l)))
+            logger.info(s"Must upgrade. Proposing firmware: $currentVersion->$c...").flatMap(_ => Ok.apply(f, `Content-Length`.unsafeFromLong(l)))
           case Left(msg) => // no such version
             logger.warn(s"Cannot upgrade, version not found: $msg").flatMap(_ => NotFound())
         }
