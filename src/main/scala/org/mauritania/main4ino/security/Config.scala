@@ -16,7 +16,7 @@ import scala.io.Codec
 
 case class Config(
   users: List[User],
-  privatekey: String,
+  privatekey: String, // TODO use Byte[Array]
   salt: String
 ) {
 

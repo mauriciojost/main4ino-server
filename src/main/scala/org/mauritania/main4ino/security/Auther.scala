@@ -100,7 +100,7 @@ object Auther {
   def authenticatedUserFromSessionOrCredentials(encry: EncryptionConfig, usersBy: UsersBy, session: Option[UserSession], creds: Option[(UserId, UserHashedPass)]): AuthenticationAttempt = {
     session.flatMap(v => encry.pkey.validateSignedToken(v)).flatMap(usersBy.byId.get)
       .orElse(creds.flatMap(usersBy.byIdPass.get))
-      .toRight(s"Could not find related user (user:${creds.map(_._1)} / session:$session)")
+      .toRight(s"Could not authenticate user (user:${creds.map(_._1)} / session:${session.map(_.slice(0, 5))}...)")
   }
 
   /**
@@ -127,7 +127,7 @@ object Auther {
       .orElse(validCredsFromUri)
   }
 
-  def sessionFromRequest(headers: Headers, uri: Uri): Option[UserSession] = {
+  private[security] def sessionFromRequest(headers: Headers, uri: Uri): Option[UserSession] = {
 
     // URI auth: .../session/<session>/... authentication (some services
     // like IFTTT or devices ESP8266 HTTP UPDATE do not support headers, but only URI credentials...)
@@ -138,7 +138,7 @@ object Auther {
 
   def hashPassword(password: String, salt: String): String = password.bcrypt(salt)
 
-  private def dropTokenAndSessionFromPath(path: Path): Path = {
+  private[security] def dropTokenAndSessionFromPath(path: Path): Path = {
     def drop(r: Regex, p: Path) = r.findFirstMatchIn(p).map(m => m.group(GroupPre) + "/" + m.group(GroupPos)).getOrElse(p)
     val res = drop(UriSessionRegex, drop(UriTokenRegex, path))
     res
