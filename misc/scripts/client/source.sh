@@ -16,9 +16,14 @@ fg_color_map[cyan]=36
 fg_color_map[gray]=90
 
 function highlight() {
+  if [ "$COLORED_LOGS_ENABLED" == "true" ]
+  then
     fg_c=$(echo -e "\e[1;${fg_color_map[$1]}m")
     c_rs=$'\e[0m'
     sed -u s"/$2/$fg_c\0$c_rs/g"
+  else
+    cat -
+  fi
 }
 
 function info() {
