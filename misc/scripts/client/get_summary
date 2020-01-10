@@ -14,7 +14,7 @@ function check_equals() {
 function check_fresh() {
   local timestamp=$1
   local threshold=$2
-  local timestamp2=`echo "$timestamp + $threshold" | bc`
+  let timestamp2=$timestamp+$threshold
   local now_timestamp="`date '+%s'`"
   if [ $now_timestamp -gt $timestamp2 ]
   then
