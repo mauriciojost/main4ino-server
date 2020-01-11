@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+FAILURE=""
+
 source source.sh
-function check_equals() {
+function check_equal_versions() {
   local a=$1
   local b=$2
   if [ "$a" == "$b" ]
@@ -9,6 +11,7 @@ function check_equals() {
     echo OK | highlight green ".*"
   else
     echo KO | highlight red ".*"
+    FAILURE="$FAILURE: not equal versions $a $b"
   fi
 }
 function check_fresh() {
@@ -21,6 +24,7 @@ function check_fresh() {
     echo KO | highlight red ".*"
   else
     echo OK | highlight green ".*"
+    FAILURE="$FAILURE: not fresh $timestamp ($now_timestamp)"
   fi
 }
 
@@ -41,7 +45,7 @@ do
   echo "- project        : $project"
   echo "- platform       : $platform"
   echo "- last report    : `check_fresh $last_report $FRESHNESS_THRESHOLD` (`date -d @$last_report`)"
-  echo "- current version: `check_equals $version $version_latest` (current: $version / latest: $version_latest)"
+  echo "- current version: `check_equal_versions $version $version_latest` (current: $version / latest: $version_latest)"
   echo "Summary report:"
   echo "$summary_report" | highlight gray ".*"
   echo "Logs (log level = $logl / log options = $logo):"
@@ -50,3 +54,12 @@ do
   echo ""
 done
 
+if [ "$FAILURE" == "" ]
+then
+  echo OK | highlight green '.*'
+  exit 0
+else
+  echo KO | highlight red '.*'
+  echo $FAILURE | highlight red '.*'
+  exit 1
+fi
