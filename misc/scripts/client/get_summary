@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export FAILURE=""
+echo "" > failures.log
 
 source source.sh
 function check_equal_versions() {
@@ -12,9 +12,10 @@ function check_equal_versions() {
     echo OK | highlight green ".*"
   else
     echo KO | highlight red ".*"
-    FAILURE="$FAILURE: $dev not equal versions $a $b"
+    echo "$dev not equal versions $a $b" >> failures.log
   fi
 }
+
 function check_fresh() {
   local timestamp=$1
   local threshold=$2
@@ -24,7 +25,7 @@ function check_fresh() {
   if [ $now_timestamp -gt $timestamp2 ]
   then
     echo KO | highlight red ".*"
-    FAILURE="$FAILURE: $dev not fresh update=$timestamp (now=$now_timestamp)"
+    echo "$dev not fresh update=$timestamp (now=$now_timestamp)" >> failures.log
   else
     echo OK | highlight green ".*"
   fi
@@ -46,7 +47,7 @@ do
   echo "- alias          : $aliase" | highlight blue $aliase
   echo "- project        : $project"
   echo "- platform       : $platform"
-  echo "- last report    : `check_fresh $last_report $FRESHNESS_THRESHOLD $i` (`date -d @$last_report`)"
+  echo "- last report    : `check_fresh $last_report $FRESHNESS_THRESHOLD $i` (current: now `date --utc` / last: `date -d @$last_report`)"
   echo "- current version: `check_equal_versions $version $version_latest $i` (current: $version / latest: $version_latest)"
   echo "Summary report:"
   echo "$summary_report" | highlight gray ".*"
@@ -56,9 +57,9 @@ do
   echo ""
 done
 
-echo "$FAILURE"
+cat failures.log
 
-if [ "$FAILURE" == "" ]
+if [ "$(cat failures.log)" == "" ]
 then
   echo OK | highlight green '.*'
   exit 0
