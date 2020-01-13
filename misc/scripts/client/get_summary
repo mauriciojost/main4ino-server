@@ -5,14 +5,14 @@ echo "" > failures.log
 source source.sh
 function check_equal_versions() {
   local a=$1
-  local b=$2
+  local latest=$2
   local dev=$3
-  if [ "$a" == "$b" ]
+  if [ "$a" == "$latest" ]
   then
     echo OK | highlight green ".*"
   else
     echo KO | highlight red ".*"
-    echo "$dev not equal versions $a $b" >> failures.log
+    echo "$dev not last version $a (latest=$latest)" >> failures.log
   fi
 }
 
