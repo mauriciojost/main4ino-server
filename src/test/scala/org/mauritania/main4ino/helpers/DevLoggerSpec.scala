@@ -30,7 +30,8 @@ class DevLoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
       logger.updateLogs("device", s1).unsafeRunSync() should be(Right(()))
       Source.fromFile(expectedFile.toFile).getLines.toList should be(
         List(
-          "### 1970-01-01T00:00Z[UTC]",
+          "",
+          "### 1970-01-01T00:00Z[UTC] 0 ###",
           "hey",
           "you"
         )
@@ -39,10 +40,12 @@ class DevLoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
       logger.updateLogs("device", s2).unsafeRunSync() should be(Right(()))
       Source.fromFile(expectedFile.toFile).getLines.toList should be(
         List(
-          "### 1970-01-01T00:00Z[UTC]",
+          "",
+          "### 1970-01-01T00:00Z[UTC] 0 ###",
           "hey",
           "you",
-          "### 1970-01-01T00:00Z[UTC]",  // << extra appended section from here
+          "",
+          "### 1970-01-01T00:00Z[UTC] 0 ###",  // << extra appended section from here
           "guy"
         )
       ) // appends
@@ -50,10 +53,12 @@ class DevLoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
       val readFull = logger.getLogs("device", None, None).unsafeRunSync()
       val successfulReadFull = readFull.right.value
       successfulReadFull.compile.toList.unsafeRunSync().mkString should be(
-        """### 1970-01-01T00:00Z[UTC]
+        """
+          |### 1970-01-01T00:00Z[UTC] 0 ###
           |hey
           |you
-          |### 1970-01-01T00:00Z[UTC]
+          |
+          |### 1970-01-01T00:00Z[UTC] 0 ###
           |guy
           |""".stripMargin
       )
@@ -64,7 +69,7 @@ class DevLoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
       successfulReadIgnoreLength1.compile.toList.unsafeRunSync().mkString should be("guy")
 
       val readIngoreLength2 =
-        logger.getLogs("device", Some(2L /*new lines*/ + 3L /*guy*/), Some(5L)).unsafeRunSync()
+        logger.getLogs("device", Some(8L /*new lines*/ + 3L /*guy*/), Some(5L)).unsafeRunSync()
       val successfulReadIgnoreLength2 = readIngoreLength2.right.value
       successfulReadIgnoreLength2.compile.toList.unsafeRunSync().mkString should be("[UTC]")
     }

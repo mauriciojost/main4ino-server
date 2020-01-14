@@ -37,7 +37,7 @@ class DevLogger[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], ec:
     * @return [[Attempt]] telling if it was possible to perform the operation
     */
   def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Unit]] = {
-    val timedBody = Stream.eval[F, String](time.nowUtc.map("### " + _ + "\n")) ++ body
+    val timedBody = Stream.eval[F, String](time.nowUtc.map(t => s"\n### $t ${Time.asTimestamp(t)} ###\n")) ++ body
     val encoded = timedBody.through(fs2text.utf8Encode)
     val written = encoded.through(io.file.writeAll[F](pathFromDevice(device), blocker, CreateAndAppend))
     val eithers = written.attempt.compile.toList
