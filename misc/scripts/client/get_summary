@@ -12,7 +12,7 @@ function check_equal_versions() {
     echo OK | highlight green ".*"
   else
     echo KO | highlight red ".*"
-    echo "$dev not last version $a (latest=$latest)" >> failures.log
+    echo "$dev not last version (current=$a / latest=$latest)" >> failures.log
   fi
 }
 
@@ -25,7 +25,7 @@ function check_fresh() {
   if [ $now_timestamp -gt $timestamp2 ]
   then
     echo KO | highlight red ".*"
-    echo "$dev not fresh update=$timestamp (now=$now_timestamp)" >> failures.log
+    echo "$dev not fresh (update=$timestamp / now=$now_timestamp)" >> failures.log
   else
     echo OK | highlight green ".*"
   fi
@@ -47,8 +47,8 @@ do
   echo "- alias          : $aliase" | highlight blue $aliase
   echo "- project        : $project"
   echo "- platform       : $platform"
-  echo "- last report    : `check_fresh $last_report $FRESHNESS_THRESHOLD $i` (current: now `date --utc` / last: `date -d @$last_report`)"
-  echo "- current version: `check_equal_versions $version $version_latest $i` (current: $version / latest: $version_latest)"
+  echo "- last report    : `check_fresh $last_report $FRESHNESS_THRESHOLD $i` (is: `date --utc -d @$last_report` / shouldbe `date --utc`)"
+  echo "- current version: `check_equal_versions $version $version_latest $i` (is: $version / shouldbe: $version_latest)"
   echo "Summary report:"
   echo "$summary_report" | highlight gray ".*"
   echo "Logs (log level = $logl / log options = $logo):"
@@ -65,6 +65,7 @@ then
   exit 0
 else
   echo KO | highlight red '.*'
+  echo "### FAILURES" | highlight red '.*'
   echo $FAILURE | highlight red '.*'
   exit 1
 fi
