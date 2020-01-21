@@ -83,6 +83,20 @@ function main4ino_get_last_report() {
   $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/reports/last
 }
 
+function main4ino_get_reports() {
+  local device="$1"
+  local status="$2"
+  $AUTHENTICATED_CURL_CMD -X GET "$SERVER_ADDRESS/api/v1/devices/$device/reports?status=$status"
+}
+
+function main4ino_get_targets() {
+  local device="$1"
+  local status="$2"
+  $AUTHENTICATED_CURL_CMD -X GET "$SERVER_ADDRESS/api/v1/devices/$device/targets?status=$status"
+}
+
+
+
 function main4ino_get_last_target() {
   local device="$1"
   $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/targets/last
