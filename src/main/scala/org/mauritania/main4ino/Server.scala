@@ -10,7 +10,7 @@ import org.mauritania.main4ino.db.Repository.ReqType
 import org.mauritania.main4ino.api.{Translator, v1}
 import org.mauritania.main4ino.db.{Cleaner, Database, Repository}
 import org.mauritania.main4ino.firmware.Store
-import org.mauritania.main4ino.helpers.{ConfigLoader, DevLogger, Scheduler, Time}
+import org.mauritania.main4ino.helpers.{ConfigLoader, Scheduler, Time}
 import org.mauritania.main4ino.security.Auther
 
 import scala.concurrent.duration.FiniteDuration
@@ -20,6 +20,7 @@ import org.http4s.server.{Router, Server => H4Server}
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.implicits._
 import doobie.util.ExecutionContexts
+import org.mauritania.main4ino.logs.DevLogger
 import pureconfig._
 import pureconfig.generic.auto._
 

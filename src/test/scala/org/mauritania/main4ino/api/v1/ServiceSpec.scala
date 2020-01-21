@@ -17,7 +17,7 @@ import org.mauritania.main4ino.db.Repository.ReqType
 import org.mauritania.main4ino.db.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.TimeResponse
-import org.mauritania.main4ino.helpers.{DevLogger, Time}
+import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.ForTestRicherClasses._
 import org.mauritania.main4ino.models.{Device, EpochSecTimestamp}
@@ -31,6 +31,7 @@ import org.mauritania.main4ino.DecodersIO
 import org.mauritania.main4ino.db.Repository
 import org.mauritania.main4ino.firmware.Store
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
+import org.mauritania.main4ino.logs.DevLogger
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag

@@ -1,14 +1,14 @@
-package org.mauritania.main4ino.helpers
+package org.mauritania.main4ino.logs
 
 import java.io.File
-
-import cats.effect.{Blocker, ContextShift, Sync}
 import java.nio.file.{StandardOpenOption, Path => JavaPath}
 
-import org.mauritania.main4ino.api.Attempt
+import cats.effect.{Blocker, ContextShift, Sync}
+import cats.implicits._
 import fs2.{Stream, io, text => fs2text}
+import org.mauritania.main4ino.api.Attempt
+import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.{DeviceName, EpochSecTimestamp}
-import cats.effect.implicits._
 import cats.implicits._
 
 import scala.concurrent.ExecutionContext

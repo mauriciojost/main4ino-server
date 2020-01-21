@@ -1,4 +1,6 @@
-package org.mauritania.main4ino.helpers
+package org.mauritania.main4ino.logs
+
+import java.time.Instant
 
 import org.mauritania.main4ino.models.EpochSecTimestamp
 
@@ -7,7 +9,7 @@ case class LogRecord(
   content: String
 ) {
   def pretty: String = {
-    s"$t $content"
+    s"${Instant.ofEpochSecond(t)} $content"
   }
 }
 

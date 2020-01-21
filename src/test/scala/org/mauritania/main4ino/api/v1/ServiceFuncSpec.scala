@@ -16,7 +16,7 @@ import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.{CountResponse, IdResponse, IdsOnlyResponse}
 import org.mauritania.main4ino.db.{Repository, TransactorCtx}
 import org.mauritania.main4ino.firmware.Store
-import org.mauritania.main4ino.helpers.{DevLogger, Time}
+import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Description
 import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata
@@ -27,6 +27,7 @@ import org.scalatest.Sequential
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import cats._
 import cats.implicits._
+import org.mauritania.main4ino.logs.DevLogger
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -293,12 +294,12 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
     withTransactor { tr =>
       withTmpDir { tmp =>
         implicit val s = defaultServiceWithDirectory(tr, tmp)
-        val logMsg = """failure"""
+        val logMsg = "failure\nhere"
         putExpect("/devices/dev1/logs", logMsg, Status.Ok)
 
-        val log = get(s"/devices/dev1/logs?length=${logMsg.size}")
+        val log = get(s"/devices/dev1/logs?from=0&to=1")
         log.status should be(Status.Ok)
-        log.bodyAsText.compile.toList.unsafeRunSync().mkString should be("0 failure")
+        log.bodyAsText.compile.toList.unsafeRunSync().mkString should be("1970-01-01T00:00:00Z failure\n1970-01-01T00:00:00Z here")
       }
     }
   }

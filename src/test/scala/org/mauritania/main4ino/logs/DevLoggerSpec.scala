@@ -1,4 +1,4 @@
-package org.mauritania.main4ino.helpers
+package org.mauritania.main4ino.logs
 
 import java.nio.file.{Path, Paths}
 import java.time.{Instant, ZoneId, ZonedDateTime}
@@ -6,14 +6,14 @@ import java.time.{Instant, ZoneId, ZonedDateTime}
 import cats.effect.{IO, Sync}
 import fs2.Stream
 import org.mauritania.main4ino.TmpDirCtx
+import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.EpochSecTimestamp
-import org.scalatest._
 import org.scalatest.EitherValues._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.ExecutionContext
 import scala.io.Source
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 
 class DevLoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
 
