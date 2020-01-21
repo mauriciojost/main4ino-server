@@ -2,12 +2,13 @@
 source source.sh
 
 devices_list=${1:-$DEVICES_LIST}
-target=$2
+logl=$2
+logo=$3
 
 for i in $devices_list
 do 
   echo "## $i:"
-  main4ino_post_target $i settings '{"+utarget":"'$target'"}'
+  main4ino_post_target $i settings '{"~logo":"'$logo'","~logl":"'$logl'"}'
   echo ""
   echo ""
 done
