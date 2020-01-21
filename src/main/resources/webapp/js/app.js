@@ -444,7 +444,7 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     'LogController',
-    function($scope, $http, $log, $location, $date) {
+    function($scope, $http, $log, $location) {
 
         $scope.session = getCookie("session");
         $scope.device = getCookie("device");
@@ -454,6 +454,8 @@ webPortalApp.controller(
 
         $scope.getLogs = function() {
             $log.log('Getting logs for device ' + $scope.device);
+
+            var date = new Date();
 
             var msTo = 1000 * 3600 * 24 * $scope.to;
             var toMs = date.getTime() + msTo;
