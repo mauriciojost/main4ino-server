@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+# Launch me from root-directory
+
+set -e -x
+
+this_dir=$(readlink -e `dirname $0`)
+
+while true
+do
+    timeout 86400 $this_dir/ziplaunch $@
+done
+
+
