@@ -26,10 +26,8 @@ object Url {
   object IdsParam extends OptionalQueryParamDecoderMatcher[Boolean]("ids")
   object StatusParam extends OptionalQueryParamDecoderMatcher[Status]("status")
 
-  object FromParam extends OptionalQueryParamDecoderMatcher[Long]("from")
-  object ToParam extends OptionalQueryParamDecoderMatcher[Long]("to")
-  object LengthParam extends OptionalQueryParamDecoderMatcher[Long]("length")
-  object IgnoreParam extends OptionalQueryParamDecoderMatcher[Long]("ignore")
+  object FromParam extends OptionalQueryParamDecoderMatcher[EpochSecTimestamp]("from")
+  object ToParam extends OptionalQueryParamDecoderMatcher[EpochSecTimestamp]("to")
 
   object TimezoneParam extends OptionalQueryParamDecoderMatcher[String]("timezone")
 

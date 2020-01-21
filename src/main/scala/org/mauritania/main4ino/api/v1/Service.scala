@@ -175,13 +175,13 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
       *
       * Retrieve the logs provided by the device.
       *
-      * The parameters <ignore> and <length> are optional. They allow to retrieve a more specific section of the logs, which
+      * The parameters <from> and <to> are optional. They allow to retrieve a more specific section of the logs, which
       * can be too large to download all at once.
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a@GET -> Root / "devices" / Dev(device) / "logs" :? IgnoreParam(ignore) +& LengthParam(length) as _ => {
-      val r: F[Attempt[Stream[F, String]]] = tr.getLogs(device, ignore, length)
+    case a@GET -> Root / "devices" / Dev(device) / "logs" :? FromParam(from) +& ToParam(to) as _ => {
+      val r: F[Attempt[Stream[F, String]]] = tr.getLogs(device, from, to)
       r.flatMap {
         case Right(l) => Ok(l)
         case Left(m) => NoContent()

@@ -165,7 +165,7 @@ webPortalApp.controller(
 
             $scope.tabl = 'reports'; // table to get records from
             $scope.from = -0.1; // in days, lower-bound to filter history records
-            $scope.until = 0.0; // in days, upper-bound to filter history records
+            $scope.to = 0.0; // in days, upper-bound to filter history records
 
             $scope.search = function() {
 
@@ -175,17 +175,17 @@ webPortalApp.controller(
                 $log.log('Searching device ' + $scope.device + ' in ' + $scope.tabl);
                 var date = new Date();
 
-                var msUntil = 1000 * 3600 * 24 * $scope.until;
-                var untilMs = date.getTime() + msUntil;
-                var until = (untilMs / 1000) | 0; // take to seconds and cast to int
+                var msTo = 1000 * 3600 * 24 * $scope.to;
+                var toMs = date.getTime() + msTo;
+                var toSec = (toMs / 1000) | 0; // take to seconds and cast to int
 
                 var msFrom = 1000 * 3600 * 24 * $scope.from;
                 var fromMs = date.getTime() + msFrom;
-                var from = (fromMs / 1000) | 0; // take to seconds and cast to int
+                var fromSec = (fromMs / 1000) | 0; // take to seconds and cast to int
 
                 var req = {
                     method: 'GET',
-                    url: 'api/v1/devices/' + $scope.device + '/' + $scope.tabl + '?from=' + from + '&to=' + until,
+                    url: 'api/v1/devices/' + $scope.device + '/' + $scope.tabl + '?from=' + fromSec + '&to=' + toSec,
                     headers: {'Content-Type': 'application/json', 'Session': $scope.session},
                     data: $scope.request
                 };
@@ -449,14 +449,23 @@ webPortalApp.controller(
         $scope.session = getCookie("session");
         $scope.device = getCookie("device");
 
-        $scope.logsIgnore = 0; // in days, lower-bound to filter history records
-        $scope.logsLength = 2000; // in days, upper-bound to filter history records
+        $scope.from = -0.1; // in days, lower-bound to filter history records
+        $scope.to = 0.0; // in days, upper-bound to filter history records
 
         $scope.getLogs = function() {
             $log.log('Getting logs for device ' + $scope.device);
+
+            var msTo = 1000 * 3600 * 24 * $scope.to;
+            var toMs = date.getTime() + msTo;
+            var toSec = (toMs / 1000) | 0; // take to seconds and cast to int
+
+            var msFrom = 1000 * 3600 * 24 * $scope.from;
+            var fromMs = date.getTime() + msFrom;
+            var fromSec = (fromMs / 1000) | 0; // take to seconds and cast to int
+
             var req = {
                 method: 'GET',
-                url: 'api/v1/devices/' + $scope.device + '/logs?ignore=' + $scope.logsIgnore + '&length=' + $scope.logsLength,
+                url: 'api/v1/devices/' + $scope.device + '/logs?from=' + fromSec + '&to=' + toSec,
                 headers: {'Session': $scope.session}
             };
 

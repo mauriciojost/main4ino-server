@@ -298,7 +298,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
 
         val log = get(s"/devices/dev1/logs?length=${logMsg.size}")
         log.status should be(Status.Ok)
-        log.bodyAsText.compile.toList.unsafeRunSync().mkString should be("failure")
+        log.bodyAsText.compile.toList.unsafeRunSync().mkString should be("0 failure")
       }
     }
   }

@@ -7,7 +7,7 @@ import java.nio.file.{StandardOpenOption, Path => JavaPath}
 
 import org.mauritania.main4ino.api.Attempt
 import fs2.{Stream, io, text => fs2text}
-import org.mauritania.main4ino.models.DeviceName
+import org.mauritania.main4ino.models.{DeviceName, EpochSecTimestamp}
 import cats.effect.implicits._
 import cats.implicits._
 
@@ -37,9 +37,10 @@ class DevLogger[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], ec:
     * @return [[Attempt]] telling if it was possible to perform the operation
     */
   def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Unit]] = {
-    val timedBody = Stream.eval[F, String](time.nowUtc.map(t => s"\n### $t ${Time.asTimestamp(t)} ###\n")) ++ body
-    val encoded = timedBody.through(fs2text.utf8Encode)
-    val written = encoded.through(io.file.writeAll[F](pathFromDevice(device), blocker, CreateAndAppend))
+    val bodyLines = body.through(fs2.text.lines).filter(!_.isEmpty)
+    val timedBody = bodyLines.flatMap(l => Stream.eval[F, String](time.nowUtc.map(t => s"${Time.asTimestamp(t)} $l")))
+    val encodedTimedBody = (timedBody.intersperse("\n") ++ Stream.eval(Sync[F].delay("\n"))).through(fs2text.utf8Encode)
+    val written = encodedTimedBody.through(io.file.writeAll[F](pathFromDevice(device), blocker, CreateAndAppend))
     val eithers = written.attempt.compile.toList
     val attempts = eithers.map {
       // Not clear why this behavior. This pattern matching is done based on non-documented observed
@@ -66,23 +67,22 @@ class DevLogger[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], ec:
     * - lenght=4 && ignore=2 => 4567
     *
     * @param device device name
-    * @param ignore for pagination, amount of bytes to discard from the end
-    * @param length for pagination, amount of bytes to take counting backwards from the end
+    * @param from for pagination, timestamp from which to retrieve logs
+    * @param to for pagination, timestamp until which to retrieve logs
     * @return the [[Attempt]] with the stream containing the chunks of the logs
     */
-  def getLogs(device: DeviceName, ignore: Option[Long], length: Option[Long]): F[Attempt[Stream[F, String]]] = {
+  def getLogs(device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): F[Attempt[Stream[F, LogRecord]]] = {
     val path = pathFromDevice(device)
-    val i = ignore.getOrElse(DefaultIgnoreLogs)
-    val l = length.map(i => if (i < MaxLengthLogs) i else MaxLengthLogs).getOrElse(DefaultLengthLogs)
     for {
       readable <- isReadableFile(path.toFile)
-      located: Attempt[Stream[F, String]] = readable match {
+      located: Attempt[Stream[F, LogRecord]] = readable match {
         case true =>
           Right{
             val bytes = io.file.readAll[F](pathFromDevice(device), blocker, ChunkSize)
-            val filteredBytes = bytes.dropRight(i.toInt).takeRight(l.toInt)
-            val text = filteredBytes.through(fs2text.utf8Decode)
-            text
+            val lines = bytes.through(fs2text.utf8Decode).through(fs2text.lines)
+            val records = lines.map(LogRecord.parse).collect{case Some(a) => a}
+            val filtered = records.filter(rec => from.forall(f => rec.t >= f) && to.forall(t => rec.t <= t))
+            filtered
           }
         case false =>
           Left(s"Could not locate/read logs for device: ${device}")

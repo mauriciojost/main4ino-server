@@ -31,8 +31,9 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       d <- devLogger.getLogs(device, ignore, length)
+      p = d.map(i => i.map(_.pretty))
       _ <- logger.debug(s"Retrieved logs for $device")
-    } yield (d)
+    } yield (p)
   }
 
   def getLastDescription(device: DeviceName): F[Attempt[Description]] = {
