@@ -444,7 +444,7 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     'LogController',
-    function($scope, $http, $log, $location) {
+    function($scope, $http, $log, $location, $date) {
 
         $scope.session = getCookie("session");
         $scope.device = getCookie("device");
