@@ -1,5 +1,6 @@
 #!/usr/bin/env bash -e
 
+source credentials.conf
 source settings.conf
 
 set +x 
