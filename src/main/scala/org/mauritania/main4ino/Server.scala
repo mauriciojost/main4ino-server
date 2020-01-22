@@ -47,7 +47,7 @@ object Server extends IOApp {
     repo = new Repository[F](transactor)
     time = new Time[F]()
     cleaner = new Cleaner[F](repo, time)
-    devLogger = new DevLogger(Paths.get(configApp.devLogger.logsBasePath), time, blockingIoEc)
+    devLogger = new DevLogger(configApp.devLogger, time, blockingIoEc)
     _ <- Resource.liftF(logger.debug(s"Device logger initialized..."))
 
     fwStore = new Store(Paths.get(configApp.firmware.firmwareBasePath))

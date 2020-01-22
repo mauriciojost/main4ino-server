@@ -10,6 +10,7 @@ import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.{DeviceName, EpochSecTimestamp}
 import cats.implicits._
+import org.mauritania.main4ino.Config.DevLoggerConfig
 
 import scala.concurrent.ExecutionContext
 
@@ -19,14 +20,13 @@ import scala.concurrent.ExecutionContext
   * having to pollute the actors' properties.
   * @tparam F
   */
-class DevLogger[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], ec: ExecutionContext) {
+class DevLogger[F[_]: Sync: ContextShift](config: DevLoggerConfig, time: Time[F], ec: ExecutionContext) {
 
   final private val blocker = Blocker.liftExecutionContext(ec)
   final private val ChunkSize = 1024
   final private val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-  final private val MaxLengthLogs = 1024 * 512 // 0.5 MiB
 
-  private def pathFromDevice(device: DeviceName): JavaPath = basePath.resolve(s"$device.log")
+  private def pathFromDevice(device: DeviceName): JavaPath = config.logsBasePath.resolve(s"$device.log")
 
   /**
     * Update logs, provided the device name and the log messages to be appended
@@ -71,7 +71,7 @@ class DevLogger[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], ec:
         case true =>
           Right{
             val bytes = io.file.readAll[F](pathFromDevice(device), blocker, ChunkSize)
-            val bytesLimited = bytes.takeRight(MaxLengthLogs)
+            val bytesLimited = bytes.takeRight(config.maxLengthLogs)
             val lines = bytesLimited.through(fs2text.utf8Decode).through(fs2text.lines)
             val records = lines.map(LogRecord.parse).collect{case Some(a) => a}
             val filtered = records.filter(rec => from.forall(f => rec.t >= f) && to.forall(t => rec.t <= t))

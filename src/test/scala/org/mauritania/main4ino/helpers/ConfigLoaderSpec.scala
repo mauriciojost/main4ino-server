@@ -1,6 +1,7 @@
 package org.mauritania.main4ino.helpers
 
 import java.io.File
+import java.nio.file.Paths
 
 import cats.effect.IO
 import com.typesafe.config.ConfigException
@@ -8,7 +9,7 @@ import org.mauritania.main4ino.{Config => GeneralConfig}
 import org.mauritania.main4ino.Config.{DevLoggerConfig, FirmwareConfig, ServerConfig}
 import org.mauritania.main4ino.db.Config.Cleanup
 import org.mauritania.main4ino.db.{Config => DbConfig}
-import org.mauritania.main4ino.security.{Config => SecurityConfig, Fixtures}
+import org.mauritania.main4ino.security.{Fixtures, Config => SecurityConfig}
 import org.scalatest._
 import pureconfig._
 import pureconfig.generic.auto._
@@ -31,9 +32,7 @@ class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
           retentionSecs = 10
         )
       ),
-      devLogger = DevLoggerConfig(
-        logsBasePath = "/tmp"
-      ),
+      devLogger = DevLoggerConfig(Paths.get("/tmp")),
       firmware = FirmwareConfig(
         firmwareBasePath = "src/test/resources/firmwares/1/"
       )

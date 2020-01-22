@@ -27,6 +27,7 @@ import org.mauritania.main4ino.{Fixtures, Helper}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues._
 import org.http4s.circe._
+import org.mauritania.main4ino.Config.DevLoggerConfig
 import org.mauritania.main4ino.DecodersIO
 import org.mauritania.main4ino.db.Repository
 import org.mauritania.main4ino.firmware.Store
@@ -143,7 +144,7 @@ class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with Decode
         repository = r,
         time = t,
         devLogger = new DevLogger[IO](
-          basePath = Paths.get("/tmp"),
+          DevLoggerConfig(Paths.get("/tmp")),
           time = t,
           ExecutionContext.global
         )(Sync[IO], cs)

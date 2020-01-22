@@ -1,5 +1,7 @@
 package org.mauritania.main4ino
 
+import java.nio.file.Path
+
 import org.mauritania.main4ino.Config.{DevLoggerConfig, FirmwareConfig, ServerConfig}
 import org.mauritania.main4ino.db.{Config => DbConfig}
 
@@ -18,7 +20,8 @@ object Config {
   )
 
   case class DevLoggerConfig(
-    logsBasePath: String
+    logsBasePath: Path,
+    maxLengthLogs: Int = 1024 * 512 // 512 KB
   )
 
   case class FirmwareConfig(

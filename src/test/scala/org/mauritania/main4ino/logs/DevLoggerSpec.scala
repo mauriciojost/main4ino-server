@@ -5,6 +5,7 @@ import java.time.{Instant, ZoneId, ZonedDateTime}
 
 import cats.effect.{IO, Sync}
 import fs2.Stream
+import org.mauritania.main4ino.Config.DevLoggerConfig
 import org.mauritania.main4ino.TmpDirCtx
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.EpochSecTimestamp
@@ -80,7 +81,7 @@ class DevLoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
 
   private def buildLogger(tmp: Path, t: EpochSecTimestamp = 0L) = {
     val ec = ExecutionContext.global
-    val logger = new DevLogger[IO](tmp, new FixedTime(t), ec)(Sync[IO], IO.contextShift(ec))
+    val logger = new DevLogger[IO](DevLoggerConfig(tmp), new FixedTime(t), ec)(Sync[IO], IO.contextShift(ec))
     logger
   }
 
