@@ -24,8 +24,6 @@ class DevLogger[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], ec:
   final private val blocker = Blocker.liftExecutionContext(ec)
   final private val ChunkSize = 1024
   final private val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-  final private val DefaultLengthLogs = 1024L * 10
-  final private val DefaultIgnoreLogs = 0L
   final private val MaxLengthLogs = 1024L * 512 // 0.5 MiB
 
   private def pathFromDevice(device: DeviceName): JavaPath = basePath.resolve(s"$device.log")
@@ -60,12 +58,6 @@ class DevLogger[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], ec:
   /**
     * Retrieve full logs for the given device
     *
-    * Examples:
-    * - stream=0123456789
-    * - lenght=4 && ignore=0 => 6789
-    * - lenght=4 && ignore=1 => 5678
-    * - lenght=4 && ignore=2 => 4567
-    *
     * @param device device name
     * @param from for pagination, timestamp from which to retrieve logs
     * @param to for pagination, timestamp until which to retrieve logs
@@ -79,7 +71,8 @@ class DevLogger[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], ec:
         case true =>
           Right{
             val bytes = io.file.readAll[F](pathFromDevice(device), blocker, ChunkSize)
-            val lines = bytes.through(fs2text.utf8Decode).through(fs2text.lines)
+            val bytesLimited = bytes.take(MaxLengthLogs)
+            val lines = bytesLimited.through(fs2text.utf8Decode).through(fs2text.lines)
             val records = lines.map(LogRecord.parse).collect{case Some(a) => a}
             val filtered = records.filter(rec => from.forall(f => rec.t >= f) && to.forall(t => rec.t <= t))
             filtered
