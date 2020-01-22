@@ -24,7 +24,7 @@ class DevLogger[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], ec:
   final private val blocker = Blocker.liftExecutionContext(ec)
   final private val ChunkSize = 1024
   final private val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-  final private val MaxLengthLogs = 1024L * 512 // 0.5 MiB
+  final private val MaxLengthLogs = 1024 * 512 // 0.5 MiB
 
   private def pathFromDevice(device: DeviceName): JavaPath = basePath.resolve(s"$device.log")
 
@@ -71,7 +71,7 @@ class DevLogger[F[_]: Sync: ContextShift](basePath: JavaPath, time: Time[F], ec:
         case true =>
           Right{
             val bytes = io.file.readAll[F](pathFromDevice(device), blocker, ChunkSize)
-            val bytesLimited = bytes.take(MaxLengthLogs)
+            val bytesLimited = bytes.takeRight(MaxLengthLogs)
             val lines = bytesLimited.through(fs2text.utf8Decode).through(fs2text.lines)
             val records = lines.map(LogRecord.parse).collect{case Some(a) => a}
             val filtered = records.filter(rec => from.forall(f => rec.t >= f) && to.forall(t => rec.t <= t))
