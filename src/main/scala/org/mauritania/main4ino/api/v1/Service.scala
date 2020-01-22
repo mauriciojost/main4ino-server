@@ -28,6 +28,7 @@ import org.mauritania.main4ino.security.{Auther, User}
 import org.mauritania.main4ino.{ContentTypeAppJson, ContentTypeTextPlain}
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import fs2.Stream
+import org.mauritania.main4ino.logs.LogRecord
 
 class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], firmware: FirmwareService[F]) extends Http4sDsl[F] {
 
@@ -181,9 +182,9 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
       * Returns: OK (200) | NO_CONTENT (204)
       */
     case a@GET -> Root / "devices" / Dev(device) / "logs" :? FromParam(from) +& ToParam(to) as _ => {
-      val r: F[Attempt[Stream[F, String]]] = tr.getLogs(device, from, to)
+      val r: F[Attempt[Stream[F, LogRecord]]] = tr.getLogs(device, from, to)
       r.flatMap {
-        case Right(l) => Ok(l)
+        case Right(l) => Ok(Stream("[") ++ l.map(_.asJson.noSpaces).intersperse(",") ++ Stream("]"), ContentTypeAppJson)
         case Left(m) => NoContent()
       }
     }

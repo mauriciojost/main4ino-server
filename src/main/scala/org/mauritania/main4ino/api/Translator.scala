@@ -16,7 +16,7 @@ import org.mauritania.main4ino.models._
 import fs2.Stream
 import org.http4s.Headers
 import org.mauritania.main4ino.db.Repository
-import org.mauritania.main4ino.logs.DevLogger
+import org.mauritania.main4ino.logs.{DevLogger, LogRecord}
 
 class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger: DevLogger[F]) extends Http4sDsl[F] {
 
@@ -28,13 +28,12 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     } yield (d)
   }
 
-  def getLogs(device: DeviceName, ignore: Option[Long], length: Option[Long]): F[Attempt[Stream[F, String]]] = {
+  def getLogs(device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): F[Attempt[Stream[F, LogRecord]]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
-      d <- devLogger.getLogs(device, ignore, length)
-      p = d.map(i => i.map(_.pretty).intersperse("\n"))
+      d <- devLogger.getLogs(device, from, to)
       _ <- logger.debug(s"Retrieved logs for $device")
-    } yield (p)
+    } yield (d)
   }
 
   def getLastDescription(device: DeviceName): F[Attempt[Description]] = {

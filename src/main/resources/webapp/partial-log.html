@@ -34,9 +34,25 @@
     <div class="panel panel-info">
         <div class="panel-heading">
             <container>
-                <h3>3. Investigate logs</h3>
+                <h3>3. Investigate logs for {{ queriedDevice }}</h3>
                 <br/>
-                <div class="text-left" style="white-space:pre-wrap;">{{ logs }}</div>
+                <div>
+                    <table class="table table-striped myTable">
+                        <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Logs</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr ng-repeat="i in logs">
+                            <td class="col">{{ i.t * 1000 | date:'yyyy-MM-dd HH:mm:ss Z' }}</td>
+                            <td class="col-6">{{ i.content }} </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
             </container>
         </div>
     </div>

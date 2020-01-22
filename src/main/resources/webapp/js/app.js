@@ -451,6 +451,8 @@ webPortalApp.controller(
         $scope.from = -0.1; // in days, lower-bound to filter history records
         $scope.to = 0.0; // in days, upper-bound to filter history records
 
+        $scope.queriedDevice = '...';
+
         $scope.getLogs = function() {
             $log.log('Getting logs for device ' + $scope.device);
 
@@ -471,15 +473,18 @@ webPortalApp.controller(
             };
 
             $log.log('Executing request...');
+            $scope.queriedDevice = $scope.device + " (in progress)";
 
             $http(req).then(
                 function(r) {
                     $log.log('Logs obtained.');
                     $scope.logs = r.data;
+                    $scope.queriedDevice = $scope.device;
                 },
                 function(r) {
                     $log.log('Could not retrieve logs.');
-                    $scope.logs = '-';
+                    $scope.logs = '[]';
+                    $scope.queriedDevice = $scope.device + " (failed)";
                     BootstrapDialog.show({
                         title: 'Error',
                         message: 'Failed to retrieve logs.'
