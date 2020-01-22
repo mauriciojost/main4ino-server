@@ -197,7 +197,6 @@ webPortalApp.controller(
                         $log.log('Found: ' + JSON.stringify(r.data));
                         $scope.queriedDevice = $scope.device;
                         $scope.result = r.data;
-                        $scope.result.reverse();
                     },
                     function(r) {
                         $log.log('Problem requesting: ' + JSON.stringify(r.data));
