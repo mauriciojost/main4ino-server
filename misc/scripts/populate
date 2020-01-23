@@ -22,7 +22,7 @@ curl -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/tar
 curl -X PUT "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/descriptions" -d "$DESCRIPTION"
 
 curl -X PUT "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/logs" -d "log"
-curl -X PUT "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/logs" -d "here"
+curl -X PUT "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/logs" -d "here\nmyday\nis\nthe best that can happen to anyone"
 
 curl -X GET "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/logs"
 
