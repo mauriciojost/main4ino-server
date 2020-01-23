@@ -5,7 +5,6 @@ import java.time.{Instant, ZoneId, ZonedDateTime}
 
 import cats.effect.{IO, Sync}
 import fs2.Stream
-import org.mauritania.main4ino.Config.DevLoggerConfig
 import org.mauritania.main4ino.TmpDirCtx
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.EpochSecTimestamp

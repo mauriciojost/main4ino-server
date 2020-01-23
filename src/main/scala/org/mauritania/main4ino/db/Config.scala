@@ -1,5 +1,6 @@
 package org.mauritania.main4ino.db
 
+import eu.timepit.refined.types.numeric.PosInt
 import org.mauritania.main4ino.db.Config.Cleanup
 
 case class Config(
@@ -12,7 +13,7 @@ case class Config(
 
 object Config {
   case class Cleanup(
-    periodSecs: Int,
-    retentionSecs: Int
+    periodSecs: PosInt,
+    retentionSecs: PosInt
   )
 }

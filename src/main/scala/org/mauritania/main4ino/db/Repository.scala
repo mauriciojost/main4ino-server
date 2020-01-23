@@ -7,6 +7,7 @@ import doobie._
 import doobie.free.connection.{ConnectionOp, raw}
 import doobie.implicits._
 import doobie.util.transactor.Transactor
+import eu.timepit.refined.types.numeric.PosInt
 import fs2.Stream
 import io.circe.Json
 import org.mauritania.main4ino.api.{Attempt, ErrMsg}
@@ -43,9 +44,9 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
     transaction.transact(transactor)
   }
 
-  def cleanup(table: ReqType, now: EpochSecTimestamp, retentionSecs: Int) = {
+  def cleanup(table: ReqType, now: EpochSecTimestamp, retentionSecs: PosInt) = {
     val transaction = for {
-      m <- sqlDeleteMetadataWhereCreationIsLess(table, now - retentionSecs)
+      m <- sqlDeleteMetadataWhereCreationIsLess(table, now - retentionSecs.value)
       _ <- sqlDeleteActorTupOrphanOfRequest(table)
       // TODO cleanup descriptions that are not the last one per device
     } yield (m)

@@ -6,30 +6,33 @@ import java.nio.file.Paths
 import cats.effect.IO
 import com.typesafe.config.ConfigException
 import org.mauritania.main4ino.{Config => GeneralConfig}
-import org.mauritania.main4ino.Config.{DevLoggerConfig, FirmwareConfig, ServerConfig}
+import org.mauritania.main4ino.Config.{FirmwareConfig, ServerConfig}
 import org.mauritania.main4ino.db.Config.Cleanup
 import org.mauritania.main4ino.db.{Config => DbConfig}
+import org.mauritania.main4ino.logs.DevLoggerConfig
 import org.mauritania.main4ino.security.{Fixtures, Config => SecurityConfig}
 import org.scalatest._
 import pureconfig._
 import pureconfig.generic.auto._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import eu.timepit.refined.pureconfig._
+import eu.timepit.refined.types.numeric.PosInt
 
 class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
 
   "The config loader" should "load correctly a configuration file" in {
     val c = ConfigLoader.loadFromFile[IO, GeneralConfig](new File("src/test/resources/configs/1/application.conf")).unsafeRunSync()
     c shouldBe GeneralConfig(
-      server = ServerConfig("0.0.0.0", 8080),
+      server = ServerConfig("0.0.0.0", PosInt(8080)),
       database = DbConfig(
         driver = "org.h2.Driver",
         url = "jdbc:h2:mem:test-db",
         user = "sa",
         password = "",
         cleanup = Cleanup(
-          periodSecs = 1,
-          retentionSecs = 10
+          periodSecs = PosInt(1),
+          retentionSecs = PosInt(10)
         )
       ),
       devLogger = DevLoggerConfig(Paths.get("/tmp")),

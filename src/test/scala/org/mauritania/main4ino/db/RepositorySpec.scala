@@ -1,5 +1,6 @@
 package org.mauritania.main4ino.db
 
+import eu.timepit.refined.types.numeric.PosInt
 import io.circe.Json
 import org.mauritania.main4ino.Fixtures._
 import org.mauritania.main4ino.db.Repository.ReqType
@@ -202,17 +203,17 @@ class RepositorySpec extends AnyFlatSpec with Matchers with TransactorCtx {
         repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe List(1L, 2L, 3L, 4L)
         repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe List(5L, 6L, 7L, 8L)
 
-        repo.cleanup(table, 10, 10).unsafeRunSync() shouldBe 0 // should preserve all (remove none)
+        repo.cleanup(table, 10, PosInt(10)).unsafeRunSync() shouldBe 0 // should preserve all (remove none)
 
         repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe List(1L, 2L, 3L, 4L)
         repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe List(5L, 6L, 7L, 8L)
 
-        repo.cleanup(table, 10, 5).unsafeRunSync() shouldBe 2 // should remove creations at 0L (so 2 in total)
+        repo.cleanup(table, 10, PosInt(5)).unsafeRunSync() shouldBe 2 // should remove creations at 0L (so 2 in total)
 
         repo.selectRequestIdsWhereDevice(table, d1.metadata.device).compile.toList.unsafeRunSync() shouldBe List(2L, 3L, 4L)
         repo.selectRequestIdsWhereDevice(table, d2.metadata.device).compile.toList.unsafeRunSync() shouldBe List(6L, 7L, 8L)
 
-        repo.cleanup(table, 10, 0).unsafeRunSync() shouldBe 6 // remove all updates
+        repo.cleanup(table, 10, PosInt(1)).unsafeRunSync() shouldBe 6 // remove all updates
 
       }
     }

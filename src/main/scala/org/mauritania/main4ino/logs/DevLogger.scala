@@ -10,7 +10,6 @@ import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.{DeviceName, EpochSecTimestamp}
 import cats.implicits._
-import org.mauritania.main4ino.Config.DevLoggerConfig
 
 import scala.concurrent.ExecutionContext
 

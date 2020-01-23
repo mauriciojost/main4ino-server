@@ -18,7 +18,8 @@ object Dependencies {
         val slf4jLog4j12Version = "1.8.0-beta4"
         val CryptobitsVersion = "1.3"
         val BcryptVersion = "4.1"
-        val GfcSemver = "0.0.5"
+        val GfcSemverVersion = "0.0.5"
+        val RefinedVersion = "0.9.10"
     }
 
     val Dependencies = Seq(
@@ -26,6 +27,8 @@ object Dependencies {
           "com.github.t3hnar" %% "scala-bcrypt" % Versions.BcryptVersion,
           "org.http4s" %% "http4s-blaze-server" % Versions.Http4sVersion,
           "org.http4s" %% "http4s-circe" % Versions.Http4sVersion,
+          "eu.timepit" %% "refined"                 % Versions.RefinedVersion,
+          "eu.timepit" %% "refined-pureconfig"      % Versions.RefinedVersion,
           "io.circe" %% "circe-core" % Versions.CirceVersion,
           "io.circe" %% "circe-generic" % Versions.CirceVersion,
           "io.circe" %% "circe-parser" % Versions.CirceVersion,
@@ -42,8 +45,9 @@ object Dependencies {
           "org.xerial" % "sqlite-jdbc" % Versions.SqliteVersion,
           "org.flywaydb" % "flyway-core" % Versions.FlywayVersion,
           "com.github.pureconfig" %% "pureconfig" % Versions.PureConfigVersion,
-          "com.gilt" %% "gfc-semver" % Versions.GfcSemver,
+          "com.gilt" %% "gfc-semver" % Versions.GfcSemverVersion,
           "org.scalatest" %% "scalatest" % Versions.ScalaTestVersion % "test",
           "org.scalamock" %% "scalamock" % Versions.ScalaMockVersion % "test"
-        )
+
+  )
 }

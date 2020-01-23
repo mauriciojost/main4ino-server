@@ -27,12 +27,11 @@ import org.mauritania.main4ino.{Fixtures, Helper}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues._
 import org.http4s.circe._
-import org.mauritania.main4ino.Config.DevLoggerConfig
 import org.mauritania.main4ino.DecodersIO
 import org.mauritania.main4ino.db.Repository
 import org.mauritania.main4ino.firmware.Store
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
-import org.mauritania.main4ino.logs.DevLogger
+import org.mauritania.main4ino.logs.{DevLogger, DevLoggerConfig}
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag

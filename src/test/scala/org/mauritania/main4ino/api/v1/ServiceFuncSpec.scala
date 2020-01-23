@@ -27,8 +27,7 @@ import org.scalatest.Sequential
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import cats._
 import cats.implicits._
-import org.mauritania.main4ino.Config.DevLoggerConfig
-import org.mauritania.main4ino.logs.DevLogger
+import org.mauritania.main4ino.logs.{DevLogger, DevLoggerConfig}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

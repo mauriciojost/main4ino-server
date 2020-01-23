@@ -23,6 +23,7 @@ import doobie.util.ExecutionContexts
 import org.mauritania.main4ino.logs.DevLogger
 import pureconfig._
 import pureconfig.generic.auto._
+import eu.timepit.refined.pureconfig._
 
 object Server extends IOApp {
 
@@ -65,12 +66,12 @@ object Server extends IOApp {
     _ <- Resource.liftF(logger.debug(s"Database initialized..."))
 
     cleanupRepoTask = cleaner.cleanupRepo(configApp.database.cleanup.retentionSecs)
-    cleanupPeriodSecs = FiniteDuration(configApp.database.cleanup.periodSecs, TimeUnit.SECONDS)
+    cleanupPeriodSecs = FiniteDuration(configApp.database.cleanup.periodSecs.value, TimeUnit.SECONDS)
     _ <- Resource.liftF(Concurrent[F].start(Scheduler.periodic[F, Int](cleanupPeriodSecs, cleanupRepoTask)))
     _ <- Resource.liftF(logger.debug(s"Cleanup task initialized..."))
 
     exitCodeServer <- BlazeServerBuilder[F]
-      .bindHttp(configApp.server.port, configApp.server.host)
+      .bindHttp(configApp.server.port.value, configApp.server.host)
       .withHttpApp(httpApp)
       .resource
     _ <- Resource.liftF(logger.info(s"Server initialized."))

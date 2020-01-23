@@ -2,6 +2,7 @@ package org.mauritania.main4ino.db
 
 import cats.effect.{Async, Blocker, IO, Resource, Sync}
 import doobie.hikari.HikariTransactor
+import eu.timepit.refined.types.numeric.PosInt
 import org.mauritania.main4ino.Helper
 import org.mauritania.main4ino.db.Config.Cleanup
 
@@ -13,8 +14,8 @@ trait TransactorCtx {
     user = "sa",
     password = "",
     cleanup = Cleanup(
-      periodSecs = 10,
-      retentionSecs = 10
+      periodSecs = PosInt(10),
+      retentionSecs = PosInt(10)
     )
   )
 
