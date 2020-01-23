@@ -27,7 +27,7 @@ import org.scalatest.Sequential
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import cats._
 import cats.implicits._
-import org.mauritania.main4ino.logs.{DevLogger, DevLoggerConfig}
+import org.mauritania.main4ino.devicelogs.{Logger, Config}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -49,7 +49,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
       new Translator(
         new Repository(transactor),
         t,
-        new DevLogger[IO](DevLoggerConfig(tmp), t, Helper.testExecutionContext)(Sync[IO], cs)
+        new Logger[IO](Config(tmp), t, Helper.testExecutionContext)(Sync[IO], cs)
       ),
       t,
       new FirmwareService[IO](new Store(Paths.get("src/test/resources/firmwares/1")), Helper.testExecutionContext)

@@ -22,7 +22,7 @@ import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.ForTestRicherClasses._
 import org.mauritania.main4ino.models.{Device, EpochSecTimestamp}
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
-import org.mauritania.main4ino.security.{Auther, Config, User}
+import org.mauritania.main4ino.security.{Auther, Config => SecurityConfig, User}
 import org.mauritania.main4ino.{Fixtures, Helper}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues._
@@ -31,7 +31,7 @@ import org.mauritania.main4ino.DecodersIO
 import org.mauritania.main4ino.db.Repository
 import org.mauritania.main4ino.firmware.Store
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
-import org.mauritania.main4ino.logs.{DevLogger, DevLoggerConfig}
+import org.mauritania.main4ino.devicelogs.{Logger, Config => DevLogsConfig}
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
@@ -45,7 +45,7 @@ class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with Decode
   val Salt = Fixtures.Salt
   val ValidToken = "012345678901234567890123456789"
   val PrivateKey = "0123456789abcdef0123"
-  val AuthConfig = Config(List(User1), PrivateKey, Salt)
+  val AuthConfig = SecurityConfig(List(User1), PrivateKey, Salt)
   val Dev1 = Fixtures.Device1
   val DevId1 = Fixtures.DeviceId1
   val DevId2 = Fixtures.DeviceId1.withId(2L).withDeviceName("dev2")
@@ -142,8 +142,8 @@ class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with Decode
       tr = new Translator[IO](
         repository = r,
         time = t,
-        devLogger = new DevLogger[IO](
-          DevLoggerConfig(Paths.get("/tmp")),
+        devLogger = new Logger[IO](
+          DevLogsConfig(Paths.get("/tmp")),
           time = t,
           ExecutionContext.global
         )(Sync[IO], cs)

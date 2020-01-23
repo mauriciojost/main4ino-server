@@ -1,9 +1,10 @@
-package org.mauritania.main4ino.logs
+package org.mauritania.main4ino.devicelogs
 
 import java.nio.file.{Path, Paths}
 import java.time.{Instant, ZoneId, ZonedDateTime}
 
 import cats.effect.{IO, Sync}
+import eu.timepit.refined.types.numeric.PosInt
 import fs2.Stream
 import org.mauritania.main4ino.TmpDirCtx
 import org.mauritania.main4ino.helpers.Time
@@ -15,7 +16,7 @@ import org.scalatest.matchers.should.Matchers
 import scala.concurrent.ExecutionContext
 import scala.io.Source
 
-class DevLoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
+class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
 
   class FixedTime(t: EpochSecTimestamp) extends Time[IO] {
     override def nowUtc: IO[ZonedDateTime] = IO.pure(ZonedDateTime.ofInstant(Instant.ofEpochSecond(t), ZoneId.of("UTC")))
@@ -49,23 +50,49 @@ class DevLoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
       val successfulReadFull = readFull.right.value
       successfulReadFull.compile.toList.unsafeRunSync() should be(
         List(
-          LogRecord(0, "hey"),
-          LogRecord(0, "you"),
-          LogRecord(1, "guy")
+          Record(0, "hey"),
+          Record(0, "you"),
+          Record(1, "guy")
         )
       )
 
       val readIngoreLength1 =
         logger2.getLogs("device", Some(1L), Some(3L)).unsafeRunSync()
       val successfulReadIgnoreLength1 = readIngoreLength1.right.value
-      successfulReadIgnoreLength1.compile.toList.unsafeRunSync() should be(List(LogRecord(1L, "guy")))
+      successfulReadIgnoreLength1.compile.toList.unsafeRunSync() should be(List(Record(1L, "guy")))
 
       val readIngoreLength2 =
         logger2.getLogs("device", Some(0L), Some(0L)).unsafeRunSync()
       val successfulReadIgnoreLength2 = readIngoreLength2.right.value
-      successfulReadIgnoreLength2.compile.toList.unsafeRunSync() should be(List(LogRecord(0L, "hey"), LogRecord(0L, "you")))
+      successfulReadIgnoreLength2.compile.toList.unsafeRunSync() should be(List(Record(0L, "hey"), Record(0L, "you")))
     }
   }
+
+  it should "limit retrieval length" in {
+    withTmpDir { tmp =>
+      val loggerWrite = buildLogger(tmp = tmp, t = 0)
+      val s = Stream("hey\nyou")
+      loggerWrite.updateLogs("device", s).unsafeRunSync().right.value should be(())
+
+      val loggerRead12 = buildLogger(tmp = tmp, t = 0, mxLen = PosInt((1/*time*/ + 1/*space*/ + 3/*hey*/ + 1/*newline*/)* 2))
+      val read12 = loggerRead12.getLogs("device", Some(0L), Some(0L)).unsafeRunSync().right.value
+      read12.compile.toList.unsafeRunSync() should be(
+        List(
+          Record(0, "hey"),
+          Record(0, "you")
+        )
+      )
+
+      val loggerRead6 = buildLogger(tmp = tmp, t = 0, mxLen = PosInt(6))
+      val read6 = loggerRead6.getLogs("device", Some(0L), Some(0L)).unsafeRunSync().right.value
+      read6.compile.toList.unsafeRunSync() should be(
+        List(
+          Record(0, "you")
+        )
+      )
+    }
+  }
+
 
   it should "report a meaningful failure when cannot write file" in {
     val logger = buildLogger(Paths.get("/non/existent/path"))
@@ -78,9 +105,9 @@ class DevLoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
     logger.getLogs("device1", None, None).unsafeRunSync().left.get should include("device1")
   }
 
-  private def buildLogger(tmp: Path, t: EpochSecTimestamp = 0L) = {
+  private def buildLogger(tmp: Path, t: EpochSecTimestamp = 0L, mxLen: PosInt = PosInt(1024)) = {
     val ec = ExecutionContext.global
-    val logger = new DevLogger[IO](DevLoggerConfig(tmp), new FixedTime(t), ec)(Sync[IO], IO.contextShift(ec))
+    val logger = new Logger[IO](Config(tmp, mxLen), new FixedTime(t), ec)(Sync[IO], IO.contextShift(ec))
     logger
   }
 

@@ -20,7 +20,7 @@ import org.http4s.server.{Router, Server => H4Server}
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.implicits._
 import doobie.util.ExecutionContexts
-import org.mauritania.main4ino.logs.DevLogger
+import org.mauritania.main4ino.devicelogs.Logger
 import pureconfig._
 import pureconfig.generic.auto._
 import eu.timepit.refined.pureconfig._
@@ -48,7 +48,7 @@ object Server extends IOApp {
     repo = new Repository[F](transactor)
     time = new Time[F]()
     cleaner = new Cleaner[F](repo, time)
-    devLogger = new DevLogger(configApp.devLogger, time, blockingIoEc)
+    devLogger = new Logger(configApp.devLogger, time, blockingIoEc)
     _ <- Resource.liftF(logger.debug(s"Device logger initialized..."))
 
     fwStore = new Store(Paths.get(configApp.firmware.firmwareBasePath))

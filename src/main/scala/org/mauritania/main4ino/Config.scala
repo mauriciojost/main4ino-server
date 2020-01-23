@@ -5,7 +5,7 @@ import java.nio.file.Path
 import eu.timepit.refined.types.numeric.PosInt
 import org.mauritania.main4ino.Config.{FirmwareConfig, ServerConfig}
 import org.mauritania.main4ino.db.{Config => DbConfig}
-import org.mauritania.main4ino.logs.DevLoggerConfig
+import org.mauritania.main4ino.devicelogs.{Config => DevLoggerConfig}
 
 case class Config(
   server: ServerConfig,

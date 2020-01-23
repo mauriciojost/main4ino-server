@@ -1,4 +1,4 @@
-package org.mauritania.main4ino.logs
+package org.mauritania.main4ino.devicelogs
 
 import java.io.File
 import java.nio.file.{StandardOpenOption, Path => JavaPath}
@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext
   * having to pollute the actors' properties.
   * @tparam F
   */
-class DevLogger[F[_]: Sync: ContextShift](config: DevLoggerConfig, time: Time[F], ec: ExecutionContext) {
+class Logger[F[_]: Sync: ContextShift](config: Config, time: Time[F], ec: ExecutionContext) {
 
   final private val blocker = Blocker.liftExecutionContext(ec)
   final private val ChunkSize = 1024
@@ -62,17 +62,17 @@ class DevLogger[F[_]: Sync: ContextShift](config: DevLoggerConfig, time: Time[F]
     * @param to for pagination, timestamp until which to retrieve logs
     * @return the [[Attempt]] with the stream containing the chunks of the logs
     */
-  def getLogs(device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): F[Attempt[Stream[F, LogRecord]]] = {
+  def getLogs(device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): F[Attempt[Stream[F, Record]]] = {
     val path = pathFromDevice(device)
     for {
       readable <- isReadableFile(path.toFile)
-      located: Attempt[Stream[F, LogRecord]] = readable match {
+      located: Attempt[Stream[F, Record]] = readable match {
         case true =>
           Right{
             val bytes = io.file.readAll[F](pathFromDevice(device), blocker, ChunkSize)
-            val bytesLimited = bytes.takeRight(config.maxLengthLogs)
+            val bytesLimited = bytes.takeRight(config.maxLengthLogs.value)
             val lines = bytesLimited.through(fs2text.utf8Decode).through(fs2text.lines)
-            val records = lines.map(LogRecord.parse).collect{case Some(a) => a}
+            val records = lines.map(Record.parse).collect{case Some(a) => a}
             val filtered = records.filter(rec => from.forall(f => rec.t >= f) && to.forall(t => rec.t <= t))
             filtered
           }
