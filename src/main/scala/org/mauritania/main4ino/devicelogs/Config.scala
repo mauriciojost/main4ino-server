@@ -6,6 +6,6 @@ import eu.timepit.refined.types.numeric.PosInt
 
 case class Config(
   logsBasePath: Path,
-  maxLengthLogs: PosInt = PosInt(1024 * 512) // 512 KB
+  maxLengthLogs: PosInt = PosInt(1024) * PosInt(512) // 512 KB
 )
 
