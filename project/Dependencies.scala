@@ -19,7 +19,7 @@ object Dependencies {
         val CryptobitsVersion = "1.3"
         val BcryptVersion = "4.1"
         val GfcSemverVersion = "0.0.5"
-        val RefinedVersion = "0.9.10"
+        val RefinedVersion = "0.9.12"
     }
 
     val Dependencies = Seq(
