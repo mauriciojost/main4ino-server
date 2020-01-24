@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 source source.sh
 
-devices_list=${1:-$DEVICES_LIST}
-ssid1=$2
-pass1=$3
-ssid2=$4
-pass2=$5
+devices_list="$DEVICES_LIST"
+ssid1=$1
+pass1=$2
+ssid2=$3
+pass2=$4
 
 for i in $devices_list
 do 

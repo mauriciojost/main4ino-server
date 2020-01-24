@@ -72,10 +72,12 @@ function main4ino_post_target() {
 
 
 function main4ino_get_logs() {
+  # suggestion, pype output with: jq -r .[].content
   local device="$1"
-  local ignore="${2:-0}"
-  local length="${3:-2000}"
-  $AUTHENTICATED_CURL_CMD -X GET "$SERVER_ADDRESS/api/v1/devices/$device/logs?ignore=$ignore&length=$length"
+  local length="${2:-2000}"
+  local now=`date +'%s'`
+  let from=$now-$length
+  $AUTHENTICATED_CURL_CMD -X GET "$SERVER_ADDRESS/api/v1/devices/$device/logs?from=$from&to=$now"
 }
 
 
