@@ -72,7 +72,10 @@ function main4ino_post_target() {
 
 
 function main4ino_get_logs() {
-  # suggestion, pype output with: jq -r .[].content
+  main4ino_get_logs_raw $@ | jq -r .[].content
+}
+
+function main4ino_get_logs_raw() {
   local device="$1"
   local length="${2:-2000}"
   local now=`date +'%s'`
