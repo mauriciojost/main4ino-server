@@ -54,8 +54,7 @@
                                         <th>{{ actorRep }} / Property</th>
                                         <th>Description</th>
                                         <th>Value</th>
-                                        <th>Target</th>
-                                        <th>Set</th>
+                                        <th>Target / Set</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -67,10 +66,8 @@
                                             </div>
                                         </td>
                                         <td><div>{{ propValueRep }}</div></td>
-                                        <td>
-                                            <p class="text-warning">{{ targetsSummary[actorRep][propNameRep] }}</p>
-                                        </td>
                                         <td style="text-overflow:string;overflow-x:visible;overflow:visible;">
+                                            <p class="text-warning">{{ targetsSummary[actorRep][propNameRep] }}</p>
                                             <form role="form">
                                                 <div class="input-group">
                                                     <input type="text" class="form-control"
