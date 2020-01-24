@@ -7,11 +7,7 @@ import org.mauritania.main4ino.models.EpochSecTimestamp
 case class Record(
   t: EpochSecTimestamp,
   content: String
-) {
-  def pretty: String = {
-    s"${Instant.ofEpochSecond(t)} $content"
-  }
-}
+)
 
 object Record {
   final val LogRegex = "^(\\d+) (.*)$".r
