@@ -12,6 +12,20 @@ There are two parts:
 
 One example of a project making use of `main4ino-arduino` is [here](https://github.com/mauriciojost/botino-arduino).
 
+## Features
+
+Current features include:
+
+- REST API using mainly JSON to interact with devices
+- web UI to interact with users (to interact with devices)
+- authentication on web UI and REST API
+- device properties edition via web UI
+- device properties synchronization with server
+- device time synchronization
+- device logs storage and exploration via web UI
+- firmware server (for Arduino firmware auto-upgrade)
+- CI/CD example using Jenkins
+
 ## Basics
 
 A `device` is an embedded system. For instance, a device can be an alarm based on Arduino.
