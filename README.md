@@ -8,26 +8,26 @@ Main4ino is a very simple C++(client l-Arduino)/Scala(server) framework to facil
 
 There are two parts: 
 - **main4ino-server** (**server**, this project): to be launched somewhere accessible by the devices
-- [main4ino-arduino](https://bitbucket.org/mauriciojost/main4ino-arduino/)(**client**): to be used by the soft of the Arduino devices
+- [main4ino-arduino](https://bitbucket.org/mauriciojost/main4ino-arduino/) (**client**): to be used by the soft of the Arduino devices
 
 Examples of projects making use of `main4ino-arduino`:
 
-- [botino](https://github.com/mauriciojost/botino-arduino).
-- [sleepino](https://github.com/mauriciojost/sleepino).
+- [botino](https://github.com/mauriciojost/botino-arduino)
+- [sleepino](https://github.com/mauriciojost/sleepino)
 
 ## Features
 
 Current features include:
 
-- REST API using mainly JSON to interact with devices
-- web UI to interact with users (to interact with devices)
+- REST API / JSON for interaction server-devices
+- web UI for interaction server-users
 - authentication on web UI and REST API
-- device properties edition via web UI
-- device properties synchronization with server
-- device time synchronization
-- device logs storage and exploration via web UI
-- firmware server (for Arduino firmware auto-upgrade)
-- CI/CD example using Jenkins
+- device properties edition via web UI (to set up devices conveniently)
+- device properties synchronization with server (the server handles the synchronization of targets/reports automaticaly)
+- device time synchronization (devices get their clock automatically synchronized according to the preferred timezone)
+- device logs storage and exploration via web UI (debug and monitor your devices conveniently without the need of physical access to the device)
+- firmware server (let your Arduino upgrade its firmware automatically without the need of physical access to it)
+- CI/CD example using Jenkins (your firmwares get built by Jenkins and deployed automatically, so that auto-upgrade can take place)
 
 ## Basics
 
