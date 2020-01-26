@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+source source.sh
+
+devices_list=$DEVICES_LIST
+utarget=$1
+
+for i in $devices_list
+do 
+  echo "## $i:"
+  main4ino_post_target $i settings '{"+utarget":"'$utarget'"}'
+  echo ""
+  echo ""
+done
+
