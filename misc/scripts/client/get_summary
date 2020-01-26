@@ -3,16 +3,26 @@
 echo "" > failures.log
 
 source source.sh
-function check_equal_versions() {
-  local a=$1
-  local latest=$2
-  local dev=$3
-  if [ "$a" == "$latest" ]
+function check_recent_version() {
+  local dev=$1
+  local current=$2
+  local latest_file=$3
+
+  local matched=""
+  for latest in `cat $latest_file`
+  do
+    if [ "$current" == "$latest" ]
+    then
+      matched="YES"
+    fi
+  done
+
+  if [ "$matched" == "YES" ]
   then
     echo OK | highlight green ".*"
   else
     echo KO | highlight red ".*"
-    echo "$dev not last version (current=$a / latest=$latest)" >> failures.log
+    echo "$dev not last version (current=$current)" >> failures.log
   fi
 }
 
@@ -40,15 +50,16 @@ do
   project=`echo $summary_report | jq -r  '.settings.project'`
   platform=`echo $summary_report | jq -r  '.settings.platform'`
   last_report=`main4ino_get_last_report $i | jq -r '.dbId.creation'`
-  version_latest=`main4ino_get_firmwares $project $platform  | jq -r .[].version | tail -1`
+  main4ino_get_firmwares $project $platform  | jq -r .[].version | tail -$VERSIONS_TOLERANCE > .versions.latest.file
+  versions_latest_file=.versions.latest.file
   logl=`echo $summary_report | jq -r  '.settings."~logl"'`
   logo=`echo $summary_report | jq -r  '.settings."~logo"'`
   echo "Info:"
   echo "- alias          : $aliase" | highlight blue $aliase
   echo "- project        : $project"
   echo "- platform       : $platform"
-  echo "- last report    : `check_fresh $last_report $FRESHNESS_THRESHOLD $i` (is: `date --utc -d @$last_report` / shouldbe `date --utc`)"
-  echo "- current version: `check_equal_versions $version $version_latest $i` (is: $version / shouldbe: $version_latest)"
+  echo "- last report    : `check_fresh $last_report $FRESHNESS_THRESHOLD $i` (is: `date --utc -d @$last_report` / shouldbenear `date --utc`)"
+  echo "- current version: `check_recent_version $i $version $versions_latest_file` (is: $version / shouldbein: `cat $versions_latest_file | tr '\n' ' '`)"
   echo "Summary report:"
   echo "$summary_report" | highlight gray ".*"
   echo "Logs (log level = $logl / log options = $logo):"
