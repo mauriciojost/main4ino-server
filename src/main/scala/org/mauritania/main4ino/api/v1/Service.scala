@@ -192,7 +192,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
     /**
       * PUT /devices/<dev>/descriptions
       *
-      * Example: POST /devices/dev1/descriptions
+      * Example: PUT /devices/dev1/descriptions
       *
       * Update the device description given the device ID.
       *
