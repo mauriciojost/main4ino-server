@@ -7,7 +7,8 @@ import org.mauritania.main4ino.DecodersIO
 import org.mauritania.main4ino.cli.Actions.{AddRawUser, AddRawUsers}
 import org.mauritania.main4ino.cli.Modules.{ConfigsAppErr, FilesystemSync}
 import org.mauritania.main4ino.security.Fixtures._
-import org.mauritania.main4ino.security.{Auther, User}
+import org.mauritania.main4ino.security.MethodRight.{MethodRight, RW}
+import org.mauritania.main4ino.security.{AccessRight, Auther, User}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -18,14 +19,14 @@ class ModulesSpec extends AnyWordSpec with Matchers with DecodersIO {
     "add a user" in {
       val c = new ConfigsAppErr[IO]()
       val baseConfig = DefaultSecurityConfig
-      val newUser = AddRawUsers(List(AddRawUser("pepe", "toto", "pepe@zzz.com", List("/"))))
+      val newUser = AddRawUsers(List(AddRawUser("pepe", "toto", "pepe@zzz.com", Map[String, MethodRight]("/" -> RW))))
       val newConf = c.performAction(baseConfig, newUser)
 
       val ExpectedNewUserEntry = User(
         name = "pepe",
         hashedpass = Auther.hashPassword("toto", Salt),
         email = "pepe@zzz.com",
-        granted = List("/")
+        granted = Map[String, MethodRight]("/" -> RW)
       )
 
       newConf shouldBe baseConfig.copy(users = ExpectedNewUserEntry :: baseConfig.users)

@@ -5,6 +5,7 @@ import org.http4s.headers.Authorization
 import org.http4s.{AuthedRequest, BasicCredentials, Header, Headers, Method, Request, Uri}
 import org.mauritania.main4ino.security.Auther.EncryptionConfig
 import org.mauritania.main4ino.security.Fixtures._
+import org.mauritania.main4ino.security.MethodRight.{MethodRight, RW}
 import org.reactormonk.{CryptoBits, PrivateKey}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.EitherValues._
@@ -50,18 +51,18 @@ class AutherSpec extends AnyWordSpec with Matchers {
     }
 
     "correctly identify not allowed users to certain uris" in {
-      val user = User1.copy(granted = List("/api/v1/"))
+      val user = User1.copy(granted = Map[String, MethodRight]("/api/v1/" -> RW))
       val uriPath = "/admin"
-      val authorizationAttempt = Auther.checkAccess(user, uriPath)
+      val authorizationAttempt = Auther.checkAccess(user, Method.POST, uriPath)
       authorizationAttempt.isLeft shouldBe(true)
       authorizationAttempt.left.get should include(user.id)
       authorizationAttempt.left.get should include(uriPath)
     }
 
     "correctly identify allowed users to certain uris" in {
-      val user = User1.copy(granted = List("/api/v1/"))
+      val user = User1.copy(granted = Map[String, MethodRight]("/api/v1/" -> RW))
       val uriPath = "/api/v1/smth"
-      val authorizationAttempt = Auther.checkAccess(user, uriPath)
+      val authorizationAttempt = Auther.checkAccess(user, Method.POST, uriPath)
       authorizationAttempt shouldBe Right(user)
     }
 
@@ -114,6 +115,6 @@ class AutherSpec extends AnyWordSpec with Matchers {
     uri = Uri.unsafeFromString(uri),
     headers = h
   )
-  private def userWithRights(l: String*): User = User1.copy(granted = l.toList)
+  private def userWithRights(l: String*): User = User1.copy(granted = l.toList.map(_ -> RW).toMap)
 
 }

@@ -1,5 +1,7 @@
 package org.mauritania.main4ino.security
 
+import org.mauritania.main4ino.security.MethodRight.{MethodRight, RW}
+
 object Fixtures {
 
   val Salt = "$2a$10$TxnbkbAGirLy3Rdgt3xPiu"
@@ -10,7 +12,7 @@ object Fixtures {
     name = "name",
     hashedpass = Auther.hashPassword(User1Pass, Salt),
     email = "user@zzz.com",
-    granted = List("/")
+    granted = Map[String, MethodRight]("/" -> RW)
   )
 
   val PrivateKey = "0123456789abcdef0123"

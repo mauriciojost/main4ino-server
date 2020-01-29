@@ -11,7 +11,7 @@ import org.mauritania.main4ino.api.{Translator, v1}
 import org.mauritania.main4ino.db.{Cleaner, Database, Repository}
 import org.mauritania.main4ino.firmware.Store
 import org.mauritania.main4ino.helpers.{ConfigLoader, Scheduler, Time}
-import org.mauritania.main4ino.security.Auther
+import org.mauritania.main4ino.security.{AccessRight, Auther, MethodRight}
 
 import scala.concurrent.duration.FiniteDuration
 import cats.effect._
@@ -26,6 +26,8 @@ import pureconfig.generic.auto._
 import eu.timepit.refined.pureconfig._
 
 object Server extends IOApp {
+
+  import ConfigLoader._
 
   def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](args: List[String]): Resource[F, H4Server[F]] = for {
     logger <- Resource.liftF(Slf4jLogger.fromClass[F](getClass))

@@ -18,6 +18,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import eu.timepit.refined.pureconfig._
 import eu.timepit.refined.types.numeric.PosInt
+import pureconfig.error.ConfigReaderException
 
 class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
 
@@ -44,19 +45,21 @@ class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
 
   val User1 = Fixtures.User1
 
+  import ConfigLoader._
+
   it should "load correctly a security configuration file" in {
     val c = ConfigLoader.loadFromFile[IO, SecurityConfig](new File("src/test/resources/configs/2/security-users-single.conf")).unsafeRunSync()
     c.users shouldBe List(User1)
   }
 
   it should "throw an exception if the config is invalid" in {
-    a [IllegalArgumentException] should be thrownBy {
+    a [ConfigReaderException[SecurityConfig]] should be thrownBy {
       ConfigLoader.loadFromFile[IO, SecurityConfig](new File("src/test/resources/configs/2/security-users-invalid.conf")).unsafeRunSync()
     }
   }
 
   it should "throw an exception if the config is malformed" in {
-    a [ConfigException.Parse] should be thrownBy {
+    a [ConfigReaderException[SecurityConfig]] should be thrownBy {
       ConfigLoader.loadFromFile[IO, SecurityConfig](new File("src/test/resources/configs/2/security-users-broken.conf")).unsafeRunSync()
     }
   }

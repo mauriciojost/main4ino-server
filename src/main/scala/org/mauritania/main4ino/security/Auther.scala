@@ -3,7 +3,7 @@ package org.mauritania.main4ino.security
 import java.time.Clock
 
 import cats.effect.Sync
-import org.http4s.{AuthedRequest, BasicCredentials, Credentials, Headers, Request, Uri}
+import org.http4s.{AuthedRequest, BasicCredentials, Credentials, Headers, Method, Request, Uri}
 import org.http4s.Uri.Path
 import org.http4s.util.CaseInsensitiveString
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, ErrorMsg, UserSession}
@@ -40,7 +40,7 @@ class Auther[F[_]: Sync](config: Config) {
   def authenticateAndCheckAccess(request: Request[F]): F[Either[ErrorMsg, AuthedRequest[F, User]]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](getClass)
-      attempt = Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.uri)
+      attempt = Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.method, request.uri)
       _ <- logger.debug(s">>> Authentication: ${attempt.map(_.id)}")
       authedRequest = attempt.map { u =>
         AuthedRequest(
@@ -76,13 +76,13 @@ object Auther {
   private final val GroupThe = 2
   private final val GroupPos = 3
 
-  def authenticateAndCheckAccess(usersBy: UsersBy, encry: EncryptionConfig, headers: Headers, uri: Uri): AccessAttempt = {
+  def authenticateAndCheckAccess(usersBy: UsersBy, encry: EncryptionConfig, headers: Headers, method: Method, uri: Uri): AccessAttempt = {
     val resource = uri.path
     val credentials = userCredentialsFromRequest(encry, headers, uri)
     val session = sessionFromRequest(headers, uri)
     for {
       user <- authenticatedUserFromSessionOrCredentials(encry, usersBy, session, credentials)
-      authorized <- checkAccess(user, resource)
+      authorized <- checkAccess(user, method, resource)
     } yield authorized
   }
 
@@ -106,9 +106,9 @@ object Auther {
   /**
     * Check if a user can access a given resource
     */
-  def checkAccess(user: User, resourceUriPath: Path): AccessAttempt = {
-    user.authorized(dropTokenAndSessionFromPath(resourceUriPath))
-      .toRight(s"User '${user.name}' is not authorized to access resource '${resourceUriPath}'")
+  def checkAccess(user: User, method: Method, resourceUriPath: Path): AccessAttempt = {
+    user.authorized(method, dropTokenAndSessionFromPath(resourceUriPath))
+      .toRight(s"User '${user.name}' is not authorized to access resource '${method}'/'${resourceUriPath}'")
   }
 
   def userCredentialsFromRequest(encry: EncryptionConfig, headers: Headers, uri: Uri): Option[(UserId, UserHashedPass)] = {

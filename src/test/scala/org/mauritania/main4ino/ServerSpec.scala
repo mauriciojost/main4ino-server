@@ -1,9 +1,7 @@
 package org.mauritania.main4ino
 
 import cats.effect.IO
-import io.circe.Json
-import org.http4s.client.blaze.{BlazeClientBuilder, Http1Client}
-import org.http4s.client.{Client, UnexpectedStatus}
+import org.http4s.client.UnexpectedStatus
 import org.http4s.{BasicCredentials, Method, Request, Status, Uri}
 import org.scalatest.{BeforeAndAfterAll, Sequential}
 import io.circe.syntax._

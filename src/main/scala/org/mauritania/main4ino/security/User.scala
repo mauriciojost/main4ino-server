@@ -1,20 +1,21 @@
 package org.mauritania.main4ino.security
 
+import org.http4s.Method
 import org.http4s.Uri.Path
+import org.mauritania.main4ino.security.MethodRight.MethodRight
 
 case class User(
   name: String,
   hashedpass: String,
   email: String,
-  granted: List[String]
+  granted: Map[String, MethodRight]
 ) {
-  def authorized(uriPath: Path): Option[User] = {
-    canAccess(uriPath) match {
+  def authorized(method: Method, uriPath: Path): Option[User] = {
+    granted.exists{case (k, v) => AccessRight(k, v).canAccess(method, uriPath)} match {
       case true => Some(this)
       case false => None
     }
   }
   val id = name
-  private [security] def canAccess(uriPath: Path): Boolean = granted.exists(p => uriPath.startsWith(p))
 }
 

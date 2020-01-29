@@ -1,5 +1,7 @@
 package org.mauritania.main4ino.cli
 
+import org.mauritania.main4ino.security.MethodRight.MethodRight
+
 object Actions {
   sealed trait CliAction
 
@@ -7,7 +9,7 @@ object Actions {
     name: String,
     pass: String,
     email: String,
-    granted: List[String]
+    granted: Map[String, MethodRight]
   ) extends CliAction
 
   case class AddRawUsers(

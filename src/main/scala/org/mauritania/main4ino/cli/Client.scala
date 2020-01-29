@@ -16,6 +16,8 @@ import pureconfig.generic.auto._
 
 object Client {
 
+  import ConfigLoader._
+
   def start[F[_] : Sync](O: Configs[F], S: Filesystem[F])(args: Array[String]): F[Unit] = {
     // TODO support parameters correctly
     val input = Paths.get(args(0))

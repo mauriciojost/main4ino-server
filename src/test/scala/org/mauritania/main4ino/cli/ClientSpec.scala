@@ -5,7 +5,8 @@ import java.nio.file.{Files, Paths}
 import io.circe.generic.auto._
 import io.circe.jawn.decode
 import org.mauritania.main4ino.DecodersIO
-import org.mauritania.main4ino.security.Config
+import org.mauritania.main4ino.security.MethodRight.RW
+import org.mauritania.main4ino.security.{AccessRight, Config}
 
 import scala.io.Source
 import org.scalatest.matchers.should.Matchers
@@ -31,8 +32,8 @@ class ClientSpec extends AnyWordSpec with Matchers with DecodersIO {
       config1.users.map(_.name).toSet shouldBe Set(/* just added */ "newuser", "admin")
       config1.users.map(_.email).toSet shouldBe Set(/* just added */ "newuser@zzz.com", "admin@zzz.com")
       config1.users.map(_.granted.toSet).toSet shouldBe Set(
-        /* just added */ Set("/api/v1/time", "/"),
-        Set("/")
+        /* just added */ Set("/api/v1/time"-> RW, "/" -> RW),
+        Set("/" -> RW)
       )
 
       val input2 = output1
