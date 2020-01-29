@@ -6,17 +6,18 @@ import cats.Monad
 import cats.effect.{IO, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import enumeratum.Circe
 import org.mauritania.main4ino.cli.Algebras.{Configs, Filesystem}
 import org.mauritania.main4ino.cli.Actions.{AddRawUser, AddRawUsers}
 import org.mauritania.main4ino.cli.Modules.{ConfigsAppErr, FilesystemSync}
 import org.mauritania.main4ino.helpers.ConfigLoader
-import org.mauritania.main4ino.security.Config
+import org.mauritania.main4ino.security.{Config, MethodRight}
 import pureconfig._
 import pureconfig.generic.auto._
 
 object Client {
 
-  import ConfigLoader._
+  import ConfigLoader.PureConfigImplicits._
 
   def start[F[_] : Sync](O: Configs[F], S: Filesystem[F])(args: Array[String]): F[Unit] = {
     // TODO support parameters correctly

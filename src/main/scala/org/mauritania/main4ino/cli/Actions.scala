@@ -1,6 +1,6 @@
 package org.mauritania.main4ino.cli
 
-import org.mauritania.main4ino.security.MethodRight.MethodRight
+import org.mauritania.main4ino.security.MethodRight
 
 object Actions {
   sealed trait CliAction

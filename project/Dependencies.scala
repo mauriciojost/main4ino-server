@@ -19,6 +19,7 @@ object Dependencies {
         val CryptobitsVersion = "1.3"
         val BcryptVersion = "4.1"
         val GfcSemverVersion = "0.0.5"
+        val EnumeratumVersion = "1.5.15"
         val RefinedVersion = "0.9.12"
     }
 
@@ -46,6 +47,8 @@ object Dependencies {
           "org.flywaydb" % "flyway-core" % Versions.FlywayVersion,
           "com.github.pureconfig" %% "pureconfig" % Versions.PureConfigVersion,
           "com.gilt" %% "gfc-semver" % Versions.GfcSemverVersion,
+          "com.beachape" %% "enumeratum" % Versions.EnumeratumVersion,
+          "com.beachape" %% "enumeratum-circe" % Versions.EnumeratumVersion,
           "org.scalatest" %% "scalatest" % Versions.ScalaTestVersion % "test",
           "org.scalamock" %% "scalamock" % Versions.ScalaMockVersion % "test"
 

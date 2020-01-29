@@ -10,7 +10,7 @@ import io.circe.generic.auto._
 import io.circe.syntax._
 import org.mauritania.main4ino.cli.Algebras._
 import org.mauritania.main4ino.cli.Actions.{AddRawUser, CliAction}
-import org.mauritania.main4ino.security.{Auther, Config, User}
+import org.mauritania.main4ino.security.{Auther, Config, MethodRight, User}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import org.mauritania.main4ino.helpers.ConfigLoader
@@ -20,8 +20,13 @@ import scala.io.Source
 import scala.util.Try
 import pureconfig._
 import pureconfig.generic.auto._
+import enumeratum._
+import io.circe.Encoder
 
 object Modules {
+
+  import ConfigLoader.CirceImplicits._
+  import ConfigLoader.PureConfigImplicits._
 
   class ConfigsAppErr[F[_]: Monad](implicit A: ApplicativeError[F, Throwable]) extends Configs[F] {
 

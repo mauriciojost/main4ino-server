@@ -45,7 +45,7 @@ class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
 
   val User1 = Fixtures.User1
 
-  import ConfigLoader._
+  import ConfigLoader.PureConfigImplicits._
 
   it should "load correctly a security configuration file" in {
     val c = ConfigLoader.loadFromFile[IO, SecurityConfig](new File("src/test/resources/configs/2/security-users-single.conf")).unsafeRunSync()

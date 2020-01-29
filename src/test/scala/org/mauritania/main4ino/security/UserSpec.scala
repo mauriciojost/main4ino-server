@@ -1,7 +1,7 @@
 package org.mauritania.main4ino.security
 
 import org.http4s.Method
-import org.mauritania.main4ino.security.MethodRight.{MethodRight, R, RW, W}
+import org.mauritania.main4ino.security.MethodRight.{R, RW, W}
 import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

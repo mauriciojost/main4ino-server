@@ -1,6 +1,6 @@
 package org.mauritania.main4ino.security
 
-import org.mauritania.main4ino.security.MethodRight.{MethodRight, RW}
+import org.mauritania.main4ino.security.MethodRight.RW
 
 object Fixtures {
 

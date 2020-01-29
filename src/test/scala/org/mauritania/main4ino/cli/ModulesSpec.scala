@@ -7,8 +7,8 @@ import org.mauritania.main4ino.DecodersIO
 import org.mauritania.main4ino.cli.Actions.{AddRawUser, AddRawUsers}
 import org.mauritania.main4ino.cli.Modules.{ConfigsAppErr, FilesystemSync}
 import org.mauritania.main4ino.security.Fixtures._
-import org.mauritania.main4ino.security.MethodRight.{MethodRight, RW}
-import org.mauritania.main4ino.security.{AccessRight, Auther, User}
+import org.mauritania.main4ino.security.MethodRight.RW
+import org.mauritania.main4ino.security.{Auther, MethodRight, User}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

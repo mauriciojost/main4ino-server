@@ -5,15 +5,23 @@ import java.io.File
 import cats.effect.Sync
 import org.mauritania.main4ino.security.MethodRight
 import pureconfig.error.ConfigReaderException
-import pureconfig.generic.ProductHint
 
 import scala.reflect.ClassTag
 
 object ConfigLoader {
 
   import pureconfig._
+  import enumeratum._
 
-  implicit val customReader = ConfigReader[Map[String, String]].map(m => m.flatMap{case (k, v) => MethodRight.parse(v).map((k, _))})
+  object CirceImplicits {
+    implicit val methodRightEncoder = Circe.encoder(MethodRight)
+    implicit val methodRightDecoder = Circe.decoder(MethodRight)
+  }
+  object PureConfigImplicits {
+    implicit val customMethodRightReader = ConfigReader[String].map(m => MethodRight.withName(m))
+  }
+
+
 
 
   /**

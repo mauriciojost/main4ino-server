@@ -2,11 +2,12 @@ package org.mauritania.main4ino.cli
 
 import java.nio.file.{Files, Paths}
 
+import enumeratum.Circe
 import io.circe.generic.auto._
 import io.circe.jawn.decode
 import org.mauritania.main4ino.DecodersIO
 import org.mauritania.main4ino.security.MethodRight.RW
-import org.mauritania.main4ino.security.{AccessRight, Config}
+import org.mauritania.main4ino.security.{Config, MethodRight}
 
 import scala.io.Source
 import org.scalatest.matchers.should.Matchers
@@ -15,6 +16,9 @@ import org.scalatest.wordspec.AnyWordSpec
 class ClientSpec extends AnyWordSpec with Matchers with DecodersIO {
   val User1Cmd = "newuser newpass newuser@zzz.com /api/v1/time /"
   val User2Cmd = "newuser2 newpass2 newuser2@zzz.com /api"
+
+  import org.mauritania.main4ino.helpers.ConfigLoader.CirceImplicits._
+  import org.mauritania.main4ino.helpers.ConfigLoader.PureConfigImplicits._
 
   "The client" should {
     "add correctly a user and then another one" in {
@@ -28,7 +32,7 @@ class ClientSpec extends AnyWordSpec with Matchers with DecodersIO {
       Client.main(args1)
 
       val fileContent1 = Source.fromFile(output1.toFile).mkString
-      val config1 = decode[Config](fileContent1).toOption.get
+      val config1 = decode[Config](fileContent1).toTry.get
       config1.users.map(_.name).toSet shouldBe Set(/* just added */ "newuser", "admin")
       config1.users.map(_.email).toSet shouldBe Set(/* just added */ "newuser@zzz.com", "admin@zzz.com")
       config1.users.map(_.granted.toSet).toSet shouldBe Set(
@@ -48,9 +52,9 @@ class ClientSpec extends AnyWordSpec with Matchers with DecodersIO {
       config2.users.map(_.name).toSet shouldBe Set("newuser2", "newuser", "admin")
       config2.users.map(_.email).toSet shouldBe Set("newuser2@zzz.com", "newuser@zzz.com", "admin@zzz.com")
       config2.users.map(_.granted.toSet).toSet shouldBe Set(
-        Set("/api"),
-        Set("/api/v1/time", "/"),
-        Set("/")
+        Set("/api" -> RW),
+        Set("/api/v1/time" -> RW, "/" -> RW),
+        Set("/" -> RW)
       )
     }
   }

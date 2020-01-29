@@ -5,7 +5,7 @@ import org.http4s.headers.Authorization
 import org.http4s.{AuthedRequest, BasicCredentials, Header, Headers, Method, Request, Uri}
 import org.mauritania.main4ino.security.Auther.EncryptionConfig
 import org.mauritania.main4ino.security.Fixtures._
-import org.mauritania.main4ino.security.MethodRight.{MethodRight, RW}
+import org.mauritania.main4ino.security.MethodRight.RW
 import org.reactormonk.{CryptoBits, PrivateKey}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.EitherValues._
