@@ -108,7 +108,7 @@ object Auther {
     */
   def checkAccess(user: User, method: Method, resourceUriPath: Path): AccessAttempt = {
     user.authorized(method, dropTokenAndSessionFromPath(resourceUriPath))
-      .toRight(s"User '${user.name}' is not authorized to access resource '${method}'/'${resourceUriPath}'")
+      .toRight(s"User '${user.name}' is not authorized to ${method} '${resourceUriPath}'")
   }
 
   def userCredentialsFromRequest(encry: EncryptionConfig, headers: Headers, uri: Uri): Option[(UserId, UserHashedPass)] = {
