@@ -76,7 +76,7 @@ curl -u admin:password -X POST http://localhost:8080/api/v1/devices/dev1/targets
 It allows to create the configuration files for the server.
 
 ```
-sbt "runMain org.mauritania.main4ino.cli.Client input.conf add.conf output.conf"
+sbt "runMain org.mauritania.main4ino.security.confgen.Client input.conf add.conf output.conf"
 ```
 
 ## Contribute

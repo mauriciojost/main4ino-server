@@ -1,4 +1,4 @@
-package org.mauritania.main4ino.cli
+package org.mauritania.main4ino.security.confgen
 
 import java.io.{BufferedWriter, FileWriter}
 import java.nio.file.Path
@@ -8,8 +8,8 @@ import cats.{ApplicativeError, Monad}
 import com.typesafe.config.{ConfigFactory, Config => TypeSafeConfig}
 import io.circe.generic.auto._
 import io.circe.syntax._
-import org.mauritania.main4ino.cli.Algebras._
-import org.mauritania.main4ino.cli.Actions.{AddRawUser, CliAction}
+import org.mauritania.main4ino.security.confgen.Algebras._
+import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, CliAction}
 import org.mauritania.main4ino.security.{Auther, Config, MethodRight, User}
 import cats.syntax.flatMap._
 import cats.syntax.functor._

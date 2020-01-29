@@ -8,4 +8,4 @@ root_dir=$curr_dir/../..
 
 cd $root_dir
 
-sbt "runMain org.mauritania.main4ino.cli.Client $curr_dir/input.conf $curr_dir/add.conf $curr_dir/security.conf"
+sbt "runMain org.mauritania.main4ino.security.confgen.Client $curr_dir/input.conf $curr_dir/add.conf $curr_dir/security.conf"

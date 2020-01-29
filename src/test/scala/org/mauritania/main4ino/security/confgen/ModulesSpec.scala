@@ -1,11 +1,11 @@
-package org.mauritania.main4ino.cli
+package org.mauritania.main4ino.security.confgen
 
 import java.nio.file.{Files, Paths}
 
 import cats.effect.IO
 import org.mauritania.main4ino.DecodersIO
-import org.mauritania.main4ino.cli.Actions.{AddRawUser, AddRawUsers}
-import org.mauritania.main4ino.cli.Modules.{ConfigsAppErr, FilesystemSync}
+import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, AddRawUsers}
+import org.mauritania.main4ino.security.confgen.Modules.{ConfigsAppErr, FilesystemSync}
 import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security.MethodRight.RW
 import org.mauritania.main4ino.security.{Auther, MethodRight, User}

@@ -1,4 +1,4 @@
-package org.mauritania.main4ino.cli
+package org.mauritania.main4ino.security.confgen
 
 import org.mauritania.main4ino.security.MethodRight
 

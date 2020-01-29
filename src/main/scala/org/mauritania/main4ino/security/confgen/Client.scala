@@ -1,4 +1,4 @@
-package org.mauritania.main4ino.cli
+package org.mauritania.main4ino.security.confgen
 
 import java.nio.file.{Path, Paths}
 
@@ -7,9 +7,9 @@ import cats.effect.{IO, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import enumeratum.Circe
-import org.mauritania.main4ino.cli.Algebras.{Configs, Filesystem}
-import org.mauritania.main4ino.cli.Actions.{AddRawUser, AddRawUsers}
-import org.mauritania.main4ino.cli.Modules.{ConfigsAppErr, FilesystemSync}
+import org.mauritania.main4ino.security.confgen.Algebras.{Configs, Filesystem}
+import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, AddRawUsers}
+import org.mauritania.main4ino.security.confgen.Modules.{ConfigsAppErr, FilesystemSync}
 import org.mauritania.main4ino.helpers.ConfigLoader
 import org.mauritania.main4ino.security.{Config, MethodRight}
 import pureconfig._

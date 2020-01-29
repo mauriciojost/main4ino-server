@@ -1,8 +1,8 @@
-package org.mauritania.main4ino.cli
+package org.mauritania.main4ino.security.confgen
 
 import java.nio.file.Path
 
-import org.mauritania.main4ino.cli.Actions.{AddRawUser, CliAction}
+import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, CliAction}
 import org.mauritania.main4ino.security.{Auther, Config, User}
 
 object Algebras {

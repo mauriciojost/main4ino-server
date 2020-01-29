@@ -1,4 +1,4 @@
-package org.mauritania.main4ino.cli
+package org.mauritania.main4ino.security.confgen
 
 import java.nio.file.{Files, Paths}
 
