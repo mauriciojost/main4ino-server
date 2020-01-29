@@ -6,7 +6,7 @@ devices_list=$DEVICES_LIST
 for i in $devices_list
 do 
   echo "## $i:"
-  main4ino_get_reports $i C | jq -r '.[].device.actors.battery.".charge"'
+  main4ino_get_reports $i C | jq -r '.[]|"->" + (.dbId.creation|todate) + " " + .device.actors.battery.".charge"'
   echo ""
   echo ""
 done
