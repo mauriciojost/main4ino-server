@@ -2,6 +2,7 @@ package org.mauritania.main4ino.security.confgen
 
 import java.nio.file.{Files, Paths}
 
+import com.typesafe.config.ConfigFactory
 import enumeratum.Circe
 import io.circe.generic.auto._
 import io.circe.jawn.decode
@@ -12,6 +13,7 @@ import org.mauritania.main4ino.security.{Config, MethodRight}
 import scala.io.Source
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import pureconfig.ConfigSource
 
 class ClientSpec extends AnyWordSpec with Matchers with DecodersIO {
   val User1Cmd = "newuser newpass newuser@zzz.com /api/v1/time /"
@@ -27,9 +29,12 @@ class ClientSpec extends AnyWordSpec with Matchers with DecodersIO {
       val modif1 = Paths.get("src", "test", "resources", "configs", "4", "adduser1.conf")
       val output1 = Files.createTempFile("security", "conf")
       output1.toFile.deleteOnExit()
-      val args1 = Array(input1.toFile.getAbsolutePath, modif1.toFile.getAbsolutePath, output1.toFile.getAbsolutePath)
 
-      Client.main(args1)
+      System.setProperty("input", input1.toFile.getAbsolutePath)
+      System.setProperty("modif", modif1.toFile.getAbsolutePath)
+      System.setProperty("output", output1.toFile.getAbsolutePath)
+      ConfigFactory.invalidateCaches() // force reload of java properties
+      Client.main(Array())
 
       val fileContent1 = Source.fromFile(output1.toFile).mkString
       val config1 = decode[Config](fileContent1).toTry.get
@@ -43,9 +48,12 @@ class ClientSpec extends AnyWordSpec with Matchers with DecodersIO {
       val input2 = output1
       val modif2 = Paths.get("src", "test", "resources", "configs", "4" ,"adduser2.conf")
       val output2 = output1
-      val args2 = Array(input2.toFile.getAbsolutePath, modif2.toFile.getAbsolutePath, output2.toFile.getAbsolutePath)
 
-      Client.main(args2)
+      System.setProperty("input", input2.toFile.getAbsolutePath)
+      System.setProperty("modif", modif2.toFile.getAbsolutePath)
+      System.setProperty("output", output2.toFile.getAbsolutePath)
+      ConfigFactory.invalidateCaches() // force reload of java properties
+      Client.main(Array())
 
       val fileContent2 = Source.fromFile(output2.toFile).mkString
       val config2 = decode[Config](fileContent2).toOption.get

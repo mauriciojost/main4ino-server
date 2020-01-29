@@ -4,6 +4,7 @@ import java.io.File
 
 import cats.effect.Sync
 import org.mauritania.main4ino.security.MethodRight
+import pureconfig.backend.ConfigFactoryWrapper
 import pureconfig.error.ConfigReaderException
 
 import scala.reflect.ClassTag
@@ -31,9 +32,22 @@ object ConfigLoader {
     *   import pureconfig._
     *   import pureconfig.generic.auto._
     */
-  def loadFromFile[F[_] : Sync, T: ClassTag](configFile: File)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
+  def fromFile[F[_] : Sync, T: ClassTag](configFile: File)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
     val f = configFile.getAbsoluteFile
-    implicitly[Sync[F]].fromEither(ConfigSource.file(f).load.swap.map(ConfigReaderException(_)).swap)
+    from(ConfigSource.file(f))
+  }
+
+  def fromFileAndEnv[F[_] : Sync, T: ClassTag](configFile: File)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
+    val f = configFile.getAbsoluteFile
+    from(ConfigSource.systemProperties.withFallback(ConfigSource.file(f)))
+  }
+
+  def fromEnv[F[_] : Sync, T: ClassTag](implicit reader: Derivation[ConfigReader[T]]): F[T] = {
+    from(ConfigSource.systemProperties)
+  }
+
+  def from[F[_] : Sync, T: ClassTag](s: ConfigObjectSource)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
+    implicitly[Sync[F]].fromEither(s.load.swap.map(ConfigReaderException(_)).swap)
   }
 
 }

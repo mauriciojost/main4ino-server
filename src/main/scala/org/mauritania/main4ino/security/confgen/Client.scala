@@ -19,24 +19,21 @@ object Client {
 
   import ConfigLoader.PureConfigImplicits._
 
-  def start[F[_] : Sync](O: Configs[F], S: Filesystem[F])(args: Array[String]): F[Unit] = {
-    // TODO support parameters correctly
-    val input = Paths.get(args(0))
-    val modif = Paths.get(args(1))
-    val output = Paths.get(args(2))
+  def start[F[_] : Sync](O: Configs[F], S: Filesystem[F]): F[Unit] = {
     for {
-      conf <- ConfigLoader.loadFromFile[F, Config](input.toFile)
+      args <- ConfigLoader.fromEnv[F, Args]
+      conf <- ConfigLoader.fromFile[F, Config](args.input.toFile)
        // TODO support other actions too
-      user <- ConfigLoader.loadFromFile[F, AddRawUsers](modif.toFile)
+      user <- ConfigLoader.fromFile[F, AddRawUsers](args.modif.toFile)
       newConf = O.performAction(conf, user)
       newConfStr = O.asString(newConf)
-      _ <- S.writeFile(output, newConfStr)
+      _ <- S.writeFile(args.output, newConfStr)
     } yield ()
   }
 
   def main(args: Array[String]): Unit = {
     val co = new ConfigsAppErr[IO]
     val fs = new FilesystemSync[IO]
-    start[IO](co, fs)(args).unsafeRunSync()
+    start[IO](co, fs).unsafeRunSync()
   }
 }

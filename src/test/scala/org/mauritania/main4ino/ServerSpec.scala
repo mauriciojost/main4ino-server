@@ -1,6 +1,7 @@
 package org.mauritania.main4ino
 
 import cats.effect.IO
+import com.typesafe.config.ConfigFactory
 import org.http4s.client.UnexpectedStatus
 import org.http4s.{BasicCredentials, Method, Request, Status, Uri}
 import org.scalatest.{BeforeAndAfterAll, Sequential}
@@ -15,6 +16,8 @@ import org.mauritania.main4ino.api.Translator.IdResponse
 import org.mauritania.main4ino.models.{DeviceId, DeviceName, RequestId}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pureconfig.ConfigSource
+import pureconfig.error.ConfigReaderException
 
 class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with HttpClient {
 
@@ -28,7 +31,9 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
   implicit val statusDecoder = JsonEncoding.StatusDecoder
 
   override def beforeAll(): Unit = {
-    appThread = launchAsync(Array("src/test/resources/configs/1"))
+    System.setProperty("config-dir", "src/test/resources/configs/1")
+    ConfigFactory.invalidateCaches() // force reload of java properties
+    appThread = launchAsync()
     Thread.sleep(5 * OneSecond)
   }
 
@@ -129,15 +134,15 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
   }
 
   it should "fail if started with bad arduments" in {
-    // accepts only one argument
-    assertThrows[IllegalArgumentException](Server.run(List()).unsafeRunSync())
-    assertThrows[IllegalArgumentException](Server.run(List("", "")).unsafeRunSync())
+    System.clearProperty("config-dir")
+    ConfigFactory.invalidateCaches() // force reload of java properties
+    assertThrows[ConfigReaderException[Args]](Server.run(List.empty[String]).unsafeRunSync())
   }
 
-  private def launchAsync(args: Array[String]): Thread = {
+  private def launchAsync(): Thread = {
     val runnable = new Runnable() {
       override def run() = {
-        Server.main(args)
+        Server.main(Array.empty[String])
       }
     }
     val thread = new Thread(runnable)

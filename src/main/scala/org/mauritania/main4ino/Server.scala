@@ -29,18 +29,18 @@ object Server extends IOApp {
 
   import ConfigLoader.PureConfigImplicits._
 
-  def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](args: List[String]): Resource[F, H4Server[F]] = for {
+  def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async]: Resource[F, H4Server[F]] = for {
     logger <- Resource.liftF(Slf4jLogger.fromClass[F](getClass))
     _ <- Resource.liftF(logger.info(s"Initializing server..."))
     // Thread Pools - https://gist.github.com/djspiewak/46b543800958cf61af6efa8e072bfd5c
     blockingIoEc <- ExecutionContexts.cachedThreadPool[F]
     _ <- Resource.liftF(logger.debug(s"Thread pools initialized..."))
 
-    configDir <- Resource.liftF[F, File](resolveConfigDir(args))
-    applicationConf = new File(configDir, "application.conf")
-    securityConf = new File(configDir, "security.conf")
-    configApp <- Resource.liftF(ConfigLoader.loadFromFile[F, Config](applicationConf))
-    configUsers <- Resource.liftF(ConfigLoader.loadFromFile[F, security.Config](securityConf))
+    args <- Resource.liftF[F, Args](ConfigLoader.fromEnv[F, Args])
+    applicationConf = new File(args.configDir.toFile, "application.conf")
+    securityConf = new File(args.configDir.toFile, "security.conf")
+    configApp <- Resource.liftF(ConfigLoader.fromFile[F, Config](applicationConf))
+    configUsers <- Resource.liftF(ConfigLoader.fromFile[F, security.Config](securityConf))
     _ <- Resource.liftF(logger.debug(s"Configurations created..."))
 
     transactor <- Database.transactor[F](configApp.database, blockingIoEc, Blocker.liftExecutionContext(blockingIoEc))
@@ -80,14 +80,5 @@ object Server extends IOApp {
 
   } yield exitCodeServer
 
-  private def resolveConfigDir[F[_]: Sync](args: List[String]): F[File] = Sync[F].delay {
-    val arg1 = args match {
-      case Nil => throw new IllegalArgumentException("Missing config directory")
-      case a1 :: Nil => a1
-      case _ => throw new IllegalArgumentException("Too many arguments")
-    }
-    new File(arg1)
-  }
-
-  def run(args: List[String]): IO[ExitCode] = createServer[IO](args).use(_ => IO.never).as(ExitCode.Success)
+  def run(args: List[String]): IO[ExitCode] = createServer[IO].use(_ => IO.never).as(ExitCode.Success)
 }
