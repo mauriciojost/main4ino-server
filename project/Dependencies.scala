@@ -19,7 +19,7 @@ object Dependencies {
         val CryptobitsVersion = "1.3"
         val BcryptVersion = "4.1"
         val GfcSemverVersion = "0.0.5"
-        val EnumeratumVersion = "1.5.15"
+        val EnumeratumVersion = "1.5.22"
         val RefinedVersion = "0.9.12"
     }
 
