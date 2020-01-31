@@ -14,7 +14,7 @@ object Dependencies {
         val ScalaTestVersion = "3.1.0"
         val ScalaMockVersion = "4.4.0"
         val log4CatsSlf4jVersion = "1.0.1"
-        val slf4jLog4j12Version = "1.8.0-beta4"
+        val slf4jLog4j12Version = "1.7.30"
         val CryptobitsVersion = "1.3"
         val BcryptVersion = "4.1"
         val GfcSemverVersion = "0.0.5"
