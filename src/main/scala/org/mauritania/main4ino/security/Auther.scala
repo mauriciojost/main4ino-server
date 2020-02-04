@@ -105,7 +105,7 @@ object Auther {
   }
 
   /**
-    * Create a session for a given user given a private key and a timestamp
+    * Create a session for a given user given a private key
     *
     * @param user user for whom we want to create a session
     * @param privateKey private key used for encryption of the session id to be generated
@@ -119,7 +119,7 @@ object Auther {
     } yield stringjwt
   }
 
-  def userIdFromSession[F[_] : Sync : Monad](session: UserSession, privateKey: CryptoBits): F[Option[String]] = {
+  def userIdFromSession[F[_] : Sync : Monad](session: UserSession, privateKey: CryptoBits): F[Option[UserId]] = {
     for {
       key             <- HMACSHA256.buildKey[F](privateKey)
       parsed          <- JWTMac.verifyAndParse[F, HMACSHA256](session, key)
