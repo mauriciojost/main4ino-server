@@ -18,6 +18,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import eu.timepit.refined.pureconfig._
 import eu.timepit.refined.types.numeric.PosInt
+import org.mauritania.main4ino.security.Auther.UserHashedPass
 import pureconfig.error.ConfigReaderException
 import org.mauritania.main4ino.security.confgen.Args
 
@@ -63,7 +64,9 @@ class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
 
   it should "load correctly a security configuration file" in {
     val c = ConfigLoader.fromFile[IO, SecurityConfig](new File("src/test/resources/configs/2/security-users-single.conf")).unsafeRunSync()
-    c.users shouldBe List(User1)
+    c.users.size shouldBe 1
+    val user = c.users.head
+    user.copy(hashedpass = "".asInstanceOf[UserHashedPass]) shouldBe User1.copy(hashedpass = "".asInstanceOf[UserHashedPass])
   }
 
   it should "throw an exception if the config is invalid" in {
