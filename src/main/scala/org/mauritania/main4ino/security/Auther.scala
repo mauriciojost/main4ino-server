@@ -13,6 +13,7 @@ import org.mauritania.main4ino.security.Config.UsersBy
 import cats._
 import cats.implicits._
 import cats._
+import cats.data.Validated
 import cats.syntax._
 import cats.instances._
 import cats.implicits._
@@ -23,6 +24,7 @@ import org.http4s.util.CaseInsensitiveString
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
 import org.http4s.headers.Authorization
 import org.mauritania.main4ino.security.Config.UsersBy
+import tsec.common.{VerificationFailed, Verified}
 import tsec.jws.mac.JWTMac
 import tsec.jwt.JWTClaims
 import tsec.mac.jca.HMACSHA256
@@ -72,16 +74,16 @@ class Auther[F[_]: Sync](config: Config) {
     * Provide a session given a user
     */
   def generateSession(user: User): F[UserSession] =
-    Auther.sessionFromUser[F](user, config.privateKeyBits, config.nonceStartupTime)
+    Auther.sessionFromUser[F](user, config.privateKeyBits)
 
 }
 
 object Auther {
 
-  type UserId = String // username
-  type UserHashedPass = PasswordHash[BCrypt]
-//  type UserHashedPass = String
-  type UserSession = String // generated after login
+  type UserId = String // user login
+  type UserHashedPass = PasswordHash[BCrypt] // user hashed password
+  type UserPassword = String // user clear password
+  type UserSession = String // session generated after login
 
   type ErrorMsg = String
   type AccessAttempt = Either[ErrorMsg, User]
@@ -97,10 +99,9 @@ object Auther {
   def authenticateAndCheckAccess[F[_]: Sync : Monad](usersBy: UsersBy, encry: EncryptionConfig, headers: Headers, method: Method, uri: Uri)(implicit H: PasswordHasher[F, BCrypt]): F[AccessAttempt] = {
     val resource = uri.path
     val credentials = userCredentialsFromRequest(encry, headers, uri)
-    val c = credentials.map(c => c._2.map(p => (c._1, p))).sequence
     val session = sessionFromRequest(headers, uri)
     for {
-      cc <- c
+      cc <- credentials.traverse(c => c._2.map(p => (c._1, p)))
       user <- authenticatedUserFromSessionOrCredentials(encry, usersBy, session, cc)
     } yield user.flatMap(u => checkAccess(u, method, resource))
   }
@@ -110,10 +111,9 @@ object Auther {
     *
     * @param user user for whom we want to create a session
     * @param privateKey private key used for encryption of the session id to be generated
-    * @param time time used to generate the session id
     * @return a user session id
     */
-  def sessionFromUser[F[_]: Sync : Monad](user: User, privateKey: CryptoBits, time: Clock): F[UserSession] = {
+  def sessionFromUser[F[_]: Sync : Monad](user: User, privateKey: CryptoBits): F[UserSession] = {
     val claims = JWTClaims(subject = Some(user.id))
     for {
       key             <- HMACSHA256.buildKey[F](privateKey)
@@ -135,12 +135,17 @@ object Auther {
 
   }
 
-  def authenticatedUserFromSessionOrCredentials[F[_]: Sync](encry: EncryptionConfig, usersBy: UsersBy,
-                                                session: Option[UserSession], creds: Option[(UserId, UserHashedPass)]): F[AuthenticationAttempt] = {
-    val a = creds.flatMap(usersBy.byIdPass.get)
+  def authenticatedUserFromSessionOrCredentials[F[_]: Sync](encry: EncryptionConfig, usersBy: UsersBy, session: Option[UserSession], creds: Option[(UserId, UserPassword)])(implicit H: PasswordHasher[F, BCrypt]): F[AuthenticationAttempt] = {
     for {
-      b <- session.map(s => userFromSession(s, encry.pkey, usersBy)).sequence.map(_.flatten)
-    } yield a.orElse(b).toRight(s"Could not find related user (user:${creds.map(_._1)} / session:$session)")
+      authenticatedUsrSession <- session.map(s => userFromSession(s, encry.pkey, usersBy)).sequence.map(_.flatten)
+      authenticatedUsrCreds <- creds.map { case (id, clearPass) =>
+        val configUser = usersBy.byId.get(id)
+        configUser.map { u =>
+          H.checkpw(clearPass, u.hashedpass).map(c => if (c == Verified) Some(u) else None)
+        }.sequence.map(_.flatten)
+      }.sequence.map(_.flatten)
+      authenticatedUsr = authenticatedUsrCreds.orElse(authenticatedUsrSession)
+    } yield authenticatedUsr.toRight(s"Could not find related user (user:${creds.map(_._1)} / session:$session)")
   }
 
   /**
