@@ -154,14 +154,14 @@ object Auther {
   def userCredentialsFromRequest[F[_]](encry: EncryptionConfig, headers: Headers, uri: Uri)(implicit H: PasswordHasher[F, BCrypt]): Option[(UserId, F[UserHashedPass])] = {
     // Basic auth
     val credsFromHeader = headers.get(Authorization).collect {
-      case Authorization(BasicCredentials(username, password)) => (username, hashPassword(password, encry.salt))
+      case Authorization(BasicCredentials(username, password)) => (username, hashPassword(password))
     }
     // URI auth: .../token/<token>/... authentication (some services
     // like IFTTT or devices ESP8266 HTTP UPDATE do not support headers, but only URI credentials...)
     val tokenFromUri = UriTokenRegex.findFirstMatchIn(uri.path).flatMap(a => Try(a.group(GroupThe)).toOption)
     val validCredsFromUri = tokenFromUri
       .map(t => BasicCredentials(t))
-      .map(c => (c.username, hashPassword(c.password, encry.salt)))
+      .map(c => (c.username, hashPassword(c.password)))
 
     credsFromHeader
       .orElse(validCredsFromUri)
@@ -176,7 +176,7 @@ object Auther {
     headerSession.orElse(uriSession)
   }
 
-  def hashPassword[F[_]](password: String, salt: String)(implicit P: PasswordHasher[F, BCrypt]): F[UserHashedPass] = BCrypt.hashpw[F](password)
+  def hashPassword[F[_]](password: String)(implicit P: PasswordHasher[F, BCrypt]): F[UserHashedPass] = BCrypt.hashpw[F](password)
 
   private[security] def dropTokenAndSessionFromPath(path: Path): Path = {
     def drop(r: Regex, p: Path) = r.findFirstMatchIn(p).map(m => m.group(GroupPre) + "/" + m.group(GroupPos)).getOrElse(p)
@@ -191,8 +191,7 @@ object Auther {
     * @param salt salt used to hash passwords
     */
   case class EncryptionConfig(
-    pkey: CryptoBits,
-    salt: String
+    pkey: CryptoBits
   )
 
   type CryptoBits = Array[Byte]
