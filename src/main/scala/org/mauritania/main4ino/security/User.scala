@@ -2,10 +2,11 @@ package org.mauritania.main4ino.security
 
 import org.http4s.Method
 import org.http4s.Uri.Path
+import org.mauritania.main4ino.security.Auther.UserHashedPass
 
 case class User(
   name: String,
-  hashedpass: String,
+  hashedpass: UserHashedPass,
   email: String,
   granted: Map[Path, MethodRight]
 ) {

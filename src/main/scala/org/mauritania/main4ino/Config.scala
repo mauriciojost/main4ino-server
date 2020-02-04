@@ -1,7 +1,5 @@
 package org.mauritania.main4ino
 
-import java.nio.file.Path
-
 import eu.timepit.refined.types.numeric.PosInt
 import org.mauritania.main4ino.Config.{FirmwareConfig, ServerConfig}
 import org.mauritania.main4ino.db.{Config => DbConfig}

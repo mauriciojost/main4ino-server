@@ -26,22 +26,19 @@ case class Config(
 
   val usersBy = UsersBy(users)
   val privateKeyBits = privatekey.utf8Bytes
-  val nonceStartupTime = Clock.systemUTC()
   val encryptionConfig = EncryptionConfig(privateKeyBits)
 }
 
 object Config {
 
   case class UsersBy(
-    byId: Map[UserId, User],
-    byIdPass: Map[(UserId, UserHashedPass), User]
+    byId: Map[UserId, User]
   )
 
   object UsersBy {
     def apply(u: List[User]): UsersBy = {
       UsersBy(
-        byId = u.groupBy(_.name).map { case (t, us) => (t, us.last) },
-        byIdPass = u.groupBy(i => (i.name, PasswordHash[BCrypt](i.hashedpass))).map { case (t, us) => (t, us.last) }
+        byId = u.groupBy(_.name).map { case (t, us) => (t, us.last) }
       )
     }
   }
