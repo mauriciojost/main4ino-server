@@ -24,7 +24,7 @@ class ModulesSpec extends AnyWordSpec with Matchers with DecodersIO {
 
       val ExpectedNewUserEntry = User(
         name = "pepe",
-        hashedpass = Auther.hashPassword("toto", Salt),
+        hashedpass = Auther.hashPassword[IO]("toto", Salt).unsafeRunSync(),
         email = "pepe@zzz.com",
         granted = Map[String, MethodRight]("/" -> RW)
       )

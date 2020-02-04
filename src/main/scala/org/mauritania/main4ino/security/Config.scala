@@ -6,7 +6,6 @@ import cats.effect.Sync
 import java.time.Clock
 import org.mauritania.main4ino.helpers.ConfigLoader
 import cats.effect.IO
-import org.mauritania.main4ino.config.Loadable
 import java.time.Clock
 import tsec.common._
 import pureconfig._
