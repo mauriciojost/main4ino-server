@@ -3,6 +3,8 @@ package org.mauritania.main4ino.helpers
 import java.io.File
 
 import cats.effect.Sync
+import io.circe.{Decoder, Encoder}
+import org.mauritania.main4ino.security.Auther.UserHashedPass
 import org.mauritania.main4ino.security.MethodRight
 import pureconfig.backend.ConfigFactoryWrapper
 import pureconfig.error.ConfigReaderException
@@ -15,11 +17,14 @@ object ConfigLoader {
   import enumeratum._
 
   object CirceImplicits {
-    implicit val methodRightEncoder = Circe.encoder(MethodRight)
-    implicit val methodRightDecoder = Circe.decoder(MethodRight)
+    implicit val methodRightEncoder: Encoder[MethodRight] = Circe.encoder(MethodRight)
+    implicit val methodRightDecoder: Decoder[MethodRight] = Circe.decoder(MethodRight)
+    implicit val methodUserHashedPassDecoder: Decoder[UserHashedPass] = implicitly[Decoder[String]].map(s => s.asInstanceOf[UserHashedPass])
+    implicit val methodUserHashedPassEncoder: Encoder[UserHashedPass] = implicitly[Encoder[String]].contramap[UserHashedPass](m => m.toString)
   }
   object PureConfigImplicits {
-    implicit val customMethodRightReader = ConfigReader[String].map(m => MethodRight.withName(m))
+    implicit val customMethodRightReader: ConfigReader[MethodRight] = ConfigReader[String].map(m => MethodRight.withName(m))
+    implicit val customMethodUserHashedPass: ConfigReader[UserHashedPass] = ConfigReader[String].map(m => m.asInstanceOf[UserHashedPass])
   }
 
 

@@ -31,7 +31,6 @@ import tsec.mac.jca.HMACSHA256
 import tsec.passwordhashers._
 import tsec.passwordhashers.jca._
 
-import scala.concurrent.duration._
 import scala.util.Try
 import scala.util.matching.Regex
 
@@ -98,11 +97,10 @@ object Auther {
 
   def authenticateAndCheckAccess[F[_]: Sync : Monad](usersBy: UsersBy, encry: EncryptionConfig, headers: Headers, method: Method, uri: Uri)(implicit H: PasswordHasher[F, BCrypt]): F[AccessAttempt] = {
     val resource = uri.path
-    val credentials = userCredentialsFromRequest(encry, headers, uri)
+    val credentials = userCredentialsFromRequest(headers, uri)
     val session = sessionFromRequest(headers, uri)
     for {
-      cc <- credentials.traverse(c => c._2.map(p => (c._1, p)))
-      user <- authenticatedUserFromSessionOrCredentials(encry, usersBy, session, cc)
+      user <- authenticatedUserFromSessionOrCredentials(encry, usersBy, session, credentials)
     } yield user.flatMap(u => checkAccess(u, method, resource))
   }
 
@@ -145,7 +143,7 @@ object Auther {
         }.sequence.map(_.flatten)
       }.sequence.map(_.flatten)
       authenticatedUsr = authenticatedUsrCreds.orElse(authenticatedUsrSession)
-    } yield authenticatedUsr.toRight(s"Could not find related user (user:${creds.map(_._1)} / session:$session)")
+    } yield authenticatedUsr.toRight(s"Could not authenticate user (login:${creds.map(_._1)} / session:${session.slice(1,5)}...)")
   }
 
   /**
@@ -156,17 +154,17 @@ object Auther {
       .toRight(s"User '${user.name}' is not authorized to ${method} '${resourceUriPath}'")
   }
 
-  def userCredentialsFromRequest[F[_]](encry: EncryptionConfig, headers: Headers, uri: Uri)(implicit H: PasswordHasher[F, BCrypt]): Option[(UserId, F[UserHashedPass])] = {
+  def userCredentialsFromRequest[F[_]](headers: Headers, uri: Uri): Option[(UserId, UserPassword)] = {
     // Basic auth
     val credsFromHeader = headers.get(Authorization).collect {
-      case Authorization(BasicCredentials(username, password)) => (username, hashPassword(password))
+      case Authorization(BasicCredentials(username, password)) => (username, password)
     }
     // URI auth: .../token/<token>/... authentication (some services
     // like IFTTT or devices ESP8266 HTTP UPDATE do not support headers, but only URI credentials...)
     val tokenFromUri = UriTokenRegex.findFirstMatchIn(uri.path).flatMap(a => Try(a.group(GroupThe)).toOption)
     val validCredsFromUri = tokenFromUri
       .map(t => BasicCredentials(t))
-      .map(c => (c.username, hashPassword(c.password)))
+      .map(c => (c.username, c.password))
 
     credsFromHeader
       .orElse(validCredsFromUri)
@@ -193,7 +191,6 @@ object Auther {
     * Encryption configuration
     *
     * @param pkey private key used to generate sessions
-    * @param salt salt used to hash passwords
     */
   case class EncryptionConfig(
     pkey: CryptoBits

@@ -21,22 +21,22 @@ class AutherSpec extends AnyWordSpec with Matchers {
     "fail when no token is provided in the request" in {
       val h = Headers.of()
       val u = Uri.unsafeFromString("http://main4ino.com/api/v1/")
-      val t = Auther.userCredentialsFromRequest[IO](encConfig, h, u)
+      val t = Auther.userCredentialsFromRequest[IO](h, u)
       t shouldBe None
     }
 
     "retrieve token from header as Authorization: token <token>" in {
       val headers = Headers.of(AuthorizationHeaderUser1)
       val uri = Uri.unsafeFromString("http://main4ino.com/api/v1/device/...")
-      val creds = Auther.userCredentialsFromRequest[IO](encConfig, headers, uri)
-      creds.map(a => (a._1, a._2.unsafeRunSync())) shouldBe Some((User1.id, User1.hashedpass))
+      val creds = Auther.userCredentialsFromRequest[IO](headers, uri)
+      creds shouldBe Some((User1.id, User1Pass))
     }
 
     "retrieve token from uri as .../token/<token>/..." in {
       val headers = Headers.of()
       val uri = Uri.unsafeFromString(s"http://main4ino.com/api/v1/token/${User1Token}/device/...")
-      val creds = Auther.userCredentialsFromRequest[IO](encConfig, headers, uri)
-      creds.map(a => (a._1, a._2.unsafeRunSync())) shouldBe Some((User1.id, User1.hashedpass))
+      val creds = Auther.userCredentialsFromRequest[IO](headers, uri)
+      creds shouldBe Some((User1.id, User1Pass))
     }
 
     "retrieve session from uri as .../session/<session>/..." in {
