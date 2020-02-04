@@ -28,6 +28,5 @@ object Fixtures {
 
   val User1 = FixturesSecurity.User1
   val User1Pass = FixturesSecurity.User1Pass
-  val Salt = FixturesSecurity.Salt
 
 }

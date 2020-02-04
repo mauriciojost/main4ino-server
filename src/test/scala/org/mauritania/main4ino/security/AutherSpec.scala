@@ -12,7 +12,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class AutherSpec extends AnyWordSpec with Matchers {
 
-  val encConfig = EncryptionConfig(PrivateKey.getBytes, Salt)
+  val encConfig = EncryptionConfig(PrivateKey.getBytes)
   val User1Token = BasicCredentials(User1.id, User1Pass).token
   val AuthorizationHeaderUser1 = Authorization(BasicCredentials(User1.id, User1Pass))
 
@@ -105,7 +105,7 @@ class AutherSpec extends AnyWordSpec with Matchers {
 
   }
 
-  private def configFromUser(u: User): Config = Config(List(u), "key", Salt)
+  private def configFromUser(u: User): Config = Config(List(u), "key")
   private def request(uri: String, h: Headers = Headers.empty): Request[IO] = Request[IO](
     method = Method.GET,
     uri = Uri.unsafeFromString(uri),

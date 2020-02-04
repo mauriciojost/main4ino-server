@@ -42,10 +42,9 @@ class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with Decode
 
   val User1 = Fixtures.User1
   val User1Pass = Fixtures.User1Pass
-  val Salt = Fixtures.Salt
   val ValidToken = "012345678901234567890123456789"
   val PrivateKey = "0123456789abcdef0123"
-  val AuthConfig = SecurityConfig(List(User1), PrivateKey, Salt)
+  val AuthConfig = SecurityConfig(List(User1), PrivateKey)
   val Dev1 = Fixtures.Device1
   val DevId1 = Fixtures.DeviceId1
   val DevId2 = Fixtures.DeviceId1.withId(2L).withDeviceName("dev2")

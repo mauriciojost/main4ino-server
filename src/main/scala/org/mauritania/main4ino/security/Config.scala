@@ -19,8 +19,7 @@ import scala.io.Codec
 
 case class Config(
   users: List[User],
-  privatekey: String, // TODO use Byte[Array]
-  salt: String
+  privatekey: String // TODO use Byte[Array]
 ) {
 
   import Config._
@@ -28,7 +27,7 @@ case class Config(
   val usersBy = UsersBy(users)
   val privateKeyBits = privatekey.utf8Bytes
   val nonceStartupTime = Clock.systemUTC()
-  val encryptionConfig = EncryptionConfig(privateKeyBits, salt)
+  val encryptionConfig = EncryptionConfig(privateKeyBits)
 }
 
 object Config {
