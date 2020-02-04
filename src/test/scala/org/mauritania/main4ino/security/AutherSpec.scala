@@ -6,17 +6,13 @@ import org.http4s.{AuthedRequest, BasicCredentials, Header, Headers, Method, Req
 import org.mauritania.main4ino.security.Auther.EncryptionConfig
 import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security.MethodRight.RW
-import org.reactormonk.{CryptoBits, PrivateKey}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.EitherValues._
 import org.scalatest.wordspec.AnyWordSpec
 
 class AutherSpec extends AnyWordSpec with Matchers {
 
-  val DefaultPrivateKey = PrivateKey(scala.io.Codec.toUTF8(" " * 20))
-  val DefaultCrypto = CryptoBits(DefaultPrivateKey)
-
-  val encConfig = EncryptionConfig(DefaultCrypto, Salt)
+  val encConfig = EncryptionConfig(PrivateKey.getBytes, Salt)
   val User1Token = BasicCredentials(User1.id, User1Pass).token
   val AuthorizationHeaderUser1 = Authorization(BasicCredentials(User1.id, User1Pass))
 
@@ -25,22 +21,22 @@ class AutherSpec extends AnyWordSpec with Matchers {
     "fail when no token is provided in the request" in {
       val h = Headers.of()
       val u = Uri.unsafeFromString("http://main4ino.com/api/v1/")
-      val t = Auther.userCredentialsFromRequest(encConfig, h, u)
+      val t = Auther.userCredentialsFromRequest[IO](encConfig, h, u)
       t shouldBe None
     }
 
     "retrieve token from header as Authorization: token <token>" in {
       val headers = Headers.of(AuthorizationHeaderUser1)
       val uri = Uri.unsafeFromString("http://main4ino.com/api/v1/device/...")
-      val creds = Auther.userCredentialsFromRequest(encConfig, headers, uri)
-      creds shouldBe Some((User1.id, User1.hashedpass))
+      val creds = Auther.userCredentialsFromRequest[IO](encConfig, headers, uri)
+      creds.map(a => (a._1, a._2.unsafeRunSync())) shouldBe Some((User1.id, User1.hashedpass))
     }
 
     "retrieve token from uri as .../token/<token>/..." in {
       val headers = Headers.of()
       val uri = Uri.unsafeFromString(s"http://main4ino.com/api/v1/token/${User1Token}/device/...")
-      val creds = Auther.userCredentialsFromRequest(encConfig, headers, uri)
-      creds shouldBe Some((User1.id, User1.hashedpass))
+      val creds = Auther.userCredentialsFromRequest[IO](encConfig, headers, uri)
+      creds.map(a => (a._1, a._2.unsafeRunSync())) shouldBe Some((User1.id, User1.hashedpass))
     }
 
     "retrieve session from uri as .../session/<session>/..." in {

@@ -1,6 +1,7 @@
 package org.mauritania.main4ino.security
 
 import org.mauritania.main4ino.security.MethodRight.RW
+import cats.effect.IO
 
 object Fixtures {
 
@@ -10,7 +11,7 @@ object Fixtures {
 
   val User1 = User(
     name = "name",
-    hashedpass = Auther.hashPassword(User1Pass, Salt),
+    hashedpass = Auther.hashPassword[IO](User1Pass, Salt).unsafeRunSync(),
     email = "user@zzz.com",
     granted = Map[String, MethodRight]("/" -> RW)
   )

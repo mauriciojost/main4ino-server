@@ -56,7 +56,7 @@ class Auther[F[_]: Sync](config: Config) {
   def authenticateAndCheckAccess(request: Request[F]): F[Either[ErrorMsg, AuthedRequest[F, User]]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](getClass)
-      attempt = Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.method, request.uri)
+      attempt <- Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.method, request.uri)
       _ <- logger.debug(s">>> Authentication: ${attempt.map(_.id)}")
       authedRequest = attempt.map { u =>
         AuthedRequest(
@@ -71,17 +71,9 @@ class Auther[F[_]: Sync](config: Config) {
   /**
     * Provide a session given a user
     */
-  def generateSession(user: User): F[UserSession]
+  def generateSession(user: User): F[UserSession] =
+    Auther.sessionFromUser[F](user, config.privateKeyBits, config.nonceStartupTime)
 
-}
-
-class AutherIO(config: Config) extends Auther[IO] {
-
-  def authenticateAndCheckAccessFromRequest(request: Request[IO]): IO[AccessAttempt] =
-    Auther.authenticateAndCheckAccess[IO](config.usersBy, config.encryptionConfig, request.headers, request.uri, request.uri.path)
-
-  def generateSession(user: User): IO[UserSession] =
-    Auther.sessionFromUser[IO](user, config.privateKeyBits, config.nonceStartupTime)
 }
 
 object Auther {
