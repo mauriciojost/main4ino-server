@@ -2,7 +2,7 @@ package org.mauritania.main4ino.security.confgen
 
 import java.nio.file.Path
 
-import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, CliAction}
+import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, Action}
 import cats.Monad
 import cats.implicits._
 import org.mauritania.main4ino.security.{Auther, Config, User}
@@ -22,7 +22,7 @@ object Algebras {
       hashed <- Auther.hashPassword[F](u.pass)
     } yield User(u.name, hashed, u.email, u.granted)
 
-    def performAction(c: Config, a: CliAction): F[Config]
+    def performAction(c: Config, a: Action): F[Config]
     def asString(c: Config): String
   }
 

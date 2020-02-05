@@ -9,7 +9,7 @@ import cats.syntax.functor._
 import enumeratum.Circe
 import org.mauritania.main4ino.security.confgen.Algebras.{Configs, Filesystem}
 import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, AddRawUsers}
-import org.mauritania.main4ino.security.confgen.Modules.{ConfigsAppErr, FilesystemSync}
+import org.mauritania.main4ino.security.confgen.Modules.{ConfigsMonad, FilesystemSync}
 import org.mauritania.main4ino.helpers.ConfigLoader
 import org.mauritania.main4ino.security.{Config, MethodRight}
 import pureconfig._
@@ -32,7 +32,7 @@ object Client {
   }
 
   def main(args: Array[String]): Unit = {
-    val co = new ConfigsAppErr[IO]
+    val co = new ConfigsMonad[IO]
     val fs = new FilesystemSync[IO]
     start[IO](co, fs).unsafeRunSync()
   }
