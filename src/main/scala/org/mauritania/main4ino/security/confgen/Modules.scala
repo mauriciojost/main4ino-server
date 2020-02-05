@@ -12,7 +12,7 @@ import com.typesafe.config.{ConfigFactory, Config => TypeSafeConfig}
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.mauritania.main4ino.security.confgen.Algebras._
-import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, CliAction}
+import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, Action}
 import org.mauritania.main4ino.security.{Auther, Config, MethodRight, User}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
@@ -33,9 +33,9 @@ object Modules {
   import ConfigLoader.CirceImplicits._
   import ConfigLoader.PureConfigImplicits._
 
-  class ConfigsAppErr[F[_]: Monad](implicit H: PasswordHasher[F, BCrypt]) extends Configs[F] {
+  class ConfigsMonad[F[_]: Monad](implicit H: PasswordHasher[F, BCrypt]) extends Configs[F] {
 
-    def performAction(c: Config, action: CliAction): F[Config] = {
+    def performAction(c: Config, action: Action): F[Config] = {
       action match {
         case rus : Actions.AddRawUsers => {
           val nUsers: F[List[User]] = rus.users.map(u => user(c, u)).sequence
