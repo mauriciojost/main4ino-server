@@ -8,19 +8,19 @@ object Dependencies {
         val DoobieVersion = "0.8.8"
         val H2Version = "1.4.200"
         val SqliteVersion = "3.30.1"
-        val FlywayVersion = "6.2.2"
-        val CirceVersion = "0.12.3"
+        val FlywayVersion = "6.2.1"
+        val CirceVersion = "0.13.0-RC1"
         val PureConfigVersion = "0.12.2"
         val ScalaTestVersion = "3.1.0"
         val ScalaMockVersion = "4.4.0"
         val log4CatsSlf4jVersion = "1.0.1"
         val slf4jLog4j12Version = "1.7.30"
         val CryptobitsVersion = "1.3"
-        val BcryptVersion = "4.1"
         val GfcSemverVersion = "0.0.5"
         val EnumeratumVersion = "1.5.15"
         val RefinedVersion = "0.9.12"
         val GfcSemver = "0.0.5"
+        val TsecVersion = "0.2.0-RC1"
     }
 
     val Dependencies = Seq(
@@ -48,7 +48,9 @@ object Dependencies {
           "com.beachape" %% "enumeratum" % Versions.EnumeratumVersion,
           "com.beachape" %% "enumeratum-circe" % Versions.EnumeratumVersion,
           "org.scalatest" %% "scalatest" % Versions.ScalaTestVersion % "test",
-          "org.scalamock" %% "scalamock" % Versions.ScalaMockVersion % "test"
-
+          "org.scalamock" %% "scalamock" % Versions.ScalaMockVersion % "test",
+          "io.github.jmcardon" %% "tsec-common" % Versions.TsecVersion,
+          "io.github.jmcardon" %% "tsec-password" % Versions.TsecVersion,
+          "io.github.jmcardon" %% "tsec-jwt-mac" % Versions.TsecVersion
   )
 }

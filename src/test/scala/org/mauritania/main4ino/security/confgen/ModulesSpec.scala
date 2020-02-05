@@ -20,7 +20,7 @@ class ModulesSpec extends AnyWordSpec with Matchers with DecodersIO {
       val c = new ConfigsAppErr[IO]()
       val baseConfig = DefaultSecurityConfig
       val newUser = AddRawUsers(List(AddRawUser("pepe", "toto", "pepe@zzz.com", Map[String, MethodRight]("/" -> RW))))
-      val newConf = c.performAction(baseConfig, newUser)
+      val newConf = c.performAction(baseConfig, newUser).unsafeRunSync()
 
       val ExpectedNewUserEntry = User(
         name = "pepe",
