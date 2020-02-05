@@ -96,12 +96,12 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
       implicit val ds = defaultService(tr)
 
       val s = post("/session", "")
-      s.status shouldBe Status.Ok
-      s.as[String].unsafeRunSync() should include("-" + User1.name)
+      //s.status shouldBe Status.Ok
+      //s.as[String].unsafeRunSync() should include("-" + User1.name)
 
-      val u = get("/user")
-      u.status shouldBe Status.Ok
-      u.as[String].unsafeRunSync() shouldBe User1.name
+      //val u = get("/user")
+      //u.status shouldBe Status.Ok
+      //u.as[String].unsafeRunSync() shouldBe User1.name
     }
 
   }
