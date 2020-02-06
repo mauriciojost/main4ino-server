@@ -4,7 +4,6 @@ import java.nio.file.{Files, Paths}
 
 import cats.effect.{IO, Sync}
 import org.mauritania.main4ino.DecodersIO
-import org.mauritania.main4ino.security.Auther.UserHashedPass
 import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, AddRawUsers}
 import org.mauritania.main4ino.security.confgen.Modules.{ConfigsMonad, FilesystemSync}
 import org.mauritania.main4ino.security.Fixtures._
@@ -19,7 +18,6 @@ class ModulesSpec extends AnyWordSpec with Matchers with DecodersIO {
 
   "A config handler" should {
 
-    // Replace all asInstanceOf with PasswordHash[BCrypt](...)
     "add a user" in {
       implicit val ph = new MockedPasswordHasher()
       val c = new ConfigsMonad[IO]()

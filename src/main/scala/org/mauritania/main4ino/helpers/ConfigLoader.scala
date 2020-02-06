@@ -8,6 +8,8 @@ import org.mauritania.main4ino.security.Auther.UserHashedPass
 import org.mauritania.main4ino.security.MethodRight
 import pureconfig.backend.ConfigFactoryWrapper
 import pureconfig.error.ConfigReaderException
+import tsec.passwordhashers.PasswordHash
+import tsec.passwordhashers.jca.BCrypt
 
 import scala.reflect.ClassTag
 
@@ -19,12 +21,12 @@ object ConfigLoader {
   object CirceImplicits {
     implicit val methodRightEncoder: Encoder[MethodRight] = Circe.encoder(MethodRight)
     implicit val methodRightDecoder: Decoder[MethodRight] = Circe.decoder(MethodRight)
-    implicit val methodUserHashedPassDecoder: Decoder[UserHashedPass] = implicitly[Decoder[String]].map(s => s.asInstanceOf[UserHashedPass])
+    implicit val methodUserHashedPassDecoder: Decoder[UserHashedPass] = implicitly[Decoder[String]].map(s => PasswordHash[BCrypt](s))
     implicit val methodUserHashedPassEncoder: Encoder[UserHashedPass] = implicitly[Encoder[String]].contramap[UserHashedPass](m => m.toString)
   }
   object PureConfigImplicits {
     implicit val customMethodRightReader: ConfigReader[MethodRight] = ConfigReader[String].map(m => MethodRight.withName(m))
-    implicit val customMethodUserHashedPass: ConfigReader[UserHashedPass] = ConfigReader[String].map(m => m.asInstanceOf[UserHashedPass])
+    implicit val customMethodUserHashedPass: ConfigReader[UserHashedPass] = ConfigReader[String].map(m => PasswordHash[BCrypt](m))
   }
 
 
