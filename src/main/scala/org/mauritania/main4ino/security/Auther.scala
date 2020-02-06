@@ -135,12 +135,12 @@ object Auther {
 
   def authenticatedUserFromSessionOrCredentials[F[_]: Sync](encry: EncryptionConfig, usersBy: UsersBy, session: Option[UserSession], creds: Option[(UserId, UserPassword)])(implicit H: PasswordHasher[F, BCrypt]): F[AuthenticationAttempt] = {
     for {
-      authenticatedUsrSession <- session.map(s => userFromSession(s, encry.pkey, usersBy)).sequence.map(_.flatten)
+      authenticatedUsrSession <- session.traverse(s => userFromSession(s, encry.pkey, usersBy)).map(_.flatten)
       authenticatedUsrCreds <- creds.map { case (id, clearPass) =>
         val configUser = usersBy.byId.get(id)
-        configUser.map { u =>
+        configUser.traverse { u =>
           H.checkpw(clearPass, u.hashedpass).map(c => if (c == Verified) Some(u) else None)
-        }.sequence.map(_.flatten)
+        }.map(_.flatten)
       }.sequence.map(_.flatten)
       authenticatedUsr = authenticatedUsrCreds.orElse(authenticatedUsrSession)
     } yield authenticatedUsr.toRight(s"Could not authenticate user (login:${creds.map(_._1)} / session:${session.slice(1,5)}...)")
