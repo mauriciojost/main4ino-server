@@ -21,6 +21,8 @@ import eu.timepit.refined.types.numeric.PosInt
 import org.mauritania.main4ino.security.Auther.UserHashedPass
 import pureconfig.error.ConfigReaderException
 import org.mauritania.main4ino.security.confgen.Args
+import tsec.passwordhashers.PasswordHash
+import tsec.passwordhashers.jca.BCrypt
 
 class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
 
@@ -66,7 +68,7 @@ class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
     val c = ConfigLoader.fromFile[IO, SecurityConfig](new File("src/test/resources/configs/2/security-users-single.conf")).unsafeRunSync()
     c.users.size shouldBe 1
     val user = c.users.head
-    user.copy(hashedpass = "".asInstanceOf[UserHashedPass]) shouldBe User1.copy(hashedpass = "".asInstanceOf[UserHashedPass])
+    user shouldBe User1.copy(hashedpass = PasswordHash[BCrypt]("hashed-pass"))
   }
 
   it should "throw an exception if the config is invalid" in {

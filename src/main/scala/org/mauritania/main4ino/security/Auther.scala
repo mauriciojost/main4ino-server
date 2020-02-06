@@ -80,7 +80,7 @@ class Auther[F[_]: Sync](config: Config) {
 object Auther {
 
   type UserId = String // user login
-  type UserHashedPass = PasswordHash[BCrypt] // user hashed password
+  type UserHashedPass = PasswordHash[BCrypt] // user hashed password (build using PasswordHash[BCrypt](...))
   type UserPassword = String // user clear password
   type UserSession = String // session generated after login
 
