@@ -6,9 +6,11 @@ set -e -x
 
 root_dir=$(readlink -e `dirname $0`/../..)
 
+branch=stable
 cd $root_dir
+git checkout $branch
 git reset --hard HEAD~200 # in unlikely case of history rewritting 
-git pull origin master
+git pull origin $branch
 git log | head -10
 
 
