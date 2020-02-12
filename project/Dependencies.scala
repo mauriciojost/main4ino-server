@@ -20,7 +20,7 @@ object Dependencies {
         val EnumeratumVersion = "1.5.15"
         val RefinedVersion = "0.9.12"
         val GfcSemver = "0.0.5"
-        val TsecVersion = "0.2.0-RC1
+        val TsecVersion = "0.2.0-RC1"
     }
 
     val Dependencies = Seq(
