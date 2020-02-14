@@ -1,7 +1,7 @@
 package org.mauritania.main4ino.security
 
 import org.http4s.Method
-import org.mauritania.main4ino.security.MethodRight.{R, RW, W}
+import org.mauritania.main4ino.security.MethodRight.{R, RW, W, -}
 import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -30,6 +30,11 @@ class UserSpec extends AnyFlatSpec with Matchers {
     user(List("/"), W).authorized(Method.POST, "/api/v1/").isDefined shouldBe true
     user(List("/"), W).authorized(Method.PUT, "/api/v1/").isDefined shouldBe true
     user(List("/"), W).authorized(Method.DELETE, "/api/v1/").isDefined shouldBe true
+
+    user(List("/"), -).authorized(Method.GET, "/api/v1/").isDefined shouldBe false
+    user(List("/"), -).authorized(Method.POST, "/api/v1/").isDefined shouldBe false
+    user(List("/"), -).authorized(Method.PUT, "/api/v1/").isDefined shouldBe false
+    user(List("/"), -).authorized(Method.DELETE, "/api/v1/").isDefined shouldBe false
   }
 
 }
