@@ -12,7 +12,7 @@ import com.typesafe.config.{ConfigFactory, Config => TypeSafeConfig}
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.mauritania.main4ino.security.confgen.Algebras._
-import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, Action}
+import org.mauritania.main4ino.security.confgen.Actions.{Action, AddRawUser, Identity}
 import org.mauritania.main4ino.security.{Auther, Config, MethodRight, User}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
@@ -38,11 +38,16 @@ object Modules {
     def performAction(c: Config, action: Action): F[Config] = {
       action match {
         case rus : Actions.AddRawUsers => {
-          val nUsers: F[List[User]] = rus.users.map(u => user(c, u)).sequence
-          val nConf = Monad[F].map(nUsers)(nu => c.copy(users = nu ++ c.users))
-          nConf
+          val nUsers: F[List[User]] = rus.users.traverse(u => user(c, u))
+          Monad[F].map(nUsers)(nu => c.copy(users = nu ++ c.users))
         }
-        case _ => Monad[F].pure(c)
+        case Identity => Monad[F].pure(c)
+      }
+    }
+
+    def performActions(cf: Config, actions: List[Action]): F[Config] = {
+      actions.foldLeft[F[Config]](Monad[F].pure(cf)) { (acumConf, action) =>
+        Monad[F].flatMap(acumConf)(i => performAction(i, action))
       }
     }
 

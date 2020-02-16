@@ -4,26 +4,35 @@ import java.nio.file.{Files, Paths}
 
 import cats.effect.{IO, Sync}
 import org.mauritania.main4ino.DecodersIO
-import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, AddRawUsers}
+import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, AddRawUsers, Identity}
 import org.mauritania.main4ino.security.confgen.Modules.{ConfigsMonad, FilesystemSync}
 import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security.MethodRight.RW
-import org.mauritania.main4ino.security.{Auther, MethodRight, User}
+import org.mauritania.main4ino.security.{MethodRight, User}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import tsec.passwordhashers.jca.{BCrypt, MockedPasswordHasher}
-import tsec.passwordhashers.{PasswordHash, PasswordHasher}
+import tsec.passwordhashers.PasswordHash
 
 class ModulesSpec extends AnyWordSpec with Matchers with DecodersIO {
 
   "A config handler" should {
 
+    "apply identity if no operation" in {
+      implicit val ph = new MockedPasswordHasher()
+      val c = new ConfigsMonad[IO]()
+      val baseConfig = DefaultSecurityConfig
+      val newConf = c.performActions(baseConfig, List(Identity)).unsafeRunSync()
+
+      newConf shouldBe baseConfig
+    }
+
     "add a user" in {
       implicit val ph = new MockedPasswordHasher()
       val c = new ConfigsMonad[IO]()
       val baseConfig = DefaultSecurityConfig
-      val newUser = AddRawUsers(List(AddRawUser("pepe", "toto", "pepe@zzz.com", Map[String, MethodRight]("/" -> RW))))
-      val newConf = c.performAction(baseConfig, newUser).unsafeRunSync()
+      val addNewUser = AddRawUsers(List(AddRawUser("pepe", "toto", "pepe@zzz.com", Map[String, MethodRight]("/" -> RW))))
+      val newConf = c.performActions(baseConfig, List(addNewUser)).unsafeRunSync()
 
       val ExpectedNewUserEntry = User(
         name = "pepe",

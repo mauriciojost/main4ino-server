@@ -22,7 +22,7 @@ object Algebras {
       hashed <- Auther.hashPassword[F](u.pass)
     } yield User(u.name, hashed, u.email, u.granted)
 
-    def performAction(c: Config, a: Action): F[Config]
+    def performActions(c: Config, a: List[Action]): F[Config]
     def asString(c: Config): String
   }
 

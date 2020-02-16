@@ -8,7 +8,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import enumeratum.Circe
 import org.mauritania.main4ino.security.confgen.Algebras.{Configs, Filesystem}
-import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, AddRawUsers}
+import org.mauritania.main4ino.security.confgen.Actions.{Action, AddRawUser, AddRawUsers}
 import org.mauritania.main4ino.security.confgen.Modules.{ConfigsMonad, FilesystemSync}
 import org.mauritania.main4ino.helpers.ConfigLoader
 import org.mauritania.main4ino.security.{Config, MethodRight}
@@ -23,9 +23,8 @@ object Client {
     for {
       args <- ConfigLoader.fromEnv[F, Args]
       conf <- ConfigLoader.fromFile[F, Config](args.input.toFile)
-       // TODO support other actions too
-      user <- ConfigLoader.fromFile[F, AddRawUsers](args.modif.toFile)
-      newConf <- O.performAction(conf, user)
+      actions <- ConfigLoader.fromFile[F, Actions](args.modif.toFile)
+      newConf <- O.performActions(conf, actions.merged)
       newConfStr = O.asString(newConf)
       _ <- S.writeFile(args.output, newConfStr)
     } yield ()
