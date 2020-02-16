@@ -7,7 +7,7 @@ import io.circe.{Decoder, Encoder}
 import org.mauritania.main4ino.security.Auther.UserHashedPass
 import org.mauritania.main4ino.security.MethodRight
 import pureconfig.backend.ConfigFactoryWrapper
-import pureconfig.error.ConfigReaderException
+import pureconfig.error.{CannotParse, ConfigReaderException, ConfigReaderFailures}
 import tsec.passwordhashers.PasswordHash
 import tsec.passwordhashers.jca.BCrypt
 
@@ -25,7 +25,16 @@ object ConfigLoader {
     implicit val methodUserHashedPassEncoder: Encoder[UserHashedPass] = implicitly[Encoder[String]].contramap[UserHashedPass](m => m.toString)
   }
   object PureConfigImplicits {
-    implicit val customMethodRightReader: ConfigReader[MethodRight] = ConfigReader[String].map(m => MethodRight.withName(m))
+    implicit object customMethodRightReader extends ConfigReader[MethodRight] {
+      def from(cur: ConfigCursor) = {
+        val st = cur.asString
+          st.flatMap { s =>
+            MethodRight.withNameEither(s).left.map { e =>
+              ConfigReaderFailures(CannotParse(e.getMessage(), None))
+            }
+          }
+      }
+    }
     implicit val customMethodUserHashedPass: ConfigReader[UserHashedPass] = ConfigReader[String].map(m => PasswordHash[BCrypt](m))
   }
 
