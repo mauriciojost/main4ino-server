@@ -24,7 +24,7 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
   val OneSecond = 1000
 
   Sequential
-  var appThread: Thread = _
+  lazy val appThread: Thread = launchAsync()
   val UserPass = BasicCredentials(Fixtures.User1.id, Fixtures.User1Pass)
 
   implicit val statusEncoder = JsonEncoding.StatusEncoder
@@ -33,7 +33,7 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
   override def beforeAll(): Unit = {
     System.setProperty("config-dir", "src/test/resources/configs/1")
     ConfigFactory.invalidateCaches() // force reload of java properties
-    appThread = launchAsync()
+    appThread
     Thread.sleep(5 * OneSecond)
   }
 
