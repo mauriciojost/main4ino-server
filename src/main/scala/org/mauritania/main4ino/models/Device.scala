@@ -88,9 +88,9 @@ object Device {
     val names = ds.map(_.device.metadata.device).toSet
     assert(names.size <= 1) // at least one, but not more than 1
     val as = ds.flatMap(d => flat(d.dbId.id, d.actors))
-    val props = as.groupBy(_._1)
+    val props = as.groupBy { case (actName, _, _, _) => actName}
       .mapValues { byActorActorTups =>
-        byActorActorTups.groupBy(_._2)
+        byActorActorTups.groupBy{ case (_, propName, _, _) => propName}
           .mapValues { byActorPropActorTups =>
             val eligibleActorTupPerActorProp = byActorPropActorTups.maxBy(_._4)
             eligibleActorTupPerActorProp._3
