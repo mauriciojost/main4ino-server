@@ -29,7 +29,7 @@ object Server extends IOApp {
 
   import ConfigLoader.PureConfigImplicits._
 
-  def createServer[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async]: Resource[F, H4Server[F]] = for {
+  def create[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async]: Resource[F, H4Server[F]] = for {
     logger <- Resource.liftF(Slf4jLogger.fromClass[F](getClass))
     _ <- Resource.liftF(logger.info(s"Initializing server..."))
     // Thread Pools - https://gist.github.com/djspiewak/46b543800958cf61af6efa8e072bfd5c
@@ -80,5 +80,5 @@ object Server extends IOApp {
 
   } yield exitCodeServer
 
-  def run(args: List[String]): IO[ExitCode] = createServer[IO].use(_ => IO.never).as(ExitCode.Success)
+  def run(args: List[String]): IO[ExitCode] = create[IO].use(_ => IO.never).as(ExitCode.Success)
 }
