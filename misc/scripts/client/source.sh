@@ -28,20 +28,20 @@ function highlight() {
 }
 
 function info() {
-  echo $1 | highlight green ".*"
+  echo "$1" | highlight green ".*"
 }
 
 function warn() {
-  echo $1 | highlight yellow ".*"
+  echo "$1" | highlight yellow ".*"
 }
 
 function error() {
-  echo $1 | highlight red ".*"
+  echo "$1" | highlight red ".*"
   exit 1
 }
 
 function session() {
-  curl $CURL_OPTS -s -u $USER_PASSWORD -X POST "$SERVER_ADDRESS/api/v1/session"
+  curl $CURL_OPTS -s -u "$USER_PASSWORD" -X POST "$SERVER_ADDRESS/api/v1/session"
 }
 
 info "Trying to log in..."
