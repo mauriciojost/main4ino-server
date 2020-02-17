@@ -92,8 +92,8 @@ object Device {
       .mapValues { byActorActorTups =>
         byActorActorTups.groupBy{ case (_, propName, _, _) => propName}
           .mapValues { byActorPropActorTups =>
-            val eligibleActorTupPerActorProp = byActorPropActorTups.maxBy(_._4)
-            eligibleActorTupPerActorProp._3
+            val (_, _, propValue, _) = byActorPropActorTups.maxBy{ case (_, _, _, reqId) => reqId}
+            propValue
           }
       }
     names.headOption.map(n => Device(Metadata(n, Status.Unknown), props))
