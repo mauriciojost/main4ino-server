@@ -92,14 +92,7 @@ class Store[F[_]: Sync](basePath: Path) {
       case _ if available.isEmpty =>
         None
       case c if (c.version == "LATEST") =>
-        val semvers = available.map(c => SemVer.apply(c.version))
-        Some(
-          FirmwareCoords(
-            project = target.project,
-            version = semvers.max(BySemVer).original,
-            platform = target.platform
-          )
-        )
+        Some(FirmwareCoords(target.project, available.map(c => SemVer(c.version)).max(BySemVer).original, target.platform))
       case t if available.contains(t) =>
         Some(t)
       case _ =>
