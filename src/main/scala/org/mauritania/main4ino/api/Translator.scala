@@ -16,6 +16,7 @@ import org.mauritania.main4ino.models._
 import fs2.Stream
 import org.http4s.Headers
 import org.mauritania.main4ino.db.Repository
+import org.mauritania.main4ino.db.Repository.FromTo
 import org.mauritania.main4ino.devicelogs.{Logger, Record}
 
 class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger: Logger[F]) extends Http4sDsl[F] {
@@ -123,25 +124,25 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     } yield (device)
   }
 
-  def getDevicesIds(dev: DeviceName, table: ReqType, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], status: Option[Status]): F[IdsOnlyResponse] = {
-    val d = getDevices(dev, table, from, to, status)
+  def getDevicesIds(dev: DeviceName, table: ReqType, fromTo: FromTo, status: Option[Status]): F[IdsOnlyResponse] = {
+    val d = getDevices(dev, table, fromTo, status)
     d.map(v => IdsOnlyResponse(v.map(_.dbId.id).toSeq.sorted))
   }
 
-  def getDevices(dev: DeviceName, table: ReqType, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], status: Option[Status]): F[Iterable[DeviceId]] = {
+  def getDevices(dev: DeviceName, table: ReqType, fromTo: FromTo, status: Option[Status]): F[Iterable[DeviceId]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
-      devices <- repository.selectDevicesWhereTimestampStatus(table, dev, from, to, status)
-      _ <- logger.debug(s"GET all devices $dev from table $table from time $from until $to with status $status: $devices")
+      devices <- repository.selectDevicesWhereTimestampStatus(table, dev, fromTo, status)
+      _ <- logger.debug(s"GET all devices $dev from table $table from time ${fromTo.from} until ${fromTo.to} with status $status: $devices")
     } yield (devices)
   }
 
-  def getDevicesSummary(dev: DeviceName, table: ReqType, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], st: Option[Status]): F[Option[Device]] = {
+  def getDevicesSummary(dev: DeviceName, table: ReqType, fromTo: FromTo, st: Option[Status]): F[Option[Device]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
-      devices <- repository.selectDevicesWhereTimestampStatus(table, dev, from, to, st)
+      devices <- repository.selectDevicesWhereTimestampStatus(table, dev, fromTo, st)
       summary = Device.merge(devices)
-      _ <- logger.debug(s"GET summary all devices $dev from table $table from time $from until $to with status $st: $devices")
+      _ <- logger.debug(s"GET summary all devices $dev from table $table from time ${fromTo.from} until ${fromTo.to} with status $st: $devices")
     } yield (summary)
   }
 

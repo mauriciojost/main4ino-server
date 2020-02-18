@@ -3,7 +3,7 @@ package org.mauritania.main4ino.db
 import eu.timepit.refined.types.numeric.PosInt
 import io.circe.Json
 import org.mauritania.main4ino.Fixtures._
-import org.mauritania.main4ino.db.Repository.ReqType
+import org.mauritania.main4ino.db.Repository.{FromTo, ReqType}
 import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status.Closed
 import org.mauritania.main4ino.models.Device.{DbId, Metadata}
@@ -100,19 +100,19 @@ class RepositorySpec extends AnyFlatSpec with Matchers with TransactorCtx {
       repo.insertDevice(ReqType.Targets, snap2, 12L).unsafeRunSync() shouldBe 2L
       repo.insertDevice(ReqType.Targets, snap3, 13L).unsafeRunSync() shouldBe 3L
 
-      repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", from = Some(11L), to = None, st = None)
+      repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", fromTo = FromTo(Some(11L), None), st = None)
         .unsafeRunSync().map(_.device).toSet shouldBe Set(snap1, snap2, snap3)
 
-      repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", from = Some(12L), to = None, st = None)
+      repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", fromTo = FromTo(Some(12L), None), st = None)
         .unsafeRunSync().map(_.device).toSet shouldBe Set(snap2, snap3)
 
-      repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", from = None, to = Some(12L), st = None)
+      repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", fromTo = FromTo(None, Some(12L)), st = None)
         .unsafeRunSync().map(_.device).toSet shouldBe Set(snap1, snap2)
 
-      repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", from = None, to = Some(11L), st = None)
+      repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", fromTo = FromTo(None, Some(11L)), st = None)
         .unsafeRunSync().map(_.device).toSet shouldBe Set(snap1)
 
-      repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", from = Some(12L), to = Some(12L), st = None)
+      repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", fromTo = FromTo(Some(12L), Some(12L)), st = None)
         .unsafeRunSync().map(_.device).toSet shouldBe Set(snap2)
     }
 
@@ -134,7 +134,7 @@ class RepositorySpec extends AnyFlatSpec with Matchers with TransactorCtx {
       repo.insertDevice(ReqType.Targets, snap4, 74L).unsafeRunSync() shouldBe 4L
       repo.insertDevice(ReqType.Targets, snap5, 75L).unsafeRunSync() shouldBe 5L
 
-      repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", from = None, to = None, st = None)
+      repo.selectDevicesWhereTimestampStatus(ReqType.Targets, "dev1", FromTo(None, None), st = None)
         .unsafeRunSync().toList.map(_.dbId.id) shouldBe List(2L, 3L, 1L, 4L, 5L) // retrieved in order of timestamp
 
     }

@@ -13,7 +13,7 @@ import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.headers.Authorization
 import org.http4s.{Request, Response, Uri, Status => HttpStatus, _}
-import org.mauritania.main4ino.db.Repository.ReqType
+import org.mauritania.main4ino.db.Repository.{FromTo, ReqType}
 import org.mauritania.main4ino.db.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.TimeResponse
@@ -22,7 +22,7 @@ import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.ForTestRicherClasses._
 import org.mauritania.main4ino.models.{Device, EpochSecTimestamp}
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
-import org.mauritania.main4ino.security.{Auther, Config => SecurityConfig, User}
+import org.mauritania.main4ino.security.{Auther, User, Config => SecurityConfig}
 import org.mauritania.main4ino.{Fixtures, Helper}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues._
@@ -124,7 +124,7 @@ class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with Decode
     val t = stub[TimeIO]
     val s = defaultService(r, t)
     "return 200 with a list of existent targets when reading all targets request" in {
-      (r.selectDevicesWhereTimestampStatus _).when(ReqType.Targets, "dev1", None, None, None).returns(IO.pure(Iterable(DevId1, DevId2))).once // mock
+      (r.selectDevicesWhereTimestampStatus _).when(ReqType.Targets, "dev1", FromTo(None, None), None).returns(IO.pure(Iterable(DevId1, DevId2))).once // mock
 
       val ta = getApiV1("/devices/dev1/targets")(s).unsafeRunSync()
       ta.status shouldBe (HttpStatus.Ok)

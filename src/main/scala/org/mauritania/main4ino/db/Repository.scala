@@ -12,7 +12,7 @@ import fs2.Stream
 import io.circe.Json
 import org.mauritania.main4ino.api.{Attempt, ErrMsg}
 import org.mauritania.main4ino.db.Repository.ReqType.ReqType
-import org.mauritania.main4ino.db.Repository.{ActorTup, ActorTupIdLess, Device1}
+import org.mauritania.main4ino.db.Repository.{ActorTup, ActorTupIdLess, Device1, FromTo}
 import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models.Device.Metadata.Status.Status
@@ -121,8 +121,8 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
     transaction.transact(transactor)
   }
 
-  def selectDevicesWhereTimestampStatus(table: ReqType, device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], st: Option[Status]): F[Iterable[DeviceId]] = {
-    val transaction = sqlSelectMetadataActorTupWhereDeviceStatus(table, device, from, to, st)
+  def selectDevicesWhereTimestampStatus(table: ReqType, device: DeviceName, fromTo: FromTo, st: Option[Status]): F[Iterable[DeviceId]] = {
+    val transaction = sqlSelectMetadataActorTupWhereDeviceStatus(table, device, fromTo, st)
     val s = transaction.transact(transactor)
     val iol = s.compile.toList
     iol.map(l => Device1.asDeviceHistory(l).toSeq.sortBy(_.dbId.creation))
@@ -200,12 +200,12 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
       .update.run
   }
 
-  private def sqlSelectMetadataActorTupWhereDeviceStatus(table: ReqType, d: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp], st: Option[Status]): Stream[ConnectionIO, Device1] = {
-    val fromFr = from match {
+  private def sqlSelectMetadataActorTupWhereDeviceStatus(table: ReqType, d: DeviceName, fromTo: FromTo, st: Option[Status]): Stream[ConnectionIO, Device1] = {
+    val fromFr = fromTo.from match {
       case Some(a) => fr"AND r.creation >= $a"
       case None => fr""
     }
-    val toFr = to match {
+    val toFr = fromTo.to match {
       case Some(a) => fr"AND r.creation <= $a"
       case None => fr""
     }
@@ -260,6 +260,8 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
 }
 
 object Repository {
+
+  case class FromTo(from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp])
 
   def toDevice(dbId: DbId, metadata: Metadata, ats: Iterable[ActorTup]): DeviceId = DeviceId(dbId, Device(metadata, ActorTup.asActorMap(ats)))
 

@@ -28,6 +28,7 @@ import org.mauritania.main4ino.security.{Auther, User}
 import org.mauritania.main4ino.{ContentTypeAppJson, ContentTypeTextPlain}
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import fs2.Stream
+import org.mauritania.main4ino.db.Repository.FromTo
 import org.mauritania.main4ino.devicelogs.Record
 
 class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], firmware: FirmwareService[F]) extends Http4sDsl[F] {
@@ -274,10 +275,10 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
     case a@GET -> Root / "devices" / Dev(device) / Req(table) :? FromParam(from) +& ToParam(to) +& StatusParam(st) +& IdsParam(ids) as _ => {
       val idsOnly = ids.exists(identity)
       if (idsOnly) {
-        val x: F[Translator.IdsOnlyResponse] = tr.getDevicesIds(device, table, from, to, st)
+        val x: F[Translator.IdsOnlyResponse] = tr.getDevicesIds(device, table, FromTo(from, to), st)
         x.flatMap(i => Ok(i.asJson, ContentTypeAppJson))
       } else {
-        val x: F[Iterable[DeviceId]] = tr.getDevices(device, table, from, to, st)
+        val x: F[Iterable[DeviceId]] = tr.getDevices(device, table, FromTo(from, to), st)
         x.flatMap(i => Ok(i.asJson, ContentTypeAppJson))
       }
     }
@@ -298,7 +299,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
       *
       */
     case a@GET -> Root / "devices" / Dev(device) / Req(table) / "summary" :? FromParam(from) +& ToParam(to) +& StatusParam(st) as _ => {
-      val x: F[Option[Device]] = tr.getDevicesSummary(device, table, from, to, st)
+      val x: F[Option[Device]] = tr.getDevicesSummary(device, table, FromTo(from, to), st)
       x.flatMap {
         case Some(v) => Ok(v.actors.asJson, ContentTypeAppJson)
         case None => NoContent()
