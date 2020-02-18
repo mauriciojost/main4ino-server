@@ -12,6 +12,7 @@ import org.mauritania.main4ino.models.{DeviceName, EpochSecTimestamp}
 import cats.implicits._
 
 import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 /**
   * Defines a way to handle logs coming from Devices, so that
@@ -67,20 +68,21 @@ class Logger[F[_]: Sync: ContextShift](config: Config, time: Time[F], ec: Execut
     for {
       readable <- isReadableFile(path.toFile)
       located: Attempt[Stream[F, Record]] = readable match {
-        case true =>
-          Right{
-            val bytes = io.file.readAll[F](pathFromDevice(device), blocker, ChunkSize)
-            val bytesLimited = bytes.takeRight(config.maxLengthLogs.value)
-            val lines = bytesLimited.through(fs2text.utf8Decode).through(fs2text.lines)
-            val records = lines.map(Record.parse).collect{case Some(a) => a}
-            val filtered = records.filter(rec => from.forall(f => rec.t >= f) && to.forall(t => rec.t <= t))
-            filtered
-          }
-        case false =>
-          Left(s"Could not locate/read logs for device: ${device}")
+        case true => readFile(device, from, to)
+        case false => Left(s"Could not locate/read logs for device: ${device}")
       }
     } yield (located)
   }
 
+  private def readFile(device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): Attempt[Stream[F, Record]]= {
+    Try {
+      val bytes = io.file.readAll[F](pathFromDevice(device), blocker, ChunkSize)
+      val bytesLimited = bytes.takeRight(config.maxLengthLogs.value)
+      val lines = bytesLimited.through(fs2text.utf8Decode).through(fs2text.lines)
+      val records = lines.map(Record.parse).collect { case Some(a) => a }
+      val filtered = records.filter(rec => from.forall(f => rec.t >= f) && to.forall(t => rec.t <= t))
+      filtered
+    }.toEither.swap.map(_.getMessage).swap
+  }
 }
 
