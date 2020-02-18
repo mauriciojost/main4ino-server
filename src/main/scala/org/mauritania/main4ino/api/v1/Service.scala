@@ -48,7 +48,9 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
   implicit val IterableDeviceIdEncoder: EntityEncoder[F, Iterable[DeviceId]] = jsonEncoderOf
   implicit val IdResponseEncoder: EntityEncoder[F, Translator.IdResponse] = jsonEncoderOf
 
-  private[v1] val service = AuthedRoutes.of[User, F] {
+  type AuthedRoute[F[_], T] = PartialFunction[AuthedRequest[F, T], F[Response[F]]]
+
+  private[v1] val basicService: AuthedRoute[F, User] = {
 
     /**
       * GET /help
@@ -61,8 +63,6 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
       */
     case GET -> _ / "help" as _ =>
       Ok(HelpMsg, ContentTypeTextPlain)
-
-    // Date/Time
 
     /**
       * GET /time?timezone=<tz>
@@ -84,8 +84,9 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
         case Left(_) => BadRequest()
       }
     }
+  }
 
-    // User
+  private[v1] val loginService: AuthedRoute[F, User] = {
 
     /**
       * POST /session (with standard basic auth)
@@ -114,9 +115,10 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
     case a@GET -> Root / "user" as user => {
       Ok(user.name, ContentTypeTextPlain)
     }
+  }
 
 
-    // Administration
+  private[v1] val adminService: AuthedRoute[F, User] = {
 
     /**
       * DELETE /administrator/devices/<dev>/targets
@@ -133,14 +135,15 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
       val x: F[Translator.CountResponse] = tr.deleteDevice(device, table)
       x.flatMap(i => Ok(i, ContentTypeAppJson))
     }
+  }
 
-
+  private[v1] val deviceService: AuthedRoute[F, User] = {
     /**
       * GET /devices/<dev>/firmware/...
       *
       * Forward to firmware store services (i.e. [[firmware.service]]).
       */
-    case a @ GET -> "devices" /: Dev(device) /: "firmware" /: forwarded as user => {
+    case a@GET -> "devices" /: Dev(device) /: "firmware" /: forwarded as user => {
       val oldUri = a.req.uri
       val newUri = oldUri.withPath(forwarded.toString)
       val newReq = a.req.withUri(newUri)
@@ -239,7 +242,7 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
       * Mostly used by the device (mode reports) to start a request transaction.
       * There are 2 main scenarios:
       * - no actor-property provided: the request remains in state open, waiting for properties
-      *   to be added in a second step. It should be explicitly closed so that it is exposed to devices.
+      * to be added in a second step. It should be explicitly closed so that it is exposed to devices.
       * - at least one actor-property is provided: the request is automatically closed, and exposed to devices.
       *
       * Returns: CREATED (201)
@@ -358,8 +361,9 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
         case None => NoContent() // ignore message
       }
     }
+  }
 
-    // Targets & Reports (at device-actor level)
+  private[v1] val deviceActorService: AuthedRoute[F, User] = {
 
     /**
       * POST /devices/<dev>/targets/actors/<actor>
@@ -443,6 +447,14 @@ class Service[F[_] : Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fi
         case Left(_) => NoContent()
       }
     }
+  }
+
+  private[v1] val service = AuthedRoutes.of[User, F] {
+    basicService
+      .orElse(loginService)
+      .orElse(adminService)
+      .orElse(deviceService)
+      .orElse(deviceActorService)
   }
 
   private[v1] val onFailure: AuthedRoutes[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
