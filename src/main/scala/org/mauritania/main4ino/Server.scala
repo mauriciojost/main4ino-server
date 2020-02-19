@@ -5,9 +5,8 @@ import java.nio.file.Paths
 import java.util.concurrent._
 
 import cats.effect.{ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, Resource, Timer}
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.mauritania.main4ino.db.Repository.ReqType
-import org.mauritania.main4ino.api.{Translator, v1}
+import org.mauritania.main4ino.api.{v1, Translator}
 import org.mauritania.main4ino.db.{Cleaner, Database, Repository}
 import org.mauritania.main4ino.firmware.{Service, Store}
 import org.mauritania.main4ino.helpers.{ConfigLoader, Scheduler, Time}

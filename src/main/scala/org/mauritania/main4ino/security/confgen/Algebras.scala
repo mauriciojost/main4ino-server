@@ -2,7 +2,7 @@ package org.mauritania.main4ino.security.confgen
 
 import java.nio.file.Path
 
-import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, Action}
+import org.mauritania.main4ino.security.confgen.Actions.{Action, AddRawUser}
 import cats.Monad
 import cats.implicits._
 import org.mauritania.main4ino.security.{Auther, Config, User}

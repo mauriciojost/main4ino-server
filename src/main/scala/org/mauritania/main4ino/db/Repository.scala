@@ -4,7 +4,7 @@ import cats.effect.Sync
 import cats.free.Free
 import cats.implicits._
 import doobie._
-import doobie.free.connection.{ConnectionOp, raw}
+import doobie.free.connection.{raw, ConnectionOp}
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.types.numeric.PosInt
