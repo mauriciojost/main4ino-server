@@ -4,7 +4,7 @@ import cats.effect.IO
 import com.typesafe.config.ConfigFactory
 import org.http4s.client.UnexpectedStatus
 import org.http4s.{BasicCredentials, Method, Request, Status, Uri}
-import org.scalatest.{BeforeAndAfterAll, Sequential}
+import org.scalatest.{Assertion, BeforeAndAfterAll, Sequential}
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
@@ -59,12 +59,12 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
   it should "perform cleanup of old entries regularly" in {
     withHttpClient { httpClient =>
 
-      def checkRecord(dev: DeviceName, id: Long, status: Status) = {
+      def checkRecord(dev: DeviceName, id: Long, status: Status): Assertion = {
         val s = httpClient.status(devGetRequest(dev, "targets", id))
         s.unsafeRunSync() shouldBe status
       }
-      def checkExists(dev: DeviceName, id: Long) = checkRecord(dev, id, Status.Ok)
-      def checkDoesNotExist(dev: DeviceName, id: Long) = checkRecord(dev, id, Status.NoContent)
+      def checkExists(dev: DeviceName, id: Long): Assertion = checkRecord(dev, id, Status.Ok)
+      def checkDoesNotExist(dev: DeviceName, id: Long): Assertion = checkRecord(dev, id, Status.NoContent)
 
       // T0sec
 

@@ -10,7 +10,7 @@ import eu.timepit.refined.types.numeric.PosInt
 
 class Cleaner[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](repo: Repository[F], time: Time[F]) {
 
-  def cleanupRepo(retentionSecs: PosInt) = {
+  def cleanupRepo(retentionSecs: PosInt): F[Int] = {
     for {
       logger <- Slf4jLogger.fromClass[F](getClass)
       now <- time.nowUtc
