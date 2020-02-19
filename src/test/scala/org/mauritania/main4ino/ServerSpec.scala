@@ -101,7 +101,7 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
   }
 
   private def jsonAs[T](json: String)(implicit v: Decoder[T]): T = {
-    parse(json).toOption.flatMap(_.as[T].toOption).get
+    parse(json).toOption.flatMap(_.as[T].toOption).getOrElse(throw new IllegalArgumentException(s"Cannot parse $json"))
   }
 
   private def devPostRequest(devName: String, table: String) = {

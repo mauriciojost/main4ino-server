@@ -51,7 +51,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
     implicit val s = defaultServiceWithDirectory(Dataset1)
     val r = get("/firmwares/botino/esp8266")
     r.status shouldBe Status.Ok
-    r.bodyAsText.compile.toList.unsafeRunSync().head shouldBe Set(FirmwareCoords("botino", "1.0.0", "esp8266")).asJson.noSpaces
+    r.bodyAsText.compile.toList.unsafeRunSync() shouldBe List(Set(FirmwareCoords("botino", "1.0.0", "esp8266")).asJson.noSpaces)
   }
 
   it should "tell that current version is up to date" in {

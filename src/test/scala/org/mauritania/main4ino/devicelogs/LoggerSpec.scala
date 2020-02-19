@@ -97,15 +97,15 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
   it should "report a meaningful failure when cannot write file" in {
     val logger = buildLogger(Paths.get("/non/existent/path"))
     val s = Stream("hey")
-    logger.updateLogs("device", s).unsafeRunSync().left.get should include("/non/existent/path")
+    logger.updateLogs("device", s).unsafeRunSync().left.value should include("/non/existent/path")
   }
 
   it should "report a meaningful failure when cannot read file" in {
     val logger = buildLogger(Paths.get("/non/existent/path"))
-    logger.getLogs("device1", None, None).unsafeRunSync().left.get should include("device1")
+    logger.getLogs("device1", None, None).unsafeRunSync().left.value should include("device1")
   }
 
-  private def buildLogger(tmp: Path, t: EpochSecTimestamp = 0L, mxLen: PosInt = PosInt(1024)) = {
+  private def buildLogger(tmp: Path, t: EpochSecTimestamp = 0L, mxLen: PosInt = PosInt(1024)): Logger[IO] = {
     val ec = ExecutionContext.global
     val logger = new Logger[IO](Config(tmp, mxLen), new FixedTime(t), ec)(Sync[IO], IO.contextShift(ec))
     logger

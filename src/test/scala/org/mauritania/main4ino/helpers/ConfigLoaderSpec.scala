@@ -67,18 +67,18 @@ class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
   it should "load correctly a security configuration file" in {
     val c = ConfigLoader.fromFile[IO, SecurityConfig](new File("src/test/resources/configs/2/security-users-single.conf")).unsafeRunSync()
     c.users.size shouldBe 1
-    val user = c.users.head
-    user shouldBe User1.copy(hashedpass = PasswordHash[BCrypt]("hashed-pass"))
+    val users = c.users
+    users shouldBe List(User1.copy(hashedpass = PasswordHash[BCrypt]("hashed-pass")))
   }
 
   it should "throw an exception if the config is invalid" in {
-    a [ConfigReaderException[SecurityConfig]] should be thrownBy {
+    a[ConfigReaderException[SecurityConfig]] should be thrownBy {
       ConfigLoader.fromFile[IO, SecurityConfig](new File("src/test/resources/configs/2/security-users-invalid.conf")).unsafeRunSync()
     }
   }
 
   it should "throw an exception if the config is malformed" in {
-    a [ConfigReaderException[SecurityConfig]] should be thrownBy {
+    a[ConfigReaderException[SecurityConfig]] should be thrownBy {
       ConfigLoader.fromFile[IO, SecurityConfig](new File("src/test/resources/configs/2/security-users-broken.conf")).unsafeRunSync()
     }
   }
