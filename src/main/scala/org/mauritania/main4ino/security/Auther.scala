@@ -94,7 +94,9 @@ object Auther {
   private final val GroupThe = 2
   private final val GroupPos = 3
 
-  def authenticateAndCheckAccess[F[_]: Sync: Monad](usersBy: UsersBy, encry: EncryptionConfig, headers: Headers, method: Method, uri: Uri)(implicit H: PasswordHasher[F, BCrypt]): F[AccessAttempt] = {
+  def authenticateAndCheckAccess[F[_]: Sync: Monad](usersBy: UsersBy, encry: EncryptionConfig, headers: Headers, method: Method, uri: Uri)(
+    implicit H: PasswordHasher[F, BCrypt]
+  ): F[AccessAttempt] = {
     val resource = uri.path
     val credentials = userCredentialsFromRequest(headers, uri)
     val session = sessionFromRequest(headers, uri)
@@ -132,7 +134,12 @@ object Auther {
 
   }
 
-  def authenticatedUserFromSessionOrCredentials[F[_]: Sync](encry: EncryptionConfig, usersBy: UsersBy, session: Option[UserSession], creds: Option[(UserId, UserPassword)])(implicit H: PasswordHasher[F, BCrypt]): F[AuthenticationAttempt] = {
+  def authenticatedUserFromSessionOrCredentials[F[_]: Sync](
+    encry: EncryptionConfig,
+    usersBy: UsersBy,
+    session: Option[UserSession],
+    creds: Option[(UserId, UserPassword)]
+  )(implicit H: PasswordHasher[F, BCrypt]): F[AuthenticationAttempt] = {
     for {
       authenticatedUsrSession <- session.traverse(s => userFromSession(s, encry.pkey, usersBy)).map(_.flatten)
       authenticatedUsrCreds <- creds

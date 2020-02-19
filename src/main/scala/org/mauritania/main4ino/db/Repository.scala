@@ -168,7 +168,8 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
   }
 
   private def sqlInsertMetadata(table: ReqType, m: Metadata, ts: EpochSecTimestamp): ConnectionIO[RequestId] = {
-    (fr"INSERT INTO " ++ Fragment.const(table.code + "_requests") ++ fr" (creation, device_name, status) VALUES (${ts}, ${m.device}, ${m.status})").update.withUniqueGeneratedKeys[RequestId]("id")
+    (fr"INSERT INTO " ++ Fragment.const(table.code + "_requests") ++ fr" (creation, device_name, status) VALUES (${ts}, ${m.device}, ${m.status})").update
+      .withUniqueGeneratedKeys[RequestId]("id")
   }
 
   private def sqlInsertDescription(dev: DeviceName, d: VersionJson, ts: EpochSecTimestamp): ConnectionIO[Int] = {

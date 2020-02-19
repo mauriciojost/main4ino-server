@@ -58,7 +58,13 @@ object Server extends IOApp {
 
     } yield exitCodeServer
 
-  private def router[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](configApp: Config, configUsers: security.Config, blockingIoEc: ExecutionContext, repo: Repository[F], time: Time[F]) = {
+  private def router[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](
+    configApp: Config,
+    configUsers: security.Config,
+    blockingIoEc: ExecutionContext,
+    repo: Repository[F],
+    time: Time[F]
+  ) = {
     val devLogger = new Logger(configApp.devLogger, time, blockingIoEc)
     val fwStore = new Store(Paths.get(configApp.firmware.firmwareBasePath))
     val firmwareService = new firmware.Service(fwStore, blockingIoEc)
