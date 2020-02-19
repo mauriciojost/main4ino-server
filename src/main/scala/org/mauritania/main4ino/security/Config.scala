@@ -16,7 +16,6 @@ import tsec.passwordhashers.jca.BCrypt
 
 import scala.io.Codec
 
-
 case class Config(
   users: List[User],
   privatekey: String // TODO use Byte[Array]
@@ -44,4 +43,3 @@ object Config {
   }
 
 }
-

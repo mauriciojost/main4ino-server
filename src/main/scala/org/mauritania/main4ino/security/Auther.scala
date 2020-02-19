@@ -34,7 +34,6 @@ import tsec.passwordhashers.jca._
 import scala.util.Try
 import scala.util.matching.Regex
 
-
 /**
   * Authorization and authentication
   * @tparam F
@@ -95,7 +94,7 @@ object Auther {
   private final val GroupThe = 2
   private final val GroupPos = 3
 
-  def authenticateAndCheckAccess[F[_]: Sync : Monad](usersBy: UsersBy, encry: EncryptionConfig, headers: Headers, method: Method, uri: Uri)(implicit H: PasswordHasher[F, BCrypt]): F[AccessAttempt] = {
+  def authenticateAndCheckAccess[F[_]: Sync: Monad](usersBy: UsersBy, encry: EncryptionConfig, headers: Headers, method: Method, uri: Uri)(implicit H: PasswordHasher[F, BCrypt]): F[AccessAttempt] = {
     val resource = uri.path
     val credentials = userCredentialsFromRequest(headers, uri)
     val session = sessionFromRequest(headers, uri)
@@ -111,18 +110,18 @@ object Auther {
     * @param privateKey private key used for encryption of the session id to be generated
     * @return a user session id
     */
-  def sessionFromUser[F[_]: Sync : Monad](user: User, privateKey: CryptoBits): F[UserSession] = {
+  def sessionFromUser[F[_]: Sync: Monad](user: User, privateKey: CryptoBits): F[UserSession] = {
     val claims = JWTClaims(subject = Some(user.id))
     for {
-      key             <- HMACSHA256.buildKey[F](privateKey)
-      stringjwt       <- JWTMac.buildToString[F, HMACSHA256](claims, key)
+      key <- HMACSHA256.buildKey[F](privateKey)
+      stringjwt <- JWTMac.buildToString[F, HMACSHA256](claims, key)
     } yield stringjwt
   }
 
-  def userIdFromSession[F[_] : Sync : Monad](session: UserSession, privateKey: CryptoBits): F[Option[UserId]] = {
+  def userIdFromSession[F[_]: Sync: Monad](session: UserSession, privateKey: CryptoBits): F[Option[UserId]] = {
     for {
-      key             <- HMACSHA256.buildKey[F](privateKey)
-      parsed          <- JWTMac.verifyAndParse[F, HMACSHA256](session, key)
+      key <- HMACSHA256.buildKey[F](privateKey)
+      parsed <- JWTMac.verifyAndParse[F, HMACSHA256](session, key)
     } yield parsed.body.subject
   }
 
@@ -136,21 +135,28 @@ object Auther {
   def authenticatedUserFromSessionOrCredentials[F[_]: Sync](encry: EncryptionConfig, usersBy: UsersBy, session: Option[UserSession], creds: Option[(UserId, UserPassword)])(implicit H: PasswordHasher[F, BCrypt]): F[AuthenticationAttempt] = {
     for {
       authenticatedUsrSession <- session.traverse(s => userFromSession(s, encry.pkey, usersBy)).map(_.flatten)
-      authenticatedUsrCreds <- creds.map { case (id, clearPass) =>
-        val configUser = usersBy.byId.get(id)
-        configUser.traverse { u =>
-          H.checkpw(clearPass, u.hashedpass).map(c => if (c == Verified) Some(u) else None)
-        }.map(_.flatten)
-      }.sequence.map(_.flatten)
+      authenticatedUsrCreds <- creds
+        .map {
+          case (id, clearPass) =>
+            val configUser = usersBy.byId.get(id)
+            configUser
+              .traverse { u =>
+                H.checkpw(clearPass, u.hashedpass).map(c => if (c == Verified) Some(u) else None)
+              }
+              .map(_.flatten)
+        }
+        .sequence
+        .map(_.flatten)
       authenticatedUsr = authenticatedUsrCreds.orElse(authenticatedUsrSession)
-    } yield authenticatedUsr.toRight(s"Could not authenticate user (login:${creds.map(_._1)} / session:${session.slice(1,5)}...)")
+    } yield authenticatedUsr.toRight(s"Could not authenticate user (login:${creds.map(_._1)} / session:${session.slice(1, 5)}...)")
   }
 
   /**
     * Check if a user can access a given resource
     */
   def checkAccess(user: User, method: Method, resourceUriPath: Path): AccessAttempt = {
-    user.authorized(method, dropTokenAndSessionFromPath(resourceUriPath))
+    user
+      .authorized(method, dropTokenAndSessionFromPath(resourceUriPath))
       .toRight(s"User '${user.name}' is not authorized to ${method} '${resourceUriPath}'")
   }
 

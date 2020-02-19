@@ -30,34 +30,35 @@ object Server extends IOApp {
 
   import ConfigLoader.PureConfigImplicits._
 
-  def create[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async]: Resource[F, H4Server[F]] = for {
-    args <- Resource.liftF[F, Args](ConfigLoader.fromEnv[F, Args])
+  def create[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async]: Resource[F, H4Server[F]] =
+    for {
+      args <- Resource.liftF[F, Args](ConfigLoader.fromEnv[F, Args])
 
-    blockingIoEc <- ExecutionContexts.cachedThreadPool[F] // Thread Pools - https://gist.github.com/djspiewak/46b543800958cf61af6efa8e072bfd5c
+      blockingIoEc <- ExecutionContexts.cachedThreadPool[F] // Thread Pools - https://gist.github.com/djspiewak/46b543800958cf61af6efa8e072bfd5c
 
-    configApp <- Resource.liftF(ConfigLoader.fromFile[F, Config](new File(args.configDir.toFile, "application.conf")))
-    configUsers <- Resource.liftF(ConfigLoader.fromFile[F, security.Config](new File(args.configDir.toFile, "security.conf")))
+      configApp <- Resource.liftF(ConfigLoader.fromFile[F, Config](new File(args.configDir.toFile, "application.conf")))
+      configUsers <- Resource.liftF(ConfigLoader.fromFile[F, security.Config](new File(args.configDir.toFile, "security.conf")))
 
-    transactor <- Database.transactor[F](configApp.database, blockingIoEc, Blocker.liftExecutionContext(blockingIoEc))
+      transactor <- Database.transactor[F](configApp.database, blockingIoEc, Blocker.liftExecutionContext(blockingIoEc))
 
-    repo = new Repository[F](transactor)
-    time = new Time[F]()
+      repo = new Repository[F](transactor)
+      time = new Time[F]()
 
-    httpApp = router(configApp, configUsers, blockingIoEc, repo, time)
+      httpApp = router(configApp, configUsers, blockingIoEc, repo, time)
 
-    _ <- Resource.liftF(Database.initialize(transactor))
+      _ <- Resource.liftF(Database.initialize(transactor))
 
-    cleanupRepoTask = new Cleaner[F](repo, time).cleanupRepo(configApp.database.cleanup.retentionSecs)
-    _ <- Resource.liftF(Concurrent[F].start(Scheduler.periodic[F, Int](configApp.database.cleanup.periodSecsFiniteDuration, cleanupRepoTask)))
+      cleanupRepoTask = new Cleaner[F](repo, time).cleanupRepo(configApp.database.cleanup.retentionSecs)
+      _ <- Resource.liftF(Concurrent[F].start(Scheduler.periodic[F, Int](configApp.database.cleanup.periodSecsFiniteDuration, cleanupRepoTask)))
 
-    exitCodeServer <- BlazeServerBuilder[F]
-      .bindHttp(configApp.server.port.value, configApp.server.host)
-      .withHttpApp(httpApp)
-      .resource
+      exitCodeServer <- BlazeServerBuilder[F]
+        .bindHttp(configApp.server.port.value, configApp.server.host)
+        .withHttpApp(httpApp)
+        .resource
 
-  } yield exitCodeServer
+    } yield exitCodeServer
 
-  private def router[F[_] : ContextShift : ConcurrentEffect : Timer : Sync : Async](configApp: Config, configUsers: security.Config, blockingIoEc: ExecutionContext, repo: Repository[F], time: Time[F]) = {
+  private def router[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](configApp: Config, configUsers: security.Config, blockingIoEc: ExecutionContext, repo: Repository[F], time: Time[F]) = {
     val devLogger = new Logger(configApp.devLogger, time, blockingIoEc)
     val fwStore = new Store(Paths.get(configApp.firmware.firmwareBasePath))
     val firmwareService = new firmware.Service(fwStore, blockingIoEc)

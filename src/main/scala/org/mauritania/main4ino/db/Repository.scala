@@ -156,7 +156,6 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
     transaction.transact(transactor)
   }
 
-
   def selectRequestIdsWhereDevice(table: ReqType, d: DeviceName): Stream[F, RequestId] = {
     (fr"SELECT id FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE device_name=$d").query[RequestId].stream.transact(transactor)
   }
@@ -169,8 +168,7 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
   }
 
   private def sqlInsertMetadata(table: ReqType, m: Metadata, ts: EpochSecTimestamp): ConnectionIO[RequestId] = {
-    (fr"INSERT INTO " ++ Fragment.const(table.code + "_requests") ++ fr" (creation, device_name, status) VALUES (${ts}, ${m.device}, ${m.status})")
-      .update.withUniqueGeneratedKeys[RequestId]("id")
+    (fr"INSERT INTO " ++ Fragment.const(table.code + "_requests") ++ fr" (creation, device_name, status) VALUES (${ts}, ${m.device}, ${m.status})").update.withUniqueGeneratedKeys[RequestId]("id")
   }
 
   private def sqlInsertDescription(dev: DeviceName, d: VersionJson, ts: EpochSecTimestamp): ConnectionIO[Int] = {
@@ -186,18 +184,15 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
   }
 
   private def sqlDeleteMetadataWhereDeviceName(table: ReqType, device: DeviceName): ConnectionIO[Int] = {
-    (fr"DELETE FROM" ++ Fragment.const(table.code + "_requests") ++ fr"WHERE device_name=$device")
-      .update.run
+    (fr"DELETE FROM" ++ Fragment.const(table.code + "_requests") ++ fr"WHERE device_name=$device").update.run
   }
 
   private def sqlDeleteMetadataWhereCreationIsLess(table: ReqType, upperbound: EpochSecTimestamp): ConnectionIO[Int] = {
-    (fr"DELETE FROM" ++ Fragment.const(table.code + "_requests") ++ fr"WHERE creation < $upperbound")
-      .update.run
+    (fr"DELETE FROM" ++ Fragment.const(table.code + "_requests") ++ fr"WHERE creation < $upperbound").update.run
   }
 
   private def sqlDeleteActorTupOrphanOfRequest(table: ReqType): ConnectionIO[Int] = {
-    (fr"DELETE FROM " ++ Fragment.const(table.code) ++ fr" tu WHERE NOT EXISTS (SELECT 1 FROM " ++ Fragment.const(table.code + "_requests") ++ fr" re where tu.request_id = re.id)")
-      .update.run
+    (fr"DELETE FROM " ++ Fragment.const(table.code) ++ fr" tu WHERE NOT EXISTS (SELECT 1 FROM " ++ Fragment.const(table.code + "_requests") ++ fr" re where tu.request_id = re.id)").update.run
   }
 
   private def sqlSelectMetadataActorTupWhereDeviceStatus(table: ReqType, d: DeviceName, fromTo: FromTo, st: Option[Status]): Stream[ConnectionIO, Device1] = {
@@ -217,12 +212,14 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
       fr"FROM" ++ Fragment.const(table.code + "_requests") ++ fr"as r LEFT OUTER JOIN" ++ Fragment.const(table.code) ++ fr"as t" ++
       fr"ON r.id = t.request_id" ++
       fr"WHERE r.device_name=$d" ++ fromFr ++ toFr ++ stFr)
-      .query[Device1].stream
+      .query[Device1]
+      .stream
   }
 
   private def sqlSelectMetadataWhereRequestId(table: ReqType, id: RequestId): ConnectionIO[Option[(DbId, Metadata)]] = {
     (fr"SELECT id, creation, device_name, status FROM " ++ Fragment.const(table.code + "_requests") ++ fr" WHERE id=$id")
-      .query[(DbId, Metadata)].option
+      .query[(DbId, Metadata)]
+      .option
   }
 
   private def sqlSelectLastRequestIdWhereDeviceStatus(table: ReqType, device: DeviceName, status: Option[Status]): ConnectionIO[Option[RequestId]] = {
@@ -241,7 +238,8 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
     (fr"SELECT MAX(r.id) FROM" ++ Fragment.const(table.code + "_requests") ++ fr"as r LEFT OUTER JOIN" ++ Fragment.const(table.code) ++ fr"as t" ++
       fr"ON r.id = t.request_id" ++
       fr"WHERE r.device_name=$d AND t.actor_name=$a" ++ stFr)
-      .query[Option[RequestId]].unique
+      .query[Option[RequestId]]
+      .unique
   }
 
   private def sqlSelectActorTupWhereRequestIdActorStatus(
@@ -254,7 +252,8 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
       case None => fr""
     }
     (fr"SELECT request_id, actor_name, property_name, property_value, creation FROM " ++ Fragment.const(table.code) ++ fr" WHERE request_id=$requestId" ++ actorFr)
-      .query[ActorTup].accumulate
+      .query[ActorTup]
+      .accumulate
   }
 
 }
@@ -339,8 +338,9 @@ object Repository {
     }
 
     def from(deviceName: DeviceName, actorName: ActorName, pm: ActorProps): Iterable[ActorTupIdLess] = {
-      pm.map { case (name, value) =>
-        ActorTupIdLess(actorName, name, value)
+      pm.map {
+        case (name, value) =>
+          ActorTupIdLess(actorName, name, value)
       }
     }
   }

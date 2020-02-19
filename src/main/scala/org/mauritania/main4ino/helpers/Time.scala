@@ -14,4 +14,3 @@ object Time {
 class Time[F[_]: Sync] {
   def nowUtc: F[ZonedDateTime] = Sync[F].delay(ZonedDateTime.now(ZoneOffset.UTC))
 }
-

@@ -11,7 +11,7 @@ case class User(
   granted: Map[Path, MethodRight]
 ) {
   def authorized(method: Method, uriPath: Path): Option[User] = {
-    granted.exists { case right => canAccess(right, method, uriPath)} match {
+    granted.exists { case right => canAccess(right, method, uriPath) } match {
       case true => Some(this)
       case false => None
     }
@@ -23,4 +23,3 @@ case class User(
     methodGrant.canAccess(method) && uriPath.startsWith(uriGrant)
   }
 }
-

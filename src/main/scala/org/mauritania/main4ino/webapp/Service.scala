@@ -25,17 +25,16 @@ class Service[F[_]: Effect: Sync: ContextShift](resourceIndexHtml: String, ec: E
 
   val serviceUntimed = HttpRoutes.of[F] {
 
-      case a@GET -> Root =>
-        StaticFile.fromResource(resourceIndexHtml, blocker, Some(a)).getOrElseF(InternalServerError())
+    case a @ GET -> Root =>
+      StaticFile.fromResource(resourceIndexHtml, blocker, Some(a)).getOrElseF(InternalServerError())
 
-      case a@GET -> _ =>
-        StaticResource(a).value.map(_.getOrElse(Response.notFound[F]))
+    case a @ GET -> _ =>
+      StaticResource(a).value.map(_.getOrElse(Response.notFound[F]))
 
-    }
+  }
 
   val service = HttpMeter.timedHttpMiddleware[F].apply(serviceUntimed)
 
-	private[webapp] def request(r: Request[F]): F[Response[F]] = service(r).getOrElseF(NotFound())
+  private[webapp] def request(r: Request[F]): F[Response[F]] = service(r).getOrElseF(NotFound())
 
 }
-

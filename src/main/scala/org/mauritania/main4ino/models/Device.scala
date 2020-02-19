@@ -84,15 +84,17 @@ object Device {
   }
 
   def merge(ds: Iterable[DeviceId]): Option[Device] = {
-    def flat(r: RequestId, am: DeviceProps): Iterable[(ActorName, PropName, PropValue, RequestId)] = am.flatMap{case (an, ps) => ps.map{case (pn, pv) => (an, pn, pv, r)}}
+    def flat(r: RequestId, am: DeviceProps): Iterable[(ActorName, PropName, PropValue, RequestId)] = am.flatMap { case (an, ps) => ps.map { case (pn, pv) => (an, pn, pv, r) } }
     val names = ds.map(_.device.metadata.device).toSet
     assert(names.size <= 1) // at least one, but not more than 1
     val as = ds.flatMap(d => flat(d.dbId.id, d.actors))
-    val props = as.groupBy { case (actName, _, _, _) => actName}
+    val props = as
+      .groupBy { case (actName, _, _, _) => actName }
       .mapValues { byActorActorTups =>
-        byActorActorTups.groupBy{ case (_, propName, _, _) => propName}
+        byActorActorTups
+          .groupBy { case (_, propName, _, _) => propName }
           .mapValues { byActorPropActorTups =>
-            val (_, _, propValue, _) = byActorPropActorTups.maxBy{ case (_, _, _, reqId) => reqId}
+            val (_, _, propValue, _) = byActorPropActorTups.maxBy { case (_, _, _, reqId) => reqId }
             propValue
           }
       }
@@ -100,4 +102,3 @@ object Device {
   }
 
 }
-

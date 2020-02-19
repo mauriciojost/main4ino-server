@@ -54,7 +54,6 @@ object Url {
     def unapply(platform: String): Option[String] = extractSafeStringFrom(platform)
   }
 
-
   object ReqId { // request ID secction
     def unapply(id: String): Option[RequestId] = Try(id.toLong).toOption
   }

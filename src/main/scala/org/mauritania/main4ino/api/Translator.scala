@@ -54,7 +54,6 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     } yield (inserts)
   }
 
-
   def deleteDevice(dev: DeviceName, t: ReqType): F[CountResponse] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)

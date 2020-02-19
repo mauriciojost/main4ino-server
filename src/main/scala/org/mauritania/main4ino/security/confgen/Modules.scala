@@ -37,7 +37,7 @@ object Modules {
 
     def performAction(c: Config, action: Action): F[Config] = {
       action match {
-        case rus : Actions.AddRawUsers => {
+        case rus: Actions.AddRawUsers => {
           val nUsers: F[List[User]] = rus.users.traverse(u => user(c, u))
           Monad[F].map(nUsers)(nu => c.copy(users = nu ++ c.users))
         }
@@ -54,14 +54,15 @@ object Modules {
     def asString(c: Config): String = c.asJson.noSpaces
   }
 
-  class FilesystemSync[F[_]](implicit S: Sync[F]) extends Filesystem[F]  {
+  class FilesystemSync[F[_]](implicit S: Sync[F]) extends Filesystem[F] {
     def readFile(p: Path): F[String] = S.fromTry[String](Try(Source.fromFile(p.toFile).mkString))
 
     def writeFile(p: Path, b: String): F[Unit] = {
       S.fromTry[Unit] {
         Try {
           val bw = new BufferedWriter(new FileWriter(p.toFile))
-          try bw.write(b) finally bw.close()
+          try bw.write(b)
+          finally bw.close()
         }
       }
 

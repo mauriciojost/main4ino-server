@@ -100,5 +100,4 @@ class Store[F[_]: Sync](basePath: Path) {
     }
   }
 
-
 }

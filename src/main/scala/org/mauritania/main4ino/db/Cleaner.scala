@@ -8,7 +8,7 @@ import cats.effect._
 import cats.implicits._
 import eu.timepit.refined.types.numeric.PosInt
 
-class Cleaner[F[_] : ContextShift : ConcurrentEffect : Timer : Sync : Async](repo: Repository[F], time: Time[F]){
+class Cleaner[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](repo: Repository[F], time: Time[F]) {
 
   def cleanupRepo(retentionSecs: PosInt) = {
     for {

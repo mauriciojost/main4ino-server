@@ -19,7 +19,7 @@ object Client {
 
   import ConfigLoader.PureConfigImplicits._
 
-  def start[F[_] : Sync](O: Configs[F], S: Filesystem[F]): F[Unit] = {
+  def start[F[_]: Sync](O: Configs[F], S: Filesystem[F]): F[Unit] = {
     for {
       args <- ConfigLoader.fromEnv[F, Args]
       conf <- ConfigLoader.fromFile[F, Config](args.input.toFile)

@@ -28,18 +28,15 @@ object ConfigLoader {
     implicit object customMethodRightReader extends ConfigReader[MethodRight] {
       def from(cur: ConfigCursor) = {
         val st = cur.asString
-          st.flatMap { s =>
-            MethodRight.withNameEither(s).left.map { e =>
-              ConfigReaderFailures(CannotParse(e.getMessage(), None))
-            }
+        st.flatMap { s =>
+          MethodRight.withNameEither(s).left.map { e =>
+            ConfigReaderFailures(CannotParse(e.getMessage(), None))
           }
+        }
       }
     }
     implicit val customMethodUserHashedPass: ConfigReader[UserHashedPass] = ConfigReader[String].map(m => PasswordHash[BCrypt](m))
   }
-
-
-
 
   /**
     * Load a configuration from a file
@@ -48,21 +45,21 @@ object ConfigLoader {
     *   import pureconfig._
     *   import pureconfig.generic.auto._
     */
-  def fromFile[F[_] : Sync, T: ClassTag](configFile: File)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
+  def fromFile[F[_]: Sync, T: ClassTag](configFile: File)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
     val f = configFile.getAbsoluteFile
     from(ConfigSource.file(f))
   }
 
-  def fromFileAndEnv[F[_] : Sync, T: ClassTag](configFile: File)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
+  def fromFileAndEnv[F[_]: Sync, T: ClassTag](configFile: File)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
     val f = configFile.getAbsoluteFile
     from(ConfigSource.systemProperties.withFallback(ConfigSource.file(f)))
   }
 
-  def fromEnv[F[_] : Sync, T: ClassTag](implicit reader: Derivation[ConfigReader[T]]): F[T] = {
+  def fromEnv[F[_]: Sync, T: ClassTag](implicit reader: Derivation[ConfigReader[T]]): F[T] = {
     from(ConfigSource.systemProperties)
   }
 
-  def from[F[_] : Sync, T: ClassTag](s: ConfigObjectSource)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
+  def from[F[_]: Sync, T: ClassTag](s: ConfigObjectSource)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
     implicitly[Sync[F]].fromEither(s.load.swap.map(ConfigReaderException(_)).swap)
   }
 

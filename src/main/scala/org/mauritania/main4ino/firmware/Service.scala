@@ -28,7 +28,7 @@ import org.mauritania.main4ino.helpers.{HttpMeter, Time}
 
 import scala.concurrent.ExecutionContext
 
-class Service[F[_] : Sync: Effect: ContextShift](st: Store[F], ec: ExecutionContext) extends Http4sDsl[F] {
+class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionContext) extends Http4sDsl[F] {
 
   import Service._
 
@@ -46,7 +46,7 @@ class Service[F[_] : Sync: Effect: ContextShift](st: Store[F], ec: ExecutionCont
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a@GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? FirmVersionParam(version) => {
+    case a @ GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? FirmVersionParam(version) => {
       val headers = a.headers
       val currentVersion = extractCurrentVersion(headers)
       val coords = FirmwareCoords(project, version, platform)
@@ -76,7 +76,7 @@ class Service[F[_] : Sync: Effect: ContextShift](st: Store[F], ec: ExecutionCont
       *
       * Returns: OK (200)
       */
-    case a@GET -> Root / "firmwares" / Proj(project) / Platf(platform) => {
+    case a @ GET -> Root / "firmwares" / Proj(project) / Platf(platform) => {
       for {
         logger <- Slf4jLogger.fromClass[F](getClass)
         fa <- st.listFirmwares(project, platform)
@@ -113,8 +113,8 @@ object Service {
   val Esp8266VersionHeader = "x-ESP8266-version"
   val Esp32VersionHeader = "x-ESP32-version"
   val VersionHeaders: List[CaseInsensitiveString] = List(
-  Esp8266VersionHeader,
-  Esp32VersionHeader
+    Esp8266VersionHeader,
+    Esp32VersionHeader
   ).map(CaseInsensitiveString.apply)
 
 }

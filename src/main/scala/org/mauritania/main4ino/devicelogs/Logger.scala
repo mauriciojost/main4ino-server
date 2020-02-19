@@ -74,7 +74,7 @@ class Logger[F[_]: Sync: ContextShift](config: Config, time: Time[F], ec: Execut
     } yield (located)
   }
 
-  private def readFile(device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): Attempt[Stream[F, Record]]= {
+  private def readFile(device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): Attempt[Stream[F, Record]] = {
     Try {
       val bytes = io.file.readAll[F](pathFromDevice(device), blocker, ChunkSize)
       val bytesLimited = bytes.takeRight(config.maxLengthLogs.value)
@@ -85,4 +85,3 @@ class Logger[F[_]: Sync: ContextShift](config: Config, time: Time[F], ec: Execut
     }.toEither.swap.map(_.getMessage).swap
   }
 }
-

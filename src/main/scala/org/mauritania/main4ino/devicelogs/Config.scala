@@ -8,4 +8,3 @@ case class Config(
   logsBasePath: Path,
   maxLengthLogs: PosInt = PosInt(524288) // 512 KB
 )
-

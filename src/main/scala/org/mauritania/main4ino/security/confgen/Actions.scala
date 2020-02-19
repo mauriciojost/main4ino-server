@@ -22,5 +22,4 @@ object Actions {
   case object Identity extends Action
   case class AddRawUsers(users: List[AddRawUser]) extends Action
 
-
 }
