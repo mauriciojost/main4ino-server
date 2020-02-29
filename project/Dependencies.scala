@@ -4,7 +4,7 @@ object Dependencies {
 
     object Versions {
         val Http4sVersion = "0.21.1"
-        val Specs2Version = "4.8.3"
+        val Specs2Version = "4.9.1"
         val DoobieVersion = "0.8.8"
         val H2Version = "1.4.200"
         val SqliteVersion = "3.30.1"
