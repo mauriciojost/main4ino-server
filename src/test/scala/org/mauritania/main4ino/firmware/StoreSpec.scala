@@ -41,6 +41,19 @@ class StoreSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
     store.getFirmware(FirmwareCoords("botino", "1.1.0", "esp8266")).unsafeRunSync().left.value should (include("Could not locate/read"))
   }
 
+  it should "report a meaningful failure when cannot find a version among available ones" in {
+    val file = Paths.get("src", "test", "resources", "firmwares", "3")
+    val store = new Store[IO](file)
+    store.getFirmware(FirmwareCoords("botino", "1.1.1", "esp8266")).unsafeRunSync().left.value should (include("Could not resolve"))
+  }
+
+  it should "list firmware coordinates (malformed files)" in {
+    val file = Paths.get("src", "test", "resources", "firmwares", "4")
+    val store = new Store[IO](file)
+    store.listFirmwares("botino", "esp8266").unsafeRunSync() should be(Seq())
+  }
+
+
   it should "have good orderings" in {
     val v100 = List(
       "1.0.0-d5199da",
