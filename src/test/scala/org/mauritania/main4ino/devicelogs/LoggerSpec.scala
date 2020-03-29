@@ -1,6 +1,6 @@
 package org.mauritania.main4ino.devicelogs
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.{NoSuchFileException, Path, Paths}
 import java.time.{Instant, ZoneId, ZonedDateTime}
 
 import cats.effect.{IO, Sync}
@@ -103,6 +103,15 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
   it should "report a meaningful failure when cannot read file" in {
     val logger = buildLogger(Paths.get("/non/existent/path"))
     logger.getLogs("device1", None, None).unsafeRunSync().left.value should include("device1")
+  }
+
+  it should "fail gracefully when reading stream for file unexistent (internals)" in {
+    val logger = buildLogger(Paths.get("/non/existent/path"))
+    val s = Stream("hey")
+    val file = logger.readFile("device", None, None, 0).right.value
+    intercept[NoSuchFileException] {
+      file.compile.toList.unsafeRunSync()
+    }
   }
 
   private def buildLogger(tmp: Path, t: EpochSecTimestamp = 0L, mxLen: PosInt = PosInt(1024)): Logger[IO] = {
