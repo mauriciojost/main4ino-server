@@ -87,12 +87,12 @@ object Auther {
   type AccessAttempt = Either[ErrorMsg, User]
   type AuthenticationAttempt = Either[ErrorMsg, User]
 
-  private final val HeaderSession = CaseInsensitiveString("session")
-  private final val UriTokenRegex = ("^(.*?)/token/(.*?)/(.*)$").r
-  private final val UriSessionRegex = ("^(.*?)/session/(.*?)/(.*)$").r
-  private final val GroupPre = 1
-  private final val GroupThe = 2
-  private final val GroupPos = 3
+  private final lazy val HeaderSession = CaseInsensitiveString("session")
+  private final lazy val UriTokenRegex = ("^(.*?)/token/(.*?)/(.*)$").r
+  private final lazy val UriSessionRegex = ("^(.*?)/session/(.*?)/(.*)$").r
+  private final lazy val GroupPre = 1
+  private final lazy val GroupThe = 2
+  private final lazy val GroupPos = 3
 
   def authenticateAndCheckAccess[F[_]: Sync: Monad](usersBy: UsersBy, encry: EncryptionConfig, headers: Headers, method: Method, uri: Uri)(
     implicit H: PasswordHasher[F, BCrypt]
