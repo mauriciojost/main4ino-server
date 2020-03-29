@@ -475,6 +475,5 @@ class Service[F[_]: Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fir
     CustomAuthMiddleware(Kleisli(auth.authenticateAndCheckAccess), onFailure)
   val serviceWithAuthentication: HttpRoutes[F] = HttpMeter.timedHttpMiddleware[F].apply(customAuthMiddleware(service))
 
-  private[v1] def request(r: Request[F]): F[Response[F]] = serviceWithAuthentication(r).getOrElseF(NotFound())
 
 }

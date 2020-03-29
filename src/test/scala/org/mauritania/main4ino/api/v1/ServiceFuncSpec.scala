@@ -27,11 +27,12 @@ import org.scalatest.Sequential
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import cats._
 import cats.implicits._
-import org.mauritania.main4ino.devicelogs.{Logger, Config}
+import org.http4s.dsl.Http4sDsl
+import org.mauritania.main4ino.devicelogs.{Config, Logger}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with TmpDirCtx {
+class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with TmpDirCtx with Http4sDsl[IO] {
 
   Sequential
 
@@ -353,17 +354,22 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
 
   private[this] def put(path: String, body: String)(implicit service: Service[IO]): Response[IO] = {
     val request = Request[IO](method = Method.PUT, uri = Uri.unsafeFromString(path), body = asEntityBody(body), headers = DefaultHeaders)
-    service.request(request).unsafeRunSync()
+    req(service, request).unsafeRunSync()
   }
 
   private[this] def post(path: String, body: String)(implicit service: Service[IO]): Response[IO] = {
     val request = Request[IO](method = Method.POST, uri = Uri.unsafeFromString(path), body = asEntityBody(body), headers = DefaultHeaders)
-    service.request(request).unsafeRunSync()
+    req(service, request).unsafeRunSync()
   }
+
 
   private[this] def delete(path: String)(implicit service: Service[IO]): Response[IO] = {
     val request = Request[IO](method = Method.DELETE, uri = Uri.unsafeFromString(path), headers = DefaultHeaders)
-    service.request(request).unsafeRunSync()
+    req(service, request).unsafeRunSync()
+  }
+
+  private def req(service: Service[IO], request: Request[IO]) = {
+    service.serviceWithAuthentication(request).getOrElseF(NotFound())
   }
 
   private[this] def asEntityBody(content: String): EntityBody[IO] = {
