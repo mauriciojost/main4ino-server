@@ -3,12 +3,13 @@ package org.mauritania.main4ino.webapp
 import cats.effect.{Effect, IO, Sync}
 import org.http4s.{Method, Request, Response, Status, Uri}
 import org.scalatest.{BeforeAndAfterEach, Sequential}
+import org.http4s.dsl.Http4sDsl
 
 import scala.concurrent.ExecutionContext
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class ServiceFuncSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
+class ServiceFuncSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with Http4sDsl[IO] {
 
   Sequential
 
@@ -43,7 +44,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach 
 
   private[this] def get(path: String)(service: Service[IO]): Response[IO] = {
     val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path))
-    service.request(request).unsafeRunSync()
+    service.service(request).getOrElseF(NotFound()).unsafeRunSync()
   }
 
   private def buildService(resourceIndexHtml: String = "/webapp/index.html"): Service[IO] = {
