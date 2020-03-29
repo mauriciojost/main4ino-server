@@ -76,7 +76,7 @@ class Service[F[_]: Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fir
       * Returns: OK (200)
       */
     case GET -> _ / "version" as _ =>
-      Ok(BuildInfo.asJson, ContentTypeAppJson)
+      Ok(BuildInfo.toJson, ContentTypeAppJson)
 
     /**
       * GET /time?timezone=<tz>

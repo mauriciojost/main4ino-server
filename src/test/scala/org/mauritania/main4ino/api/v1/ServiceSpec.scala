@@ -68,6 +68,17 @@ class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with Decode
     }
   }
 
+  "Version request" should {
+    val r = stub[RepositoryIO]
+    val t = stub[TimeIO]
+    val s = defaultService(r, t)
+    "return 200" in {
+      val q = getApiV1("/version")(s).unsafeRunSync()
+      q.status shouldBe (HttpStatus.Ok)
+      q.body.compile.toVector.unsafeRunSync().map(_.toChar).mkString should include("version")
+    }
+  }
+
   "Create target request" should {
     val r = stub[RepositoryIO]
     val t = stub[TimeIO]

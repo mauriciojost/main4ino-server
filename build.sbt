@@ -15,6 +15,7 @@ lazy val root = (project in file("."))
   .settings(
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoOptions += BuildInfoOption.BuildTime,
+    buildInfoOptions += BuildInfoOption.ToJson,
     buildInfoPackage := "org.mauritania.main4ino"
   )
   .settings(
