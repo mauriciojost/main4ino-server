@@ -68,7 +68,7 @@ class Logger[F[_]: Sync: ContextShift](config: Config, time: Time[F], ec: Execut
     for {
       readable <- isReadableFile(path.toFile)
       located: Attempt[Stream[F, Record]] = readable match {
-        case true => readFile(device, from, to)
+        case true => Right(readFile(device, from, to))
         case false => Left(s"Could not locate/read logs for device: ${device}")
       }
     } yield (located)
@@ -79,18 +79,16 @@ class Logger[F[_]: Sync: ContextShift](config: Config, time: Time[F], ec: Execut
     from: Option[EpochSecTimestamp],
     to: Option[EpochSecTimestamp],
     chunkSize: Int = ChunkSize,
-  ): Attempt[Stream[F, Record]] = {
-    Try {
-      val bytes = io.file.readAll[F](
-        pathFromDevice(device),
-        blocker,
-        chunkSize
-      )
-      val bytesLimited = bytes.takeRight(config.maxLengthLogs.value)
-      val lines = bytesLimited.through(fs2text.utf8Decode).through(fs2text.lines)
-      val records = lines.map(Record.parse).collect { case Some(a) => a }
-      val filtered = records.filter(rec => from.forall(f => rec.t >= f) && to.forall(t => rec.t <= t))
-      filtered
-    }.toEither.left.map(_.getMessage)
+  ): Stream[F, Record] = {
+    val bytes = io.file.readAll[F](
+      pathFromDevice(device),
+      blocker,
+      chunkSize
+    )
+    val bytesLimited = bytes.takeRight(config.maxLengthLogs.value)
+    val lines = bytesLimited.through(fs2text.utf8Decode).through(fs2text.lines)
+    val records = lines.map(Record.parse).collect { case Some(a) => a }
+    val filtered = records.filter(rec => from.forall(f => rec.t >= f) && to.forall(t => rec.t <= t))
+    filtered
   }
 }

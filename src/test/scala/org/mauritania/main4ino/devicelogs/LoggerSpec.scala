@@ -107,8 +107,7 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
 
   it should "fail gracefully when reading stream for file unexistent (internals)" in {
     val logger = buildLogger(Paths.get("/non/existent/path"))
-    val s = Stream("hey")
-    val file = logger.readFile("device", None, None, 0).right.value
+    val file = logger.readFile("device", None, None, 0)
     intercept[NoSuchFileException] {
       file.compile.toList.unsafeRunSync()
     }
