@@ -11,6 +11,12 @@ packageSummary := "Properties management for main4ino-enabled embedded systems."
 mainClass in Compile := Some("org.mauritania.main4ino.Server")
 
 lazy val root = (project in file("."))
+  .enablePlugins(BuildInfoPlugin)
+  .settings(
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+    buildInfoOptions += BuildInfoOption.BuildTime,
+    buildInfoPackage := "org.mauritania.main4ino"
+  )
   .settings(
     organization := "org.mauritania",
     name := "main4ino-server",

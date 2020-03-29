@@ -16,6 +16,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
 import org.http4s.{AuthedService, EntityDecoder, EntityEncoder, HttpService, Request, Response}
+import org.mauritania.main4ino.BuildInfo
 import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.CountResponse
@@ -66,6 +67,18 @@ class Service[F[_]: Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fir
       Ok(HelpMsg, ContentTypeTextPlain)
 
     /**
+      * GET /version
+      *
+      * Display version information.
+      *
+      * To be used by developers.
+      *
+      * Returns: OK (200)
+      */
+    case GET -> _ / "version" as _ =>
+      Ok(BuildInfo.asJson, ContentTypeAppJson)
+
+    /**
       * GET /time?timezone=<tz>
       *
       * Example: GET /time?timezone=UTC
@@ -81,7 +94,7 @@ class Service[F[_]: Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fir
     case GET -> Root / "time" :? TimezoneParam(tz) as _ => {
       val attempt: F[Either[Throwable, Translator.TimeResponse]] = tr.nowAtTimezone(tz.getOrElse("UTC")).attempt
       attempt.flatMap {
-        case Right(v) => Ok(v.asJson, ContentTypeTextPlain)
+        case Right(v) => Ok(v.asJson, ContentTypeAppJson)
         case Left(_) => BadRequest()
       }
     }
