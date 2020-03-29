@@ -1,6 +1,6 @@
 package org.mauritania.main4ino.api.v1
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.{Path => NioPath, Paths}
 import java.time.{Instant, ZoneId, ZonedDateTime}
 
 import cats.effect.{IO, Sync}
@@ -42,7 +42,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
     override def nowUtc: IO[ZonedDateTime] = IO.pure(TheTime)
   }
 
-  def defaultServiceWithDirectory(transactor: HikariTransactor[IO], tmp: Path): Service[IO] = {
+  def defaultServiceWithDirectory(transactor: HikariTransactor[IO], tmp: NioPath): Service[IO] = {
     val t = new FixedTime()
     implicit val cs = IO.contextShift(Helper.testExecutionContext)
     new Service(
@@ -332,7 +332,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
 
   private[this] def get(path: String, headers: Headers = DefaultHeaders)(implicit service: Service[IO]): Response[IO] = {
     val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path), headers = headers)
-    service.request(request).unsafeRunSync()
+    req(service, request).unsafeRunSync()
   }
 
   private[this] def postExpectCreated(path: String, body: String)(implicit service: Service[IO]): Json = {
@@ -362,13 +362,12 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
     req(service, request).unsafeRunSync()
   }
 
-
   private[this] def delete(path: String)(implicit service: Service[IO]): Response[IO] = {
     val request = Request[IO](method = Method.DELETE, uri = Uri.unsafeFromString(path), headers = DefaultHeaders)
     req(service, request).unsafeRunSync()
   }
 
-  private def req(service: Service[IO], request: Request[IO]) = {
+  private[this] def req(service: Service[IO], request: Request[IO]) = {
     service.serviceWithAuthentication(request).getOrElseF(NotFound())
   }
 

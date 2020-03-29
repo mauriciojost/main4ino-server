@@ -27,6 +27,7 @@ import org.mauritania.main4ino.{Fixtures, Helper}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.EitherValues._
 import org.http4s.circe._
+import org.http4s.dsl.Http4sDsl
 import org.mauritania.main4ino.DecodersIO
 import org.mauritania.main4ino.db.Repository
 import org.mauritania.main4ino.firmware.Store
@@ -38,7 +39,7 @@ import scala.reflect.ClassTag
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with DecodersIO {
+class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with DecodersIO with Http4sDsl[IO] {
 
   val User1 = Fixtures.User1
   val User1Pass = Fixtures.User1Pass
@@ -225,15 +226,19 @@ class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with Decode
 
   private[this] def getApiV1(path: String, h: Headers = HeadersCredsOk)(service: Service[IO]): IO[Response[IO]] = {
     val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path), headers = h)
-    service.request(request)
+    req(service, request)
   }
 
   private[this] def postApiV1(path: String, body: EntityBody[IO], h: Headers = HeadersCredsOk)(service: Service[IO]): IO[Response[IO]] = {
     val request = Request[IO](method = Method.POST, uri = Uri.unsafeFromString(path), body = body, headers = h)
-    service.request(request)
+    req(service, request)
   }
 
-  final val HeadersNoCreds = Headers()
+  private[this] def req(service: Service[IO], request: Request[IO]) = {
+    service.serviceWithAuthentication(request).getOrElseF(NotFound())
+  }
+
+  final val HeadersNoCreds = Headers.empty
   final val BasicCredsOk = BasicCredentials(User1.id, User1Pass)
   final val HeadersCredsOk = Headers(Authorization(BasicCredsOk))
   final val HeadersCredsWrong = Headers(Authorization(BasicCredentials(User1.id, "incorrectpassword")))
