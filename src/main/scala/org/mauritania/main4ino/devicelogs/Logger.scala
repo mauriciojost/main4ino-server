@@ -22,9 +22,9 @@ import scala.util.Try
   */
 class Logger[F[_]: Sync: ContextShift](config: Config, time: Time[F], ec: ExecutionContext) {
 
-  final private val blocker = Blocker.liftExecutionContext(ec)
-  final private val ChunkSize = 1024
-  final private val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+  final private lazy val blocker = Blocker.liftExecutionContext(ec)
+  final private lazy val ChunkSize = 1024
+  final private lazy val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
   private def pathFromDevice(device: DeviceName): JavaPath = config.logsBasePath.resolve(s"$device.log")
 
