@@ -12,9 +12,9 @@ import scala.concurrent.ExecutionContext
 
 class Service[F[_]: Effect: Sync: ContextShift](resourceIndexHtml: String, ec: ExecutionContext) extends Http4sDsl[F] {
 
-  final private val blocker = Blocker.liftExecutionContext(ec)
+  final private lazy val blocker = Blocker.liftExecutionContext(ec)
 
-  final private val StaticResource = staticcontent.resourceService[F](
+  final private lazy val StaticResource = staticcontent.resourceService[F](
     Config(
       basePath = "/webapp",
       pathPrefix = "/",

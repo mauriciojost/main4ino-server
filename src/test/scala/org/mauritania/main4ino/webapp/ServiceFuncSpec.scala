@@ -1,6 +1,6 @@
 package org.mauritania.main4ino.webapp
 
-import cats.effect.{Blocker, Effect, IO, Sync}
+import cats.effect.{Effect, IO, Sync}
 import org.http4s.{Method, Request, Response, Status, Uri}
 import org.scalatest.{BeforeAndAfterEach, Sequential}
 
@@ -29,6 +29,10 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach 
   it should "read existent app.js" in {
     val appJs = getExpectOk("/js/app.js")(buildService())
     appJs should include("=") // app.js
+  }
+
+  it should "fail to read non-existent non-app.js" in {
+    get("/js/non-app.js")(buildService()).status shouldBe Status.NotFound
   }
 
   private[this] def getExpectOk(path: String)(service: Service[IO]): String = {
