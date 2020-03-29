@@ -41,31 +41,40 @@ function check_fresh() {
   fi
 }
 
-for i in $DEVICES_LIST
-do 
+function get_summary_device() {
+  local i=$1
+  local versions_tolerance=${VERSIONS_TOLERANCE[$i]:-$VERSIONS_TOLERANCE}
+  local log_length=${LOG_LENGTH[$i]:-$LOG_LENGTH}
+  local freshness_threshold=${FRESHNESS_THRESHOLD[$i]:-$FRESHNESS_THRESHOLD}
   echo "### Device $i ###" | highlight green ".*"
-  summary_report=`main4ino_get_summary_report $i`
-  aliase=`echo $summary_report | jq -r  '.settings.alias'`
-  version=`echo $summary_report | jq -r  '.settings."~version"'`
-  project=`echo $summary_report | jq -r  '.settings.project'`
-  platform=`echo $summary_report | jq -r  '.settings.platform'`
-  last_report=`main4ino_get_last_report $i | jq -r '.dbId.creation'`
-  main4ino_get_firmwares $project $platform  | jq -r .[].version | tail -$VERSIONS_TOLERANCE > .versions.latest.file
-  versions_latest_file=.versions.latest.file
-  logl=`echo $summary_report | jq -r  '.settings."~logl"'`
-  logo=`echo $summary_report | jq -r  '.settings."~logo"'`
+  local summary_report=`main4ino_get_summary_report $i`
+  local aliase=`echo $summary_report | jq -r  '.settings.alias'`
+  local version=`echo $summary_report | jq -r  '.settings."~version"'`
+  local project=`echo $summary_report | jq -r  '.settings.project'`
+  local platform=`echo $summary_report | jq -r  '.settings.platform'`
+  local last_report=`main4ino_get_last_report $i | jq -r '.dbId.creation'`
+  main4ino_get_firmwares $project $platform  | jq -r .[].version | tail -$versions_tolerance > .versions.latest.file
+  local versions_latest_file=.versions.latest.file
+  local logl=`echo $summary_report | jq -r  '.settings."~logl"'`
+  local logo=`echo $summary_report | jq -r  '.settings."~logo"'`
+
   echo "Info:"
   echo "- alias          : $aliase" | highlight blue $aliase
   echo "- project        : $project"
   echo "- platform       : $platform"
-  echo "- last report    : `check_fresh $last_report $FRESHNESS_THRESHOLD $i` (is: `date --utc -d @$last_report` / shouldbenear `date --utc`)"
-  echo "- current version: `check_recent_version $i $version $versions_latest_file` (is: $version / shouldbein: `cat $versions_latest_file | tr '\n' ' '`)"
+  echo "- last report    : `check_fresh $last_report $freshness_threshold $i/$aliase` (is: `date --utc -d @$last_report` / shouldbenear `date --utc`)"
+  echo "- current version: `check_recent_version $i/$aliase $version $versions_latest_file` (is: $version / shouldbein: `cat $versions_latest_file | tr '\n' ' '`)"
   echo "Summary report:"
   echo "$summary_report" | highlight gray ".*"
   echo "Logs (log level = $logl / log options = $logo):"
-  main4ino_get_logs $i $LOG_LENGTH | highlight gray ".*"
+  main4ino_get_logs $i $log_length | highlight gray ".*"
   echo "###" | highlight green ".*"
   echo ""
+}
+
+for i in $DEVICES_LIST
+do 
+  get_summary_device $i
 done
 
 cat failures.log

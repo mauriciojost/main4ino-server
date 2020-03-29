@@ -45,13 +45,13 @@ function session() {
 }
 
 info "Trying to log in..."
-AUTHENTICATED_CURL_CMD="curl $CURL_OPTS --header session:`session`"
+authenticated_curl_cmd="curl $CURL_OPTS --header session:`session`"
 info "Logged in successfully."
 
 function main4ino_post_description() {
   local device="$1"
   local description="$2"
-  $AUTHENTICATED_CURL_CMD -X POST "$SERVER_ADDRESS/api/v1/devices/$device/descriptions" -d "$description"
+  $authenticated_curl_cmd -X POST "$SERVER_ADDRESS/api/v1/devices/$device/descriptions" -d "$description"
 }
 
 function main4ino_post_report() {
@@ -59,7 +59,7 @@ function main4ino_post_report() {
   local actor="$2"
   local body="$3"
 
-  $AUTHENTICATED_CURL_CMD -X POST $SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor -d "$body"
+  $authenticated_curl_cmd -X POST $SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor -d "$body"
 }
 
 function main4ino_post_target() {
@@ -67,7 +67,7 @@ function main4ino_post_target() {
   local actor="$2"
   local body="$3"
 
-  $AUTHENTICATED_CURL_CMD -X POST $SERVER_ADDRESS/api/v1/devices/$device/targets/actors/$actor -d "$body"
+  $authenticated_curl_cmd -X POST $SERVER_ADDRESS/api/v1/devices/$device/targets/actors/$actor -d "$body"
 }
 
 
@@ -80,60 +80,60 @@ function main4ino_get_logs_raw() {
   local length="${2:-2000}"
   local now=`date +'%s'`
   let from=$now-$length
-  $AUTHENTICATED_CURL_CMD -X GET "$SERVER_ADDRESS/api/v1/devices/$device/logs?from=$from&to=$now"
+  $authenticated_curl_cmd -X GET "$SERVER_ADDRESS/api/v1/devices/$device/logs?from=$from&to=$now"
 }
 
 
 function main4ino_get_last_report() {
   local device="$1"
-  $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/reports/last
+  $authenticated_curl_cmd -X GET $SERVER_ADDRESS/api/v1/devices/$device/reports/last
 }
 
 function main4ino_get_reports() {
   local device="$1"
   local status="$2"
-  $AUTHENTICATED_CURL_CMD -X GET "$SERVER_ADDRESS/api/v1/devices/$device/reports?status=$status"
+  $authenticated_curl_cmd -X GET "$SERVER_ADDRESS/api/v1/devices/$device/reports?status=$status"
 }
 
 function main4ino_get_targets() {
   local device="$1"
   local status="$2"
-  $AUTHENTICATED_CURL_CMD -X GET "$SERVER_ADDRESS/api/v1/devices/$device/targets?status=$status"
+  $authenticated_curl_cmd -X GET "$SERVER_ADDRESS/api/v1/devices/$device/targets?status=$status"
 }
 
 
 
 function main4ino_get_last_target() {
   local device="$1"
-  $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/targets/last
+  $authenticated_curl_cmd -X GET $SERVER_ADDRESS/api/v1/devices/$device/targets/last
 }
 
 function main4ino_get_summary_report() {
   local device="$1"
-  $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/reports/summary
+  $authenticated_curl_cmd -X GET $SERVER_ADDRESS/api/v1/devices/$device/reports/summary
 }
 
 function main4ino_get_summary_target() {
   local device="$1"
-  $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/targets/summary
+  $authenticated_curl_cmd -X GET $SERVER_ADDRESS/api/v1/devices/$device/targets/summary
 }
 
 function main4ino_get_last_report_actor() {
   local device="$1"
   local actor="$2"
-  $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor/last
+  $authenticated_curl_cmd -X GET $SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor/last
 }
 
 function main4ino_get_last_target_actor() {
   local device="$1"
   local actor="$2"
-  $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/api/v1/devices/$device/target/actors/$actor/last
+  $authenticated_curl_cmd -X GET $SERVER_ADDRESS/api/v1/devices/$device/target/actors/$actor/last
 }
 
 function main4ino_get_firmwares() {
   local project="$1"
   local platform="$2"
-  $AUTHENTICATED_CURL_CMD -X GET $SERVER_ADDRESS/firmwares/$project/$platform
+  $authenticated_curl_cmd -X GET $SERVER_ADDRESS/firmwares/$project/$platform
 }
 
 info "Functions loaded."

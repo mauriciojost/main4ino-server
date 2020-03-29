@@ -8,3 +8,5 @@
 /.ivy2/
 /.sbt/
 /dbsqlite
+/misc/scripts/client/.versions.latest.file
+/misc/scripts/client/failures.log
