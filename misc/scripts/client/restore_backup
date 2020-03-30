@@ -7,6 +7,7 @@ for i in $devices_list
 do 
   echo "## $i:"
   main4ino_post_target $i "`cat $i.report.bkp`" 
+  main4ino_post_report $i "`cat $i.report.bkp`" 
   echo ""
 done
 
