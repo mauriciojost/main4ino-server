@@ -56,6 +56,13 @@ function main4ino_post_description() {
 
 function main4ino_post_report() {
   local device="$1"
+  local body="$2"
+
+  $authenticated_curl_cmd -X POST $SERVER_ADDRESS/api/v1/devices/$device/reports -d "$body"
+}
+
+function main4ino_post_report_actor() {
+  local device="$1"
   local actor="$2"
   local body="$3"
 
@@ -63,6 +70,13 @@ function main4ino_post_report() {
 }
 
 function main4ino_post_target() {
+  local device="$1"
+  local body="$2"
+
+  $authenticated_curl_cmd -X POST $SERVER_ADDRESS/api/v1/devices/$device/targets -d "$body"
+}
+
+function main4ino_post_target_actor() {
   local device="$1"
   local actor="$2"
   local body="$3"

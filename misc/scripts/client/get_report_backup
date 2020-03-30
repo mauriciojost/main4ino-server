@@ -2,13 +2,11 @@
 source source.sh
 
 devices_list=$DEVICES_LIST
-f=$1
 
 for i in $devices_list
 do 
   echo "## $i:"
-  main4ino_post_target $i propsync '{"+fstorefreq":"'$f'"}'
-  echo ""
+  main4ino_get_summary_report $i > $i.report.bkp
   echo ""
 done
 
