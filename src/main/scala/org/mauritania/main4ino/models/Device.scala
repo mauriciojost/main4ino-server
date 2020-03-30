@@ -73,7 +73,7 @@ object Device {
 
       val all = List(Open, Closed, Consumed, Unknown)
 
-      def apply(code: String): Status = all.find(_.code == code).getOrElse(Unknown)
+      def parse(code: String): Status = all.find(_.code == code).getOrElse(Unknown)
     }
 
   }

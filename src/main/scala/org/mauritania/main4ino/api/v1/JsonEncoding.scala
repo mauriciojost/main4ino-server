@@ -40,7 +40,7 @@ object JsonEncoding {
 
   val StatusDecoder: Decoder[Status] = { v =>
     Decoder[String].tryDecode(v) match {
-      case Right(s) => Right[DecodingFailure, Status](Metadata.Status(s))
+      case Right(s) => Right[DecodingFailure, Status](Metadata.Status.parse(s))
       case Left(_) => Left[DecodingFailure, Status](DecodingFailure(s"Cannot decode $v", Nil))
     }
   }

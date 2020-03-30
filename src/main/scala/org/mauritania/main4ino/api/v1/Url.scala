@@ -20,7 +20,7 @@ object Url {
   // Parameters
 
   implicit val statusDecoder: QueryParamDecoder[Status] = new QueryParamDecoder[Status] {
-    override def decode(value: QueryParameterValue): ValidatedNel[ParseFailure, Status] = Validated.Valid(Status(value.value))
+    override def decode(value: QueryParameterValue): ValidatedNel[ParseFailure, Status] = Validated.Valid(Status.parse(value.value))
   }
 
   object IdsParam extends OptionalQueryParamDecoderMatcher[Boolean]("ids")

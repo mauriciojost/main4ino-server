@@ -22,7 +22,7 @@ import org.mauritania.main4ino.models._
 // Naming regarding to SQL
 class Repository[F[_]: Sync](transactor: Transactor[F]) {
 
-  implicit val StatusMeta: Meta[Status] = Meta[String].timap[Status](Status.apply(_))(_.code)
+  implicit val StatusMeta: Meta[Status] = Meta[String].timap[Status](Status.parse(_))(_.code)
 
   implicit val ReadCompositeJson: Read[Json] = {
     val m: Get[Json] = Get[String].map(io.circe.parser.parse(_).toOption.getOrElse(Json.Null))
