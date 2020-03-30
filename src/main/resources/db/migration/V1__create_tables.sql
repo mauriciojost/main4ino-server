@@ -2,7 +2,7 @@ CREATE TABLE targets_requests (
   id SERIAL PRIMARY KEY,
   creation LONG,
   device_name VARCHAR(20),
-  status VARCHAR(1)
+  status VARCHAR(1) CHECK (status IN ('O', 'C', 'X', '?'))
 );
 
 CREATE TABLE targets (
@@ -18,7 +18,7 @@ CREATE TABLE reports_requests (
   id SERIAL PRIMARY KEY,
   creation LONG,
   device_name VARCHAR(20),
-  status VARCHAR(1)
+  status VARCHAR(1) CHECK (status IN ('O', 'C', 'X', '?'))
 );
 
 CREATE TABLE reports (
