@@ -70,6 +70,13 @@ function main4ino_post_target() {
   $authenticated_curl_cmd -X POST $SERVER_ADDRESS/api/v1/devices/$device/targets/actors/$actor -d "$body"
 }
 
+function main4ino_get_help() {
+  $authenticated_curl_cmd -X GET "$SERVER_ADDRESS/api/v1/help"
+}
+
+function main4ino_get_version() {
+  $authenticated_curl_cmd -X GET "$SERVER_ADDRESS/api/v1/version"
+}
 
 function main4ino_get_logs() {
   main4ino_get_logs_raw $@ | jq -r .[].content

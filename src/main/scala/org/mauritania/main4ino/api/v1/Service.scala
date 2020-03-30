@@ -63,7 +63,7 @@ class Service[F[_]: Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fir
       *
       * Returns: OK (200)
       */
-    case GET -> _ / "help" as _ =>
+    case GET -> Root / "help" as _ =>
       Ok(HelpMsg, ContentTypeTextPlain)
 
     /**
@@ -75,7 +75,7 @@ class Service[F[_]: Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fir
       *
       * Returns: OK (200)
       */
-    case GET -> _ / "version" as _ =>
+    case GET -> Root / "version" as _ =>
       Ok(BuildInfo.toJson, ContentTypeAppJson)
 
     /**

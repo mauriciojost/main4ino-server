@@ -72,6 +72,8 @@ function get_summary_device() {
   echo ""
 }
 
+main4ino_get_version
+
 for i in $DEVICES_LIST
 do 
   get_summary_device $i
