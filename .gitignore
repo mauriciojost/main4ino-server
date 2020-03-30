@@ -10,3 +10,4 @@
 /dbsqlite
 /misc/scripts/client/.versions.latest.file
 /misc/scripts/client/failures.log
+/misc/scripts/client/*.bkp
