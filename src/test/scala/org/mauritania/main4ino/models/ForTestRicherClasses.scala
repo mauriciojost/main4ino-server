@@ -1,7 +1,7 @@
 package org.mauritania.main4ino.models
 
 import org.mauritania.main4ino.models.Device.DbId
-import org.mauritania.main4ino.models.Device.Metadata.Status.Status
+import org.mauritania.main4ino.models.Device.Metadata.Status
 
 object ForTestRicherClasses {
 

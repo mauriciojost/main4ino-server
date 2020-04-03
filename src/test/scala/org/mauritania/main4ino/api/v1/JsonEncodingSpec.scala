@@ -3,7 +3,6 @@ package org.mauritania.main4ino.api.v1
 import io.circe.{Decoder, parser}
 import io.circe.generic.auto._
 import org.mauritania.main4ino.models.Device.Metadata.Status
-import org.mauritania.main4ino.models.Device.Metadata.Status.Status
 import org.scalatest.EitherValues._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec

@@ -3,7 +3,7 @@ package org.mauritania.main4ino.models
 import org.mauritania.main4ino.db.Repository.{ActorTup, ActorTupIdLess}
 import org.mauritania.main4ino.models.Device.{DbId, Metadata}
 import org.mauritania.main4ino.models.Device.Metadata.Status
-import org.mauritania.main4ino.models.Device.Metadata.Status.Status
+import enumeratum._
 
 /**
   * Version of the [[Device]] after read from database.
@@ -60,20 +60,14 @@ object Device {
 
   object Metadata {
 
-    object Status {
-
-      sealed abstract class Status(val code: String)
-
+    sealed abstract class Status(override val entryName: String) extends EnumEntry
+    object Status extends Enum[Status] {
+      val values = findValues
       // Natural progression: O -> C -> X
       case object Open extends Status("O") // just created, modifications can be done on it (like adding properties)
       case object Closed extends Status("C") // modifications cannot be done on it anymore, waiting for consumption
       case object Consumed extends Status("X") // it has been already consumed (no modifications can be done on it)
-
       case object Unknown extends Status("?") // status not defined
-
-      val all = List(Open, Closed, Consumed, Unknown)
-
-      def parse(code: String): Status = all.find(_.code == code).getOrElse(Unknown)
     }
 
   }

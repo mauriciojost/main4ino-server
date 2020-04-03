@@ -15,14 +15,13 @@ import org.mauritania.main4ino.db.Repository.ReqType.ReqType
 import org.mauritania.main4ino.db.Repository.{ActorTup, ActorTupIdLess, Device1, FromTo}
 import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status
-import org.mauritania.main4ino.models.Device.Metadata.Status.Status
 import org.mauritania.main4ino.models.Device.{DbId, Metadata}
 import org.mauritania.main4ino.models._
 
 // Naming regarding to SQL
 class Repository[F[_]: Sync](transactor: Transactor[F]) {
 
-  implicit val StatusMeta: Meta[Status] = Meta[String].timap[Status](Status.parse(_))(_.code)
+  implicit val StatusMeta: Meta[Status] = Meta[String].timap[Status](Status.withName(_))(_.entryName)
 
   implicit val ReadCompositeJson: Read[Json] = {
     val m: Get[Json] = Get[String].map(io.circe.parser.parse(_).toOption.getOrElse(Json.Null))

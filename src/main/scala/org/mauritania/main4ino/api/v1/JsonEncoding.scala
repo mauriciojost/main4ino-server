@@ -2,7 +2,9 @@ package org.mauritania.main4ino.api.v1
 
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 import org.mauritania.main4ino.models.Device.Metadata
-import org.mauritania.main4ino.models.Device.Metadata.Status.Status
+import org.mauritania.main4ino.models.Device.Metadata.Status
+
+import scala.util.{Failure, Success}
 
 /**
   * Custom JSON encoders and decoders
@@ -35,13 +37,13 @@ object JsonEncoding {
   }
 
   val StatusEncoder = new Encoder[Status] {
-    override def apply(a: Status): Json = Json.fromString(a.code)
+    override def apply(a: Status): Json = Json.fromString(a.entryName)
   }
 
   val StatusDecoder: Decoder[Status] = { v =>
-    Decoder[String].tryDecode(v) match {
-      case Right(s) => Right[DecodingFailure, Status](Metadata.Status.parse(s))
-      case Left(_) => Left[DecodingFailure, Status](DecodingFailure(s"Cannot decode $v", Nil))
+    Decoder[String].tryDecode(v).toTry.flatMap(s => Metadata.Status.withNameEither(s).toTry) match {
+      case Success(s) => Right[DecodingFailure, Status](s)
+      case Failure(f) => Left[DecodingFailure, Status](DecodingFailure(s"Cannot decode $v: ${f.getMessage}", Nil))
     }
   }
 

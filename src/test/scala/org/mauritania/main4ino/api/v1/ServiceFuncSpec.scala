@@ -203,15 +203,15 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
 
 
       // The request is open
-      getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).asString shouldBe Some(Metadata.Status.Open.code)
+      getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).asString shouldBe Some(Metadata.Status.Open.entryName)
 
       // Close the request
       putExpect("/devices/dev1/targets/1?status=C", "", Status.Ok)
-      getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).asString shouldBe Some(Metadata.Status.Closed.code)
+      getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).asString shouldBe Some(Metadata.Status.Closed.entryName)
 
       // Consume the request
       putExpect("/devices/dev1/targets/1?status=X", "", Status.Ok)
-      getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).asString shouldBe Some(Metadata.Status.Consumed.code)
+      getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).asString shouldBe Some(Metadata.Status.Consumed.entryName)
 
       // Check its not anymore available if requesting for closed requests
       getExpectOk("/devices/dev1/targets?ids=true&status=C").noSpaces shouldBe IdsOnlyResponse(List()).asJson.noSpaces
