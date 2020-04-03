@@ -89,6 +89,19 @@ webPortalApp.controller(
                         $log.log("Not logged in: " + r.data);
                     }
                 );
+                var requsVer = {
+                    method: "GET",
+                    url: "api/v1/version",
+                    headers: {"Session": $scope.session}
+                };
+                $http(requsVer).then(
+                    function(r) {
+                        $log.log("Version: " + r.data);
+                    },
+                    function(r) {
+                        $log.log("Could not figure out version: " + r.data);
+                    }
+                );
             }
 
             $scope.rememberCredentials = function() {
