@@ -9,7 +9,7 @@
 
 # HTTPS server (port 443)
 server {
-        listen 443; 
+        listen 443;
         server_name localhost;
         ssl on;
         ssl_certificate /etc/nginx/ssl/server.crt;
@@ -20,11 +20,14 @@ server {
         location /main4ino/dev/ {
                 proxy_pass http://localhost:8082/;
         }
+        rewrite ^/$ /main4ino/prd permanent;
+        rewrite ^/main4ino$ /main4ino/prd permanent;
+        rewrite ^/main4ino/$ /main4ino/prd permanent;
 }
 
 # HTTP server (port 80)
 server {
-        listen 80; 
+        listen 80;
         server_name localhost;
         location /main4ino/prd/ {
                 proxy_pass http://localhost:8080/;
@@ -33,4 +36,3 @@ server {
                 proxy_pass http://localhost:8082/;
         }
 }
-  
