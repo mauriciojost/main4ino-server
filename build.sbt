@@ -28,7 +28,7 @@ lazy val root = (project in file("."))
       "-language:higherKinds"
     ),
     libraryDependencies ++= Dependencies.Dependencies,
-    parallelExecution in Test := false,
+    parallelExecution in Test := true,
 
     coverageMinimum := 98,
     coverageFailOnMinimum := true

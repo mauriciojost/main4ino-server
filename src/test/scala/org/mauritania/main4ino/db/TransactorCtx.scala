@@ -1,5 +1,7 @@
 package org.mauritania.main4ino.db
 
+import java.util.UUID
+
 import cats.effect.{Async, Blocker, IO, Resource, Sync}
 import doobie.hikari.HikariTransactor
 import eu.timepit.refined.types.numeric.PosInt
@@ -10,7 +12,7 @@ trait TransactorCtx {
 
   val TransactorConfig = Config(
     driver = "org.h2.Driver",
-    url = "jdbc:h2:mem:test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
+    url = buildUrl("default"),
     user = "sa",
     password = "",
     cleanup = Cleanup(
@@ -19,14 +21,22 @@ trait TransactorCtx {
     )
   )
 
-  def withTransactor[T](f: HikariTransactor[IO] => T): T = {
+  private def buildUrl(name: String) = s"jdbc:h2:mem:$name;MODE=PostgreSQL;DB_CLOSE_DELAY=-1"
+
+  private def randomName() = "test-" + UUID.randomUUID.toString
+
+  def withTransactorWithName[T](name: String)(f: HikariTransactor[IO] => T): T = {
     val ec = Helper.testExecutionContext
-    val cs = IO.contextShift(ec)
     val re = for {
-      t <- Database.transactor[IO](TransactorConfig, ec, Blocker.liftExecutionContext(ec))(Sync[IO], IO.contextShift(ec), Async[IO])
-      d <- Resource.liftF(Database.initialize[IO](t, true))
+      t <- Database.transactor[IO](TransactorConfig.copy(url = buildUrl(name)), ec, Blocker.liftExecutionContext(ec))(Sync[IO], IO.contextShift(ec), Async[IO])
+      _ <- Resource.liftF(Database.initialize[IO](t, true))
     } yield(t)
     re.use(c => IO(f(c))).unsafeRunSync()
+  }
+
+  def withTransactor[T](f: HikariTransactor[IO] => T): T = {
+    val name = randomName()
+    withTransactorWithName(name)(f)
   }
 
 }

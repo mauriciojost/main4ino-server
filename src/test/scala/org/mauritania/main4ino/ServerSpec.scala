@@ -4,7 +4,7 @@ import cats.effect.IO
 import com.typesafe.config.ConfigFactory
 import org.http4s.client.UnexpectedStatus
 import org.http4s.{BasicCredentials, Method, Request, Status, Uri}
-import org.scalatest.{Assertion, BeforeAndAfterAll, Sequential}
+import org.scalatest.{Assertion, BeforeAndAfterAll}
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
@@ -23,7 +23,6 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
 
   val OneSecond = 1000
 
-  Sequential
   lazy val appThread: Thread = launchAsync()
   val UserPass = BasicCredentials(Fixtures.User1.id, Fixtures.User1Pass)
 

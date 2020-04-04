@@ -2,7 +2,7 @@ package org.mauritania.main4ino.webapp
 
 import cats.effect.{Effect, IO, Sync}
 import org.http4s.{Method, Request, Response, Status, Uri}
-import org.scalatest.{BeforeAndAfterEach, Sequential}
+import org.scalatest.{BeforeAndAfterEach}
 import org.http4s.dsl.Http4sDsl
 
 import scala.concurrent.ExecutionContext
@@ -10,8 +10,6 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class ServiceFuncSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with Http4sDsl[IO] {
-
-  Sequential
 
   "The service" should "read existent index.html" in {
     val indexHtml = getExpectOk("/index.html")(buildService())

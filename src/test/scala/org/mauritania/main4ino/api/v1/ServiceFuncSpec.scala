@@ -23,7 +23,6 @@ import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security._
 import org.mauritania.main4ino.{Helper, TmpDirCtx}
-import org.scalatest.Sequential
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import cats._
 import cats.implicits._
@@ -33,8 +32,6 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with TmpDirCtx with Http4sDsl[IO] {
-
-  Sequential
 
   val TheTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("UTC"))
 
