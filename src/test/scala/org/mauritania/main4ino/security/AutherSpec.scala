@@ -8,9 +8,10 @@ import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security.MethodRight.RW
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.EitherValues._
+import org.scalatest.ParallelTestExecution
 import org.scalatest.wordspec.AnyWordSpec
 
-class AutherSpec extends AnyWordSpec with Matchers {
+class AutherSpec extends AnyWordSpec with Matchers with ParallelTestExecution {
 
   val encConfig = EncryptionConfig(PrivateKey.getBytes)
   val User1Token = BasicCredentials(User1.id, User1Pass).token

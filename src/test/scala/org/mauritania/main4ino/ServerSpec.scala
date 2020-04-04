@@ -16,12 +16,12 @@ import org.mauritania.main4ino.api.Translator.IdResponse
 import org.mauritania.main4ino.models.{DeviceId, DeviceName, RequestId}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import pureconfig.ConfigSource
 import pureconfig.error.ConfigReaderException
 
 class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with HttpClient {
 
-  val OneSecond = 1000
+  val InitializationTimeMs = 5000
+  val TimeUnit = 500 // unit of time in ms for this test suite
 
   lazy val appThread: Thread = launchAsync()
   val UserPass = BasicCredentials(Fixtures.User1.id, Fixtures.User1Pass)
@@ -33,7 +33,7 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
     System.setProperty("config-dir", "src/test/resources/configs/1")
     ConfigFactory.invalidateCaches() // force reload of java properties
     appThread
-    Thread.sleep(5 * OneSecond)
+    Thread.sleep(InitializationTimeMs) // give time to the thread to initialize
   }
 
   override def afterAll(): Unit = {
@@ -65,33 +65,33 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
       def checkExists(dev: DeviceName, id: Long): Assertion = checkRecord(dev, id, Status.Ok)
       def checkDoesNotExist(dev: DeviceName, id: Long): Assertion = checkRecord(dev, id, Status.NoContent)
 
-      // T0sec
+      // T0timeunit
 
-      // inject dev1 (at ~T0sec, cleanup will take place at ~T10sec)
+      // inject dev1 (at ~T0timeunit, cleanup will take place at ~T10timeunit)
       val dev1ResponseJson = httpClient.expect[String](devPostRequest("dev1", "targets"))
       val idDev1 = jsonAs[IdResponse](dev1ResponseJson.unsafeRunSync()).id
 
       checkExists("dev1", idDev1) // just created
 
-      Thread.sleep(5 * OneSecond) // T5sec
+      Thread.sleep(5 * TimeUnit) // T5timeunit
 
-      // inject dev2 (at ~T5sec, cleanup will take place at ~T15sec)
+      // inject dev2 (at ~T5timeunit, cleanup will take place at ~T15timeunit)
       val dev2ResponseJson = httpClient.expect[String](devPostRequest("dev2", "targets"))
       val idDev2 = jsonAs[IdResponse](dev2ResponseJson.unsafeRunSync()).id
 
       checkExists("dev2", idDev2) // just created
       checkExists("dev1", idDev1) // still exists
 
-      Thread.sleep(5 * OneSecond) // T10sec
+      Thread.sleep(5 * TimeUnit) // T10timeunit
 
-      // cleanup every 10s
+      // retention of 10 time units
 
-      Thread.sleep(2 * OneSecond) // T12sec
+      Thread.sleep(2 * TimeUnit) // T12timeunit
 
       checkDoesNotExist("dev1", idDev1) // cleaned up
       checkExists("dev2", idDev2) // still there
 
-      Thread.sleep(6 * OneSecond) // T17sec
+      Thread.sleep(6 * TimeUnit) // T17timeunit
 
       checkDoesNotExist("dev2", idDev2) // cleaned up too
 

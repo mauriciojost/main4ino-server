@@ -9,12 +9,13 @@ import org.mauritania.main4ino.security.confgen.Modules.{ConfigsMonad, Filesyste
 import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security.MethodRight.RW
 import org.mauritania.main4ino.security.{MethodRight, User}
+import org.scalatest.ParallelTestExecution
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import tsec.passwordhashers.jca.{BCrypt, MockedPasswordHasher}
 import tsec.passwordhashers.PasswordHash
 
-class ModulesSpec extends AnyWordSpec with Matchers with DecodersIO {
+class ModulesSpec extends AnyWordSpec with Matchers with DecodersIO with ParallelTestExecution {
 
   "A config handler" should {
 

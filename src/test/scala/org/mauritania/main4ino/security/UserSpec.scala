@@ -6,7 +6,7 @@ import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class UserSpec extends AnyFlatSpec with Matchers {
+class UserSpec extends AnyFlatSpec with Matchers with ParallelTestExecution {
   def user(rights: List[String], methodRight: MethodRight) = Fixtures.User1.copy(granted = rights.map(_ -> methodRight).toMap)
 
   "The user" should "load correctly a configuration file" in {

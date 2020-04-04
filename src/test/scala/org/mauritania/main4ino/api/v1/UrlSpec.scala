@@ -1,9 +1,10 @@
 package org.mauritania.main4ino.api.v1
 
+import org.scalatest.ParallelTestExecution
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class UrlSpec extends AnyWordSpec with Matchers {
+class UrlSpec extends AnyWordSpec with Matchers with ParallelTestExecution {
 
   "The extracting of safe strings from url" should {
 

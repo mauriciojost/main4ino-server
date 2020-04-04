@@ -10,13 +10,14 @@ import org.mauritania.main4ino.TmpDirCtx
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.EpochSecTimestamp
 import org.scalatest.EitherValues._
+import org.scalatest.ParallelTestExecution
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.ExecutionContext
 import scala.io.Source
 
-class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
+class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelTestExecution {
 
   class FixedTime(t: EpochSecTimestamp) extends Time[IO] {
     override def nowUtc: IO[ZonedDateTime] = IO.pure(ZonedDateTime.ofInstant(Instant.ofEpochSecond(t), ZoneId.of("UTC")))

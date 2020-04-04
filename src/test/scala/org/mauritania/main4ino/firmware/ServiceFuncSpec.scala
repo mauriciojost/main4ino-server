@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx {
+class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelTestExecution {
 
   final val Byte0: Byte = '0'.toByte
   final val Byte1: Byte = '1'.toByte

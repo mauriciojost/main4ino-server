@@ -3,10 +3,11 @@ package org.mauritania.main4ino.models
 import org.mauritania.main4ino.Fixtures
 import org.mauritania.main4ino.Fixtures.Device1
 import org.mauritania.main4ino.db.Repository.{ActorTup, ActorTupIdLess}
+import org.scalatest.ParallelTestExecution
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class DeviceSpec extends AnyWordSpec with Matchers {
+class DeviceSpec extends AnyWordSpec with Matchers with ParallelTestExecution {
 
   "The device" should {
 

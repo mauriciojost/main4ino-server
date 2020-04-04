@@ -33,13 +33,14 @@ import org.mauritania.main4ino.db.Repository
 import org.mauritania.main4ino.firmware.Store
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import org.mauritania.main4ino.devicelogs.{Logger, Config => DevLogsConfig}
+import org.scalatest.ParallelTestExecution
 
 import scala.concurrent.ExecutionContext
 import scala.reflect.ClassTag
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with DecodersIO with Http4sDsl[IO] {
+class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with DecodersIO with Http4sDsl[IO] with ParallelTestExecution {
 
   val User1 = Fixtures.User1
   val User1Pass = Fixtures.User1Pass

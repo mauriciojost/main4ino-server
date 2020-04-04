@@ -9,13 +9,14 @@ import io.circe.jawn.decode
 import org.mauritania.main4ino.{DecodersIO, TmpDirCtx}
 import org.mauritania.main4ino.security.MethodRight.RW
 import org.mauritania.main4ino.security.{Config, MethodRight}
+import org.scalatest.ParallelTestExecution
 
 import scala.io.Source
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import pureconfig.ConfigSource
 
-class ClientSpec extends AnyWordSpec with Matchers with DecodersIO with TmpDirCtx {
+class ClientSpec extends AnyWordSpec with Matchers with DecodersIO with TmpDirCtx with ParallelTestExecution {
   val User1Cmd = "newuser newpass newuser@zzz.com /api/v1/time /"
   val User2Cmd = "newuser2 newpass2 newuser2@zzz.com /api"
 

@@ -1,6 +1,6 @@
 package org.mauritania.main4ino.api.v1
 
-import java.nio.file.{Path => NioPath, Paths}
+import java.nio.file.{Paths, Path => NioPath}
 import java.time.{Instant, ZoneId, ZonedDateTime}
 
 import cats.effect.{IO, Sync}
@@ -28,10 +28,11 @@ import cats._
 import cats.implicits._
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.main4ino.devicelogs.{Config, Logger}
+import org.scalatest.ParallelTestExecution
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with TmpDirCtx with Http4sDsl[IO] {
+class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with TmpDirCtx with Http4sDsl[IO] with ParallelTestExecution {
 
   val TheTime = ZonedDateTime.ofInstant(Instant.EPOCH, ZoneId.of("UTC"))
 

@@ -4,10 +4,11 @@ import io.circe.{Decoder, parser}
 import io.circe.generic.auto._
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.scalatest.EitherValues._
+import org.scalatest.ParallelTestExecution
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class JsonEncodingSpec extends AnyWordSpec with Matchers {
+class JsonEncodingSpec extends AnyWordSpec with Matchers with ParallelTestExecution {
 
   case class B(i: Boolean) // object containing a boolean
   case class I(i: Int) // object containing an integer

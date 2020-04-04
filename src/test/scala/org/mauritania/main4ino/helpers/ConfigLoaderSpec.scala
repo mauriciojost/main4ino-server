@@ -37,7 +37,7 @@ class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
         password = "",
         cleanup = Cleanup(
           periodSecs = PosInt(1),
-          retentionSecs = PosInt(10)
+          retentionSecs = PosInt(5)
         )
       ),
       devLogger = Config(Paths.get("/tmp")),
