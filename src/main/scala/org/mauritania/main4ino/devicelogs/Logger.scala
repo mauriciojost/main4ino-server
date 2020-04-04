@@ -32,23 +32,27 @@ class Logger[F[_]: Sync: ContextShift](config: Config, time: Time[F], ec: Execut
     * Update logs, provided the device name and the log messages to be appended
     * @param device device name
     * @param body body containing the logs to be appended
-    * @return [[Attempt]] telling if it was possible to perform the operation
+    * @return [[Attempt]] telling if it was possible to perform the operation, and the amount of bytes written
     */
-  def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Unit]] = {
+  def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Long]] = {
+    val file = pathFromDevice(device)
     val bodyLines = body.through(fs2.text.lines).filter(!_.isEmpty)
     val timedBody = bodyLines.flatMap(l => Stream.eval[F, String](time.nowUtc.map(t => s"${Time.asTimestamp(t)} $l")))
     val encodedTimedBody = (timedBody.intersperse("\n") ++ Stream.eval(Sync[F].delay("\n"))).through(fs2text.utf8Encode)
-    val written = encodedTimedBody.through(io.file.writeAll[F](pathFromDevice(device), blocker, CreateAndAppend))
-    val eithers = written.attempt.compile.toList
-    val attempts = eithers.map {
-      case Left(e) :: _ => Left(e.getMessage)
-      case _ => Right()
-    }
-
-    attempts
+    for {
+      preSize <- fileSize(file.toFile)
+      written = encodedTimedBody.through(io.file.writeAll[F](file, blocker, CreateAndAppend))
+      eithers = written.attempt.compile.toList
+      postSize <- fileSize(file.toFile)
+      attempts <- eithers.map {
+        case Left(e) :: _ => Left(e.getMessage)
+        case _ => Right(postSize - preSize)
+      }
+    } yield attempts
   }
 
   private def isReadableFile(f: File): F[Boolean] = Sync[F].delay(f.canRead && f.isFile)
+  private def fileSize(f: File): F[Long] = Sync[F].delay(f.length)
 
   /**
     * Retrieve full logs for the given device

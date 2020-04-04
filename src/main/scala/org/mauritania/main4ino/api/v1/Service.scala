@@ -178,9 +178,9 @@ class Service[F[_]: Sync](auth: Auther[F], tr: Translator[F], time: Time[F], fir
       */
     case a @ PUT -> Root / "devices" / Dev(device) / "logs" as _ => {
       val d = a.req.bodyAsText
-      val r: F[Attempt[Unit]] = tr.updateLogs(device, d)
+      val r: F[Attempt[Long]] = tr.updateLogs(device, d)
       r.flatMap {
-        case Right(_) => Ok()
+        case Right(bytes) => Ok(CountResponse(bytes).asJson)
         case Left(m) => InternalServerError(m)
       }
     }

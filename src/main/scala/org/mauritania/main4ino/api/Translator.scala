@@ -21,11 +21,11 @@ import org.mauritania.main4ino.devicelogs.{Logger, Record}
 
 class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger: Logger[F]) extends Http4sDsl[F] {
 
-  def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Unit]] = {
+  def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Long]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       d <- devLogger.updateLogs(device, body)
-      _ <- logger.debug(s"Appended logs for $device: $d")
+      _ <- logger.debug(s"Appended logs for $device: +$d bytes")
     } yield (d)
   }
 
@@ -91,7 +91,7 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       updates <- repository.updateDeviceWhereRequestId(table, device, requestId, status)
-      count = updates.map(CountResponse)
+      count = updates.map(CountResponse(_))
       _ <- logger.debug(s"Update device $device into table $table id $requestId to $status: count $count")
     } yield (count)
   }
@@ -102,7 +102,7 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
       timeUtc <- time.nowUtc
       props <- ap
       inserts <- repository.insertDeviceActor(table, dev, act, id, props, Time.asTimestamp(timeUtc))
-      count = inserts.map(CountResponse)
+      count = inserts.map(CountResponse(_))
       _ <- logger.debug(s"POST device $dev (actor $act) into table $table id $id: $props / $count")
     } yield (count)
   }
@@ -158,7 +158,7 @@ object Translator {
 
   case class IdResponse(id: RequestId)
 
-  case class CountResponse(count: Int)
+  case class CountResponse(count: Long)
 
   case class IdsOnlyResponse(ids: Seq[RequestId])
 
