@@ -21,7 +21,6 @@ import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.models.ForTestRicherClasses._
 import org.mauritania.main4ino.models.{Device, EpochSecTimestamp}
-import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
 import org.mauritania.main4ino.security.{Auther, User, Config => SecurityConfig}
 import org.mauritania.main4ino.{Fixtures, Helper}
 import org.scalamock.scalatest.MockFactory
@@ -33,6 +32,7 @@ import org.mauritania.main4ino.db.Repository
 import org.mauritania.main4ino.firmware.Store
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import org.mauritania.main4ino.devicelogs.{Logger, Config => DevLogsConfig}
+import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.scalatest.ParallelTestExecution
 
 import scala.concurrent.ExecutionContext
@@ -142,6 +142,10 @@ class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with Decode
       val ta = getApiV1("/devices/dev1/targets")(s).unsafeRunSync()
       ta.status shouldBe (HttpStatus.Ok)
       ta.as[Json](Sync[IO], DecoderIOJson).unsafeRunSync() shouldBe (List(Dev1V1, Dev2V1).asJson)
+    }
+    "reject invalid statuses when reading reading all targets request" in {
+      val ta = getApiV1("/devices/dev1/targets?status=UNEXISTENT_STATUS")(s).unsafeRunSync()
+      ta.status shouldBe (HttpStatus.NotFound)
     }
   }
 
