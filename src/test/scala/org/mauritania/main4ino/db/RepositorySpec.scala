@@ -220,11 +220,12 @@ class RepositorySpec extends AnyFlatSpec with Matchers with TransactorCtx with P
   it should "create and retrieve descriptions" in {
     withTransactor { transactor =>
       val repo = new Repository(transactor)
+      val json = Json.fromString("{}")
       repo.getDescription("dev1").unsafeRunSync() shouldBe Left("No description for 'dev1'")
       repo.setDescription("dev1", VersionJson("1", Json.Null), 0L).unsafeRunSync() shouldBe 1
       repo.getDescription("dev1").unsafeRunSync() shouldBe Right(Description("dev1", 0L, VersionJson("1", Json.Null)))
-      repo.setDescription("dev1", VersionJson("2", Json.Null), 0L).unsafeRunSync() shouldBe 1
-      repo.getDescription("dev1").unsafeRunSync() shouldBe Right(Description("dev1", 0L, VersionJson("2", Json.Null)))
+      repo.setDescription("dev1", VersionJson("2", json), 0L).unsafeRunSync() shouldBe 1
+      repo.getDescription("dev1").unsafeRunSync() shouldBe Right(Description("dev1", 0L, VersionJson("2", json)))
     }
   }
 

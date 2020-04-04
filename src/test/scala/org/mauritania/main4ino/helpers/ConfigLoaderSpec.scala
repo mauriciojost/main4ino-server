@@ -77,6 +77,12 @@ class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
     }
   }
 
+  it should "throw an exception if the config has a bad method" in {
+    a[ConfigReaderException[SecurityConfig]] should be thrownBy {
+      ConfigLoader.fromFile[IO, SecurityConfig](new File("src/test/resources/configs/2/security-users-badmethod.conf")).unsafeRunSync()
+    }
+  }
+
   it should "throw an exception if the config is malformed" in {
     a[ConfigReaderException[SecurityConfig]] should be thrownBy {
       ConfigLoader.fromFile[IO, SecurityConfig](new File("src/test/resources/configs/2/security-users-broken.conf")).unsafeRunSync()

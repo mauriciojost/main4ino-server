@@ -47,6 +47,13 @@ class AutherSpec extends AnyWordSpec with Matchers with ParallelTestExecution {
       creds shouldBe Some("session1")
     }
 
+    "retrieve session from header" in {
+      val headers = Headers.of(Header("session", "session1"))
+      val uri = Uri.unsafeFromString(s"http://main4ino.com/api/v1/device/...")
+      val creds = Auther.sessionFromRequest(headers, uri)
+      creds shouldBe Some("session1")
+    }
+
     "correctly identify not allowed users to certain uris" in {
       val user = User1.copy(granted = Map[String, MethodRight]("/api/v1/" -> RW))
       val uriPath = "/admin"

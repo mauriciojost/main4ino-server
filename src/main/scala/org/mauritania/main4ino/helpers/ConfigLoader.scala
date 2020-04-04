@@ -26,7 +26,7 @@ object ConfigLoader {
   }
   object PureConfigImplicits {
     implicit object customMethodRightReader extends ConfigReader[MethodRight] {
-      def from(cur: ConfigCursor) = {
+      def from(cur: ConfigCursor): Either[ConfigReaderFailures, MethodRight] = {
         val st = cur.asString
         st.flatMap { s =>
           MethodRight.withNameEither(s).left.map { e =>

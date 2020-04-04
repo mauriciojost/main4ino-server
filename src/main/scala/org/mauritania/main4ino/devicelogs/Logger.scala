@@ -41,13 +41,8 @@ class Logger[F[_]: Sync: ContextShift](config: Config, time: Time[F], ec: Execut
     val written = encodedTimedBody.through(io.file.writeAll[F](pathFromDevice(device), blocker, CreateAndAppend))
     val eithers = written.attempt.compile.toList
     val attempts = eithers.map {
-      // Not clear why this behavior. This pattern matching is done based on non-documented observed
-      // behaviour of io.file.WriteAll whose expected output was a single element
-      // containing a Right(()) or a Left(e). Observed: no element if success, one
-      // element Left(e) if failure.
-      case Nil => Right()
-      case Left(e) :: Nil => Left(e.getMessage)
-      case _ => Left("Unexpected scenario")
+      case Left(e) :: _ => Left(e.getMessage)
+      case _ => Right()
     }
 
     attempts
