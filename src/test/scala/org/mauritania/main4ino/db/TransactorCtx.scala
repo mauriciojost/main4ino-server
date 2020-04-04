@@ -4,7 +4,7 @@ import java.util.UUID
 
 import cats.effect.{Async, Blocker, IO, Resource, Sync}
 import doobie.hikari.HikariTransactor
-import eu.timepit.refined.types.numeric.PosInt
+import eu.timepit.refined.types.numeric.{PosFloat, PosInt}
 import org.mauritania.main4ino.Helper
 import org.mauritania.main4ino.db.Config.Cleanup
 
@@ -16,7 +16,7 @@ trait TransactorCtx {
     user = "sa",
     password = "",
     cleanup = Cleanup(
-      periodSecs = PosInt(10),
+      periodSecs = PosFloat(10),
       retentionSecs = PosInt(10)
     )
   )

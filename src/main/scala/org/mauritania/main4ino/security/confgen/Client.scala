@@ -1,17 +1,12 @@
 package org.mauritania.main4ino.security.confgen
 
-import java.nio.file.{Path, Paths}
-
-import cats.Monad
 import cats.effect.{IO, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import enumeratum.Circe
 import org.mauritania.main4ino.security.confgen.Algebras.{Configs, Filesystem}
-import org.mauritania.main4ino.security.confgen.Actions.{Action, AddRawUser, AddRawUsers}
 import org.mauritania.main4ino.security.confgen.Modules.{ConfigsMonad, FilesystemSync}
 import org.mauritania.main4ino.helpers.ConfigLoader
-import org.mauritania.main4ino.security.{Config, MethodRight}
+import org.mauritania.main4ino.security.Config
 import pureconfig._
 import pureconfig.generic.auto._
 

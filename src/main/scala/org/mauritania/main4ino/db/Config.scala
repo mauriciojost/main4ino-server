@@ -2,7 +2,7 @@ package org.mauritania.main4ino.db
 
 import java.util.concurrent.TimeUnit
 
-import eu.timepit.refined.types.numeric.PosInt
+import eu.timepit.refined.types.numeric.{PosFloat, PosInt}
 import org.mauritania.main4ino.db.Config.Cleanup
 
 import scala.concurrent.duration.FiniteDuration
@@ -17,9 +17,9 @@ case class Config(
 
 object Config {
   case class Cleanup(
-    periodSecs: PosInt,
+    periodSecs: PosFloat,
     retentionSecs: PosInt
   ) {
-    def periodSecsFiniteDuration = FiniteDuration(periodSecs.value, TimeUnit.SECONDS)
+    def periodDuration: FiniteDuration = FiniteDuration((periodSecs.value * 1000).toLong, TimeUnit.MILLISECONDS)
   }
 }

@@ -28,7 +28,7 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelT
       val expectedFile = tmp.resolve("device.log")
       val logger0= buildLogger(tmp, 0)
       val s1 = Stream("hey\nyou\n") // creates and appends
-      logger0.updateLogs("device", s1).unsafeRunSync() should be(Right(()))
+      logger0.updateLogs("device", s1).unsafeRunSync().right.value should be(12L)
       Source.fromFile(expectedFile.toFile).getLines.toList should be(
         List(
           "0 hey",
@@ -36,8 +36,8 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelT
       )
       )
       val s2 = Stream("guy\n") // appends
-      val logger1= buildLogger(tmp, 1)
-      logger1.updateLogs("device", s2).unsafeRunSync() should be(Right(()))
+      val logger1 = buildLogger(tmp, 1)
+      logger1.updateLogs("device", s2).unsafeRunSync().right.value should be(6L)
       Source.fromFile(expectedFile.toFile).getLines.toList should be(
         List(
           "0 hey",
@@ -73,7 +73,7 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelT
     withTmpDir { tmp =>
       val loggerWrite = buildLogger(tmp = tmp, t = 0)
       val s = Stream("hey\nyou")
-      loggerWrite.updateLogs("device", s).unsafeRunSync().right.value should be(())
+      loggerWrite.updateLogs("device", s).unsafeRunSync().right.value should be(12L)
 
       val loggerRead12 = buildLogger(tmp = tmp, t = 0, mxLen = PosInt((1/*time*/ + 1/*space*/ + 3/*hey*/ + 1/*newline*/)* 2))
       val read12 = loggerRead12.getLogs("device", Some(0L), Some(0L)).unsafeRunSync().right.value

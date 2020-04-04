@@ -6,7 +6,6 @@ import cats.effect.Sync
 import io.circe.{Decoder, Encoder}
 import org.mauritania.main4ino.security.Auther.UserHashedPass
 import org.mauritania.main4ino.security.MethodRight
-import pureconfig.backend.ConfigFactoryWrapper
 import pureconfig.error.{CannotParse, ConfigReaderException, ConfigReaderFailures}
 import tsec.passwordhashers.PasswordHash
 import tsec.passwordhashers.jca.BCrypt

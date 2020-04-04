@@ -43,16 +43,17 @@ class Logger[F[_]: Sync: ContextShift](config: Config, time: Time[F], ec: Execut
       preSize <- fileSize(file.toFile)
       written = encodedTimedBody.through(io.file.writeAll[F](file, blocker, CreateAndAppend))
       eithers = written.attempt.compile.toList
-      postSize <- fileSize(file.toFile)
       attempts <- eithers.map {
         case Left(e) :: _ => Left(e.getMessage)
-        case _ => Right(postSize - preSize)
+        case _ => Right(preSize)
       }
-    } yield attempts
+      postSize <- fileSize(file.toFile)
+      increase = attempts.map(pre => postSize - pre)
+    } yield increase
   }
 
   private def isReadableFile(f: File): F[Boolean] = Sync[F].delay(f.canRead && f.isFile)
-  private def fileSize(f: File): F[Long] = Sync[F].delay(f.length)
+  private def fileSize(f: File): F[Long] = Sync[F].delay(f.length())
 
   /**
     * Retrieve full logs for the given device

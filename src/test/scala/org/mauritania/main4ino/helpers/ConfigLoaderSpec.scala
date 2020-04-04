@@ -17,8 +17,7 @@ import pureconfig.generic.auto._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import eu.timepit.refined.pureconfig._
-import eu.timepit.refined.types.numeric.PosInt
-import org.mauritania.main4ino.security.Auther.UserHashedPass
+import eu.timepit.refined.types.numeric.{PosFloat, PosInt}
 import pureconfig.error.ConfigReaderException
 import org.mauritania.main4ino.security.confgen.Args
 import tsec.passwordhashers.PasswordHash
@@ -36,8 +35,8 @@ class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
         user = "sa",
         password = "",
         cleanup = Cleanup(
-          periodSecs = PosInt(1),
-          retentionSecs = PosInt(5)
+          periodSecs = PosFloat(0.1F),
+          retentionSecs = PosInt(3)
         )
       ),
       devLogger = Config(Paths.get("/tmp")),
