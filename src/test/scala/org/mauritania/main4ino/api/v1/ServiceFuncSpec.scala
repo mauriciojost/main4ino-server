@@ -305,6 +305,16 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
     }
   }
 
+  it should "fail gracefully if logs do not exist" in {
+    withTransactor { tr =>
+      withTmpDir { tmp =>
+        implicit val s = defaultServiceWithDirectory(tr, tmp)
+        val log = get(s"/devices/dev1/logs")
+        log.status should be(Status.NoContent)
+      }
+    }
+  }
+
   "The service from both web ui and device" should "create and read descriptions by device name" in {
     withTransactor { tr =>
       implicit val s = defaultService(tr)

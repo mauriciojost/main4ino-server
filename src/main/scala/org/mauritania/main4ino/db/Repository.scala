@@ -24,8 +24,7 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
   implicit val StatusMeta: Meta[Status] = Meta[String].timap[Status](Status.withName(_))(_.entryName)
 
   implicit val ReadCompositeJson: Read[Json] = {
-    val m: Get[Json] = Get[String].temap(io.circe.parser.parse(_).left.map(_.getMessage()))
-    Read.fromGet(m)
+    Read.fromGet(Get[String].temap(io.circe.parser.parse(_).left.map(_.getMessage())))
   }
 
   def setDescription(d: DeviceName, v: VersionJson, ts: EpochSecTimestamp): F[Int] = {
