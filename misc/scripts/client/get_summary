@@ -58,6 +58,7 @@ function get_summary_device() {
   local logl=`echo $summary_report | jq -r  '.settings."~logl"'`
   local logo=`echo $summary_report | jq -r  '.settings."~logo"'`
 
+  echo ""
   echo "Info:"
   echo "- alias          : $aliase" | highlight blue $aliase
   echo "- project        : $project"
@@ -72,7 +73,7 @@ function get_summary_device() {
   echo ""
 }
 
-main4ino_get_version
+main4ino_get_version | jq -r .
 
 for i in $DEVICES_LIST
 do 
