@@ -162,6 +162,12 @@ object Translator {
 
   case class IdsOnlyResponse(ids: Seq[RequestId])
 
-  case class TimeResponse(zoneName: String, timestamp: Long, formatted: String) //"zoneName":"Europe\/Paris","timestamp":1547019039,"formatted":"2019-01-09 07:30:39"}
+  /**
+    * Response for a time query
+    * @param zoneName an example: Europe\/Paris
+    * @param timestamp an example: 1547019039
+    * @param formatted an example: 2019-01-09 07:30:39
+    */
+  case class TimeResponse(zoneName: String, timestamp: Long, formatted: String)
 
 }
