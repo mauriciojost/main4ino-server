@@ -22,10 +22,7 @@ import org.mauritania.main4ino.models._
 class Repository[F[_]: Sync](transactor: Transactor[F]) {
 
   implicit val StatusMeta: Meta[Status] = Meta[String].timap[Status](Status.withName(_))(_.entryName)
-
-  implicit val ReadCompositeJson: Read[Json] = {
-    Read.fromGet(Get[String].temap(io.circe.parser.parse(_).left.map(_.getMessage())))
-  }
+  implicit val JsonMeta: Meta[Json] = Meta[String].timap[Json](io.circe.parser.parse(_).getOrElse(Json.Null))(_.noSpaces)
 
   def setDescription(d: DeviceName, v: VersionJson, ts: EpochSecTimestamp): F[Int] = {
     val transaction = for {
@@ -42,7 +39,7 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
     transaction.transact(transactor)
   }
 
-  def cleanup(table: ReqType, now: EpochSecTimestamp, retentionSecs: PosInt) = {
+  def cleanup(table: ReqType, now: EpochSecTimestamp, retentionSecs: PosInt): F[Int] = {
     val transaction = for {
       m <- sqlDeleteMetadataWhereCreationIsLess(table, now - retentionSecs.value)
       _ <- sqlDeleteActorTupOrphanOfRequest(table)
@@ -51,7 +48,7 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
     transaction.transact(transactor)
   }
 
-  def deleteDeviceWhereName(table: ReqType, device: String) = {
+  def deleteDeviceWhereName(table: ReqType, device: String): F[Int] = {
     val transaction = for {
       m <- sqlDeleteMetadataWhereDeviceName(table, device)
       _ <- sqlDeleteActorTupOrphanOfRequest(table)
@@ -171,7 +168,7 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
   }
 
   private def sqlInsertDescription(dev: DeviceName, d: VersionJson, ts: EpochSecTimestamp): ConnectionIO[Int] = {
-    (fr"INSERT INTO descriptions (device_name, updated, version, json) VALUES (${dev}, ${ts}, ${d.version}, ${d.json.noSpaces})").update.run
+    (fr"INSERT INTO descriptions (device_name, updated, version, json) VALUES (${dev}, ${ts}, ${d.version}, ${d.json})").update.run
   }
 
   private def sqlSelectDescription(d: DeviceName): ConnectionIO[Option[Description]] = {
