@@ -96,7 +96,7 @@ webPortalApp.controller(
                 };
                 $http(requsVer).then(
                     function(r) {
-                        $log.log("Version: " + r.data);
+                        $log.log("Version: " + JSON.stringify(r.data));
                     },
                     function(r) {
                         $log.log("Could not figure out version: " + r.data);
