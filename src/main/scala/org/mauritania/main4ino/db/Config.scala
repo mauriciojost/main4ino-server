@@ -20,6 +20,7 @@ object Config {
     periodSecs: PosFloat,
     retentionSecs: PosInt
   ) {
-    def periodDuration: FiniteDuration = FiniteDuration((periodSecs.value * 1000).toLong, TimeUnit.MILLISECONDS)
+    def periodDuration: FiniteDuration =
+      FiniteDuration((periodSecs.value * 1000).toLong, TimeUnit.MILLISECONDS)
   }
 }

@@ -47,7 +47,8 @@ class Store[F[_]: Sync](basePath: Path) {
 
   private def length(f: File): F[Long] = Sync[F].delay(f.length)
   private def isReadableFile(f: File): F[Boolean] = Sync[F].delay(f.canRead && f.isFile)
-  private def listFiles(dir: File): F[List[File]] = Sync[F].delay(Option(dir.listFiles()).toList.flatMap(_.toList))
+  private def listFiles(dir: File): F[List[File]] =
+    Sync[F].delay(Option(dir.listFiles()).toList.flatMap(_.toList))
 
   def getFirmware(coords: FirmwareCoords): F[Attempt[Firmware]] = {
     val resp: F[Attempt[Firmware]] = for {
@@ -81,18 +82,28 @@ class Store[F[_]: Sync](basePath: Path) {
       _ <- logger.debug(s"Checked firmware $coords: readable=$readable length=$length")
       located = readable match {
         case true => Right(Firmware(file, length, coords))
-        case false => Left(s"Could not locate/read firmware: ${coords.project}/$filename (resolved to $file)")
+        case false =>
+          Left(s"Could not locate/read firmware: ${coords.project}/$filename (resolved to $file)")
       }
     } yield located
   }
 
-  private def resolveVersion(target: FirmwareCoords, available: Seq[FirmwareCoords]): Option[FirmwareCoords] = {
+  private def resolveVersion(
+    target: FirmwareCoords,
+    available: Seq[FirmwareCoords]
+  ): Option[FirmwareCoords] = {
     import Store._
     target match {
       case _ if available.isEmpty =>
         None
       case c if (c.version == "LATEST") =>
-        Some(FirmwareCoords(target.project, available.map(c => SemVer(c.version)).max(BySemVer).original, target.platform))
+        Some(
+          FirmwareCoords(
+            target.project,
+            available.map(c => SemVer(c.version)).max(BySemVer).original,
+            target.platform
+          )
+        )
       case t if available.contains(t) =>
         Some(t)
       case _ =>

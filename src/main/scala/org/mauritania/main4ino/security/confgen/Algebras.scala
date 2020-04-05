@@ -18,7 +18,10 @@ object Algebras {
 
   trait Configs[F[_]] {
 
-    def user(c: Config, u: AddRawUser)(implicit P: PasswordHasher[F, BCrypt], M: Monad[F]): F[User] =
+    def user(
+      c: Config,
+      u: AddRawUser
+    )(implicit P: PasswordHasher[F, BCrypt], M: Monad[F]): F[User] =
       for {
         hashed <- Auther.hashPassword[F](u.pass)
       } yield User(u.name, hashed, u.email, u.granted)

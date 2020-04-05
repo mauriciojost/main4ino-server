@@ -8,7 +8,10 @@ import cats.effect._
 import cats.implicits._
 import eu.timepit.refined.types.numeric.PosInt
 
-class Cleaner[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](repo: Repository[F], time: Time[F]) {
+class Cleaner[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](
+  repo: Repository[F],
+  time: Time[F]
+) {
 
   def cleanupRepo(retentionSecs: PosInt): F[Int] = {
     for {
@@ -17,7 +20,9 @@ class Cleaner[F[_]: ContextShift: ConcurrentEffect: Timer: Sync: Async](repo: Re
       epSecs = now.toEpochSecond
       reportsCleaned <- repo.cleanup(ReqType.Reports, epSecs, retentionSecs)
       targetsCleaned <- repo.cleanup(ReqType.Targets, epSecs, retentionSecs)
-      _ <- logger.info(s"Repository cleanup at $now ($epSecs): (reports)$reportsCleaned+(targets)$targetsCleaned requests cleaned")
+      _ <- logger.info(
+        s"Repository cleanup at $now ($epSecs): (reports)$reportsCleaned+(targets)$targetsCleaned requests cleaned"
+      )
     } yield (reportsCleaned + targetsCleaned)
   }
 

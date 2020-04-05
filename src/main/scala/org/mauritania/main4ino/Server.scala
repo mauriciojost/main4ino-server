@@ -33,12 +33,18 @@ object Server extends IOApp {
     for {
       args <- Resource.liftF[F, Args](ConfigLoader.fromEnv[F, Args])
 
-      blockingIoEc <- ExecutionContexts.cachedThreadPool[F] // Thread Pools - https://gist.github.com/djspiewak/46b543800958cf61af6efa8e072bfd5c
+      // Thread Pools - https://gist.github.com/djspiewak/46b543800958cf61af6efa8e072bfd5c
+      blockingIoEc <- ExecutionContexts.cachedThreadPool[F] 
 
-      configApp <- Resource.liftF(ConfigLoader.fromFile[F, Config](new File(args.configDir.toFile, "application.conf")))
-      configUsers <- Resource.liftF(ConfigLoader.fromFile[F, security.Config](new File(args.configDir.toFile, "security.conf")))
+      configApp <- Resource.liftF(
+        ConfigLoader.fromFile[F, Config](new File(args.configDir.toFile, "application.conf"))
+      )
+      configUsers <- Resource.liftF(
+        ConfigLoader.fromFile[F, security.Config](new File(args.configDir.toFile, "security.conf"))
+      )
 
-      transactor <- Database.transactor[F](configApp.database, blockingIoEc, Blocker.liftExecutionContext(blockingIoEc))
+      transactor <- Database
+        .transactor[F](configApp.database, blockingIoEc, Blocker.liftExecutionContext(blockingIoEc))
 
       repo = new Repository[F](transactor)
       time = new Time[F]()
@@ -47,8 +53,13 @@ object Server extends IOApp {
 
       _ <- Resource.liftF(Database.initialize(transactor))
 
-      cleanupRepoTask = new Cleaner[F](repo, time).cleanupRepo(configApp.database.cleanup.retentionSecs)
-      _ <- Resource.liftF(Concurrent[F].start(Scheduler.periodic[F, Int](configApp.database.cleanup.periodDuration, cleanupRepoTask)))
+      cleanupRepoTask = new Cleaner[F](repo, time)
+        .cleanupRepo(configApp.database.cleanup.retentionSecs)
+      _ <- Resource.liftF(
+        Concurrent[F].start(
+          Scheduler.periodic[F, Int](configApp.database.cleanup.periodDuration, cleanupRepoTask)
+        )
+      )
 
       exitCodeServer <- BlazeServerBuilder[F]
         .bindHttp(configApp.server.port.value, configApp.server.host)

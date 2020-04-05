@@ -8,7 +8,12 @@ import cats.implicits._
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.main4ino.db.Repository.ReqType.ReqType
-import org.mauritania.main4ino.api.Translator.{CountResponse, IdResponse, IdsOnlyResponse, TimeResponse}
+import org.mauritania.main4ino.api.Translator.{
+  CountResponse,
+  IdResponse,
+  IdsOnlyResponse,
+  TimeResponse
+}
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status
@@ -19,7 +24,8 @@ import org.mauritania.main4ino.db.Repository
 import org.mauritania.main4ino.db.Repository.FromTo
 import org.mauritania.main4ino.devicelogs.{Logger, Record}
 
-class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger: Logger[F]) extends Http4sDsl[F] {
+class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger: Logger[F])
+    extends Http4sDsl[F] {
 
   def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Long]] = {
     for {
@@ -29,7 +35,11 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     } yield (d)
   }
 
-  def getLogs(device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): F[Attempt[Stream[F, Record]]] = {
+  def getLogs(
+    device: DeviceName,
+    from: Option[EpochSecTimestamp],
+    to: Option[EpochSecTimestamp]
+  ): F[Attempt[Stream[F, Record]]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       d <- devLogger.getLogs(device, from, to)
@@ -71,7 +81,12 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     } yield (device)
   }
 
-  def getDeviceActor(t: ReqType, dev: DeviceName, actor: ActorName, id: RequestId): F[Attempt[ActorProps]] = {
+  def getDeviceActor(
+    t: ReqType,
+    dev: DeviceName,
+    actor: ActorName,
+    id: RequestId
+  ): F[Attempt[ActorProps]] = {
     val x = getDevice(t, dev, id)
     x.map(e => e.flatMap(d => d.device.actor(actor).toRight(s"No such actor: $actor")))
   }
@@ -87,16 +102,29 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     } yield (response)
   }
 
-  def updateDeviceStatus(table: ReqType, device: String, requestId: RequestId, status: Status): F[Attempt[CountResponse]] = {
+  def updateDeviceStatus(
+    table: ReqType,
+    device: String,
+    requestId: RequestId,
+    status: Status
+  ): F[Attempt[CountResponse]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       updates <- repository.updateDeviceWhereRequestId(table, device, requestId, status)
       count = updates.map(CountResponse(_))
-      _ <- logger.debug(s"Update device $device into table $table id $requestId to $status: count $count")
+      _ <- logger.debug(
+        s"Update device $device into table $table id $requestId to $status: count $count"
+      )
     } yield (count)
   }
 
-  def postDeviceActor(ap: F[ActorProps], dev: DeviceName, act: ActorName, table: ReqType, id: RequestId): F[Attempt[CountResponse]] = {
+  def postDeviceActor(
+    ap: F[ActorProps],
+    dev: DeviceName,
+    act: ActorName,
+    table: ReqType,
+    id: RequestId
+  ): F[Attempt[CountResponse]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       timeUtc <- time.nowUtc
@@ -107,7 +135,11 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     } yield (count)
   }
 
-  def getDeviceLast(dev: DeviceName, table: ReqType, status: Option[Status]): F[Option[DeviceId]] = {
+  def getDeviceLast(
+    dev: DeviceName,
+    table: ReqType,
+    status: Option[Status]
+  ): F[Option[DeviceId]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       device <- repository.selectMaxDevice(table, dev, status)
@@ -115,7 +147,12 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     } yield (device)
   }
 
-  def getDeviceActorLast(dev: DeviceName, act: ActorName, table: ReqType, status: Option[Status]): F[Option[DeviceId]] = {
+  def getDeviceActorLast(
+    dev: DeviceName,
+    act: ActorName,
+    table: ReqType,
+    status: Option[Status]
+  ): F[Option[DeviceId]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       device <- repository.selectMaxDeviceActor(table, dev, act, status)
@@ -123,25 +160,44 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     } yield (device)
   }
 
-  def getDevicesIds(dev: DeviceName, table: ReqType, fromTo: FromTo, status: Option[Status]): F[IdsOnlyResponse] = {
+  def getDevicesIds(
+    dev: DeviceName,
+    table: ReqType,
+    fromTo: FromTo,
+    status: Option[Status]
+  ): F[IdsOnlyResponse] = {
     val d = getDevices(dev, table, fromTo, status)
     d.map(v => IdsOnlyResponse(v.map(_.dbId.id).toSeq.sorted))
   }
 
-  def getDevices(dev: DeviceName, table: ReqType, fromTo: FromTo, status: Option[Status]): F[Iterable[DeviceId]] = {
+  def getDevices(
+    dev: DeviceName,
+    table: ReqType,
+    fromTo: FromTo,
+    status: Option[Status]
+  ): F[Iterable[DeviceId]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       devices <- repository.selectDevicesWhereTimestampStatus(table, dev, fromTo, status)
-      _ <- logger.debug(s"GET all devices $dev from table $table from time ${fromTo.from} until ${fromTo.to} with status $status: $devices")
+      _ <- logger.debug(
+        s"GET all devices $dev from table $table from time ${fromTo.from} until ${fromTo.to} with status $status: $devices"
+      )
     } yield (devices)
   }
 
-  def getDevicesSummary(dev: DeviceName, table: ReqType, fromTo: FromTo, st: Option[Status]): F[Option[Device]] = {
+  def getDevicesSummary(
+    dev: DeviceName,
+    table: ReqType,
+    fromTo: FromTo,
+    st: Option[Status]
+  ): F[Option[Device]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       devices <- repository.selectDevicesWhereTimestampStatus(table, dev, fromTo, st)
       summary = Device.merge(devices)
-      _ <- logger.debug(s"GET summary all devices $dev from table $table from time ${fromTo.from} until ${fromTo.to} with status $st: $devices")
+      _ <- logger.debug(
+        s"GET summary all devices $dev from table $table from time ${fromTo.from} until ${fromTo.to} with status $st: $devices"
+      )
     } yield (summary)
   }
 

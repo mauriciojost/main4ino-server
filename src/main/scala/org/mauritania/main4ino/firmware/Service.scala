@@ -28,7 +28,8 @@ import org.mauritania.main4ino.helpers.{HttpMeter, Time}
 
 import scala.concurrent.ExecutionContext
 
-class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionContext) extends Http4sDsl[F] {
+class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionContext)
+    extends Http4sDsl[F] {
 
   import Service._
 
@@ -46,7 +47,9 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a @ GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? FirmVersionParam(version) => {
+    case a @ GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? FirmVersionParam(
+          version
+        ) => {
       val headers = a.headers
       val currentVersion = extractCurrentVersion(headers)
       val coords = FirmwareCoords(project, version, platform)
@@ -57,10 +60,13 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
         _ <- logger.debug(s"Request headers: $headers")
         fa <- st.getFirmware(coords)
         response <- fa match {
-          case Right(Firmware(_, _, c)) if (currentVersion.exists(_ == c.version)) => // same version as current
+          case Right(Firmware(_, _, c))
+              if (currentVersion.exists(_ == c.version)) => // same version as current
             logger.debug(s"Already up-to-date: $currentVersion=$c...").flatMap(_ => NotModified())
           case Right(Firmware(f, l, c)) => // different version than current, serving...
-            logger.info(s"Must upgrade. Proposing firmware: $currentVersion->$c...").flatMap(_ => Ok.apply(f, `Content-Length`.unsafeFromLong(l)))
+            logger
+              .info(s"Must upgrade. Proposing firmware: $currentVersion->$c...")
+              .flatMap(_ => Ok.apply(f, `Content-Length`.unsafeFromLong(l)))
           case Left(msg) => // no such version
             logger.warn(s"Cannot upgrade, version not found: $msg").flatMap(_ => NotFound())
         }
@@ -91,8 +97,10 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
     val currentVersions: List[Header] = VersionHeaders.flatMap(i => h.get(i).toList)
     currentVersions match {
       case Nil => None // unknown firmware version in requester
-      case one :: Nil => Some(one.value) // a single (as expected) header reported the firmware version in requester
-      case _ => None // multiple (unexpected) headers reported the firmware version in requester (config problem?)
+      case one :: Nil =>
+        Some(one.value) // a single (as expected) header reported the firmware version in requester
+      case _ =>
+        None // multiple (unexpected) headers reported the firmware version in requester (config problem?)
     }
   }
 

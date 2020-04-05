@@ -26,7 +26,8 @@ class Logger[F[_]: Sync: ContextShift](config: Config, time: Time[F], ec: Execut
   final private lazy val ChunkSize = 1024
   final private lazy val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
-  private def pathFromDevice(device: DeviceName): JavaPath = config.logsBasePath.resolve(s"$device.log")
+  private def pathFromDevice(device: DeviceName): JavaPath =
+    config.logsBasePath.resolve(s"$device.log")
 
   /**
     * Update logs, provided the device name and the log messages to be appended
@@ -37,8 +38,11 @@ class Logger[F[_]: Sync: ContextShift](config: Config, time: Time[F], ec: Execut
   def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Long]] = {
     val file = pathFromDevice(device)
     val bodyLines = body.through(fs2.text.lines).filter(!_.isEmpty)
-    val timedBody = bodyLines.flatMap(l => Stream.eval[F, String](time.nowUtc.map(t => s"${Time.asTimestamp(t)} $l")))
-    val encodedTimedBody = (timedBody.intersperse("\n") ++ Stream.eval(Sync[F].delay("\n"))).through(fs2text.utf8Encode)
+    val timedBody = bodyLines.flatMap(l =>
+      Stream.eval[F, String](time.nowUtc.map(t => s"${Time.asTimestamp(t)} $l"))
+    )
+    val encodedTimedBody =
+      (timedBody.intersperse("\n") ++ Stream.eval(Sync[F].delay("\n"))).through(fs2text.utf8Encode)
     for {
       preSize <- fileSize(file.toFile)
       written = encodedTimedBody.through(io.file.writeAll[F](file, blocker, CreateAndAppend))
@@ -63,7 +67,11 @@ class Logger[F[_]: Sync: ContextShift](config: Config, time: Time[F], ec: Execut
     * @param to for pagination, timestamp until which to retrieve logs
     * @return the [[Attempt]] with the stream containing the chunks of the logs
     */
-  def getLogs(device: DeviceName, from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp]): F[Attempt[Stream[F, Record]]] = {
+  def getLogs(
+    device: DeviceName,
+    from: Option[EpochSecTimestamp],
+    to: Option[EpochSecTimestamp]
+  ): F[Attempt[Stream[F, Record]]] = {
     val path = pathFromDevice(device)
     for {
       readable <- isReadableFile(path.toFile)
@@ -78,7 +86,7 @@ class Logger[F[_]: Sync: ContextShift](config: Config, time: Time[F], ec: Execut
     device: DeviceName,
     from: Option[EpochSecTimestamp],
     to: Option[EpochSecTimestamp],
-    chunkSize: Int = ChunkSize,
+    chunkSize: Int = ChunkSize
   ): Stream[F, Record] = {
     val bytes = io.file.readAll[F](
       pathFromDevice(device),

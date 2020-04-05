@@ -32,7 +32,9 @@ object JsonEncoding {
       case (_, _, Right(b)) =>
         Right[DecodingFailure, String](b.toString)
       case (Left(s), Left(i), Left(b)) =>
-        Left[DecodingFailure, String](DecodingFailure.apply(s"Cannot decode '${v}' as none of string/int/bool", Nil))
+        Left[DecodingFailure, String](
+          DecodingFailure.apply(s"Cannot decode '${v}' as none of string/int/bool", Nil)
+        )
     }
   }
 
@@ -43,7 +45,8 @@ object JsonEncoding {
   val StatusDecoder: Decoder[Status] = { v =>
     Decoder[String].tryDecode(v).toTry.flatMap(s => Metadata.Status.withNameEither(s).toTry) match {
       case Success(s) => Right[DecodingFailure, Status](s)
-      case Failure(f) => Left[DecodingFailure, Status](DecodingFailure(s"Cannot decode $v: ${f.getMessage}", Nil))
+      case Failure(f) =>
+        Left[DecodingFailure, Status](DecodingFailure(s"Cannot decode $v: ${f.getMessage}", Nil))
     }
   }
 

@@ -14,15 +14,20 @@ object Url {
 
   final val AlphaNumericAndUnderscoreRegex = raw"^([a-zA-Z0-9_]{4,20})$$".r
 
-  def extractSafeStringFrom(s: String): Option[String] = AlphaNumericAndUnderscoreRegex.findFirstIn(s)
+  def extractSafeStringFrom(s: String): Option[String] =
+    AlphaNumericAndUnderscoreRegex.findFirstIn(s)
 
   // Parameters
 
   implicit val statusDecoder: QueryParamDecoder[Status] = new QueryParamDecoder[Status] {
-    override def decode(value: QueryParameterValue): ValidatedNel[ParseFailure, Status] = Status.withNameEither(value.value) match {
-      case Right(s) => Validated.Valid(s)
-      case Left(f) => Validated.Invalid(NonEmptyList(ParseFailure(s"Could not parse: ${value.value}", f.getMessage()), Nil))
-    }
+    override def decode(value: QueryParameterValue): ValidatedNel[ParseFailure, Status] =
+      Status.withNameEither(value.value) match {
+        case Right(s) => Validated.Valid(s)
+        case Left(f) =>
+          Validated.Invalid(
+            NonEmptyList(ParseFailure(s"Could not parse: ${value.value}", f.getMessage()), Nil)
+          )
+      }
   }
 
   object IdsParam extends OptionalQueryParamDecoderMatcher[Boolean]("ids")

@@ -10,7 +10,8 @@ import org.mauritania.main4ino.helpers.HttpMeter
 
 import scala.concurrent.ExecutionContext
 
-class Service[F[_]: Effect: Sync: ContextShift](resourceIndexHtml: String, ec: ExecutionContext) extends Http4sDsl[F] {
+class Service[F[_]: Effect: Sync: ContextShift](resourceIndexHtml: String, ec: ExecutionContext)
+    extends Http4sDsl[F] {
 
   final private lazy val blocker = Blocker.liftExecutionContext(ec)
 

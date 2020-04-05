@@ -20,8 +20,10 @@ object ConfigLoader {
   object CirceImplicits {
     implicit val methodRightEncoder: Encoder[MethodRight] = Circe.encoder(MethodRight)
     implicit val methodRightDecoder: Decoder[MethodRight] = Circe.decoder(MethodRight)
-    implicit val methodUserHashedPassDecoder: Decoder[UserHashedPass] = implicitly[Decoder[String]].map(s => PasswordHash[BCrypt](s))
-    implicit val methodUserHashedPassEncoder: Encoder[UserHashedPass] = implicitly[Encoder[String]].contramap[UserHashedPass](m => m.toString)
+    implicit val methodUserHashedPassDecoder: Decoder[UserHashedPass] =
+      implicitly[Decoder[String]].map(s => PasswordHash[BCrypt](s))
+    implicit val methodUserHashedPassEncoder: Encoder[UserHashedPass] =
+      implicitly[Encoder[String]].contramap[UserHashedPass](m => m.toString)
   }
   object PureConfigImplicits {
     implicit object customMethodRightReader extends ConfigReader[MethodRight] {
@@ -34,7 +36,8 @@ object ConfigLoader {
         }
       }
     }
-    implicit val customMethodUserHashedPass: ConfigReader[UserHashedPass] = ConfigReader[String].map(m => PasswordHash[BCrypt](m))
+    implicit val customMethodUserHashedPass: ConfigReader[UserHashedPass] =
+      ConfigReader[String].map(m => PasswordHash[BCrypt](m))
   }
 
   /**
@@ -44,12 +47,16 @@ object ConfigLoader {
     *   import pureconfig._
     *   import pureconfig.generic.auto._
     */
-  def fromFile[F[_]: Sync, T: ClassTag](configFile: File)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
+  def fromFile[F[_]: Sync, T: ClassTag](
+    configFile: File
+  )(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
     val f = configFile.getAbsoluteFile
     from(ConfigSource.file(f))
   }
 
-  def fromFileAndEnv[F[_]: Sync, T: ClassTag](configFile: File)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
+  def fromFileAndEnv[F[_]: Sync, T: ClassTag](
+    configFile: File
+  )(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
     val f = configFile.getAbsoluteFile
     from(ConfigSource.systemProperties.withFallback(ConfigSource.file(f)))
   }
@@ -58,7 +65,9 @@ object ConfigLoader {
     from(ConfigSource.systemProperties)
   }
 
-  def from[F[_]: Sync, T: ClassTag](s: ConfigObjectSource)(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
+  def from[F[_]: Sync, T: ClassTag](
+    s: ConfigObjectSource
+  )(implicit reader: Derivation[ConfigReader[T]]): F[T] = {
     implicitly[Sync[F]].fromEither(s.load.swap.map(ConfigReaderException(_)).swap)
   }
 

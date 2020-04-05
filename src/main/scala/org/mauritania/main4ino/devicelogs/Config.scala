@@ -10,5 +10,5 @@ case class Config(
 )
 
 object Config {
-  final lazy val DefaultMaxLengthLogs = PosInt(512 * 1024)// 512 KB
+  final lazy val DefaultMaxLengthLogs = PosInt(512 * 1024) // 512 KB
 }

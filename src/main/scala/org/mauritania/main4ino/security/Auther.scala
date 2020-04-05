@@ -53,10 +53,18 @@ class Auther[F[_]: Sync](config: Config) {
     *
     * The resource to be accessed is in the uri of the request.
     */
-  def authenticateAndCheckAccess(request: Request[F]): F[Either[ErrorMsg, AuthedRequest[F, User]]] = {
+  def authenticateAndCheckAccess(
+    request: Request[F]
+  ): F[Either[ErrorMsg, AuthedRequest[F, User]]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](getClass)
-      attempt <- Auther.authenticateAndCheckAccess(config.usersBy, config.encryptionConfig, request.headers, request.method, request.uri)
+      attempt <- Auther.authenticateAndCheckAccess(
+        config.usersBy,
+        config.encryptionConfig,
+        request.headers,
+        request.method,
+        request.uri
+      )
       _ <- logger.debug(s">>> Authentication: ${attempt.map(_.id)}")
       authedRequest = attempt.map { u =>
         AuthedRequest(
@@ -94,7 +102,13 @@ object Auther {
   private final lazy val GroupThe = 2
   private final lazy val GroupPos = 3
 
-  def authenticateAndCheckAccess[F[_]: Sync: Monad](usersBy: UsersBy, encry: EncryptionConfig, headers: Headers, method: Method, uri: Uri)(
+  def authenticateAndCheckAccess[F[_]: Sync: Monad](
+    usersBy: UsersBy,
+    encry: EncryptionConfig,
+    headers: Headers,
+    method: Method,
+    uri: Uri
+  )(
     implicit H: PasswordHasher[F, BCrypt]
   ): F[AccessAttempt] = {
     val resource = uri.path
@@ -120,14 +134,21 @@ object Auther {
     } yield stringjwt
   }
 
-  def userIdFromSession[F[_]: Sync: Monad](session: UserSession, privateKey: CryptoBits): F[Option[UserId]] = {
+  def userIdFromSession[F[_]: Sync: Monad](
+    session: UserSession,
+    privateKey: CryptoBits
+  ): F[Option[UserId]] = {
     for {
       key <- HMACSHA256.buildKey[F](privateKey)
       parsed <- JWTMac.verifyAndParse[F, HMACSHA256](session, key)
     } yield parsed.body.subject
   }
 
-  def userFromSession[F[_]: Sync](session: UserSession, privateKey: CryptoBits, usersBy: UsersBy): F[Option[User]] = {
+  def userFromSession[F[_]: Sync](
+    session: UserSession,
+    privateKey: CryptoBits,
+    usersBy: UsersBy
+  ): F[Option[User]] = {
     for {
       id <- userIdFromSession(session, privateKey)
     } yield id.flatMap(usersBy.byId.get)
@@ -141,7 +162,9 @@ object Auther {
     creds: Option[(UserId, UserPassword)]
   )(implicit H: PasswordHasher[F, BCrypt]): F[AuthenticationAttempt] = {
     for {
-      authenticatedUsrSession <- session.traverse(s => userFromSession(s, encry.pkey, usersBy)).map(_.flatten)
+      authenticatedUsrSession <- session
+        .traverse(s => userFromSession(s, encry.pkey, usersBy))
+        .map(_.flatten)
       authenticatedUsrCreds <- creds
         .map {
           case (id, clearPass) =>
@@ -155,7 +178,9 @@ object Auther {
         .sequence
         .map(_.flatten)
       authenticatedUsr = authenticatedUsrCreds.orElse(authenticatedUsrSession)
-    } yield authenticatedUsr.toRight(s"Could not authenticate user (login:${creds.map(_._1)} / session:${session.slice(1, 5)}...)")
+    } yield authenticatedUsr.toRight(
+      s"Could not authenticate user (login:${creds.map(_._1)} / session:${session.slice(1, 5)}...)"
+    )
   }
 
   /**
@@ -167,14 +192,18 @@ object Auther {
       .toRight(s"User '${user.name}' is not authorized to ${method} '${resourceUriPath}'")
   }
 
-  def userCredentialsFromRequest[F[_]](headers: Headers, uri: Uri): Option[(UserId, UserPassword)] = {
+  def userCredentialsFromRequest[F[_]](
+    headers: Headers,
+    uri: Uri
+  ): Option[(UserId, UserPassword)] = {
     // Basic auth
     val credsFromHeader = headers.get(Authorization).collect {
       case Authorization(BasicCredentials(username, password)) => (username, password)
     }
     // URI auth: .../token/<token>/... authentication (some services
     // like IFTTT or devices ESP8266 HTTP UPDATE do not support headers, but only URI credentials...)
-    val tokenFromUri = UriTokenRegex.findFirstMatchIn(uri.path).flatMap(a => Try(a.group(GroupThe)).toOption)
+    val tokenFromUri =
+      UriTokenRegex.findFirstMatchIn(uri.path).flatMap(a => Try(a.group(GroupThe)).toOption)
     val validCredsFromUri = tokenFromUri
       .map(t => BasicCredentials(t))
       .map(c => (c.username, c.password))
@@ -187,15 +216,19 @@ object Auther {
 
     // URI auth: .../session/<session>/... authentication (some services
     // like IFTTT or devices ESP8266 HTTP UPDATE do not support headers, but only URI credentials...)
-    val uriSession = UriSessionRegex.findFirstMatchIn(uri.path).flatMap(a => Try(a.group(GroupThe)).toOption)
+    val uriSession =
+      UriSessionRegex.findFirstMatchIn(uri.path).flatMap(a => Try(a.group(GroupThe)).toOption)
     val headerSession = headers.get(HeaderSession).map(_.value)
     headerSession.orElse(uriSession)
   }
 
-  def hashPassword[F[_]](password: String)(implicit P: PasswordHasher[F, BCrypt]): F[UserHashedPass] = BCrypt.hashpw[F](password)
+  def hashPassword[F[_]](password: String)(
+    implicit P: PasswordHasher[F, BCrypt]
+  ): F[UserHashedPass] = BCrypt.hashpw[F](password)
 
   private[security] def dropTokenAndSessionFromPath(path: Path): Path = {
-    def drop(r: Regex, p: Path) = r.findFirstMatchIn(p).map(m => m.group(GroupPre) + "/" + m.group(GroupPos)).getOrElse(p)
+    def drop(r: Regex, p: Path) =
+      r.findFirstMatchIn(p).map(m => m.group(GroupPre) + "/" + m.group(GroupPos)).getOrElse(p)
     val res = drop(UriSessionRegex, drop(UriTokenRegex, path))
     res
   }

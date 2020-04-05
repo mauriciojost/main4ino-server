@@ -8,7 +8,8 @@ import cats.effect.Sync
 
 object Time {
   def asString(dt: ZonedDateTime): String = dt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-  def asTimestamp(dt: ZonedDateTime): EpochSecTimestamp = dt.toInstant.getEpochSecond // in seconds from epoch
+  def asTimestamp(dt: ZonedDateTime): EpochSecTimestamp =
+    dt.toInstant.getEpochSecond // in seconds from epoch
 }
 
 class Time[F[_]: Sync] {

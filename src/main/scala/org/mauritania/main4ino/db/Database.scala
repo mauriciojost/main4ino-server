@@ -9,7 +9,11 @@ import cats.effect.implicits._
 import scala.concurrent.ExecutionContext
 
 object Database {
-  def transactor[F[_]: Sync: ContextShift: Async](config: Config, ec: ExecutionContext, blocker: Blocker): Resource[F, HikariTransactor[F]] = {
+  def transactor[F[_]: Sync: ContextShift: Async](
+    config: Config,
+    ec: ExecutionContext,
+    blocker: Blocker
+  ): Resource[F, HikariTransactor[F]] = {
     HikariTransactor
       .newHikariTransactor[F](config.driver, config.url, config.user, config.password, ec, blocker)
   }
