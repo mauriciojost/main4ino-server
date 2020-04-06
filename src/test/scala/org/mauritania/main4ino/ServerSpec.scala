@@ -69,44 +69,32 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
 
     withHttpClient { httpClient =>
 
-      def checkRecord(dev: DeviceName, id: Long, status: Status): Assertion = {
-        val s = httpClient.status(devGetRequest(dev, "targets", id))
-        s.unsafeRunSync() shouldBe status
-      }
+      val config = ConfigLoader.fromFile[IO, Config](new File(ConfigDirPath + "/application.conf")).unsafeRunSync()
+
+      def checkRecord(dev: DeviceName, id: Long, status: Status): Assertion =
+       httpClient.status(devGetRequest(dev, "targets", id)).unsafeRunSync() shouldBe status
       def checkRecordExists(dev: DeviceName, id: Long): Assertion = checkRecord(dev, id, Status.Ok)
       def checkRecordDoesNotExist(dev: DeviceName, id: Long): Assertion = checkRecord(dev, id, Status.NoContent)
-
-      val config = ConfigLoader.fromFile[IO, Config](new File(ConfigDirPath + "/application.conf")).unsafeRunSync()
       val timeUnitSecs = config.database.cleanup.retentionSecs.value.toFloat / 10 // a 10th fraction of the retention
       def sleepTimeUnits(tu: Float): Unit = Thread.sleep((tu * 1000 * timeUnitSecs).toLong)
 
-      // T0
-
-      // inject dev1 (at ~T0, its cleanup should take place at ~T10)
+      // T0, inject dev1 (at ~T0, its cleanup should take place at ~T10)
       val dev1ResponseJson = httpClient.expect[String](devPostRequest("dev1", "targets"))
       val idDev1 = jsonAs[IdResponse](dev1ResponseJson.unsafeRunSync()).id
 
       checkRecordExists("dev1", idDev1) // just created
 
-      sleepTimeUnits(5) // T5
+      sleepTimeUnits(20) // T20
 
-      // inject dev2 (at ~T5, its cleanup should take place at ~T15)
+      checkRecordDoesNotExist("dev1", idDev1) // cleaned up
+
+      // T20, inject dev2 (at ~T20, its cleanup should take place at ~T30)
       val dev2ResponseJson = httpClient.expect[String](devPostRequest("dev2", "targets"))
       val idDev2 = jsonAs[IdResponse](dev2ResponseJson.unsafeRunSync()).id
 
       checkRecordExists("dev2", idDev2) // just created
-      checkRecordExists("dev1", idDev1) // still exists
 
-      sleepTimeUnits(5) // T10
-
-      // T10 (mind the retention of 10 time units)
-
-      sleepTimeUnits(2) // T12
-
-      checkRecordDoesNotExist("dev1", idDev1) // cleaned up
-      checkRecordExists("dev2", idDev2) // still there
-
-      sleepTimeUnits(6) // T18
+      sleepTimeUnits(20) // T40
 
       checkRecordDoesNotExist("dev2", idDev2) // cleaned up
 
