@@ -100,7 +100,15 @@ class Store[F[_]: Sync](basePath: Path) {
         Some(
           FirmwareCoords(
             target.project,
-            available.map(c => SemVer(c.version)).max(BySemVer).original,
+            available.max(ByCoordsVer).version,
+            target.platform
+          )
+        )
+      case c if (c.version == "LATEST_STABLE") =>
+        Some(
+          FirmwareCoords(
+            target.project,
+            available.map(c => SemVer(c.version)).filter(_.extra.isEmpty).max(BySemVer).original,
             target.platform
           )
         )

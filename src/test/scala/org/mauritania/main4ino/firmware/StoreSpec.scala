@@ -53,6 +53,13 @@ class StoreSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelTe
     store.listFirmwares("botino", "esp8266").unsafeRunSync() should be(Seq())
   }
 
+  it should "resolve latest stable version (only release versions)" in {
+    val file = Paths.get("src", "test", "resources", "firmwares", "5")
+    val store = new Store[IO](file)
+    store.getFirmware(FirmwareCoords("botino", "LATEST", "esp8266")).unsafeRunSync().right.value.file.getName should be("firmware-1.0.1-1.esp8266.bin")
+    store.getFirmware(FirmwareCoords("botino", "LATEST_STABLE", "esp8266")).unsafeRunSync().right.value.file.getName should be("firmware-1.0.0.esp8266.bin")
+  }
+
 
   it should "have good orderings" in {
     val v100 = List(
