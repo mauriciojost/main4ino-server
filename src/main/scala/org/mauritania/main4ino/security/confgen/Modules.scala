@@ -13,7 +13,7 @@ import io.circe.generic.auto._
 import io.circe.syntax._
 import org.mauritania.main4ino.security.confgen.Algebras._
 import org.mauritania.main4ino.security.confgen.Actions.{Action, AddRawUser, Identity}
-import org.mauritania.main4ino.security.{Auther, Config, MethodRight, User}
+import org.mauritania.main4ino.security.{Auther, Config, Permission, User}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import org.mauritania.main4ino.helpers.ConfigLoader

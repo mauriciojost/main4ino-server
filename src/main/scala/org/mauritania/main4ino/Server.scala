@@ -10,7 +10,7 @@ import org.mauritania.main4ino.api.{v1, Translator}
 import org.mauritania.main4ino.db.{Cleaner, Database, Repository}
 import org.mauritania.main4ino.firmware.{Service, Store}
 import org.mauritania.main4ino.helpers.{ConfigLoader, Scheduler, Time}
-import org.mauritania.main4ino.security.{Auther, MethodRight}
+import org.mauritania.main4ino.security.{Auther, Permission}
 
 import cats.effect._
 import cats.implicits._

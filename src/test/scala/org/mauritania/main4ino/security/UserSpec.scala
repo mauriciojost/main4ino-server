@@ -1,13 +1,13 @@
 package org.mauritania.main4ino.security
 
 import org.http4s.Method
-import org.mauritania.main4ino.security.MethodRight.{R, RW, W, -}
+import org.mauritania.main4ino.security.Permission.{R, RW, W, -}
 import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class UserSpec extends AnyFlatSpec with Matchers with ParallelTestExecution {
-  def user(rights: List[String], methodRight: MethodRight) = Fixtures.User1.copy(granted = rights.map(_ -> methodRight).toMap)
+  def user(rights: List[String], methodRight: Permission) = Fixtures.User1.copy(granted = rights.map(_ -> methodRight).toMap)
 
   "The user" should "load correctly a configuration file" in {
     user(List("/"), RW).authorized(Method.GET, "/api/v1/").isDefined shouldBe true

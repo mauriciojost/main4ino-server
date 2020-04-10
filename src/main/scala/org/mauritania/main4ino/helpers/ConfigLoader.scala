@@ -5,7 +5,7 @@ import java.io.File
 import cats.effect.Sync
 import io.circe.{Decoder, Encoder}
 import org.mauritania.main4ino.security.Auther.UserHashedPass
-import org.mauritania.main4ino.security.MethodRight
+import org.mauritania.main4ino.security.Permission
 import pureconfig.error.{CannotParse, ConfigReaderException, ConfigReaderFailures}
 import tsec.passwordhashers.PasswordHash
 import tsec.passwordhashers.jca.BCrypt
@@ -18,19 +18,19 @@ object ConfigLoader {
   import enumeratum._
 
   object CirceImplicits {
-    implicit val methodRightEncoder: Encoder[MethodRight] = Circe.encoder(MethodRight)
-    implicit val methodRightDecoder: Decoder[MethodRight] = Circe.decoder(MethodRight)
+    implicit val permissionEncoder: Encoder[Permission] = Circe.encoder(Permission)
+    implicit val permissionDecoder: Decoder[Permission] = Circe.decoder(Permission)
     implicit val methodUserHashedPassDecoder: Decoder[UserHashedPass] =
       implicitly[Decoder[String]].map(s => PasswordHash[BCrypt](s))
     implicit val methodUserHashedPassEncoder: Encoder[UserHashedPass] =
       implicitly[Encoder[String]].contramap[UserHashedPass](m => m.toString)
   }
   object PureConfigImplicits {
-    implicit object customMethodRightReader extends ConfigReader[MethodRight] {
-      def from(cur: ConfigCursor): Either[ConfigReaderFailures, MethodRight] = {
+    implicit object customPermissionReader extends ConfigReader[Permission] {
+      def from(cur: ConfigCursor): Either[ConfigReaderFailures, Permission] = {
         val st = cur.asString
         st.flatMap { s =>
-          MethodRight.withNameEither(s).left.map { e =>
+          Permission.withNameEither(s).left.map { e =>
             ConfigReaderFailures(CannotParse(e.getMessage(), None))
           }
         }

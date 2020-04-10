@@ -1,6 +1,6 @@
 package org.mauritania.main4ino.security.confgen
 
-import org.mauritania.main4ino.security.MethodRight
+import org.mauritania.main4ino.security.Permission
 import org.mauritania.main4ino.security.confgen.Actions.{Action, AddRawUsers}
 
 case class Actions(
@@ -15,7 +15,7 @@ object Actions {
     name: String,
     pass: String,
     email: String,
-    granted: Map[String, MethodRight]
+    granted: Map[String, Permission]
   )
 
   sealed trait Action

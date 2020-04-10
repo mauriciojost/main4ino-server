@@ -5,7 +5,7 @@ import org.http4s.headers.Authorization
 import org.http4s.{AuthedRequest, BasicCredentials, Header, Headers, Method, Request, Uri}
 import org.mauritania.main4ino.security.Auther.EncryptionConfig
 import org.mauritania.main4ino.security.Fixtures._
-import org.mauritania.main4ino.security.MethodRight.RW
+import org.mauritania.main4ino.security.Permission.RW
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.EitherValues._
 import org.scalatest.ParallelTestExecution
@@ -55,7 +55,7 @@ class AutherSpec extends AnyWordSpec with Matchers with ParallelTestExecution {
     }
 
     "correctly identify not allowed users to certain uris" in {
-      val user = User1.copy(granted = Map[String, MethodRight]("/api/v1/" -> RW))
+      val user = User1.copy(granted = Map[String, Permission]("/api/v1/" -> RW))
       val uriPath = "/admin"
       val authorizationAttempt = Auther.checkAccess(user, Method.POST, uriPath)
       authorizationAttempt.isLeft shouldBe(true)
@@ -64,7 +64,7 @@ class AutherSpec extends AnyWordSpec with Matchers with ParallelTestExecution {
     }
 
     "correctly identify allowed users to certain uris" in {
-      val user = User1.copy(granted = Map[String, MethodRight]("/api/v1/" -> RW))
+      val user = User1.copy(granted = Map[String, Permission]("/api/v1/" -> RW))
       val uriPath = "/api/v1/smth"
       val authorizationAttempt = Auther.checkAccess(user, Method.POST, uriPath)
       authorizationAttempt shouldBe Right(user)

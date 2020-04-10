@@ -8,7 +8,7 @@ case class User(
   name: String,
   hashedpass: UserHashedPass,
   email: String,
-  granted: Map[Path, MethodRight]
+  granted: Map[Path, Permission]
 ) {
   def authorized(method: Method, uriPath: Path): Option[User] = {
     granted.exists { case right => canAccess(right, method, uriPath) } match {
@@ -18,8 +18,8 @@ case class User(
   }
   val id = name
 
-  private def canAccess(right: (Path, MethodRight), method: Method, uriPath: Path): Boolean = {
+  private def canAccess(right: (Path, Permission), method: Method, uriPath: Path): Boolean = {
     val (uriGrant, methodGrant) = right
-    methodGrant.canAccess(method) && uriPath.startsWith(uriGrant)
+    methodGrant.isAllowed(method) && uriPath.startsWith(uriGrant)
   }
 }

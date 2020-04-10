@@ -7,8 +7,8 @@ import enumeratum.Circe
 import io.circe.generic.auto._
 import io.circe.jawn.decode
 import org.mauritania.main4ino.{DecodersIO, TmpDirCtx}
-import org.mauritania.main4ino.security.MethodRight.RW
-import org.mauritania.main4ino.security.{Config, MethodRight}
+import org.mauritania.main4ino.security.Permission.RW
+import org.mauritania.main4ino.security.{Config, Permission}
 import org.scalatest.ParallelTestExecution
 
 import scala.io.Source
