@@ -1,5 +1,3 @@
-val ProjectVersion = "0.1.0-SNAPSHOT"
-
 val ScalaVersion = "2.12.10"
 
 addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full)
@@ -21,7 +19,6 @@ lazy val root = (project in file("."))
   .settings(
     organization := "org.mauritania",
     name := "main4ino-server",
-    version := ProjectVersion,
     scalaVersion := ScalaVersion,
     scalacOptions ++= Seq(
       "-Ypartial-unification",

@@ -8,6 +8,12 @@ pipeline {
     }
   }
   stages {
+    stage('Full fetch') {
+      steps {
+        sh 'git fetch --unshallow'
+        sh 'git fetch --tags'
+      }
+    }
 
     stage('Test') {
       steps {
