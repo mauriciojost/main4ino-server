@@ -1,6 +1,12 @@
 // https://jenkins.io/doc/book/pipeline/jenkinsfile/
 // Scripted pipeline (not declarative)
 pipeline {
+  triggers {
+    pollSCM '* * * * *'
+  }
+  options {
+    buildDiscarder(logRotator(numToKeepStr: '10'))
+  }
   agent {
     docker { 
       image 'mauriciojost/scala-sbt-ci:openjdk8-scala2.12.8-sbt1.2.8-0.2.0'
