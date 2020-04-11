@@ -120,7 +120,7 @@ class Service[F[_]: Sync](
       *
       * Returns: OK (200)
       */
-    case a @ POST -> Root / "session" as user => {
+    case POST -> Root / "session" as user => {
       val session: F[UserSession] = auth.generateSession(user)
       session.flatMap(s => Ok(s, ContentTypeTextPlain))
     }
@@ -151,7 +151,7 @@ class Service[F[_]: Sync](
       *
       * Returns: OK (200)
       */
-    case a @ DELETE -> Root / "administrator" / "devices" / Dev(device) / Req(table) as _ => {
+    case DELETE -> Root / "administrator" / "devices" / Dev(device) / Req(table) as _ => {
       val x: F[Translator.CountResponse] = tr.deleteDevice(device, table)
       x.flatMap(i => Ok(i, ContentTypeAppJson))
     }
@@ -164,7 +164,7 @@ class Service[F[_]: Sync](
       *
       * Forward to firmware store services (i.e. [[firmware.service]]).
       */
-    case a @ GET -> "devices" /: Dev(device) /: "firmware" /: forwarded as user => {
+    case a @ GET -> "devices" /: Dev(device) /: "firmware" /: forwarded as _ => {
       val oldUri = a.req.uri
       val newUri = oldUri.withPath(forwarded.toString)
       val newReq = a.req.withUri(newUri)
@@ -204,7 +204,7 @@ class Service[F[_]: Sync](
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a @ GET -> Root / "devices" / Dev(device) / "logs" :? FromParam(from) +& ToParam(to) as _ => {
+    case GET -> Root / "devices" / Dev(device) / "logs" :? FromParam(from) +& ToParam(to) as _ => {
       val r: F[Attempt[Stream[F, Record]]] = tr.getLogs(device, from, to)
       r.flatMap {
         case Right(l) =>
@@ -245,7 +245,7 @@ class Service[F[_]: Sync](
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a @ GET -> Root / "devices" / Dev(device) / "descriptions" as _ => {
+    case GET -> Root / "devices" / Dev(device) / "descriptions" as _ => {
       val x: F[Attempt[Description]] = tr.getLastDescription(device)
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -294,7 +294,7 @@ class Service[F[_]: Sync](
       *
       * Returns: OK (200)
       */
-    case a @ GET -> Root / "devices" / Dev(device) / Req(table) :? FromParam(from) +& ToParam(to) +& StatusParam(
+    case GET -> Root / "devices" / Dev(device) / Req(table) :? FromParam(from) +& ToParam(to) +& StatusParam(
           st
         ) +& IdsParam(ids) as _ => {
       val idsOnly = ids.exists(identity)
@@ -322,7 +322,7 @@ class Service[F[_]: Sync](
       * Returns: OK (200) | NO_CONTENT (204)
       *
       */
-    case a @ GET -> Root / "devices" / Dev(device) / Req(table) / "summary" :? FromParam(from) +& ToParam(
+    case GET -> Root / "devices" / Dev(device) / Req(table) / "summary" :? FromParam(from) +& ToParam(
           to
         ) +& StatusParam(st) as _ => {
       val x: F[Option[Device]] = tr.getDevicesSummary(device, table, FromTo(from, to), st)
@@ -344,7 +344,7 @@ class Service[F[_]: Sync](
       *
       * Returns: OK (200) | NOT_MODIFIED (304)
       */
-    case a @ PUT -> Root / "devices" / Dev(device) / Req(table) / ReqId(requestId) :? StatusParam(
+    case PUT -> Root / "devices" / Dev(device) / Req(table) / ReqId(requestId) :? StatusParam(
           st
         ) as _ => {
       val x: F[Attempt[Translator.CountResponse]] =
@@ -366,7 +366,7 @@ class Service[F[_]: Sync](
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a @ GET -> Root / "devices" / Dev(device) / Req(table) / ReqId(requestId) as _ => {
+    case GET -> Root / "devices" / Dev(device) / Req(table) / ReqId(requestId) as _ => {
       val x: F[Attempt[DeviceId]] = tr.getDevice(table, device, requestId)
       x.flatMap {
         case Right(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -384,7 +384,7 @@ class Service[F[_]: Sync](
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a @ GET -> Root / "devices" / Dev(device) / Req(table) / "last" :? StatusParam(status) as _ => {
+    case GET -> Root / "devices" / Dev(device) / Req(table) / "last" :? StatusParam(status) as _ => {
       val x: F[Option[DeviceId]] = tr.getDeviceLast(device, table, status)
       x.flatMap {
         case Some(v) => Ok(v.asJson, ContentTypeAppJson)
@@ -451,7 +451,7 @@ class Service[F[_]: Sync](
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a @ GET -> Root / "devices" / Dev(device) / Req(table) / "actors" / Act(actor) / "last" :? StatusParam(
+    case GET -> Root / "devices" / Dev(device) / Req(table) / "actors" / Act(actor) / "last" :? StatusParam(
           status
         ) as _ => {
       val x: F[Option[DeviceId]] = tr.getDeviceActorLast(device, actor, table, status)
@@ -475,7 +475,7 @@ class Service[F[_]: Sync](
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a @ GET -> Root / "devices" / Dev(device) / Req(table) / ReqId(rid) / "actors" / Act(actor) as _ => {
+    case GET -> Root / "devices" / Dev(device) / Req(table) / ReqId(rid) / "actors" / Act(actor) as _ => {
       val x: F[Attempt[ActorProps]] = tr.getDeviceActor(table, device, actor, rid)
       x.flatMap {
         case Right(d) => Ok(d.asJson, ContentTypeAppJson)
