@@ -436,7 +436,7 @@ class Service[F[_]: Sync](
         tr.postDeviceActor(pm, device, actor, table, rid)
       x.flatMap {
         case Right(v) => Created(v.asJson, ContentTypeAppJson)
-        case Left(v) => NotModified()
+        case Left(_) => NotModified()
       }
     }
 

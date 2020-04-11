@@ -77,8 +77,8 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
   ): F[Attempt[Int]] = {
     val transaction = for {
       mtd <- sqlSelectMetadataWhereRequestId(table, requestId)
-      safe = mtd.exists { case (i, m) => m.device == dev }
-      transit = mtd.exists { case (i, m) => m.status == Status.Open }
+      safe = mtd.exists { case (_, m) => m.device == dev }
+      transit = mtd.exists { case (_, m) => m.status == Status.Open }
       inserts: ConnectionIO[Attempt[Int]] = if (!safe)
         Free.pure[ConnectionOp, Attempt[Int]](
           Left.apply[ErrMsg, Int](s"Request $requestId does not relate to $dev")
