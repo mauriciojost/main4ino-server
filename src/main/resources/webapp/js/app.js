@@ -3,7 +3,7 @@ var StatusPropPrefix = ".";
 var SensitivePropPrefix = "_";
 var AdvancedPropPrefix = "+";
 
-var webPortalApp = angular.module("webPortalApp", ["ui.router", "ngSanitize"]);
+var webPortalApp = angular.module("webPortalApp", ["ui.router", "ngRoute", "ngSanitize"]);
 
 function setCookie(name,value,days) {
     var expires = "";
@@ -39,27 +39,53 @@ webPortalApp.config(function($stateProvider, $urlRouterProvider) {
         
         .state("login", {
             url: "/login?device",
-            templateUrl: "partial-login.html"
+            templateUrl: "partial-login.html",
+            params: {
+                device: {
+                    dynamic: true
+                }
+            }
         })
         
         .state("history", {
             url: "/history?device",
-            templateUrl: "partial-history.html"
+            templateUrl: "partial-history.html",
+            params: {
+                device: {
+                    dynamic: true
+                }
+            }
         })
 
         .state("control", {
             url: "/control?device",
-            templateUrl: "partial-control.html"
+            templateUrl: "partial-control.html",
+            params: {
+                device: {
+                    dynamic: true
+                }
+            }
         })
 
         .state("log", {
             url: "/log?device",
-            templateUrl: "partial-log.html"
+            templateUrl: "partial-log.html",
+            params: {
+                device: {
+                    dynamic: true
+                }
+            }
         })
 
         .state("administrate", {
             url: "/administrate?device",
-            templateUrl: "partial-administrate.html"
+            templateUrl: "partial-administrate.html",
+            params: {
+                device: {
+                    //value: 'dev1',
+                    dynamic: true
+                }
+            }
         })
 
 
@@ -67,7 +93,7 @@ webPortalApp.config(function($stateProvider, $urlRouterProvider) {
 
 webPortalApp.controller(
     "LoginController",
-        function($scope, $http, $log, $location, $state) {
+        function($scope, $http, $log, $stateParams, $state) {
 
             $scope.logged = null;
             $scope.device = getCookie("device");
@@ -102,6 +128,7 @@ webPortalApp.controller(
                         $log.log("Could not figure out version: " + r.data);
                     }
                 );
+                $state.go("login", {session: $scope.session, device: $scope.device})
             }
 
             $scope.rememberCredentials = function() {
@@ -117,8 +144,8 @@ webPortalApp.controller(
                 $http(req).then(
                     function(r) {
                         $log.log("Logged in correctly: " + r.data);
-                        setCookie("device", $scope.device, 100);
                         setCookie("session", r.data, 100);
+                        setCookie("device", $scope.device, 100);
                         $scope.loginUsingSession();
                     },
                     function(r) {
@@ -134,32 +161,33 @@ webPortalApp.controller(
             $scope.removeCredentials = function() {
               $log.log("Removed credentials");
               eraseCookie("session");
+              eraseCookie("device");
               $scope.logged = null;
             }
 
             $scope.goLogin = function() {
               $log.log("Going to login");
-              $state.go("login", {session: $scope.session})
+              $state.go("login", {session: $scope.session, device: $stateParams.device})
             }
 
             $scope.goHistory = function() {
               $log.log("Going to history");
-              $state.go("history", {session: $scope.session})
+              $state.go("history", {session: $scope.session, device: $stateParams.device})
             }
 
             $scope.goControl = function() {
               $log.log("Going to control");
-              $state.go("control", {session: $scope.session})
+              $state.go("control", {session: $scope.session, device: $stateParams.device})
             }
 
             $scope.goLog = function() {
                 $log.log("Going to log");
-                $state.go("log", {session: $scope.session})
+                $state.go("log", {session: $scope.session, device: $stateParams.device})
             }
 
             $scope.goAdministrate = function() {
                 $log.log("Going to administrate");
-                $state.go("administrate", {session: $scope.session})
+                $state.go("administrate", {session: $scope.session, device: $stateParams.device})
             }
 
             $scope.loginUsingSession();
@@ -169,10 +197,9 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     "HistoryController",
-        function($scope, $http, $log, $location) {
+        function($scope, $http, $log, $stateParams) {
 
             $scope.session = getCookie("session");
-            $scope.device = getCookie("device");
 
             $scope.queriedDevice = "...";
 
@@ -182,10 +209,9 @@ webPortalApp.controller(
 
             $scope.search = function() {
 
-                setCookie("device", $scope.device, 100);
-                $scope.queriedDevice = $scope.device + " (in progress)";
+                $scope.queriedDevice = $stateParams.device + " (in progress)";
 
-                $log.log("Searching device " + $scope.device + " in " + $scope.tabl);
+                $log.log("Searching device " + $stateParams.device + " in " + $scope.tabl);
                 var date = new Date();
 
                 var msTo = 1000 * 3600 * 24 * $scope.to;
@@ -198,7 +224,7 @@ webPortalApp.controller(
 
                 var req = {
                     method: "GET",
-                    url: "api/v1/devices/" + $scope.device + "/" + $scope.tabl + "?from=" + fromSec + "&to=" + toSec,
+                    url: "api/v1/devices/" + $stateParams.device + "/" + $scope.tabl + "?from=" + fromSec + "&to=" + toSec,
                     headers: {"Content-Type": "application/json", "Session": $scope.session},
                     data: $scope.request
                 };
@@ -208,12 +234,12 @@ webPortalApp.controller(
                 $http(req).then(
                     function(r) {
                         $log.log("Found: " + JSON.stringify(r.data));
-                        $scope.queriedDevice = $scope.device;
+                        $scope.queriedDevice = $stateParams.device;
                         $scope.result = r.data;
                     },
                     function(r) {
                         $log.log("Problem requesting: " + JSON.stringify(r.data));
-                        $scope.queriedDevice = "Failed query for " + $scope.device;
+                        $scope.queriedDevice = "Failed query for " + $stateParams.device;
                         $scope.result = "[]"
                         BootstrapDialog.show({
                             title: "Error",
@@ -226,7 +252,7 @@ webPortalApp.controller(
 
             };
 
-            if ($scope.device) { // proceed if device is provided
+            if ($stateParams.device) { // proceed if device is provided
                 $scope.search();
             }
 
@@ -235,19 +261,30 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     "ControlController",
-        function($scope, $http, $log, $location) {
+        function($scope, $http, $log, $stateParams) {
 
             $scope.session = getCookie("session");
-            $scope.device = getCookie("device");
-
-            $scope.includeStatus = true;
-            $scope.includeDebug = true;
-            $scope.includeSensitive = true;
-            $scope.includeAdvanced = true;
 
             $scope.queriedDevice = "...";
 
-            $log.log("Device: " + $scope.device);
+            $log.log("Device: " + $stateParams.device);
+
+            $scope.readIncludes = function() {
+                $scope.includeStatus = (getCookie("includeStatus") == 'true');
+                $scope.includeDebug =  (getCookie("includeDebug") == 'true');
+                $scope.includeSensitive =  (getCookie("includeSensitive") == 'true');
+                $scope.includeAdvanced =  (getCookie("includeAdvanced") == 'true');
+            }
+
+            $scope.setIncludes = function() {
+                setCookie("includeStatus", $scope.includeStatus?'true':'false', 100);
+                setCookie("includeDebug", $scope.includeDebug?'true':'false', 100);
+                setCookie("includeSensitive", $scope.includeSensitive?'true':'false', 100);
+                setCookie("includeAdvanced", $scope.includeAdvanced?'true':'false', 100);
+            }
+
+
+            $scope.readIncludes();
 
             $scope.isPropNameEligible = function(name, incStatus, incDebug, incSensitive, incAdvanced) {
                 if (name.startsWith(StatusPropPrefix)) {
@@ -268,7 +305,7 @@ webPortalApp.controller(
 
                 var reqDescs = {
                     method: "GET",
-                    url: "api/v1/devices/" + $scope.device + "/descriptions",
+                    url: "api/v1/devices/" + $stateParams.device + "/descriptions",
                     headers: {"Content-Type": "application/json", "Session": $scope.session}
                 };
 
@@ -336,37 +373,37 @@ webPortalApp.controller(
             }
 
             $scope.search = function() {
-                $log.log("Searching device " + $scope.device);
 
-                setCookie("device", $scope.device, 100);
+                $log.log("Searching device " + $stateParams.device);
+
                 var reqReports = {
                     method: "GET",
-                    url: "api/v1/devices/" + $scope.device + "/reports/summary?status=C",
+                    url: "api/v1/devices/" + $stateParams.device + "/reports/summary?status=C",
                     headers: {"Content-Type": "application/json", "Session": $scope.session},
                     data: $scope.request
                 };
 
                 var reqTargets = {
                     method: "GET",
-                    url: "api/v1/devices/" + $scope.device + "/targets/summary?status=C",
+                    url: "api/v1/devices/" + $stateParams.device + "/targets/summary?status=C",
                     headers: {"Content-Type": "application/json", "Session": $scope.session},
                     data: $scope.request
                 };
 
                 $log.log("Executing requests...");
-                $scope.queriedDevice = $scope.device + " (in progress)";
+                $scope.queriedDevice = $stateParams.device + " (in progress)";
 
                 $http(reqReports).then(
                     function(r) {
                         $log.log("Success reports: " + JSON.stringify(r.data));
                         $scope.reportsSummary = r.data;
                         $scope.targetsSummaryUserInput = r.data;
-                        $scope.queriedDevice = $scope.device;
+                        $scope.queriedDevice = $stateParams.device;
                     },
                     function(r) {
                         $log.log("Failed reports: " + r.data);
                         $scope.reportsSummary = {};
-                        $scope.queriedDevice = $scope.device + " (failed: " + r.data + ")";
+                        $scope.queriedDevice = $stateParams.device + " (failed: " + r.data + ")";
                     }
                 );
 
@@ -374,12 +411,12 @@ webPortalApp.controller(
                     function(r) {
                         $log.log("Success targets: " + JSON.stringify(r.data));
                         $scope.targetsSummary = r.data;
-                        $scope.queriedDevice = $scope.device;
+                        $scope.queriedDevice = $stateParams.device;
                     },
                     function(r) {
                         $log.log("Failed to retrieve targets: " + r.data);
                         $scope.targetsSummary = {};
-                        $scope.queriedDevice = $scope.device + " (failed: " + r.data + ")";
+                        $scope.queriedDevice = $stateParams.device + " (failed: " + r.data + ")";
                     }
                 );
 
@@ -441,7 +478,7 @@ webPortalApp.controller(
 
             }
 
-            if ($scope.device) { // proceed if device is provided
+            if ($stateParams.device) { // proceed if device is provided
                 $scope.initLegends();
                 $scope.search();
             }
@@ -452,10 +489,9 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     "LogController",
-    function($scope, $http, $log, $location) {
+    function($scope, $http, $log, $stateParams) {
 
         $scope.session = getCookie("session");
-        $scope.device = getCookie("device");
 
         $scope.from = -0.1; // in days, lower-bound to filter history records
         $scope.to = 0.0; // in days, upper-bound to filter history records
@@ -463,7 +499,7 @@ webPortalApp.controller(
         $scope.queriedDevice = "...";
 
         $scope.getLogs = function() {
-            $log.log("Getting logs for device " + $scope.device);
+            $log.log("Getting logs for device " + $stateParams.device);
 
             var date = new Date();
 
@@ -477,23 +513,23 @@ webPortalApp.controller(
 
             var req = {
                 method: "GET",
-                url: "api/v1/devices/" + $scope.device + "/logs?from=" + fromSec + "&to=" + toSec,
+                url: "api/v1/devices/" + $stateParams.device + "/logs?from=" + fromSec + "&to=" + toSec,
                 headers: {"Session": $scope.session}
             };
 
             $log.log("Executing request...");
-            $scope.queriedDevice = $scope.device + " (in progress)";
+            $scope.queriedDevice = $stateParams.device + " (in progress)";
 
             $http(req).then(
                 function(r) {
                     $log.log("Logs obtained.");
                     $scope.logs = r.data;
-                    $scope.queriedDevice = $scope.device;
+                    $scope.queriedDevice = $stateParams.device;
                 },
                 function(r) {
                     $log.log("Could not retrieve logs.");
                     $scope.logs = "[]";
-                    $scope.queriedDevice = $scope.device + " (failed)";
+                    $scope.queriedDevice = $stateParams.device + " (failed)";
                     BootstrapDialog.show({
                         title: "Error",
                         message: "Failed to retrieve logs."
@@ -505,7 +541,7 @@ webPortalApp.controller(
 
         };
 
-        if ($scope.device) { // proceed if device is provided
+        if ($stateParams.device) { // proceed if device is provided
             $scope.getLogs();
         }
     }
@@ -514,18 +550,17 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     "AdministrateController",
-    function($scope, $http, $log, $location) {
+    function($scope, $http, $log, $stateParams) {
 
         $scope.session = getCookie("session");
-        $scope.device = getCookie("device");
 
         $scope.tabl = "reports"; // table to get records from
 
         $scope.deleteDev = function() {
-            $log.log("Deleting device " + $scope.device + " in " + $scope.tabl);
+            $log.log("Deleting device " + $stateParams.device + " in " + $scope.tabl);
             var req = {
                 method: "DELETE",
-                url: "api/v1/administrator/devices/" + $scope.device + "/" + $scope.tabl,
+                url: "api/v1/administrator/devices/" + $stateParams.device + "/" + $scope.tabl,
                 headers: {"Content-Type": "application/json", "Session": $scope.session},
                 data: $scope.request
             };
