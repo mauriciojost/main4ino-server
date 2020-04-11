@@ -250,17 +250,13 @@ webPortalApp.controller(
             $log.log("Device: " + $scope.device);
 
             $scope.isPropNameEligible = function(name, incStatus, incDebug, incSensitive, incAdvanced) {
-                var isStatus = name.startsWith(StatusPropPrefix);
-                var isDebug = name.startsWith(DebugPropPrefix);
-                var isSensitive = name.startsWith(SensitivePropPrefix);
-                var isAdvanced = name.startsWith(AdvancedPropPrefix);
-                if (isStatus) {
+                if (name.startsWith(StatusPropPrefix)) {
                     return incStatus;
-                } else if (isDebug) {
+                } else if (name.startsWith(DebugPropPrefix)) {
                     return incDebug;
-                } else if (isSensitive) {
+                } else if (name.startsWith(SensitivePropPrefix)) {
                     return incSensitive;
-                } else if (isAdvanced) {
+                } else if (name.startsWith(AdvancedPropPrefix)) {
                     return incAdvanced;
                 } else {
                     return true;
