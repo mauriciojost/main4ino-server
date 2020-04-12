@@ -180,7 +180,7 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       devices <- repository.selectDevicesWhereTimestampStatus(table, dev, fromTo, status)
       _ <- logger.debug(
-        s"GET all devices $dev from table $table from time ${fromTo.from} until ${fromTo.to} with status $status: $devices"
+        s"GET all devices $dev from table $table from time ${fromTo.from} until ${fromTo.to} with status $status"
       )
     } yield (devices)
   }
@@ -196,7 +196,7 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
       devices <- repository.selectDevicesWhereTimestampStatus(table, dev, fromTo, st)
       summary = Device.merge(devices)
       _ <- logger.debug(
-        s"GET summary all devices $dev from table $table from time ${fromTo.from} until ${fromTo.to} with status $st: $devices"
+        s"GET summary all devices $dev from table $table from time ${fromTo.from} until ${fromTo.to} with status $st"
       )
     } yield (summary)
   }

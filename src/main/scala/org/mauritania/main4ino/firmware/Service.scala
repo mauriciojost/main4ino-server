@@ -86,7 +86,7 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
       for {
         logger <- Slf4jLogger.fromClass[F](getClass)
         fa <- st.listFirmwares(project, platform)
-        _ <- logger.debug(s"Listing firmwares for $project/$platform: $fa")
+        _ <- logger.debug(s"Listing firmwares for $project/$platform: ${fa.size} found")
         r <- Ok(fa.asJson, ContentTypeAppJson)
       } yield r
     }
