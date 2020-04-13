@@ -96,7 +96,7 @@ webPortalApp.controller(
         function($scope, $http, $log, $stateParams, $state) {
 
             $scope.logged = null;
-            $scope.device = getCookie("device");
+            $scope.device = $stateParams.device | getCookie("device");
 
             $scope.loginUsingSession = function() {
               $log.log("Login with session");
