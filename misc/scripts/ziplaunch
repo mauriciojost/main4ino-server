@@ -8,6 +8,7 @@ root_dir=$(readlink -e `dirname $0`/../..)
 
 cd $root_dir
 rm -fr unzipped
+sbt clean test
 sbt universal:packageBin
 find -name main4ino-server*.zip | xargs -I% unzip % -d unzipped
 find unzipped -name main4ino-server -type f | xargs -I% bash % $@
