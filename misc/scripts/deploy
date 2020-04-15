@@ -27,6 +27,7 @@ function update_repo() {
 root_dir=$(readlink -e `dirname $0`/../..)
 
 cd $root_dir
+config_dir=$root_dir/../config/
 
 # Some logs
 whoami
@@ -43,7 +44,7 @@ find -name main4ino-server*.zip | xargs -I% unzip % -d $tmp_dir
 
 executable=`find $tmp_dir -name main4ino-server -type f` 
 
-nohup bash $executable -Dconfig-dir=$root_dir/config/ -Dlog4j.configuration=file://$root_dir/config/custom-log4j.properties &> /dev/null &
+nohup bash $executable -Dconfig-dir=$config_dir -Dlog4j.configuration=file://$config_dir/custom-log4j.properties &> /dev/null &
 
 killem "$old_pids"
 
