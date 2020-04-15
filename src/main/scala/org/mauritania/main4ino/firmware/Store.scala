@@ -79,7 +79,7 @@ class Store[F[_]: Sync](basePath: Path) {
       logger <- Slf4jLogger.fromClass[F](getClass)
       readable <- isReadableFile(file)
       length <- length(file)
-      _ <- logger.debug(s"Checked firmware $coords: readable=$readable length=$length")
+      _ <- logger.debug(s"Sanity checked firmware file $file/$coords: readable=$readable length=$length")
       located = readable match {
         case true => Right(Firmware(file, length, coords))
         case false =>
