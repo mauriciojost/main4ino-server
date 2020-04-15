@@ -47,7 +47,7 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
 
   "The server" should "start and expose rest the api (v1)" in {
     withHttpClient { httpClient =>
-      val help = httpClient.expect[String](s"http://localhost:8080/api/v1/token/${UserPass.token}/help")
+      val help = httpClient.expect[String](s"http://localhost:18095/api/v1/token/${UserPass.token}/help")
       help.unsafeRunSync() should include("https")
     }
   }
@@ -55,7 +55,7 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
   it should "reject unauthorized requests" in {
     withHttpClient { httpClient =>
       assertThrows[UnexpectedStatus] { // forbidden
-        httpClient.expect[String]("http://localhost:8080/api/v1/help").unsafeRunSync()
+        httpClient.expect[String]("http://localhost:18095/api/v1/help").unsafeRunSync()
       }
     }
   }
@@ -109,7 +109,7 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
   private def devPostRequest(devName: String, table: String) = {
     Request[IO](
       method = Method.POST,
-      uri = Uri.unsafeFromString(s"http://localhost:8080/api/v1/token/${UserPass.token}/devices/$devName/$table"),
+      uri = Uri.unsafeFromString(s"http://localhost:18095/api/v1/token/${UserPass.token}/devices/$devName/$table"),
       body = Helper.asEntityBody[IO]("""{"actor1":{"prop1":"val1"}}""")
     )
   }
@@ -117,20 +117,20 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
   private def devGetRequest(devName: String, table: String, id: RequestId) = {
     Request[IO](
       method = Method.GET,
-      uri = Uri.unsafeFromString(s"http://localhost:8080/api/v1/token/${UserPass.token}/devices/$devName/$table/$id")
+      uri = Uri.unsafeFromString(s"http://localhost:18095/api/v1/token/${UserPass.token}/devices/$devName/$table/$id")
     )
   }
 
   it should "start and expose the webapp files" in {
     withHttpClient { httpClient =>
-      val help = httpClient.expect[String](s"http://localhost:8080/index.html")
+      val help = httpClient.expect[String](s"http://localhost:18095/index.html")
       help.unsafeRunSync() should include("</body>")
     }
   }
 
   it should "start and expose the firmware files" in {
     withHttpClient { httpClient =>
-      val help = httpClient.expect[String](s"http://localhost:8080/firmwares/botino/esp8266")
+      val help = httpClient.expect[String](s"http://localhost:18095/firmwares/botino/esp8266")
       help.unsafeRunSync() should include("1.0.0")
     }
   }

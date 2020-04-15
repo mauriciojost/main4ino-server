@@ -28,7 +28,7 @@ class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
   "The config loader" should "load correctly a configuration file" in {
     val fromFile = ConfigLoader.fromFile[IO, GeneralConfig](new File("src/test/resources/configs/1/application.conf")).unsafeRunSync()
     val expectedFromFile = GeneralConfig(
-      server = ServerConfig("0.0.0.0", PosInt(8080)),
+      server = ServerConfig("0.0.0.0", PosInt(18095)),
       database = DbConfig(
         driver = "org.h2.Driver",
         url = "jdbc:h2:mem:test-db",

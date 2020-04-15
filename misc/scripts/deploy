@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+
+set -e
+set -x
+set -u
+
+function killem() {
+  echo "Killing (and force killing) existent app (if any)..."
+  local pids=$1
+  kill $pids
+  sleep 5
+  kill -9 $pids
+}
+
+function update_repo() {
+  local branch=$1
+  git checkout $branch
+  git reset --hard HEAD~200 # in unlikely case of history rewritting 
+  git pull origin $branch
+  git log | head -10
+}
+
+root_dir=$(readlink -e `dirname $0`/../..)
+
+cd $root_dir
+
+# Some logs
+whoami
+date
+
+update_repo stable
+
+old_pids=`jps -l | grep org.mauritania.main4ino.Server | cut -d' ' -f1` 
+
+tmp_dir=`mktemp -d`
+sbt clean test
+sbt universal:packageBin
+find -name main4ino-server*.zip | xargs -I% unzip % -d $tmp_dir
+
+executable=`find $tmp_dir -name main4ino-server -type f` 
+
+bash $executable -Dconfig-dir=$root_dir/config/ -Dlog4j.configuration=file://$root_dir/config/custom-log4j.properties &
+
+killem $old_pids
+
+
