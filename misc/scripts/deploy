@@ -39,6 +39,6 @@ find -name main4ino-server*.zip | xargs -I% unzip % -d $tmp_dir
 
 executable=`find $tmp_dir -name main4ino-server -type f` 
 
-daemonize -E BUILD_ID=dontKillMe bash $executable -Dconfig-dir=$config_dir -Dlog4j.configuration=file://$config_dir/custom-log4j.properties &> $tmp_logs &
+/usr/sbin/daemonize -E BUILD_ID=dontKillMe /bin/bash $executable -Dconfig-dir=$config_dir -Dlog4j.configuration=file://$config_dir/custom-log4j.properties &> $tmp_logs &
 
 killem "$old_pids"
