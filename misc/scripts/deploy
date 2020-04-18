@@ -14,6 +14,16 @@ function print_context() {
   hostname
 }
 
+function is_port_free() {
+  local port="$1"
+  if nc -z 127.0.0.1 $port
+  then
+    echo "false"
+  else
+    echo "true"
+  fi
+}
+
 function find_free_port() {
   local ports_list="$1"
   local first_free=""
@@ -75,9 +85,18 @@ print_context
 
 old_pids=$(jps -l | grep org.mauritania.main4ino.Server | cut -d' ' -f1)
 
-free_port=$(find_free_port "$ports_list")
-build_and_launch_instance "$free_port"
+target_port=$(find_free_port "$ports_list")
+build_and_launch_instance "$target_port"
 
-#sleep 10
+sleep 10
 
-killem "$old_pids"
+if [ "$(is_port_free $target_port)" == "false" ]
+then
+  echo "OK. The process is running (port $target_port taken)."
+  killem "$old_pids"
+  exit 0
+else
+  echo "KO. The process is not running (port $target_port not taken)."
+  exit 1
+fi
+
