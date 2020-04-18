@@ -6,12 +6,32 @@ set -u
 
 root_dir=$(readlink -e `dirname $0`/../..)
 config_dir=${1:-$root_dir/../config/}
+ports_list=${2:-"8090 8091 8092"}
 
 function print_context() {
-
   whoami
   date
+  hostname
 }
+
+function find_free_port() {
+  local ports_list="$1"
+  local first_free=""
+  for port in $ports_list
+  do
+    if nc -z 127.0.0.1 $port
+    then
+      echo ""
+    else
+      if [ -z "$first_free" ]
+      then
+        first_free="$port"
+      fi
+    fi
+  done
+  echo "$first_free"
+}
+
 function killem() {
   local pids="$1"
   if [ -n "$pids" ]
@@ -28,8 +48,9 @@ function killem() {
 
 function build_and_launch_instance() {
 
-  local tmp_dir=`mktemp -d`
-  local tmp_logs=`mktemp`
+  local port="$1"
+  local tmp_dir=$(mktemp -d)
+  local tmp_logs=$(mktemp)
 
   echo "Temporary unzipped directory: $tmp_dir"
   echo "Temporary logs file: $tmp_logs"
@@ -38,9 +59,13 @@ function build_and_launch_instance() {
   sbt clean universal:packageBin
   find -name main4ino-server*.zip | xargs -I% unzip % -d $tmp_dir
 
-  executable=`find $tmp_dir -name main4ino-server -type f` 
+  executable=$(find $tmp_dir -name main4ino-server -type f)
 
-  /usr/sbin/daemonize -E BUILD_ID=dontKillMe /bin/bash $executable -Dconfig-dir=$config_dir -Dlog4j.configuration=file://$config_dir/custom-log4j.properties &> $tmp_logs &
+  /usr/sbin/daemonize -E BUILD_ID=dontKillMe \
+    /bin/bash "$executable" \
+    -Dserver.port="$port" \
+    -Dconfig-dir="$config_dir" \
+    -Dlog4j.configuration="file://$config_dir/custom-log4j.properties" &> "$tmp_logs" &
 
 }
 
@@ -48,9 +73,10 @@ cd $root_dir
 
 print_context
 
-old_pids=`jps -l | grep org.mauritania.main4ino.Server | cut -d' ' -f1` 
+old_pids=$(jps -l | grep org.mauritania.main4ino.Server | cut -d' ' -f1)
 
-build_and_launch_instance
+free_port=$(find_free_port "$ports_list")
+build_and_launch_instance "$free_port"
 
 #sleep 10
 
