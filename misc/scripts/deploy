@@ -56,20 +56,25 @@ function killem() {
   fi
 }
 
-function build_and_launch_instance() {
+function build_package() {
+  #sbt clean test
+  sbt clean universal:packageBin
+}
+
+function launch_instance() {
 
   local port="$1"
   local tmp_dir=$(mktemp -d)
-  local tmp_logs=$(mktemp)
 
   echo "Temporary unzipped directory: $tmp_dir"
-  echo "Temporary logs file: $tmp_logs"
 
-  #sbt clean test
-  sbt clean universal:packageBin
+
   find -name main4ino-server*.zip | xargs -I% unzip % -d $tmp_dir
 
   executable=$(find $tmp_dir -name main4ino-server -type f)
+
+  local tmp_logs=$(mktemp)
+  echo "Temporary logs file: $tmp_logs"
 
   /usr/sbin/daemonize -E BUILD_ID=dontKillMe \
     /bin/bash "$executable" \
@@ -85,8 +90,11 @@ print_context
 
 old_pids=$(jps -l | grep org.mauritania.main4ino.Server | cut -d' ' -f1)
 
+build_package
+
 target_port=$(find_free_port "$ports_list")
-build_and_launch_instance "$target_port"
+
+launch_instance "$target_port"
 
 sleep 10
 
