@@ -38,7 +38,7 @@ object Url {
 
   object TimezoneParam extends OptionalQueryParamDecoderMatcher[String]("timezone")
 
-  object FirmVersionParam extends QueryParamDecoderMatcher[String]("version")
+  object VerWishParam extends QueryParamDecoderMatcher[String]("version")
 
   // Url sections
   object Req { // request type section

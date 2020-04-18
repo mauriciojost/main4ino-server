@@ -5,7 +5,6 @@ import java.nio.file.{Path, Paths}
 import cats.effect.{Effect, IO, Sync}
 import org.http4s.{Header, Headers, Method, Request, Response, Status, Uri}
 import org.mauritania.main4ino.TmpDirCtx
-import org.mauritania.main4ino.firmware.Store.FirmwareCoords
 import org.scalatest._
 import io.circe.syntax._
 import org.http4s.circe._
@@ -51,7 +50,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
     implicit val s = defaultServiceWithDirectory(Dataset1)
     val r = get("/firmwares/botino/esp8266")
     r.status shouldBe Status.Ok
-    r.bodyAsText.compile.toList.unsafeRunSync() shouldBe List(Set(FirmwareCoords("botino", "1.0.0", "esp8266")).asJson.noSpaces)
+    r.bodyAsText.compile.toList.unsafeRunSync() shouldBe List(Set(Coord("botino", "1.0.0", "esp8266", "firmware-1.0.0.esp8266.bin")).asJson.noSpaces)
   }
 
   it should "tell that current version is up to date" in {

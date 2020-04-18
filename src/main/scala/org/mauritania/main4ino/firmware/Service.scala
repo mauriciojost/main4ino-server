@@ -1,20 +1,12 @@
 package org.mauritania.main4ino.firmware
 
-import java.io.File
-import java.time.{ZoneOffset, ZonedDateTime}
-
-import cats.Applicative
-import cats.data.{Kleisli, OptionT}
-import cats.effect.{Blocker, ContextShift, Effect, IO, Sync}
-import fs2.Stream
+import cats.effect.{Blocker, ContextShift, Effect, Sync}
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.http4s.{EntityEncoder, Header, Headers, HttpRoutes, HttpService, Request, Response}
+import org.http4s.{EntityEncoder, Header, Headers, HttpRoutes, Request, Response}
 import org.http4s.headers.`Content-Length`
 import org.http4s.dsl.Http4sDsl
-import org.mauritania.main4ino.api.Attempt
-import org.mauritania.main4ino.api.v1.Url.{Act, Dev, FirmVersionParam, Platf, Proj, Req, ReqId}
+import org.mauritania.main4ino.api.v1.Url.{VerWishParam, Platf, Proj}
 import cats.implicits._
-import org.mauritania.main4ino.firmware.Store.{Firmware, FirmwareCoords}
 import org.mauritania.main4ino.ContentTypeAppJson
 import io.circe.syntax._
 import org.http4s.circe._
@@ -23,8 +15,7 @@ import org.http4s.util.CaseInsensitiveString
 import org.mauritania.main4ino.models.FirmwareVersion
 import cats._
 import cats.data._
-import org.http4s.server.{HttpMiddleware, Middleware}
-import org.mauritania.main4ino.helpers.{HttpMeter, Time}
+import org.mauritania.main4ino.helpers.HttpMeter
 
 import scala.concurrent.ExecutionContext
 
@@ -47,12 +38,12 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a @ GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? FirmVersionParam(
-          version
+    case a @ GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? VerWishParam(
+          versionFeatureCode
         ) => {
       val headers = a.headers
       val currentVersion = extractCurrentVersion(headers)
-      val coords = FirmwareCoords(project, version, platform)
+      val coords = Wish(project, versionFeatureCode, platform)
 
       for {
         logger <- Slf4jLogger.fromClass[F](getClass)

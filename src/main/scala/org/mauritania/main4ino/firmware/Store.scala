@@ -7,39 +7,12 @@ import cats.effect.Sync
 import com.gilt.gfc.semver.SemVer
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.mauritania.main4ino.api.Attempt
-import org.mauritania.main4ino.firmware.Store.{Firmware, FirmwareCoords}
-import org.mauritania.main4ino.models.{FirmwareVersion, Platform, ProjectName}
+import org.mauritania.main4ino.models.{Platform, ProjectName}
 import cats.implicits._
 
 object Store {
 
-  final val BySemVer = Ordering.ordered[SemVer]
-  final val ByCoordsVer = Ordering.by[FirmwareCoords, SemVer](i => SemVer(i.version))
-
-  case class FirmwareCoords(
-    project: ProjectName,
-    version: FirmwareVersion,
-    platform: Platform
-  )
-
-  case class Firmware(
-    file: File,
-    length: Long,
-    coords: FirmwareCoords
-  )
-
-  object FirmwareCoords {
-    final val FileNameRegex = """firmware-(.*)\.(\w+).bin""".r
-
-    def fromFile(f: File): Option[FirmwareCoords] = {
-      val project = f.getParentFile.getName
-      val fname = f.getName
-      fname match {
-        case FileNameRegex(version, platform) => Some(FirmwareCoords(project, version, platform))
-        case _ => None
-      }
-    }
-  }
+  final val ByCoordsVer = Ordering.by[Coord, SemVer](i => SemVer(i.version))
 
 }
 
@@ -50,31 +23,29 @@ class Store[F[_]: Sync](basePath: Path) {
   private def listFiles(dir: File): F[List[File]] =
     Sync[F].delay(Option(dir.listFiles()).toList.flatMap(_.toList))
 
-  def getFirmware(coords: FirmwareCoords): F[Attempt[Firmware]] = {
+  def getFirmware(coords: Wish): F[Attempt[Firmware]] = {
     val resp: F[Attempt[Firmware]] = for {
       logger <- Slf4jLogger.fromClass[F](getClass)
       available <- listFirmwares(coords.project, coords.platform)
-      resolved = resolveVersion(coords, available)
+      resolved = coords.resolve(available)
       _ <- logger.debug(s"Requested firmware: $coords, resolved: $resolved")
       checked <- resolved match {
-        case Some(v) => checkVersion(v)
+        case Some(v) => checkCoordsFile(v)
         case None => Sync[F].delay[Attempt[Firmware]](Left(s"Could not resolve: $coords"))
       }
     } yield checked
     resp
   }
 
-  def listFirmwares(project: ProjectName, platform: Platform): F[Seq[FirmwareCoords]] = {
-    import Store._
+  def listFirmwares(project: ProjectName, platform: Platform): F[Seq[Coord]] = {
     val path = basePath.resolve(project)
     listFiles(path.toFile).map { files =>
-      files.flatMap(FirmwareCoords.fromFile).filter(_.platform == platform).sorted(ByCoordsVer)
+      files.flatMap(Coord.fromFile).filter(_.platform == platform).sorted(Store.ByCoordsVer)
     }
   }
 
-  private def checkVersion(coords: FirmwareCoords): F[Attempt[Firmware]] = {
-    val filename = s"firmware-${coords.version}.${coords.platform}.bin"
-    val file = basePath.resolve(coords.project).resolve(filename).toFile
+  private def checkCoordsFile(coords: Coord): F[Attempt[Firmware]] = {
+    val file = basePath.resolve(coords.project).resolve(coords.filename).toFile
     for {
       logger <- Slf4jLogger.fromClass[F](getClass)
       readable <- isReadableFile(file)
@@ -83,40 +54,9 @@ class Store[F[_]: Sync](basePath: Path) {
       located = readable match {
         case true => Right(Firmware(file, length, coords))
         case false =>
-          Left(s"Could not locate/read firmware: ${coords.project}/$filename (resolved to $file)")
+          Left(s"Could not locate/read firmware: ${coords.project}/${coords.filename} (resolved to $file)")
       }
     } yield located
-  }
-
-  private def resolveVersion(
-    target: FirmwareCoords,
-    available: Seq[FirmwareCoords]
-  ): Option[FirmwareCoords] = {
-    import Store._
-    target match {
-      case _ if available.isEmpty =>
-        None
-      case c if (c.version == "LATEST") =>
-        Some(
-          FirmwareCoords(
-            target.project,
-            available.max(ByCoordsVer).version,
-            target.platform
-          )
-        )
-      case c if (c.version == "LATEST_STABLE") =>
-        Some(
-          FirmwareCoords(
-            target.project,
-            available.map(c => SemVer(c.version)).filter(_.extra.isEmpty).max(BySemVer).original,
-            target.platform
-          )
-        )
-      case t if available.contains(t) =>
-        Some(t)
-      case _ =>
-        None
-    }
   }
 
 }

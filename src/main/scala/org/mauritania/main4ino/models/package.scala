@@ -26,7 +26,16 @@ package object models {
   // Id of the firmware
   type FirmwareVersion = String
 
+  // Identifier of a specific version of the firmware (i.e. git commit), represented in some way
+  type VersionWish = String
+
   // Embedded platform identifier (esp8266, esp32, etc.)
   type Platform = String
+
+  // Feature name (i.e. git branch name, for development purposes)
+  type Feature = String
+
+  // File name of the firmware
+  type FirmwareFilename = String
 
 }
