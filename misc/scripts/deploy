@@ -1,39 +1,33 @@
 #!/usr/bin/env bash
 
-
 set -e
 set -x
 set -u
 
+root_dir=$(readlink -e `dirname $0`/../..)
+config_dir=${$1:-$root_dir/../config/}
+
+function context() {
+
+  whoami
+  date
+}
 function killem() {
   local pids=$1
   if [ -n "$pids" ]
   then
     echo "Killing (and force killing) existent app (if any)..."
+    echo "$pids"
     kill $pids
     sleep 5
     kill -9 $pids
   fi
 }
 
-function update_repo() {
-  local branch=$1
-  git checkout $branch
-  git reset --hard HEAD~200 # in unlikely case of history rewritting 
-  git pull origin $branch
-  git log | head -10
-}
-
-root_dir=$(readlink -e `dirname $0`/../..)
-
 cd $root_dir
-config_dir=$root_dir/../config/
 
 # Some logs
-whoami
-date
-
-update_repo stable
+context
 
 old_pids=`jps -l | grep org.mauritania.main4ino.Server | cut -d' ' -f1` 
 
@@ -47,5 +41,3 @@ executable=`find $tmp_dir -name main4ino-server -type f`
 nohup bash $executable -Dconfig-dir=$config_dir -Dlog4j.configuration=file://$config_dir/custom-log4j.properties &> /dev/null &
 
 killem "$old_pids"
-
-
