@@ -13,6 +13,7 @@ import io.circe.generic.auto._
 import io.circe.syntax._
 import io.circe._
 import io.circe.parser._
+import me.alexpanov.net.FreePortFinder
 import org.mauritania.main4ino.api.v1.JsonEncoding
 import org.mauritania.main4ino.api.Translator.IdResponse
 import org.mauritania.main4ino.helpers.ConfigLoader
@@ -35,7 +36,9 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
   implicit val statusDecoder = JsonEncoding.StatusDecoder
 
   override def beforeAll(): Unit = {
+    val port = FreePortFinder.findFreeLocalPort()
     System.setProperty("config-dir", ConfigDirPath)
+    System.setProperty("server.port", port.toString)
     ConfigFactory.invalidateCaches() // force reload of java properties
     appThread
     Thread.sleep(InitializationTimeMs) // give time to the thread to initialize
@@ -47,7 +50,8 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
 
   "The server" should "start and expose rest the api (v1)" in {
     withHttpClient { httpClient =>
-      val help = httpClient.expect[String](s"http://localhost:18095/api/v1/token/${UserPass.token}/help")
+      val port = System.getProperty("server.port")
+      val help = httpClient.expect[String](s"http://localhost:$port/api/v1/token/${UserPass.token}/help")
       help.unsafeRunSync() should include("https")
     }
   }
@@ -55,7 +59,8 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
   it should "reject unauthorized requests" in {
     withHttpClient { httpClient =>
       assertThrows[UnexpectedStatus] { // forbidden
-        httpClient.expect[String]("http://localhost:18095/api/v1/help").unsafeRunSync()
+        val port = System.getProperty("server.port")
+        httpClient.expect[String](s"http://localhost:$port/api/v1/help").unsafeRunSync()
       }
     }
   }
@@ -107,30 +112,34 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
   }
 
   private def devPostRequest(devName: String, table: String) = {
+    val port = System.getProperty("server.port")
     Request[IO](
       method = Method.POST,
-      uri = Uri.unsafeFromString(s"http://localhost:18095/api/v1/token/${UserPass.token}/devices/$devName/$table"),
+      uri = Uri.unsafeFromString(s"http://localhost:$port/api/v1/token/${UserPass.token}/devices/$devName/$table"),
       body = Helper.asEntityBody[IO]("""{"actor1":{"prop1":"val1"}}""")
     )
   }
 
   private def devGetRequest(devName: String, table: String, id: RequestId) = {
+    val port = System.getProperty("server.port")
     Request[IO](
       method = Method.GET,
-      uri = Uri.unsafeFromString(s"http://localhost:18095/api/v1/token/${UserPass.token}/devices/$devName/$table/$id")
+      uri = Uri.unsafeFromString(s"http://localhost:$port/api/v1/token/${UserPass.token}/devices/$devName/$table/$id")
     )
   }
 
   it should "start and expose the webapp files" in {
     withHttpClient { httpClient =>
-      val help = httpClient.expect[String](s"http://localhost:18095/index.html")
+      val port = System.getProperty("server.port")
+      val help = httpClient.expect[String](s"http://localhost:$port/index.html")
       help.unsafeRunSync() should include("</body>")
     }
   }
 
   it should "start and expose the firmware files" in {
     withHttpClient { httpClient =>
-      val help = httpClient.expect[String](s"http://localhost:18095/firmwares/botino/esp8266")
+      val port = System.getProperty("server.port")
+      val help = httpClient.expect[String](s"http://localhost:$port/firmwares/botino/esp8266")
       help.unsafeRunSync() should include("1.0.0")
     }
   }

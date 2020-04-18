@@ -37,7 +37,7 @@ object Server extends IOApp {
       blockingIoEc <- ExecutionContexts.cachedThreadPool[F] 
 
       configApp <- Resource.liftF(
-        ConfigLoader.fromFile[F, Config](new File(args.configDir.toFile, "application.conf"))
+        ConfigLoader.fromFileAndEnv[F, Config](new File(args.configDir.toFile, "application.conf"))
       )
       configUsers <- Resource.liftF(
         ConfigLoader.fromFile[F, security.Config](new File(args.configDir.toFile, "security.conf"))

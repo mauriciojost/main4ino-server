@@ -13,6 +13,7 @@ object Dependencies {
         val PureConfigVersion = "0.12.3"
         val ScalaTestVersion = "3.1.1"
         val ScalaMockVersion = "4.4.0"
+        val FreePortFinder = "1.0"
         val log4CatsSlf4jVersion = "1.0.1"
         val slf4jLog4j12Version = "1.7.30"
         val CryptobitsVersion = "1.3"
@@ -49,6 +50,7 @@ object Dependencies {
           "com.beachape" %% "enumeratum-circe" % Versions.EnumeratumVersion,
           "org.scalatest" %% "scalatest" % Versions.ScalaTestVersion % "test",
           "org.scalamock" %% "scalamock" % Versions.ScalaMockVersion % "test",
+          "me.alexpanov" % "free-port-finder" % Versions.FreePortFinder % "test",
           "io.github.jmcardon" %% "tsec-common" % Versions.TsecVersion,
           "io.github.jmcardon" %% "tsec-password" % Versions.TsecVersion,
           "io.github.jmcardon" %% "tsec-jwt-mac" % Versions.TsecVersion
