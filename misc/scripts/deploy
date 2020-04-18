@@ -32,12 +32,13 @@ context
 old_pids=`jps -l | grep org.mauritania.main4ino.Server | cut -d' ' -f1` 
 
 tmp_dir=`mktemp -d`
-sbt clean test
-sbt universal:packageBin
+tmp_logs=`mktemp`
+#sbt clean test
+sbt clean universal:packageBin
 find -name main4ino-server*.zip | xargs -I% unzip % -d $tmp_dir
 
 executable=`find $tmp_dir -name main4ino-server -type f` 
 
-nohup bash $executable -Dconfig-dir=$config_dir -Dlog4j.configuration=file://$config_dir/custom-log4j.properties &> /dev/null &
+nohup bash $executable -Dconfig-dir=$config_dir -Dlog4j.configuration=file://$config_dir/custom-log4j.properties &> $tmp_logs &
 
 killem "$old_pids"
