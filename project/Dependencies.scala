@@ -13,7 +13,7 @@ object Dependencies {
         val PureConfigVersion = "0.12.3"
         val ScalaTestVersion = "3.1.1"
         val ScalaMockVersion = "4.4.0"
-        val FreePortFinder = "1.0"
+        val FreePortFinder = "1.1.1"
         val log4CatsSlf4jVersion = "1.0.1"
         val slf4jLog4j12Version = "1.7.30"
         val CryptobitsVersion = "1.3"
