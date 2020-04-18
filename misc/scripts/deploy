@@ -7,27 +7,28 @@ set -u
 root_dir=$(readlink -e `dirname $0`/../..)
 config_dir=${1:-$root_dir/../config/}
 
-function context() {
+function print_context() {
 
   whoami
   date
 }
 function killem() {
-  local pids=$1
+  local pids="$1"
   if [ -n "$pids" ]
   then
-    echo "Killing (and force killing) existent app (if any)..."
-    echo "$pids"
+    echo "Killing existent apps: $pids"
     kill $pids
     sleep 5
+    echo "Force killing existent apps: $pids"
+    set +e
     kill -9 $pids
+    set -e
   fi
 }
 
 cd $root_dir
 
-# Some logs
-context
+print_context
 
 old_pids=`jps -l | grep org.mauritania.main4ino.Server | cut -d' ' -f1` 
 
