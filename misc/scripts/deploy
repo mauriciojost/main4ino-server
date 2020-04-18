@@ -35,7 +35,7 @@ function find_free_port() {
     else
       if [ -z "$first_free" ]
       then
-        first_free="$port"
+        first_free=$port
       fi
     fi
   done
@@ -94,6 +94,7 @@ build_package
 
 target_port=$(find_free_port "$ports_list")
 
+killem "$old_pids"
 launch_instance "$target_port"
 
 sleep 10
@@ -101,7 +102,6 @@ sleep 10
 if [ "$(is_port_free $target_port)" == "false" ]
 then
   echo "OK. The process is running (port $target_port taken)."
-  killem "$old_pids"
   exit 0
 else
   echo "KO. The process is not running (port $target_port not taken)."
