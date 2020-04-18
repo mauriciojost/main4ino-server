@@ -174,10 +174,12 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
       implicit val s = defaultService(tr)
       val r0 = get("/devices/dev1/firmware/firmwares/botino/esp8266")
       r0.status shouldBe Status.Ok
-      val r1 = get("/token/234234234234/devi1ces/dev1/firmware/firmwares/botino/esp8266", Headers())
+      val r1 = get("/token/234234234234/devi1ces/dev1/firmware/firmwares/botino/esp8266", Headers.empty)
       r1.status shouldBe Status.Forbidden
-      val r2 = get(s"/token/${DefaultCredentials.token}/devices/dev1/firmware/firmwares/botino/esp8266", Headers())
+      val r2 = get(s"/token/${DefaultCredentials.token}/devices/dev1/firmware/firmwares/botino/esp8266", Headers.empty)
       r2.status shouldBe Status.Ok
+      val r3 = get("/devices/dev1/firmware/xxx")
+      r3.status shouldBe Status.NotFound
     }
   }
 
