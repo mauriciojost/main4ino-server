@@ -37,10 +37,9 @@ case class Wish(
 }
 
 object Wish {
-
-  final val LatestKeyword = "LATEST"
-  final val LatestStableKeyword = "LATEST_STABLE"
-  final val LatestFeatureRegex = (LatestKeyword ++ """_(\w+)""").r
-  final val VersionFeatureRegex = """(.*)_(\w+)""".r
+  final lazy val LatestKeyword = "LATEST"
+  final lazy val LatestStableKeyword = "LATEST_STABLE"
+  final lazy val LatestFeatureRegex = (LatestKeyword ++ """_(\w+)""").r
+  final lazy val VersionFeatureRegex = """(.*)_(\w+)""".r
 }
 
