@@ -25,6 +25,7 @@ import pureconfig.error.ConfigReaderException
 class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with HttpClient with ParallelTestExecution {
 
   val InitializationTimeMs = 4000
+  val FreePortTimeMs = 1000
   // configs/1/application.conf/database/cleanup/retention-secs
   // which must be retention-secs=(10 * timeUnitMs)
   val ConfigDirPath = "src/test/resources/configs/1"
@@ -37,6 +38,7 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
 
   override def beforeAll(): Unit = {
     val port = FreePortFinder.findFreeLocalPort()
+    Thread.sleep(FreePortTimeMs);
     System.setProperty("config-dir", ConfigDirPath)
     System.setProperty("server.port", port.toString)
     ConfigFactory.invalidateCaches() // force reload of java properties
