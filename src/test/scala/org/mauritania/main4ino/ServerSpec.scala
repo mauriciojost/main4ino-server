@@ -25,7 +25,7 @@ import pureconfig.error.ConfigReaderException
 class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with HttpClient with ParallelTestExecution {
 
   val InitializationTimeMs = 4000
-  val FreePortTimeMs = 1000
+  val FreePortTimeMs = 5000
   // configs/1/application.conf/database/cleanup/retention-secs
   // which must be retention-secs=(10 * timeUnitMs)
   val ConfigDirPath = "src/test/resources/configs/1"
