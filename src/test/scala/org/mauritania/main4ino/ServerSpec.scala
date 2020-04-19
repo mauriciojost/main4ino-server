@@ -2,7 +2,7 @@ package org.mauritania.main4ino
 
 import java.io.File
 
-import cats.effect.IO
+import cats.effect.{ContextShift, ExitCode, Fiber, IO}
 import com.typesafe.config.ConfigFactory
 import org.http4s.client.UnexpectedStatus
 import org.http4s.{BasicCredentials, Method, Request, Status, Uri}
@@ -24,24 +24,28 @@ import pureconfig.error.ConfigReaderException
 
 class ServerSpec extends AnyFlatSpec with Matchers with HttpClient with BeforeAndAfterAll {
 
-  val InitializationTimeMs = 4000
+  implicit val contextShift: ContextShift[IO] = IO.contextShift(Helper.testExecutionContext)
+
   var port: Int = _
-  val ConfigDirPath = "src/test/resources/configs/1"
+  final private val ConfigDirPath = "src/test/resources/configs/1"
+  final private val DynamicPortBeginning = 49152
 
-  private lazy val asyncAppThread = launchAppAsync()
-  val UserPass = BasicCredentials(Fixtures.User1.id, Fixtures.User1Pass)
+  final private lazy val appFiber = launchAppAsync()
+  final private val UserPass = BasicCredentials(Fixtures.User1.id, Fixtures.User1Pass)
 
-  implicit val statusEncoder = JsonEncoding.StatusEncoder
-  implicit val statusDecoder = JsonEncoding.StatusDecoder
+  implicit final private val statusEncoder = JsonEncoding.StatusEncoder
+  implicit final private val statusDecoder = JsonEncoding.StatusDecoder
 
   override def beforeAll(): Unit = {
-    port = FreePortFinder.findFreeLocalPort()
-    asyncAppThread
-    Thread.sleep(InitializationTimeMs) // give time to the app to initialize
+    port = FreePortFinder.findFreeLocalPort(DynamicPortBeginning)
+    appFiber.join.unsafeRunAsyncAndForget()
+    while (FreePortFinder.available(port)) {
+      Thread.sleep(100)
+    };
   }
 
   override def afterAll(): Unit = {
-    asyncAppThread.interrupt()
+    appFiber.cancel.unsafeRunSync()
   }
 
   "The server" should "start and expose rest the api (v1)" in {
@@ -85,16 +89,16 @@ class ServerSpec extends AnyFlatSpec with Matchers with HttpClient with BeforeAn
 
       sleepTimeUnits(20) // T20
 
-      checkRecordDoesNotExist("dev1", idDev1) // cleaned up
-
       // T20, inject dev2 (at ~T20, its cleanup should take place at ~T30)
       val dev2ResponseJson = httpClient.expect[String](devPostRequest("dev2", "targets"))
       val idDev2 = jsonAs[IdResponse](dev2ResponseJson.unsafeRunSync()).id
 
+      checkRecordDoesNotExist("dev1", idDev1) // cleaned up
       checkRecordExists("dev2", idDev2) // just created
 
       sleepTimeUnits(20) // T40
 
+      checkRecordDoesNotExist("dev1", idDev1) // cleaned up
       checkRecordDoesNotExist("dev2", idDev2) // cleaned up
 
     }
@@ -140,18 +144,11 @@ class ServerSpec extends AnyFlatSpec with Matchers with HttpClient with BeforeAn
     assertThrows[ConfigReaderException[Args]](Server.run(List.empty[String]).unsafeRunSync())
   }
 
-  private def launchAppAsync(): Thread = {
-    val runnable = new Runnable() {
-      override def run() = {
-        System.setProperty("config-dir", ConfigDirPath)
-        System.setProperty("server.port", port.toString)
-        ConfigFactory.invalidateCaches() // force reload of java properties
-        Server.main(Array.empty[String])
-      }
-    }
-    val thread = new Thread(runnable)
-    thread.start()
-    thread
+  private def launchAppAsync(): Fiber[IO, ExitCode] = {
+    System.setProperty("config-dir", ConfigDirPath)
+    System.setProperty("server.port", port.toString)
+    ConfigFactory.invalidateCaches() // force reload of java properties
+    Server.run(List.empty[String]).start.unsafeRunSync()
   }
 
 }
