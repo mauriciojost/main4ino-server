@@ -6,7 +6,7 @@ import cats.effect.IO
 import com.typesafe.config.ConfigFactory
 import org.http4s.client.UnexpectedStatus
 import org.http4s.{BasicCredentials, Method, Request, Status, Uri}
-import org.scalatest.{Assertion, BeforeAndAfterAll, ParallelTestExecution}
+import org.scalatest.{Assertion, BeforeAndAfterAll}
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
@@ -22,37 +22,30 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pureconfig.error.ConfigReaderException
 
-class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with HttpClient with ParallelTestExecution {
+class ServerSpec extends AnyFlatSpec with Matchers with HttpClient with BeforeAndAfterAll {
 
   val InitializationTimeMs = 4000
-  val FreePortTimeMs = 5000
-  // configs/1/application.conf/database/cleanup/retention-secs
-  // which must be retention-secs=(10 * timeUnitMs)
+  var port: Int = _
   val ConfigDirPath = "src/test/resources/configs/1"
 
-  lazy val appThread: Thread = launchAsync()
+  private lazy val asyncAppThread = launchAppAsync()
   val UserPass = BasicCredentials(Fixtures.User1.id, Fixtures.User1Pass)
 
   implicit val statusEncoder = JsonEncoding.StatusEncoder
   implicit val statusDecoder = JsonEncoding.StatusDecoder
 
   override def beforeAll(): Unit = {
-    val port = FreePortFinder.findFreeLocalPort()
-    Thread.sleep(FreePortTimeMs);
-    System.setProperty("config-dir", ConfigDirPath)
-    System.setProperty("server.port", port.toString)
-    ConfigFactory.invalidateCaches() // force reload of java properties
-    appThread
-    Thread.sleep(InitializationTimeMs) // give time to the thread to initialize
+    port = FreePortFinder.findFreeLocalPort()
+    asyncAppThread
+    Thread.sleep(InitializationTimeMs) // give time to the app to initialize
   }
 
   override def afterAll(): Unit = {
-    appThread.interrupt()
+    asyncAppThread.interrupt()
   }
 
   "The server" should "start and expose rest the api (v1)" in {
     withHttpClient { httpClient =>
-      val port = System.getProperty("server.port")
       val help = httpClient.expect[String](s"http://localhost:$port/api/v1/token/${UserPass.token}/help")
       help.unsafeRunSync() should include("https")
     }
@@ -61,7 +54,6 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
   it should "reject unauthorized requests" in {
     withHttpClient { httpClient =>
       assertThrows[UnexpectedStatus] { // forbidden
-        val port = System.getProperty("server.port")
         httpClient.expect[String](s"http://localhost:$port/api/v1/help").unsafeRunSync()
       }
     }
@@ -114,7 +106,6 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
   }
 
   private def devPostRequest(devName: String, table: String) = {
-    val port = System.getProperty("server.port")
     Request[IO](
       method = Method.POST,
       uri = Uri.unsafeFromString(s"http://localhost:$port/api/v1/token/${UserPass.token}/devices/$devName/$table"),
@@ -123,7 +114,6 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
   }
 
   private def devGetRequest(devName: String, table: String, id: RequestId) = {
-    val port = System.getProperty("server.port")
     Request[IO](
       method = Method.GET,
       uri = Uri.unsafeFromString(s"http://localhost:$port/api/v1/token/${UserPass.token}/devices/$devName/$table/$id")
@@ -132,7 +122,6 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
 
   it should "start and expose the webapp files" in {
     withHttpClient { httpClient =>
-      val port = System.getProperty("server.port")
       val help = httpClient.expect[String](s"http://localhost:$port/index.html")
       help.unsafeRunSync() should include("</body>")
     }
@@ -140,7 +129,6 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
 
   it should "start and expose the firmware files" in {
     withHttpClient { httpClient =>
-      val port = System.getProperty("server.port")
       val help = httpClient.expect[String](s"http://localhost:$port/firmwares/botino/esp8266")
       help.unsafeRunSync() should include("1.0.0")
     }
@@ -152,9 +140,12 @@ class ServerSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll with H
     assertThrows[ConfigReaderException[Args]](Server.run(List.empty[String]).unsafeRunSync())
   }
 
-  private def launchAsync(): Thread = {
+  private def launchAppAsync(): Thread = {
     val runnable = new Runnable() {
       override def run() = {
+        System.setProperty("config-dir", ConfigDirPath)
+        System.setProperty("server.port", port.toString)
+        ConfigFactory.invalidateCaches() // force reload of java properties
         Server.main(Array.empty[String])
       }
     }
