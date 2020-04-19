@@ -57,7 +57,8 @@ function killem() {
 }
 
 function build_package() {
-  sbt clean test universal:packageBin
+  sbt clean test
+  sbt universal:packageBin
 }
 
 function launch_instance() {
