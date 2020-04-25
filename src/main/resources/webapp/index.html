@@ -36,12 +36,14 @@ Examples:
     <div class="navbar-header">
         <a class="navbar-brand" ui-sref="#">Main4ino</a>
     </div>
-    <ul class="nav navbar-nav">
-        <li><a ng-click="goLogin()">Login</a></li>
+    <ul style="display:{{ $root.logged ? 'inherit' : 'none' }};" class="nav navbar-nav">
         <li><a ng-click="goControl()">Control</a></li>
         <li><a ng-click="goHistory()">History</a></li>
         <li><a ng-click="goLog()">Logs</a></li>
         <li><a ng-click="goAdministrate()">Administrate</a></li>
+    </ul>
+    <ul class="nav navbar-nav navbar-right">
+        <li><a ng-click="goLogin()" style="color:{{ $root.logged ? 'green' : 'white' }};">{{ $root.logged ? "Logged in as: '" + $root.logged + "'" : "Login"}}</a></li>
     </ul>
 </nav>
 

@@ -93,9 +93,9 @@ webPortalApp.config(function($stateProvider, $urlRouterProvider) {
 
 webPortalApp.controller(
     "LoginController",
-        function($scope, $http, $log, $stateParams, $state) {
+        function($scope, $http, $log, $stateParams, $state, $rootScope) {
 
-            $scope.logged = null;
+            $rootScope.logged = null;
             $scope.device = $stateParams.device | getCookie("device");
 
             $scope.loginUsingSession = function() {
@@ -109,7 +109,7 @@ webPortalApp.controller(
                 $http(requs).then(
                     function(r) {
                         $log.log("Found: " + r.data);
-                        $scope.logged = r.data;
+                        $rootScope.logged = r.data;
                     },
                     function(r) {
                         $log.log("Not logged in: " + r.data);
@@ -162,7 +162,7 @@ webPortalApp.controller(
               $log.log("Removed credentials");
               eraseCookie("session");
               eraseCookie("device");
-              $scope.logged = null;
+              $rootScope.logged = null;
             }
 
             $scope.goLogin = function() {
@@ -197,7 +197,7 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     "HistoryController",
-        function($scope, $http, $log, $stateParams) {
+        function($scope, $http, $log, $stateParams, $rootScope) {
 
             $scope.session = getCookie("session");
 
@@ -261,7 +261,7 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     "ControlController",
-        function($scope, $http, $log, $stateParams) {
+        function($scope, $http, $log, $stateParams, $rootScope) {
 
             $scope.session = getCookie("session");
 
@@ -489,7 +489,7 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     "LogController",
-    function($scope, $http, $log, $stateParams) {
+    function($scope, $http, $log, $stateParams, $rootScope) {
 
         $scope.session = getCookie("session");
 
@@ -550,7 +550,7 @@ webPortalApp.controller(
 
 webPortalApp.controller(
     "AdministrateController",
-    function($scope, $http, $log, $stateParams) {
+    function($scope, $http, $log, $stateParams, $rootScope) {
 
         $scope.session = getCookie("session");
 
