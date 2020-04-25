@@ -42,8 +42,14 @@ Examples:
         <li><a ng-click="goLog()">Logs</a></li>
         <li><a ng-click="goAdministrate()">Administrate</a></li>
     </ul>
+    <ul style="display:{{ $root.logged ? 'inherit' : 'none' }};" class="nav navbar-nav">
+        <li ng-repeat="dv in $root.devices track by $index">
+            <a ng-click="switchTo(dv)">{{ dv }}</a>
+        </li>
+    </ul>
+
     <ul class="nav navbar-nav navbar-right">
-        <li><a ng-click="goLogin()" style="color:{{ $root.logged ? 'green' : 'white' }};">{{ $root.logged ? "Logged in as: '" + $root.logged + "'" : "Login"}}</a></li>
+        <li><a ng-click="goLogin()" style="color:{{ $root.logged ? 'green' : 'white' }};">{{ $root.logged ? "Log out '" + $root.logged + "'" : "Login"}}</a></li>
     </ul>
 </nav>
 

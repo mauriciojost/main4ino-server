@@ -96,7 +96,8 @@ webPortalApp.controller(
         function($scope, $http, $log, $stateParams, $state, $rootScope) {
 
             $rootScope.logged = null;
-            $scope.device = $stateParams.device | getCookie("device");
+            $rootScope.devices = [];
+            $scope.device = $stateParams.device;
 
             $scope.loginUsingSession = function() {
               $log.log("Login with session");
@@ -108,7 +109,12 @@ webPortalApp.controller(
                 };
                 $http(requs).then(
                     function(r) {
-                        $log.log("Found: " + r.data);
+                        $log.log("Logged in: " + r.data);
+                        var devicesCookie = getCookie("devices");
+                        if (devicesCookie) {
+                            $rootScope.devices = devicesCookie.split(",");
+                        }
+                        $log.log("Devices: " + $rootScope.devices + " (total: " + $rootScope.devices.length + ")");
                         $rootScope.logged = r.data;
                     },
                     function(r) {
@@ -135,7 +141,7 @@ webPortalApp.controller(
               $log.log("Remember credentials");
               $log.log("User: " + $scope.username);
               $log.log("Session: " + $scope.session);
-              $log.log("Device: " + $scope.device);
+              $log.log("Devices: " + $scope.devicesStr);
                 var req = {
                     method: "POST",
                     url: "api/v1/session",
@@ -145,7 +151,7 @@ webPortalApp.controller(
                     function(r) {
                         $log.log("Logged in correctly: " + r.data);
                         setCookie("session", r.data, 100);
-                        setCookie("device", $scope.device, 100);
+                        setCookie("devices", $scope.devicesStr, 100);
                         $scope.loginUsingSession();
                     },
                     function(r) {
@@ -161,33 +167,38 @@ webPortalApp.controller(
             $scope.removeCredentials = function() {
               $log.log("Removed credentials");
               eraseCookie("session");
-              eraseCookie("device");
+              eraseCookie("devices");
               $rootScope.logged = null;
             }
 
             $scope.goLogin = function() {
               $log.log("Going to login");
-              $state.go("login", {session: $scope.session, device: $stateParams.device})
+              $state.go("login", {session: $scope.session, device: $stateParams.device});
             }
 
             $scope.goHistory = function() {
               $log.log("Going to history");
-              $state.go("history", {session: $scope.session, device: $stateParams.device})
+              $state.go("history", {session: $scope.session, device: $stateParams.device});
             }
 
             $scope.goControl = function() {
               $log.log("Going to control");
-              $state.go("control", {session: $scope.session, device: $stateParams.device})
+              $state.go("control", {session: $scope.session, device: $stateParams.device});
             }
 
             $scope.goLog = function() {
                 $log.log("Going to log");
-                $state.go("log", {session: $scope.session, device: $stateParams.device})
+                $state.go("log", {session: $scope.session, device: $stateParams.device});
             }
 
             $scope.goAdministrate = function() {
                 $log.log("Going to administrate");
-                $state.go("administrate", {session: $scope.session, device: $stateParams.device})
+                $state.go("administrate", {session: $scope.session, device: $stateParams.device});
+            }
+
+            $scope.switchTo = function(dev) {
+                $log.log("Switching to: " + dev + " " + $state.$current);
+                $state.go($state.$current, {session: $scope.session, device: dev });
             }
 
             $scope.loginUsingSession();
