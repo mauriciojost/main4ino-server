@@ -1,11 +1,13 @@
 package org.mauritania.main4ino.firmware
 
+import java.io.File
+
 import cats.effect.{Blocker, ContextShift, Effect, Sync}
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.{EntityEncoder, Header, Headers, HttpRoutes, Request, Response}
 import org.http4s.headers.`Content-Length`
 import org.http4s.dsl.Http4sDsl
-import org.mauritania.main4ino.api.v1.Url.{VerWishParam, Platf, Proj}
+import org.mauritania.main4ino.api.v1.Url.{Platf, Proj, VerWishParam}
 import cats.implicits._
 import org.mauritania.main4ino.ContentTypeAppJson
 import io.circe.syntax._
@@ -15,6 +17,7 @@ import org.http4s.util.CaseInsensitiveString
 import org.mauritania.main4ino.models.FirmwareVersion
 import cats._
 import cats.data._
+import io.circe.Encoder
 import org.mauritania.main4ino.helpers.HttpMeter
 
 import scala.concurrent.ExecutionContext
@@ -62,6 +65,30 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
             logger.warn(s"Cannot upgrade, version not found: $msg").flatMap(_ => NotFound())
         }
       } yield response
+    }
+
+    /**
+      * GET /firmwares/<project>/<platform>/metadata?version=<version>
+      *
+      * Example: GET /firmwares/botino/esp8266/metadata?version=3.1.8
+      *
+      * Retrieve a the metadata of firmware given a the version, the platform and the project it belongs to.
+      *
+      * Returns: OK (200) | NO_CONTENT (204)
+      */
+    case GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "metadata" :? VerWishParam(
+          versionFeatureCode
+        ) => {
+      val coords = Wish(project, versionFeatureCode, platform)
+      for {
+        logger <- Slf4jLogger.fromClass[F](getClass)
+        _ <- logger.debug(s"Requested firmware metadata: $coords")
+        fa <- st.getFirmware(coords)
+        r <- fa match {
+          case Right(x) => Ok(x.asJson, ContentTypeAppJson)
+          case Left(_) => NoContent()
+        }
+      } yield r
     }
 
     /**
@@ -115,5 +142,7 @@ object Service {
     Esp8266VersionHeader,
     Esp32VersionHeader
   ).map(CaseInsensitiveString.apply)
+
+  implicit val CirceFileEncoder: Encoder[File] = Encoder.encodeString.contramap[File](_.getName)
 
 }

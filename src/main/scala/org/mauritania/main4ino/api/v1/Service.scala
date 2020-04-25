@@ -4,9 +4,6 @@ import cats.data.{Kleisli, OptionT}
 import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import io.circe.generic.auto._
-import io.circe.syntax._
-import org.http4s.circe._
 import cats.implicits._
 import io.circe.generic.auto._
 import io.circe.syntax._

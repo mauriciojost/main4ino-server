@@ -1,5 +1,6 @@
 package org.mauritania.main4ino.firmware
 
+import java.io.File
 import java.nio.file.{Path, Paths}
 
 import cats.effect.{Effect, IO, Sync}
@@ -22,6 +23,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
 
   final val Dataset1 = Paths.get("src", "test", "resources", "firmwares", "1")
 
+  import Service._
 
   def defaultServiceWithDirectory(tmp: Path): Service[IO] =
     new Service[IO](new Store[IO](tmp), ExecutionContext.global)(Sync[IO], Effect[IO], IO.contextShift(ExecutionContext.global))
@@ -57,16 +59,37 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
     implicit val s = defaultServiceWithDirectory(Dataset1)
     val rs = get(
       path = "/firmwares/botino/esp8266/content?version=1.0.0",
-      headers = Headers(Header(Service.Esp8266VersionHeader, "1.0.0"))
+      headers = Headers.of(Header(Service.Esp8266VersionHeader, "1.0.0"))
     )
     rs.status shouldBe Status.NotModified // already up to date
+  }
+
+  it should "return firmware meatadata" in {
+    implicit val s = defaultServiceWithDirectory(Dataset1)
+    val rs1 = get("/firmwares/botino/esp8266/metadata?version=1.0.0")
+    rs1.status shouldBe Status.Ok
+    rs1.bodyAsText.compile.toList.unsafeRunSync() shouldBe List(
+      Firmware(
+        file = new File("firmware-1.0.0.esp8266.bin"),
+        length = 5L,
+        coords =
+          Coord(
+            project = "botino",
+            version = "1.0.0",
+            platform = "esp8266",
+            filename = "firmware-1.0.0.esp8266.bin",
+            feature = None
+          )
+      ).asJson.noSpaces
+    )
+    val rs2 = get("/firmwares/botino/esp8266/metadata?version=1.2.0")
+    rs2.status shouldBe Status.NoContent
   }
 
   it should "handle scenario of firmware providing no version" in {
     implicit val s = defaultServiceWithDirectory(Dataset1)
     val rs = get(
       path = "/firmwares/botino/esp8266/content?version=1.0.0"
-      //headers = Headers(Header(Service.Esp8266VersionHeader, "1.0.0"))
     )
     rs.status shouldBe Status.Ok // can be downloaded
   }
@@ -75,7 +98,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
     implicit val s = defaultServiceWithDirectory(Dataset1)
     val rs = get(
       path = "/firmwares/botino/esp8266/content?version=1.0.0",
-      headers = Headers(Header(Service.Esp8266VersionHeader, "1.0.0"), Header(Service.Esp32VersionHeader, "2.0.0"))
+      headers = Headers.of(Header(Service.Esp8266VersionHeader, "1.0.0"), Header(Service.Esp32VersionHeader, "2.0.0"))
     )
     rs.status shouldBe Status.Ok // can be downloaded
   }
