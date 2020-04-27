@@ -12,6 +12,7 @@ function print_context() {
   whoami
   date
   hostname
+  jps -l
 }
 
 function is_port_free() {
@@ -46,6 +47,8 @@ function killem() {
   local pids="$1"
   if [ -n "$pids" ]
   then
+    echo "Context for Killing existent apps: $pids"
+    jps -l
     echo "Killing existent apps: $pids"
     kill $pids
     sleep 5
@@ -98,7 +101,9 @@ target_port=$(find_free_port "$ports_list")
 
 launch_instance "$target_port" "$old_pids"
 
-sleep 10
+sleep 30
+
+print_context
 
 if [ "$(is_port_free $target_port)" == "false" ]
 then
