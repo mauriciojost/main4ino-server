@@ -198,7 +198,7 @@ webPortalApp.controller(
 
             $scope.switchTo = function(dev) {
                 $log.log("Switching to: " + dev + " " + $state.$current);
-                $state.go($state.$current, {session: $scope.session, device: dev });
+                $state.go($state.$current, {session: $scope.session, device: dev }, {reload:true});
             }
 
             $scope.loginUsingSession();
