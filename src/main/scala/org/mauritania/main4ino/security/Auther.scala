@@ -80,7 +80,7 @@ class Auther[F[_]: Sync](config: Config) {
     * Provide a session given a user
     */
   def generateSession(user: User): F[UserSession] =
-    Auther.sessionFromUser[F](user, config.privateKeyBits)
+    Auther.sessionFromUser[F](user, config.privatekey)
 
 }
 

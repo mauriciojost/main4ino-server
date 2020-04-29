@@ -14,7 +14,7 @@ object Fixtures {
     granted = Map[String, Permission]("/" -> RW)
   )
 
-  val PrivateKey = "0123456789abcdef0123"
+  val PrivateKey = "0123456789abcdef0123".getBytes()
   val DefaultSecurityConfig = Config(List(User1), PrivateKey)
 
 }

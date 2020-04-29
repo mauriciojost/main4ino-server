@@ -18,14 +18,13 @@ import scala.io.Codec
 
 case class Config(
   users: List[User],
-  privatekey: String // TODO use Byte[Array]
+  privatekey: Array[Byte]
 ) {
 
   import Config._
 
   val usersBy = UsersBy(users)
-  val privateKeyBits = privatekey.utf8Bytes
-  val encryptionConfig = EncryptionConfig(privateKeyBits)
+  val encryptionConfig = EncryptionConfig(privatekey)
 }
 
 object Config {
