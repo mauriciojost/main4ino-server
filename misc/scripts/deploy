@@ -78,8 +78,6 @@ function launch_instance() {
 
   executable=$(find $tmp_dir -name main4ino-server -type f)
 
-  echo "Temporary logs file: $tmp_logs"
-
   killem "$old_pids" # must kill before the new one starts (or two processes using same DB !!!)
 
   /usr/sbin/daemonize -E BUILD_ID=dontKillMe \
@@ -113,7 +111,6 @@ print_context
 if [ "$(is_port_free $target_port)" == "false" ]
 then
   echo "OK. The process is running (port $target_port taken)."
-  cat "$tmp_logs"
   exit 0
 else
   echo "KO. The process is not running (port $target_port not taken)."
