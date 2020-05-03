@@ -69,6 +69,8 @@ function launch_instance() {
   local old_pids="$2"
   local stdout_logs="$3"
   local stderr_logs="$4"
+  local pid_file="$5"
+  local lock_file="$6"
 
   local tmp_dir=$(mktemp -d)
 
@@ -81,10 +83,14 @@ function launch_instance() {
   killem "$old_pids" # must kill before the new one starts (or two processes using same DB !!!)
 
   /usr/sbin/daemonize -E BUILD_ID=dontKillMe \
+    -o "$stdout_logs" \
+    -e "$stderr_logs" \
+    -p "$pid_file" \
+    -l "$lock_file" \
     /bin/bash "$executable" \
     -Dserver.port="$port" \
     -Dconfig-dir="$config_dir" \
-    -Dlog4j.configuration="file://$config_dir/custom-log4j.properties" -o "$stdout_logs" -e "$stderr_logs" &
+    -Dlog4j.configuration="file://$config_dir/custom-log4j.properties" &
 
 }
 
@@ -101,12 +107,19 @@ target_port=$(find_free_port "$ports_list")
 
 tmp_stdout_logs=$(mktemp)
 tmp_stderr_logs=$(mktemp)
+pid_file="$config_dir/app.pid"
+lock_file="$config_dir/app.lock"
 
-launch_instance "$target_port" "$old_pids" "$tmp_stdout_logs" "$tmp_stderr_logs"
+launch_instance "$target_port" "$old_pids" "$tmp_stdout_logs" "$tmp_stderr_logs" "$pid_file" "$lock_file""
 
 sleep 30
 
 print_context
+
+echo "STDOUT:"
+cat "$tmp_stdout_logs"
+echo "STDERR:"
+cat "$tmp_stderr_logs"
 
 if [ "$(is_port_free $target_port)" == "false" ]
 then
@@ -114,10 +127,6 @@ then
   exit 0
 else
   echo "KO. The process is not running (port $target_port not taken)."
-  echo "STDOUT:"
-  cat "$tmp_stdout_logs"
-  echo "STDERR:"
-  cat "$tmp_stderr_logs"
   exit 1
 fi
 
