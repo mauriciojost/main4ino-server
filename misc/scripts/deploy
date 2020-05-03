@@ -67,6 +67,8 @@ function build_package() {
 function launch_instance() {
   local port="$1"
   local old_pids="$2"
+  local stdout_logs="$3"
+  local stderr_logs="$4"
 
   local tmp_dir=$(mktemp -d)
 
@@ -76,7 +78,6 @@ function launch_instance() {
 
   executable=$(find $tmp_dir -name main4ino-server -type f)
 
-  local tmp_logs=$(mktemp)
   echo "Temporary logs file: $tmp_logs"
 
   killem "$old_pids" # must kill before the new one starts (or two processes using same DB !!!)
@@ -85,7 +86,7 @@ function launch_instance() {
     /bin/bash "$executable" \
     -Dserver.port="$port" \
     -Dconfig-dir="$config_dir" \
-    -Dlog4j.configuration="file://$config_dir/custom-log4j.properties" &> "$tmp_logs" &
+    -Dlog4j.configuration="file://$config_dir/custom-log4j.properties" -o "$stdout_logs" -e "$stderr_logs" &
 
 }
 
@@ -99,7 +100,11 @@ build_package
 
 target_port=$(find_free_port "$ports_list")
 
-launch_instance "$target_port" "$old_pids"
+
+tmp_stdout_logs=$(mktemp)
+tmp_stderr_logs=$(mktemp)
+
+launch_instance "$target_port" "$old_pids" "$tmp_stdout_logs" "$tmp_stderr_logs"
 
 sleep 30
 
@@ -108,9 +113,14 @@ print_context
 if [ "$(is_port_free $target_port)" == "false" ]
 then
   echo "OK. The process is running (port $target_port taken)."
+  cat "$tmp_logs"
   exit 0
 else
   echo "KO. The process is not running (port $target_port not taken)."
+  echo "STDOUT:"
+  cat "$tmp_stdout_logs"
+  echo "STDERR:"
+  cat "$tmp_stderr_logs"
   exit 1
 fi
 
