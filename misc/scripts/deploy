@@ -110,7 +110,7 @@ tmp_stderr_logs=$(mktemp)
 pid_file="$config_dir/app.pid"
 lock_file="$config_dir/app.lock"
 
-launch_instance "$target_port" "$old_pids" "$tmp_stdout_logs" "$tmp_stderr_logs" "$pid_file" "$lock_file""
+launch_instance "$target_port" "$old_pids" "$tmp_stdout_logs" "$tmp_stderr_logs" "$pid_file" "$lock_file"
 
 sleep 30
 
