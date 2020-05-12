@@ -7,6 +7,7 @@ import com.typesafe.config.ConfigFactory
 import org.http4s.client.UnexpectedStatus
 import org.http4s.{BasicCredentials, Method, Request, Status, Uri}
 import org.scalatest.{Assertion, BeforeAndAfterAll}
+import org.scalatest.Assertions._
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
@@ -74,10 +75,10 @@ class ServerSpec extends AnyFlatSpec with Matchers with HttpClient with BeforeAn
 
       val config = ConfigLoader.fromFile[IO, Config](new File(ConfigDirPath + "/application.conf")).unsafeRunSync()
 
-      def checkRecord(dev: DeviceName, id: Long, status: Status): Assertion =
-       httpClient.status(devGetRequest(dev, "targets", id)).unsafeRunSync() shouldBe status
-      def checkRecordExists(dev: DeviceName, id: Long): Assertion = checkRecord(dev, id, Status.Ok)
-      def checkRecordDoesNotExist(dev: DeviceName, id: Long): Assertion = checkRecord(dev, id, Status.NoContent)
+      def checkRecord(dev: DeviceName, id: Long, status: Status, errMsg: String): Assertion =
+       assert(httpClient.status(devGetRequest(dev, "targets", id)).unsafeRunSync() === status, errMsg)
+      def checkRecordExists(dev: DeviceName, id: Long, errMsg: String): Assertion = checkRecord(dev, id, Status.Ok, errMsg)
+      def checkRecordDoesNotExist(dev: DeviceName, id: Long, errMsg: String): Assertion = checkRecord(dev, id, Status.NoContent, errMsg)
       val timeUnitSecs = config.database.cleanup.retentionSecs.value.toFloat / 10 // a 10th fraction of the retention
       def sleepTimeUnits(tu: Float): Unit = Thread.sleep((tu * 1000 * timeUnitSecs).toLong)
 
@@ -85,7 +86,7 @@ class ServerSpec extends AnyFlatSpec with Matchers with HttpClient with BeforeAn
       val dev1ResponseJson = httpClient.expect[String](devPostRequest("dev1", "targets"))
       val idDev1 = jsonAs[IdResponse](dev1ResponseJson.unsafeRunSync()).id
 
-      checkRecordExists("dev1", idDev1) // just created
+      checkRecordExists("dev1", idDev1, "dev1 just created, should exist")
 
       sleepTimeUnits(20) // T20
 
@@ -93,13 +94,13 @@ class ServerSpec extends AnyFlatSpec with Matchers with HttpClient with BeforeAn
       val dev2ResponseJson = httpClient.expect[String](devPostRequest("dev2", "targets"))
       val idDev2 = jsonAs[IdResponse](dev2ResponseJson.unsafeRunSync()).id
 
-      checkRecordDoesNotExist("dev1", idDev1) // cleaned up
-      checkRecordExists("dev2", idDev2) // just created
+      checkRecordDoesNotExist("dev1", idDev1, "dev1 should have been cleaned up")
+      checkRecordExists("dev2", idDev2, "dev2 just created, should exist")
 
       sleepTimeUnits(20) // T40
 
-      checkRecordDoesNotExist("dev1", idDev1) // cleaned up
-      checkRecordDoesNotExist("dev2", idDev2) // cleaned up
+      checkRecordDoesNotExist("dev1", idDev1, "dev1 should have been cleaned up (way before)")
+      checkRecordDoesNotExist("dev2", idDev2, "dev2 should have been cleaned up")
 
     }
 
