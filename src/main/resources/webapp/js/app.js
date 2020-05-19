@@ -233,6 +233,8 @@ webPortalApp.controller(
                 var fromMs = date.getTime() + msFrom;
                 var fromSec = (fromMs / 1000) | 0; // take to seconds and cast to int
 
+                $log.log('Query from ' + new Date(fromMs).toString() + ' to ' + new Date(toMs).toString());
+
                 var req = {
                     method: "GET",
                     url: "api/v1/devices/" + $stateParams.device + "/" + $scope.tabl + "?from=" + fromSec + "&to=" + toSec,
@@ -521,6 +523,8 @@ webPortalApp.controller(
             var msFrom = 1000 * 3600 * 24 * $scope.from;
             var fromMs = date.getTime() + msFrom;
             var fromSec = (fromMs / 1000) | 0; // take to seconds and cast to int
+
+            $log.log('Query from ' + new Date(fromMs).toString() + ' to ' + new Date(toMs).toString());
 
             var req = {
                 method: "GET",
