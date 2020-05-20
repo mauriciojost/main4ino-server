@@ -96,10 +96,12 @@ class ServerSpec extends AnyFlatSpec with Matchers with HttpClient with BeforeAn
       val dev2ResponseJson = httpClient.expect[String](devPostRequest("dev2", "targets"))
       val idDev2 = jsonAs[IdResponse](dev2ResponseJson.unsafeRunSync()).id
 
+      sleepTimeUnits(5) // T25
+
       checkRecordDoesNotExist("dev1", idDev1, "dev1 should have been cleaned up")
       checkRecordExists("dev2", idDev2, "dev2 just created, should exist")
 
-      sleepTimeUnits(20) // T40
+      sleepTimeUnits(15) // T40
 
       checkRecordDoesNotExist("dev1", idDev1, "dev1 should have been cleaned up (way before)")
       checkRecordDoesNotExist("dev2", idDev2, "dev2 should have been cleaned up")
