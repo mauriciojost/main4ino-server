@@ -86,9 +86,11 @@ class ServerSpec extends AnyFlatSpec with Matchers with HttpClient with BeforeAn
       val dev1ResponseJson = httpClient.expect[String](devPostRequest("dev1", "targets"))
       val idDev1 = jsonAs[IdResponse](dev1ResponseJson.unsafeRunSync()).id
 
+      sleepTimeUnits(5) // T05
+
       checkRecordExists("dev1", idDev1, "dev1 just created, should exist")
 
-      sleepTimeUnits(20) // T20
+      sleepTimeUnits(15) // T20
 
       // T20, inject dev2 (at ~T20, its cleanup should take place at ~T30)
       val dev2ResponseJson = httpClient.expect[String](devPostRequest("dev2", "targets"))
