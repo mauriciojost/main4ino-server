@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
 currdir=$(pwd)
-cd ../../..
-sbt "runMain org.mauritania.main4ino.security.confgen.Client $currdir/input.conf $currdir/add.conf $currdir/security.conf"
-echo "File generated here: $currdir/security.conf"
+cd main4ino-server
+sbt -Dinput=$currdir/input.conf -Dmodif=$currdir/add.conf -Doutput=$currdir/security.conf "runMain org.mauritania.main4ino.security.confgen.Client"
