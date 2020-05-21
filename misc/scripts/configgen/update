@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
-currdir=$(pwd)
-cd main4ino-server
+currdir=$(readlink -e $(dirname $0))
+cd $currdir/../../../
 sbt -Dinput=$currdir/input.conf -Dmodif=$currdir/add.conf -Doutput=$currdir/security.conf "runMain org.mauritania.main4ino.security.confgen.Client"
+cd $currdir
