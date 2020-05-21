@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-
 export TERM=xterm-color
 currdir=$(readlink -e $(dirname $0))
 
 cd $currdir/../../..
 sbt -Dinput=$currdir/input.conf -Dmodif=$currdir/add.conf -Doutput=$currdir/security.conf "runMain org.mauritania.main4ino.security.confgen.Client"
-cho "File generated here: $currdir/security.conf"
+echo "File generated here: $currdir/security.conf"
+cd $currdir
