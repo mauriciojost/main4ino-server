@@ -11,3 +11,4 @@
 /misc/scripts/client/.versions.latest.file
 /misc/scripts/client/failures.log
 /misc/scripts/client/*.bkp
+/dbh2.mv.db
