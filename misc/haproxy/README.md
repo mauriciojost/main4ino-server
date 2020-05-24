@@ -3,6 +3,13 @@
 For `haproxy` use the following settings:
 
 ```
+
+  defaults
+          ...
+          #mode   http # disable this one
+          mode    tcp
+          ...
+
   frontend fe
           bind *:8080
           default_backend be
