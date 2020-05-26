@@ -60,7 +60,7 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
           case Right(Firmware(f, l, c)) => // different version than current, serving...
             logger
               .info(s"Must upgrade. Proposing upgrade from $currentVersion to $c (file $f)...")
-              .flatMap(_ => Ok.apply(f, `Content-Length`.unsafeFromLong(l)))
+              .flatMap(_ => Ok.apply(f))
           case Left(msg) => // no such version
             logger.warn(s"Cannot upgrade, version not found: $msg").flatMap(_ => NotFound())
         }
