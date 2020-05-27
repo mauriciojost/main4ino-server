@@ -35,7 +35,7 @@ class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
         user = "sa",
         password = "",
         cleanup = Cleanup(
-          periodSecs = PosFloat(0.5F),
+          periodSecs = PosFloat(0.1F),
           retentionSecs = PosInt(2)
         )
       ),
