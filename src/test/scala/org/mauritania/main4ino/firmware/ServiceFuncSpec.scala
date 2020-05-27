@@ -34,7 +34,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
 
     val rs = get("/firmwares/botino/esp8266/content?version=1.0.0") // available
     rs.status shouldBe Status.Ok
-    //rs.contentLength shouldBe Some(5L)
+    rs.contentLength shouldBe Some(5L)
     rs.body.compile.toList.unsafeRunSync() shouldBe List(Byte0, Byte0, Byte1, Byte1, ByteEnd)
 
     val rf = get("/firmwares/botino/esp32/content?version=1.0.0") // not available
