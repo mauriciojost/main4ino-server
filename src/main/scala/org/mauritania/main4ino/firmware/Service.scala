@@ -4,7 +4,7 @@ import java.io.File
 
 import cats.effect.{Blocker, ContextShift, Effect, Sync}
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.http4s.{EntityEncoder, Header, Headers, HttpRoutes, Request, Response}
+import org.http4s.{EntityEncoder, Header, Headers, HttpRoutes, Request, Response, StaticFile}
 import org.http4s.headers.`Content-Length`
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.main4ino.api.v1.Url.{Platf, Proj, VerWishParam}
@@ -28,7 +28,6 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
   import Service._
 
   final private val blocker = Blocker.liftExecutionContext(ec)
-  implicit val fileEntityEncoder = EntityEncoder.fileEncoder[F](blocker)
 
   val serviceUntimed = HttpRoutes.of[F] {
 
@@ -57,10 +56,10 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
           case Right(Firmware(_, _, c))
               if (currentVersion.exists(_ == c.version)) => // same version as current
             logger.debug(s"Already up-to-date: $currentVersion=$c...").flatMap(_ => NotModified())
-          case Right(Firmware(f, l, c)) => // different version than current, serving...
-            logger
-              .info(s"Must upgrade. Proposing upgrade from $currentVersion to $c (file $f)...")
-              .flatMap(_ => Ok.apply(f, `Content-Length`.unsafeFromLong(l)))
+          case Right(Firmware(f, _, c)) => // different version than current, serving...
+            logger.info(s"Must upgrade. Proposing upgrade from $currentVersion to $c (file $f)...").flatMap{_ =>
+              StaticFile.fromFile(f, blocker, Some(a)).getOrElseF(InternalServerError())
+            }
           case Left(msg) => // no such version
             logger.warn(s"Cannot upgrade, version not found: $msg").flatMap(_ => NotFound())
         }
