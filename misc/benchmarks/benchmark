@@ -1,113 +1,149 @@
 #!/usr/bin/env bash
 
-curr_dir=$(readlink -e $(dirname $0))
+root_dir=$(readlink -e $(dirname $0))/../../
+
 set -e
+set -u
+set -x
 
-echo "Launch me from the root directory..."
-sleep 1
+user_password="admin:password"
+main4ino_server_address="localhost:8080"
+description_body='{"version":"1.0.0", "json":[{"patterns": ["^actor1.p1$"], "descriptions": ["Property 1 xx."], "examples": ["1", "2", "3"]}]}'
 
-USER_PASSWORD="admin:password"
-SERVER_ADDRESS="localhost:8080"
-DESCRIPTION='{"version":"1.0.0", "json":[{"patterns": ["^actor1.p1$"], "descriptions": ["Property 1 xx."], "examples": ["1", "2", "3"]}]}'
+# Kill previous instance if any
+jps  | grep sbt-launch.jar | awk '{print $1}' | xargs -I% kill %
 
 rm -fr db*
-sbt -Dconfig-dir=$curr_dir/src/main/resources/defaultconfig/ 'runMain org.mauritania.main4ino.Server' &
+sbt -Dconfig-dir=$root_dir/src/main/resources/defaultconfig/ 'runMain org.mauritania.main4ino.Server' &
 
 sleep 20
 
-SESSION=`curl -s -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/session"`
+session=`curl -s -X POST "http://$user_password@$main4ino_server_address/api/v1/session"`
 
-CURL="curl -s -o /tmp/file --header session:$SESSION"
+curl_cmd="curl -s -o /tmp/file --header session:$session"
 
 function description() {
   local device="$1"
-  $CURL -X POST "http://$SERVER_ADDRESS/api/v1/devices/$device/descriptions" -d "$DESCRIPTION"
+  $curl_cmd -X POST "http://$main4ino_server_address/api/v1/devices/$device/descriptions" -d "$description_body"
 }
 
-function insert() {
+function insert_logs() {
+  echo "insert logs"
+  local device="$1"
+  $curl_cmd -X POST \
+    "$main4ino_server_address/api/v1/devices/$device/logs" \
+    -d @$root_dir/README.md
+}
+
+function get_logs() {
+  echo "get logs"
+  local device="$1"
+  local now_secs=`date +'%s'`
+  let from_secs=$now_secs-$length_secs
+  $curl_cmd -X GET \
+    "$main4ino_server_address/api/v1/devices/$device/logs?from=$from_secs&to=$now_secs"
+}
+
+function insert_report() {
   local device="$1"
   local actor="$2"
   local body="$3"
 
-  $CURL -X POST \
-    $SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor \
+  $curl_cmd -X POST \
+    $main4ino_server_address/api/v1/devices/$device/reports/actors/$actor \
     -d "$body"
 }
 
-function getlast() {
+function get_last_report() {
   local device="$1"
   local actor="$2"
-  $CURL -X GET \
-    $SERVER_ADDRESS/api/v1/devices/$device/reports/actors/$actor/last
+  $curl_cmd -X GET \
+    $main4ino_server_address/api/v1/devices/$device/reports/actors/$actor/last
 }
 
-function getlastall() {
+function get_last_report_all() {
   local device="$1"
-  $CURL -X GET \
-    $SERVER_ADDRESS/api/v1/devices/$device/reports/last
+  $curl_cmd -X GET \
+    $main4ino_server_address/api/v1/devices/$device/reports/last
 }
 
 
-function iterationmix() {
+function iteration_mix() {
   local dev=$1
   local n=$2
 
   for l in `seq 1 $n`
   do
     description dev$l
-    insert $dev body$l '{"_command1":"command1text'$l'","+command2":"command2text"}'
-    insert $dev body$l '{"_mv1":"move1text'$l'","mv2":"move2text"}'
-    insert $dev clock$l '{"~hour":5, "minute":'$l'}'
-    insert $dev clock$l '{"~hour":3,"minute":4,"second":5}'
-    insert $dev clocksync$l '{"+freq":"~1'$l'h"}'
-    insert $dev clocksync$l '{"+freq":"~2'$l'h"}'
-    insert $dev clocksync$l '{"+freq":"~4'$l'h"}'
+    insert_report $dev body$l '{"_command1":"command1text'$l'","+command2":"command2text"}'
+    insert_report $dev body$l '{"_mv1":"move1text'$l'","mv2":"move2text"}'
+    insert_report $dev clock$l '{"~hour":5, "minute":'$l'}'
+    insert_report $dev clock$l '{"~hour":3,"minute":4,"second":5}'
+    insert_report $dev clocksync$l '{"+freq":"~1'$l'h"}'
+    insert_report $dev clocksync$l '{"+freq":"~2'$l'h"}'
+    insert_report $dev clocksync$l '{"+freq":"~4'$l'h"}'
 
-    getlast $dev body$l
-    getlast $dev clock$l
-    getlast $dev clocksync$l
-    getlastall $dev
-    getlastall $dev
-    getlastall $dev
+    get_last_report $dev body$l
+    get_last_report $dev clock$l
+    get_last_report $dev clocksync$l
+    get_last_report_all $dev
+    get_last_report_all $dev
+    get_last_report_all $dev
+
+    insert_logs $dev
+    insert_logs $dev
+    insert_logs $dev
+
+    get_logs $dev
+    get_logs $dev
+    get_logs $dev
   done
 }
 
-function iterationread() {
+function iteration_read() {
   local dev=$1
   local n=$2
 
   for l in `seq 1 $n`
   do
-    getlast $dev body$l
-    getlast $dev clock$l
-    getlast $dev clocksync$l
-    getlastall $dev
-    getlastall $dev
-    getlastall $dev
+    get_last_report $dev body$l
+    get_last_report $dev clock$l
+    get_last_report $dev clocksync$l
+    get_last_report_all $dev
+    get_last_report_all $dev
+    get_last_report_all $dev
+    get_logs $dev
+    get_logs $dev
+    get_logs $dev
   done
 }
 
-function iterationwrite() {
+function iteration_write() {
   local dev=$1
   local n=$2
 
   for l in `seq 1 $n`
   do
     description dev$l
-    insert $dev body$l '{"command1":"command1text'$l'","command2":"command2text"}'
-    insert $dev body$l '{"mv1":"move1text'$l'","mv2":"move2text"}'
-    insert $dev clock$l '{"hour":5, "minute":'$l'}'
-    insert $dev clock$l '{"hour":3,"minute":4,"second":5}'
-    insert $dev clocksync$l '{"freq":"~1'$l'h"}'
-    insert $dev clocksync$l '{"freq":"~2'$l'h"}'
-    insert $dev clocksync$l '{"freq":"~4'$l'h"}'
-    insert $dev body$l '{"command3":"command1text'$l'","command2":"command2text"}'
-    insert $dev body$l '{"mv3":"move1text'$l'","mv2":"move2text"}'
-    insert $dev clock$l '{"hour":8, "minute":'$l'}'
-    insert $dev clock$l '{"hour":8,"minute":4,"second":5}'
-    insert $dev clocksync$l '{"freq":"~2'$l'h"}'
-    insert $dev clocksync$l '{"freq":"~3'$l'h"}'
-    insert $dev clocksync$l '{"freq":"~4'$l'h"}'
+    insert_report $dev body$l '{"command1":"command1text'$l'","command2":"command2text"}'
+    insert_report $dev body$l '{"mv1":"move1text'$l'","mv2":"move2text"}'
+    insert_report $dev clock$l '{"hour":5, "minute":'$l'}'
+    insert_report $dev clock$l '{"hour":3,"minute":4,"second":5}'
+    insert_report $dev clocksync$l '{"freq":"~1'$l'h"}'
+    insert_report $dev clocksync$l '{"freq":"~2'$l'h"}'
+    insert_report $dev clocksync$l '{"freq":"~4'$l'h"}'
+    insert_report $dev body$l '{"command3":"command1text'$l'","command2":"command2text"}'
+    insert_report $dev body$l '{"mv3":"move1text'$l'","mv2":"move2text"}'
+    insert_report $dev clock$l '{"hour":8, "minute":'$l'}'
+    insert_report $dev clock$l '{"hour":8,"minute":4,"second":5}'
+    insert_report $dev clocksync$l '{"freq":"~2'$l'h"}'
+    insert_report $dev clocksync$l '{"freq":"~3'$l'h"}'
+    insert_report $dev clocksync$l '{"freq":"~4'$l'h"}'
+
+    insert_logs $dev
+    insert_logs $dev
+    insert_logs $dev
+
   done
 }
 
@@ -116,21 +152,21 @@ k=2
 function fullbenchmark() {
 
   echo "### MIX k=$k"
-  time iterationmix dev1 $k
-  time iterationmix dev2 $k
-  time iterationmix dev3 $k
+  time iteration_mix dev1 $k
+  time iteration_mix dev2 $k
+  time iteration_mix dev3 $k
 
   echo "### WRITE k=$k"
-  time iterationwrite dev1 $k
-  time iterationwrite dev2 $k
-  time iterationwrite dev3 $k
+  time iteration_write dev1 $k
+  time iteration_write dev2 $k
+  time iteration_write dev3 $k
 
   echo "### READ k=$k"
-  time iterationread dev1 $k
-  time iterationread dev2 $k
-  time iterationread dev3 $k
+  time iteration_read dev1 $k
+  time iteration_read dev2 $k
+  time iteration_read dev3 $k
 }
 
-mkdir -p $curr_dir/misc/benchmarks/db-k$k/
-fullbenchmark &> $curr_dir/misc/benchmarks/db-k$k/`git rev-parse HEAD`.benchmark.log
+mkdir -p $root_dir/misc/benchmarks/db-k$k/
+fullbenchmark &> $root_dir/misc/benchmarks/db-k$k/`git rev-parse HEAD`.benchmark.log
 
