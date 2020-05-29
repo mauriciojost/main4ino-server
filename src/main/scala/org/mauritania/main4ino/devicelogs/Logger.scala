@@ -12,7 +12,6 @@ import org.mauritania.main4ino.models.{DeviceName, EpochSecTimestamp}
 import cats.implicits._
 
 import scala.concurrent.ExecutionContext
-import scala.util.Try
 
 /**
   * Defines a way to handle logs coming from Devices, so that

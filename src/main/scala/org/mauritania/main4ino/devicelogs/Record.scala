@@ -1,7 +1,5 @@
 package org.mauritania.main4ino.devicelogs
 
-import java.time.Instant
-
 import org.mauritania.main4ino.models.EpochSecTimestamp
 
 case class Record(

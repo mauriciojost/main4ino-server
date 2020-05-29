@@ -9,6 +9,8 @@ set -u
 user_password="admin:password"
 main4ino_server_address="localhost:8080"
 description_body='{"version":"1.0.0", "json":[{"patterns": ["^actor1.p1$"], "descriptions": ["Property 1 xx."], "examples": ["1", "2", "3"]}]}'
+iterations=${1:-50}
+
 
 # Kill previous instance if any
 jps  | grep sbt-launch.jar | awk '{print $1}' | xargs -I% kill %
@@ -21,7 +23,7 @@ sleep 20
 
 session=`curl -s -X POST "http://$user_password@$main4ino_server_address/api/v1/session"`
 
-curl_cmd="curl --header session:$session"
+curl_cmd="curl -s -o /tmp/file --header session:$session"
 
 function description() {
   local device="$1"
@@ -146,9 +148,8 @@ function iteration_write() {
   done
 }
 
-k=2
-
 function fullbenchmark() {
+  local k=$1
 
   echo "### MIX k=$k"
   time iteration_mix dev1 $k
@@ -164,8 +165,10 @@ function fullbenchmark() {
   time iteration_read dev1 $k
   time iteration_read dev2 $k
   time iteration_read dev3 $k
+
+  echo "### DONE"
 }
 
-mkdir -p $root_dir/misc/benchmarks/db-k$k/
-fullbenchmark &> $root_dir/misc/benchmarks/db-k$k/`git rev-parse HEAD`.benchmark.log
+mkdir -p $root_dir/misc/benchmarks/db-k$iterations/
+fullbenchmark $iterations &> $root_dir/misc/benchmarks/db-k$iterations/`git rev-parse HEAD`.benchmark.log
 
