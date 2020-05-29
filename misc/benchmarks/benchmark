@@ -4,7 +4,7 @@ root_dir=$(readlink -e $(dirname $0))/../../
 
 set -e
 set -u
-set -x
+#set -x
 
 user_password="admin:password"
 main4ino_server_address="localhost:8080"
@@ -14,32 +14,31 @@ description_body='{"version":"1.0.0", "json":[{"patterns": ["^actor1.p1$"], "des
 jps  | grep sbt-launch.jar | awk '{print $1}' | xargs -I% kill %
 
 rm -fr db*
-sbt -Dconfig-dir=$root_dir/src/main/resources/defaultconfig/ 'runMain org.mauritania.main4ino.Server' &
+sbt -Ddev-logger.logs-base-path=$(mktemp -d) -Dconfig-dir=$root_dir/src/main/resources/defaultconfig/ 'runMain org.mauritania.main4ino.Server' &
+
 
 sleep 20
 
 session=`curl -s -X POST "http://$user_password@$main4ino_server_address/api/v1/session"`
 
-curl_cmd="curl -s -o /tmp/file --header session:$session"
+curl_cmd="curl --header session:$session"
 
 function description() {
   local device="$1"
-  $curl_cmd -X POST "http://$main4ino_server_address/api/v1/devices/$device/descriptions" -d "$description_body"
+  $curl_cmd -X PUT "http://$main4ino_server_address/api/v1/devices/$device/descriptions" -d "$description_body"
 }
 
 function insert_logs() {
-  echo "insert logs"
   local device="$1"
-  $curl_cmd -X POST \
+  $curl_cmd -X PUT \
     "$main4ino_server_address/api/v1/devices/$device/logs" \
     -d @$root_dir/README.md
 }
 
 function get_logs() {
-  echo "get logs"
   local device="$1"
   local now_secs=`date +'%s'`
-  let from_secs=$now_secs-$length_secs
+  let from_secs=$now_secs-10000
   $curl_cmd -X GET \
     "$main4ino_server_address/api/v1/devices/$device/logs?from=$from_secs&to=$now_secs"
 }
