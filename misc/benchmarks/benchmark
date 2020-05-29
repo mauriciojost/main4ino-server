@@ -10,6 +10,7 @@ user_password="admin:password"
 main4ino_server_address="localhost:8080"
 description_body='{"version":"1.0.0", "json":[{"patterns": ["^actor1.p1$"], "descriptions": ["Property 1 xx."], "examples": ["1", "2", "3"]}]}'
 iterations=${1:-50}
+name=${2:-"noname"}
 
 
 # Kill previous instance if any
@@ -170,5 +171,5 @@ function fullbenchmark() {
 }
 
 mkdir -p $root_dir/misc/benchmarks/db-k$iterations/
-fullbenchmark $iterations &> $root_dir/misc/benchmarks/db-k$iterations/`git rev-parse HEAD`.benchmark.log
+fullbenchmark $iterations &> $root_dir/misc/benchmarks/db-k$iterations/`git rev-parse HEAD`.$RANDOM.$name.benchmark.log
 
