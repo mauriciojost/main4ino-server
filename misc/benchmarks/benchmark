@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+curr_dir=$(readlink -e $(dirname $0))
 set -e
 
 echo "Launch me from the root directory..."
@@ -10,7 +11,7 @@ SERVER_ADDRESS="localhost:8080"
 DESCRIPTION='{"version":"1.0.0", "json":[{"patterns": ["^actor1.p1$"], "descriptions": ["Property 1 xx."], "examples": ["1", "2", "3"]}]}'
 
 rm -fr db*
-sbt 'runMain org.mauritania.main4ino.Server src/main/resources/defaultconfig/' &
+sbt -Dconfig-dir=$curr_dir/src/main/resources/defaultconfig/ 'runMain org.mauritania.main4ino.Server' &
 
 sleep 20
 
@@ -110,8 +111,7 @@ function iterationwrite() {
   done
 }
 
-
-k=50
+k=2
 
 function fullbenchmark() {
 
@@ -131,6 +131,6 @@ function fullbenchmark() {
   time iterationread dev3 $k
 }
 
-mkdir -p misc/benchmarks/db-k$k/
-fullbenchmark &> misc/benchmarks/db-k$k/`git rev-parse HEAD`.benchmark.log
+mkdir -p $curr_dir/misc/benchmarks/db-k$k/
+fullbenchmark &> $curr_dir/misc/benchmarks/db-k$k/`git rev-parse HEAD`.benchmark.log
 
