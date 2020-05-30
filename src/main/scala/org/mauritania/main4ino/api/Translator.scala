@@ -19,10 +19,9 @@ import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models._
 import fs2.Stream
-import org.http4s.Headers
 import org.mauritania.main4ino.db.Repository
 import org.mauritania.main4ino.db.Repository.FromTo
-import org.mauritania.main4ino.devicelogs.{Logger, Record}
+import org.mauritania.main4ino.devicelogs.Logger
 
 class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger: Logger[F])
     extends Http4sDsl[F] {
@@ -37,9 +36,9 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
 
   def getLogs(
     device: DeviceName,
-    from: Option[EpochSecTimestamp],
-    to: Option[EpochSecTimestamp]
-  ): F[Attempt[Stream[F, Record]]] = {
+    from: EpochSecTimestamp,
+    to: EpochSecTimestamp
+  ): F[Stream[F, String]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       d <- devLogger.getLogs(device, from, to)

@@ -27,7 +27,6 @@ import org.mauritania.main4ino.{ContentTypeAppJson, ContentTypeTextPlain}
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import fs2.Stream
 import org.mauritania.main4ino.db.Repository.FromTo
-import org.mauritania.main4ino.devicelogs.Record
 
 class Service[F[_]: Sync](
   auth: Auther[F],
@@ -196,21 +195,14 @@ class Service[F[_]: Sync](
       *
       * Retrieve the logs provided by the device.
       *
-      * The parameters <from> and <to> are optional. They allow to retrieve a more specific section of the logs, which
+      * The parameters <from> and <to> are mandatory. They allow to retrieve a more specific section of the logs, which
       * can be too large to download all at once.
       *
-      * Returns: OK (200) | NO_CONTENT (204)
+      * Returns: OK (200)
       */
-    case GET -> Root / "devices" / Dev(device) / "logs" :? FromParam(from) +& ToParam(to) as _ => {
-      val r: F[Attempt[Stream[F, Record]]] = tr.getLogs(device, from, to)
-      r.flatMap {
-        case Right(l) =>
-          Ok(
-            Stream("[") ++ l.map(_.asJson.noSpaces).intersperse(",") ++ Stream("]"),
-            ContentTypeAppJson
-          )
-        case Left(m) => NoContent()
-      }
+    case GET -> Root / "devices" / Dev(device) / "logs" :? MFromParam(from) +& MToParam(to) as _ => {
+      val r: F[Stream[F, String]] = tr.getLogs(device, from, to)
+      r.flatMap(l => Ok(l, ContentTypeTextPlain))
     }
 
     /**

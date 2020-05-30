@@ -302,7 +302,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
 
         val log = get(s"/devices/dev1/logs?from=0&to=1")
         log.status should be(Status.Ok)
-        log.bodyAsText.compile.toList.unsafeRunSync().mkString should be("""[{"t":0,"content":"failure"},{"t":0,"content":"here"}]""")
+        log.bodyAsText.compile.toList.unsafeRunSync().toList should be(List("0 failure", "0 here", ""))
       }
     }
   }
@@ -311,8 +311,8 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
     withTransactor { tr =>
       withTmpDir { tmp =>
         implicit val s = defaultServiceWithDirectory(tr, tmp)
-        val log = get(s"/devices/dev1/logs")
-        log.status should be(Status.NoContent)
+        val log = get(s"/devices/dev1/logs?from=0&to=0")
+        log.status should be(Status.Ok)
       }
     }
   }

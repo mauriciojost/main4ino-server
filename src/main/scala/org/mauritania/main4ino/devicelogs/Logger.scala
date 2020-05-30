@@ -17,85 +17,85 @@ import scala.concurrent.ExecutionContext
   * Defines a way to handle logs coming from Devices, so that
   * developers can monitor internals of their firmwares without
   * having to pollute the actors' properties.
+  *
   * @tparam F
   */
-class Logger[F[_]: Sync: ContextShift](config: Config, time: Time[F], ec: ExecutionContext) {
+class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: ExecutionContext) {
 
+  final private val partitioner = new Partitioner(config.partitionPos)
   final private lazy val blocker = Blocker.liftExecutionContext(ec)
   final private lazy val ChunkSize = 1024
   final private lazy val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
-  private def pathFromDevice(device: DeviceName): JavaPath =
-    config.logsBasePath.resolve(s"$device.log")
+  private def pathFromDevice(device: DeviceName, partition: Long): JavaPath =
+    config.logsBasePath.resolve(s"$device.$partition.log")
 
   /**
     * Update logs, provided the device name and the log messages to be appended
+    *
     * @param device device name
-    * @param body body containing the logs to be appended
+    * @param body   body containing the logs to be appended
     * @return [[Attempt]] telling if it was possible to perform the operation, and the amount of bytes written
     */
   def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Long]] = {
-    val file = pathFromDevice(device)
-    val bodyLines = body.through(fs2.text.lines).filter(!_.isEmpty)
-    val timedBody = bodyLines.flatMap(l =>
-      Stream.eval[F, String](time.nowUtc.map(t => s"${Time.asTimestamp(t)} $l"))
-    )
-    val encodedTimedBody =
-      (timedBody.intersperse("\n") ++ Stream.eval(Sync[F].delay("\n"))).through(fs2text.utf8Encode)
     for {
-      preSize <- fileSize(file.toFile)
-      written = encodedTimedBody.through(io.file.writeAll[F](file, blocker, CreateAndAppend))
-      eithers = written.attempt.compile.toList
-      attempts <- eithers.map {
-        case Left(e) :: _ => Left(e.getMessage)
-        case _ => Right(preSize)
-      }
-      postSize <- fileSize(file.toFile)
-      increase = attempts.map(pre => postSize - pre)
-    } yield increase
+      t <- time.nowUtc
+      file = pathFromDevice(device, partitioner.partition(t.toEpochSecond))
+      bodyLines = body.through(fs2.text.lines).filter(!_.isEmpty)
+      timedBody = bodyLines.map(l => s"${Time.asTimestamp(t)} $l")
+      encodedTimedBody = (timedBody.intersperse("\n") ++ Stream.eval(Sync[F].delay("\n"))).through(fs2text.utf8Encode)
+      writ <- for {
+        preSize <- fileSize(file.toFile)
+        written = encodedTimedBody.through(io.file.writeAll[F](file, blocker, CreateAndAppend))
+        eithers = written.attempt.compile.toList
+        attempts <- eithers.map {
+          case Left(e) :: _ => Left(e.getMessage)
+          case _ => Right(preSize)
+        }
+        postSize <- fileSize(file.toFile)
+        increase = attempts.map(pre => postSize - pre)
+      } yield increase
+    } yield writ
   }
 
   private def isReadableFile(f: File): F[Boolean] = Sync[F].delay(f.canRead && f.isFile)
+
   private def fileSize(f: File): F[Long] = Sync[F].delay(f.length())
 
   /**
     * Retrieve full logs for the given device
     *
     * @param device device name
-    * @param from for pagination, timestamp from which to retrieve logs
-    * @param to for pagination, timestamp until which to retrieve logs
+    * @param f      for pagination, timestamp from which to retrieve logs
+    * @param t      for pagination, timestamp until which to retrieve logs
     * @return the [[Attempt]] with the stream containing the chunks of the logs
     */
   def getLogs(
     device: DeviceName,
-    from: Option[EpochSecTimestamp],
-    to: Option[EpochSecTimestamp]
-  ): F[Attempt[Stream[F, Record]]] = {
-    val path = pathFromDevice(device)
-    for {
-      readable <- isReadableFile(path.toFile)
-      located: Attempt[Stream[F, Record]] = readable match {
-        case true => Right(readFile(device, from, to))
-        case false => Left(s"Could not locate/read logs for device: ${device}")
-      }
-    } yield (located)
+    f: EpochSecTimestamp,
+    t: EpochSecTimestamp
+  ): F[Stream[F, String]] = {
+    val partitions = (partitioner.partition(f) to partitioner.partition(t)).toList
+    val paths = partitions.map(part => pathFromDevice(device, part))
+    val streams: List[F[Stream[F, String]]] = for {
+      path <- paths
+      stream = for {
+        readable <- isReadableFile(path.toFile)
+        located: Stream[F, String] = readable match {
+          case true => readFile(path)
+          case false => Stream.empty
+        }
+      } yield (located)
+    } yield stream
+    streams.sequence[F, Stream[F, String]].map(_.reduce(_ ++ _))
   }
 
   private[devicelogs] def readFile(
-    device: DeviceName,
-    from: Option[EpochSecTimestamp],
-    to: Option[EpochSecTimestamp],
+    path: JavaPath,
     chunkSize: Int = ChunkSize
-  ): Stream[F, Record] = {
-    val bytes = io.file.readAll[F](
-      pathFromDevice(device),
-      blocker,
-      chunkSize
-    )
+  ): Stream[F, String] = {
+    val bytes = io.file.readAll[F](path, blocker, chunkSize)
     val bytesLimited = bytes.takeRight(config.maxLengthLogs.value)
-    val lines = bytesLimited.through(fs2text.utf8Decode).through(fs2text.lines)
-    val records = lines.map(Record.parse).collect { case Some(a) => a }
-    val filtered = records.filter(rec => from.forall(f => rec.t >= f) && to.forall(t => rec.t <= t))
-    filtered
+    bytesLimited.through(fs2text.utf8Decode).through(fs2text.lines)
   }
 }
