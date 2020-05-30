@@ -4,7 +4,7 @@ import java.nio.file.{NoSuchFileException, Path, Paths}
 import java.time.{Instant, ZoneId, ZonedDateTime}
 
 import cats.effect.{IO, Sync}
-import eu.timepit.refined.types.numeric.PosInt
+import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
 import fs2.Stream
 import org.mauritania.main4ino.TmpDirCtx
 import org.mauritania.main4ino.helpers.Time
@@ -25,47 +25,26 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelT
 
   "The logger" should "append a message to a file and read it" in {
     withTmpDir { tmp =>
-      val expectedFile = tmp.resolve("device.log")
-      val logger0= buildLogger(tmp, 0)
-      val s1 = Stream("hey\nyou\n") // creates and appends
-      logger0.updateLogs("device", s1).unsafeRunSync().right.value should be(12L)
-      Source.fromFile(expectedFile.toFile).getLines.toList should be(
-        List(
-          "0 hey",
-          "0 you"
-      )
-      )
-      val s2 = Stream("guy\n") // appends
-      val logger1 = buildLogger(tmp, 1)
-      logger1.updateLogs("device", s2).unsafeRunSync().right.value should be(6L)
-      Source.fromFile(expectedFile.toFile).getLines.toList should be(
-        List(
-          "0 hey",
-          "0 you",
-          "1 guy"
-      )
-      ) // appends
+      val expectedFile = tmp.resolve("device.0.log")
+      val logger0 = buildLogger(tmp, 0) // time 0
+      logger0.updateLogs("device", Stream("hey\nyou\n")/* creates and appends */).unsafeRunSync().right.value should be(12L)
+      Source.fromFile(expectedFile.toFile).getLines.toList should be(List("0 hey", "0 you"))
+      logger0.updateLogs("device", Stream("guy\n")/* appends */).unsafeRunSync().right.value should be(6L)
+      Source.fromFile(expectedFile.toFile).getLines.toList should be(List("0 hey", "0 you", "0 guy")) // appends
+      val logger1 = buildLogger(tmp, 1) // time 1
+      logger1.updateLogs("device", Stream("how\n")/* appends */).unsafeRunSync().right.value should be(6L)
 
-      val logger2= buildLogger(tmp, 2)
-      val readFull = logger2.getLogs("device", None, None).unsafeRunSync()
-      val successfulReadFull = readFull.right.value
-      successfulReadFull.compile.toList.unsafeRunSync() should be(
-        List(
-          Record(0, "hey"),
-          Record(0, "you"),
-          Record(1, "guy")
-        )
-      )
+      val logger2 = buildLogger(tmp, 2) // time 2
+      val readFull = logger2.getLogs("device", 0L, 2L).unsafeRunSync()
+      readFull.compile.toList.unsafeRunSync() should be(List("0 hey", "0 you", "0 guy", "", "1 how", ""))
 
       val readIngoreLength1 =
-        logger2.getLogs("device", Some(1L), Some(3L)).unsafeRunSync()
-      val successfulReadIgnoreLength1 = readIngoreLength1.right.value
-      successfulReadIgnoreLength1.compile.toList.unsafeRunSync() should be(List(Record(1L, "guy")))
+        logger2.getLogs("device", 1L, 3L).unsafeRunSync()
+      readIngoreLength1.compile.toList.unsafeRunSync() should be(List("1 how", ""))
 
       val readIngoreLength2 =
-        logger2.getLogs("device", Some(0L), Some(0L)).unsafeRunSync()
-      val successfulReadIgnoreLength2 = readIngoreLength2.right.value
-      successfulReadIgnoreLength2.compile.toList.unsafeRunSync() should be(List(Record(0L, "hey"), Record(0L, "you")))
+        logger2.getLogs("device", 0L, 0L).unsafeRunSync()
+      readIngoreLength2.compile.toList.unsafeRunSync() should be(List("0 hey", "0 you", "0 guy", ""))
     }
   }
 
@@ -76,21 +55,12 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelT
       loggerWrite.updateLogs("device", s).unsafeRunSync().right.value should be(12L)
 
       val loggerRead12 = buildLogger(tmp = tmp, t = 0, mxLen = PosInt((1/*time*/ + 1/*space*/ + 3/*hey*/ + 1/*newline*/)* 2))
-      val read12 = loggerRead12.getLogs("device", Some(0L), Some(0L)).unsafeRunSync().right.value
-      read12.compile.toList.unsafeRunSync() should be(
-        List(
-          Record(0, "hey"),
-          Record(0, "you")
-        )
-      )
+      val read12 = loggerRead12.getLogs("device", 0L, 0L).unsafeRunSync()
+      read12.compile.toList.unsafeRunSync() should be(List("0 hey", "0 you", ""))
 
       val loggerRead6 = buildLogger(tmp = tmp, t = 0, mxLen = PosInt(6))
-      val read6 = loggerRead6.getLogs("device", Some(0L), Some(0L)).unsafeRunSync().right.value
-      read6.compile.toList.unsafeRunSync() should be(
-        List(
-          Record(0, "you")
-        )
-      )
+      val read6 = loggerRead6.getLogs("device", 0L, 0L).unsafeRunSync()
+      read6.compile.toList.unsafeRunSync() should be(List("0 you", ""))
     }
   }
 
@@ -103,20 +73,17 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelT
 
   it should "report a meaningful failure when cannot read file" in {
     val logger = buildLogger(Paths.get("/non/existent/path"))
-    logger.getLogs("device1", None, None).unsafeRunSync().left.value should include("device1")
+    logger.getLogs("device1", 0L, 10L).unsafeRunSync().compile.toList.unsafeRunSync() should be(List.empty[String])
   }
 
-  it should "fail gracefully when reading stream for file unexistent (internals)" in {
-    val logger = buildLogger(Paths.get("/non/existent/path"))
-    val file = logger.readFile("device", None, None, 0)
-    intercept[NoSuchFileException] {
-      file.compile.toList.unsafeRunSync()
-    }
-  }
-
-  private def buildLogger(tmp: Path, t: EpochSecTimestamp = 0L, mxLen: PosInt = PosInt(1024)): Logger[IO] = {
+  private def buildLogger(
+    tmp: Path,
+    t: EpochSecTimestamp = 0L,
+    mxLen: PosInt = PosInt(1024),
+    dropPos: NonNegInt = NonNegInt(0)
+  ): Logger[IO] = {
     val ec = ExecutionContext.global
-    val logger = new Logger[IO](Config(tmp, mxLen), new FixedTime(t), ec)(Sync[IO], IO.contextShift(ec))
+    val logger = new Logger[IO](Config(tmp, mxLen, dropPos), new FixedTime(t), ec)(Sync[IO], IO.contextShift(ec))
     logger
   }
 
