@@ -29,6 +29,21 @@ function getCookie(name) {
 function eraseCookie(name) {
     document.cookie = name+"=; Max-Age=-99999999;";
 }
+
+function intoLogsJson(linesStr) {
+  var lines = linesStr.split("\n");
+  var data = [];
+  for (const line of lines) {
+      if (line) {
+        var d = {};
+        d["t"] = line.substr(0,line.indexOf(' '));
+        d["content"] = line.substr(line.indexOf(' ')+1);
+        data.push(d);
+      }
+  }
+  return data;
+}
+
 webPortalApp.config(function($stateProvider, $urlRouterProvider) {
     
     $urlRouterProvider.otherwise("/login");
@@ -538,7 +553,7 @@ webPortalApp.controller(
             $http(req).then(
                 function(r) {
                     $log.log("Logs obtained.");
-                    $scope.logs = r.data;
+                    $scope.logs = intoLogsJson(r.data);
                     $scope.queriedDevice = $stateParams.device;
                 },
                 function(r) {

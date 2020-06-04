@@ -201,7 +201,7 @@ class Service[F[_]: Sync](
       * Returns: OK (200)
       */
     case GET -> Root / "devices" / Dev(device) / "logs" :? MFromParam(from) +& MToParam(to) as _ => {
-      val r: F[Stream[F, String]] = tr.getLogs(device, from, to)
+      val r: F[Stream[F, String]] = tr.getLogs(device, from, to).map(_.intersperse("\n"))
       r.flatMap(l => Ok(l, ContentTypeTextPlain))
     }
 
