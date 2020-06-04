@@ -30,6 +30,7 @@ class ServerSpec extends AnyFlatSpec with Matchers with HttpClient with BeforeAn
   var port: Int = _
   final private val ConfigDirPath = "src/test/resources/configs/1"
   final private val DynamicPortBeginning = 49152
+  final private val IterationMs = 100
 
   final private lazy val appFiber = launchAppAsync()
   final private val UserPass = BasicCredentials(Fixtures.User1.id, Fixtures.User1Pass)
@@ -41,7 +42,7 @@ class ServerSpec extends AnyFlatSpec with Matchers with HttpClient with BeforeAn
     port = FreePortFinder.findFreeLocalPort(DynamicPortBeginning)
     appFiber.join.unsafeRunAsyncAndForget()
     while (FreePortFinder.available(port)) {
-      Thread.sleep(100)
+      Thread.sleep(IterationMs)
     };
   }
 
@@ -75,10 +76,9 @@ class ServerSpec extends AnyFlatSpec with Matchers with HttpClient with BeforeAn
 
       val config = ConfigLoader.fromFile[IO, Config](new File(ConfigDirPath + "/application.conf")).unsafeRunSync()
 
-      def checkRecord(dev: DeviceName, id: Long, status: Status, errMsg: String): Assertion =
-       assert(httpClient.status(devGetRequest(dev, "targets", id)).unsafeRunSync() === status, errMsg)
-      def checkRecordExists(dev: DeviceName, id: Long, errMsg: String): Assertion = checkRecord(dev, id, Status.Ok, errMsg)
-      def checkRecordDoesNotExist(dev: DeviceName, id: Long, errMsg: String): Assertion = checkRecord(dev, id, Status.NoContent, errMsg)
+      def checkRecord(dev: DeviceName, id: Long, status: Status) = (httpClient.status(devGetRequest(dev, "targets", id)).unsafeRunSync() == status)
+      def blockUntilRecordExists(dev: DeviceName, id: Long) = while(checkRecord(dev, id, Status.Ok)) {Thread.sleep(IterationMs)}
+      def checkRecordDoesNotExist(dev: DeviceName, id: Long, errMsg: String) = assert(checkRecord(dev, id, Status.NoContent), errMsg)
       val timeUnitSecs = config.database.cleanup.retentionSecs.value.toFloat / 10 // a 10th fraction of the retention
       def sleepTimeUnits(tu: Float): Unit = Thread.sleep((tu * 1000 * timeUnitSecs).toLong)
 
@@ -86,22 +86,18 @@ class ServerSpec extends AnyFlatSpec with Matchers with HttpClient with BeforeAn
       val dev1ResponseJson = httpClient.expect[String](devPostRequest("dev1", "targets"))
       val idDev1 = jsonAs[IdResponse](dev1ResponseJson.unsafeRunSync()).id
 
-      sleepTimeUnits(5) // T05
+      blockUntilRecordExists("dev1", idDev1)
 
-      checkRecordExists("dev1", idDev1, "dev1 just created, should exist")
-
-      sleepTimeUnits(15) // T20
+      sleepTimeUnits(20) // T20
 
       // T20, inject dev2 (at ~T20, its cleanup should take place at ~T30)
       val dev2ResponseJson = httpClient.expect[String](devPostRequest("dev2", "targets"))
       val idDev2 = jsonAs[IdResponse](dev2ResponseJson.unsafeRunSync()).id
 
-      sleepTimeUnits(5) // T25
-
+      blockUntilRecordExists("dev2", idDev2)
       checkRecordDoesNotExist("dev1", idDev1, "dev1 should have been cleaned up")
-      checkRecordExists("dev2", idDev2, "dev2 just created, should exist")
 
-      sleepTimeUnits(15) // T40
+      sleepTimeUnits(20) // T40
 
       checkRecordDoesNotExist("dev1", idDev1, "dev1 should have been cleaned up (way before)")
       checkRecordDoesNotExist("dev2", idDev2, "dev2 should have been cleaned up")
