@@ -1,10 +1,10 @@
 package org.mauritania.main4ino.devicelogs
 
-import eu.timepit.refined.types.numeric.NonNegInt
+import eu.timepit.refined.types.numeric.PosInt
 
-class Partitioner(drops: NonNegInt) {
+class Partitioner(bucketSize: PosInt) {
   import Partitioner._
-  def partition(r: Record): Partition = r / Math.pow(10, drops.value).toInt
+  def partition(r: Record): Partition = r / bucketSize.value
 }
 
 object Partitioner {
