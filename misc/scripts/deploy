@@ -50,7 +50,9 @@ function killem() {
     echo "Context for Killing existent apps: $pids"
     jps -l
     echo "Killing existent apps: $pids"
+    set +e
     kill $pids
+    set -e
     sleep 5
     echo "Force killing existent apps: $pids"
     set +e
