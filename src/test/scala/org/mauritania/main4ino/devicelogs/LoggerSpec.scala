@@ -80,10 +80,9 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelT
     tmp: Path,
     t: EpochSecTimestamp = 0L,
     mxLen: PosInt = PosInt(1024),
-    dropPos: PosInt = PosInt(1)
   ): Logger[IO] = {
     val ec = ExecutionContext.global
-    val logger = new Logger[IO](Config(tmp, mxLen, dropPos), new FixedTime(t), ec)(Sync[IO], IO.contextShift(ec))
+    val logger = new Logger[IO](Config(tmp, mxLen), new FixedTime(t), ec)(Sync[IO], IO.contextShift(ec))
     logger
   }
 

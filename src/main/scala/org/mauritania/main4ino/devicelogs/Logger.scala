@@ -10,6 +10,7 @@ import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.{DeviceName, EpochSecTimestamp}
 import cats.implicits._
+import org.mauritania.main4ino.devicelogs.Partitioner.Partition
 
 import scala.concurrent.ExecutionContext
 
@@ -22,12 +23,12 @@ import scala.concurrent.ExecutionContext
   */
 class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: ExecutionContext) {
 
-  final private val partitioner = new Partitioner(config.partitionPos)
+  final private val partitioner = config.partitioner
   final private lazy val blocker = Blocker.liftExecutionContext(ec)
   final private lazy val ChunkSize = 1024
   final private lazy val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
-  private def pathFromDevice(device: DeviceName, partition: Long): JavaPath =
+  private def pathFromDevice(device: DeviceName, partition: Partition): JavaPath =
     config.logsBasePath.resolve(s"$device.$partition.log")
 
   /**
@@ -75,7 +76,7 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
     f: EpochSecTimestamp,
     t: EpochSecTimestamp
   ): F[Stream[F, String]] = {
-    val partitions = (partitioner.partition(f) to partitioner.partition(t)).toList
+    val partitions = (f to t).map(partitioner.partition).toList
     val paths = partitions.map(part => pathFromDevice(device, part))
     val streams: List[F[Stream[F, String]]] = for {
       path <- paths

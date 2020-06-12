@@ -3,14 +3,14 @@ package org.mauritania.main4ino.devicelogs
 import java.nio.file.Path
 
 import eu.timepit.refined.types.numeric.PosInt
+import org.mauritania.main4ino.devicelogs.Partitioner.{IdentityPartitioner, Partitioner}
 
 case class Config(
   logsBasePath: Path,
   maxLengthLogs: PosInt = Config.DefaultMaxLengthLogs,
-  partitionPos: PosInt = Config.DefaultPartitionPos
+  partitioner: Partitioner = IdentityPartitioner
 )
 
 object Config {
   final lazy val DefaultMaxLengthLogs = PosInt(524288) // 512 KB
-  final lazy val DefaultPartitionPos = PosInt(21600) // 6 hours
 }
