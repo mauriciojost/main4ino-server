@@ -1,12 +1,13 @@
 package org.mauritania.main4ino.devicelogs
 
 import java.nio.file.{NoSuchFileException, Path, Paths}
-import java.time.{Instant, ZoneId, ZonedDateTime}
+import java.time.{Instant, LocalDateTime, ZoneId, ZoneOffset, ZonedDateTime}
 
 import cats.effect.{IO, Sync}
 import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
 import fs2.Stream
 import org.mauritania.main4ino.TmpDirCtx
+import org.mauritania.main4ino.devicelogs.Partitioner.{HourPartitioner, IdentityPartitioner, Partitioner}
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.EpochSecTimestamp
 import org.scalatest.EitherValues._
@@ -76,13 +77,27 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelT
     logger.getLogs("device1", 0L, 10L).unsafeRunSync().compile.toList.unsafeRunSync() should be(List.empty[String])
   }
 
+  it should "use correctly the daily partitioner" in {
+    withTmpDir { tmp =>
+      val dt = LocalDateTime.parse("2020-01-01T00:00:00").atOffset(ZoneOffset.UTC)
+      val es = dt.toEpochSecond
+      val loggerWrite = buildLogger(tmp = tmp, t = es, HourPartitioner)
+      val s = Stream("hey\nyou")
+      loggerWrite.updateLogs("device", s).unsafeRunSync().right.value should be(30L)
+      val expectedFile = tmp.resolve("device.2020-01-01-00.log")
+      Source.fromFile(expectedFile.toFile).getLines.toList should be(List("0 hey", "0 you"))
+    }
+  }
+
+
   private def buildLogger(
     tmp: Path,
     t: EpochSecTimestamp = 0L,
+    part: Partitioner = IdentityPartitioner,
     mxLen: PosInt = PosInt(1024),
   ): Logger[IO] = {
     val ec = ExecutionContext.global
-    val logger = new Logger[IO](Config(tmp, mxLen), new FixedTime(t), ec)(Sync[IO], IO.contextShift(ec))
+    val logger = new Logger[IO](Config(tmp, mxLen, part), new FixedTime(t), ec)(Sync[IO], IO.contextShift(ec))
     logger
   }
 

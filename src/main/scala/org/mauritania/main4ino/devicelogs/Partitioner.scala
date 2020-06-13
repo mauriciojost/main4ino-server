@@ -24,12 +24,12 @@ object Partitioner {
   }
 
   case object HourPartitioner extends Partitioner {
-    val format = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH")
+    private val format = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH")
     def partition(r: RecordId): Partition = Instant.ofEpochSecond(r).atZone(ZoneOffset.UTC).format(format)
   }
 
   case object DayPartitioner extends Partitioner {
-    val format = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    private val format = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     def partition(r: RecordId): Partition = Instant.ofEpochSecond(r).atZone(ZoneOffset.UTC).format(format)
   }
 
