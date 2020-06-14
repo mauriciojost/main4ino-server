@@ -85,7 +85,7 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelT
       val s = Stream("hey\nyou")
       loggerWrite.updateLogs("device", s).unsafeRunSync().right.value should be(30L)
       val expectedFile = tmp.resolve("device.2020-01-01-00.log")
-      Source.fromFile(expectedFile.toFile).getLines.toList should be(List("0 hey", "0 you"))
+      Source.fromFile(expectedFile.toFile).getLines.toList should be(List(es + " hey", es + " you"))
     }
   }
 
