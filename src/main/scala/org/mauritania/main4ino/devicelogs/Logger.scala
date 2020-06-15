@@ -50,7 +50,7 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
         written = encodedTimedBody.through(io.file.writeAll[F](file, blocker, CreateAndAppend))
         eithers = written.attempt.compile.toList
         attempts <- eithers.map {
-          case Left(e) :: _ => Left(e.getMessage)
+          case Left(er) :: _ => Left(er.getClass.getName + ": " + er.getMessage)
           case _ => Right(preSize)
         }
         postSize <- fileSize(file.toFile)
