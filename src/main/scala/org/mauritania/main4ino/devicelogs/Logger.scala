@@ -5,12 +5,14 @@ import java.nio.file.{StandardOpenOption, Path => JavaPath}
 
 import cats.effect.{Blocker, ContextShift, Sync}
 import cats.implicits._
-import fs2.{Stream, io, text => fs2text}
+import fs2.{Stream, io => fs2io, text => fs2text}
 import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.{DeviceName, EpochSecTimestamp}
 import cats.implicits._
+import io.chrisdavenport.log4cats.{Logger => Log4CatsLogger}
 import org.mauritania.main4ino.devicelogs.Partitioner.Partition
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 
 import scala.concurrent.ExecutionContext
 
@@ -40,6 +42,7 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
     */
   def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Long]] = {
     for {
+      logger <- Slf4jLogger.fromClass[F](Log4CatsLogger.getClass)
       t <- time.nowUtc
       file = pathFromDevice(device, partitioner.partition(t.toEpochSecond))
       bodyLines = body.through(fs2.text.lines).filter(!_.isEmpty)
@@ -47,7 +50,7 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
       encodedTimedBody = (timedBody.intersperse("\n") ++ Stream.eval(Sync[F].delay("\n"))).through(fs2text.utf8Encode)
       writ <- for {
         preSize <- fileSize(file.toFile)
-        written = encodedTimedBody.through(io.file.writeAll[F](file, blocker, CreateAndAppend))
+        written = encodedTimedBody.through(fs2io.file.writeAll[F](file, blocker, CreateAndAppend))
         eithers = written.attempt.compile.toList
         attempts <- eithers.map {
           case Left(er) :: _ => Left(er.getClass.getName + ": " + er.getMessage)
@@ -55,6 +58,7 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
         }
         postSize <- fileSize(file.toFile)
         increase = attempts.map(pre => postSize - pre)
+        _ <- logger.debug(s"Logs updated: $file -> +$increase")
       } yield increase
     } yield writ
   }
@@ -81,11 +85,13 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
     val streams: List[F[Stream[F, String]]] = for {
       path <- paths
       stream = for {
+        logger <- Slf4jLogger.fromClass[F](Log4CatsLogger.getClass)
         readable <- isReadableFile(path.toFile)
         located: Stream[F, String] = readable match {
           case true => readFile(path)
           case false => Stream.empty
         }
+        _ <- logger.debug(s"Logs read: $path -> $readable")
       } yield (located)
     } yield stream
     streams.sequence[F, Stream[F, String]].map(_.reduce(_ ++ _))
@@ -95,7 +101,7 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
     path: JavaPath,
     chunkSize: Int = ChunkSize
   ): Stream[F, String] = {
-    val bytes = io.file.readAll[F](path, blocker, chunkSize)
+    val bytes = fs2io.file.readAll[F](path, blocker, chunkSize)
     val bytesLimited = bytes.takeRight(config.maxLengthLogs.value)
     bytesLimited.through(fs2text.utf8Decode).through(fs2text.lines)
   }
