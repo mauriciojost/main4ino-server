@@ -7,7 +7,7 @@ import cats.effect.{IO, Sync}
 import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
 import fs2.Stream
 import org.mauritania.main4ino.TmpDirCtx
-import org.mauritania.main4ino.devicelogs.Partitioner.{HourPartitioner, IdentityPartitioner, Partitioner}
+import org.mauritania.main4ino.devicelogs.Partitioner.{HourPartitioner, EpochSecPartitioner, Partitioner}
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.EpochSecTimestamp
 import org.scalatest.EitherValues._
@@ -93,7 +93,7 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelT
   private def buildLogger(
     tmp: Path,
     t: EpochSecTimestamp = 0L,
-    part: Partitioner = IdentityPartitioner,
+    part: Partitioner = EpochSecPartitioner,
     mxLen: PosInt = PosInt(1024),
   ): Logger[IO] = {
     val ec = ExecutionContext.global

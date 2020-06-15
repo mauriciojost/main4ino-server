@@ -177,7 +177,7 @@ class Service[F[_]: Sync](
       *
       * Update the device's logs.
       *
-      * Returns: OK (200)
+      * Returns: OK (200) || INTERNAL_SERVER_ERROR (500)
       */
     case a @ PUT -> Root / "devices" / Dev(device) / "logs" as _ => {
       val d = a.req.bodyAsText

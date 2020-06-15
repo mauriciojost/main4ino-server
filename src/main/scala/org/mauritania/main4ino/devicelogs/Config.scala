@@ -3,12 +3,12 @@ package org.mauritania.main4ino.devicelogs
 import java.nio.file.Path
 
 import eu.timepit.refined.types.numeric.PosInt
-import org.mauritania.main4ino.devicelogs.Partitioner.{IdentityPartitioner, Partitioner}
+import org.mauritania.main4ino.devicelogs.Partitioner.{EpochSecPartitioner, Partitioner}
 
 case class Config(
   logsBasePath: Path,
   maxLengthLogs: PosInt = Config.DefaultMaxLengthLogs,
-  partitioner: Partitioner = IdentityPartitioner
+  partitioner: Partitioner = EpochSecPartitioner
 )
 
 object Config {

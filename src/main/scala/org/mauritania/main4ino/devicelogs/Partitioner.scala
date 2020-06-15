@@ -1,12 +1,8 @@
 package org.mauritania.main4ino.devicelogs
 
-import java.time.chrono.IsoChronology
-import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder, ResolverStyle, SignStyle}
-import java.time.temporal.ChronoField.{DAY_OF_MONTH, MONTH_OF_YEAR, YEAR}
+import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneOffset}
 
-import eu.timepit.refined.types.numeric.PosInt
-import org.mauritania.main4ino.devicelogs.Partitioner.HourPartitioner.format
 import org.mauritania.main4ino.models.EpochSecTimestamp
 
 object Partitioner {
@@ -19,7 +15,7 @@ object Partitioner {
     def partition(r: RecordId): Partition
   }
 
-  case object IdentityPartitioner extends Partitioner {
+  case object EpochSecPartitioner extends Partitioner {
     def partition(r: RecordId): Partition = r.toString
   }
 
