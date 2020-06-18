@@ -80,10 +80,10 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
     f: EpochSecTimestamp,
     t: EpochSecTimestamp
   ): F[Stream[F, String]] = {
-    val partitions = (f to t).map(partitioner.partition).toList
+    val partitions = (f to t).toSet.map(partitioner.partition)
     val paths = partitions.map(part => pathFromDevice(device, part))
     val streams: List[F[Stream[F, String]]] = for {
-      path <- paths
+      path <- paths.toList
       stream = for {
         logger <- Slf4jLogger.fromClass[F](Log4CatsLogger.getClass)
         readable <- isReadableFile(path.toFile)
