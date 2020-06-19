@@ -28,11 +28,11 @@ pipeline {
     stage('Test') {
       steps {
         wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'gnome-terminal']) {
-          timeout(time: 15, unit: 'MINUTES') {
+          //timeout(time: 15, unit: 'MINUTES') {
             sh 'pwd'
             sh 'hostname'
             sh 'sbt -Dsbt.color=always -Dsbt.global.base=/root/.sbt -Dsbt.boot.directory=/root/.sbt -Dsbt.ivy.home=/root/.ivy2 clean "set every coverageEnabled := true" test coverageReport'
-          }
+          //}
         }
       }
     }
