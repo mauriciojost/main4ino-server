@@ -2,7 +2,7 @@
 
 [![BCH compliance](https://bettercodehub.com/edge/badge/mauriciojost/main4ino-server?branch=master)](https://bettercodehub.com/results/mauriciojost/main4ino-server)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/57c35744da0a475e970c0470db4602a0)](https://app.codacy.com/manual/mauriciojost/main4ino-server?utm_source=github.com&utm_medium=referral&utm_content=mauriciojost/main4ino-server&utm_campaign=Badge_Grade_Dashboard)
-[![Travis CI](https://api.travis-ci.org/mauriciojost/main4ino-server.svg)](https://travis-ci.org/mauriciojost/main4ino-server) 
+[![CircleCI](https://circleci.com/gh/mauriciojost/main4ino-server/tree/master.svg?style=svg)](https://circleci.com/gh/mauriciojost/main4ino-server/tree/master)
 ![Github CI](https://github.com/mauriciojost/main4ino-server/workflows/Scala%20CI/badge.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/mauriciojost/main4ino-server/badge.svg?branch=master)](https://coveralls.io/github/mauriciojost/main4ino-server?branch=master) 
 [![Scala Steward badge](https://img.shields.io/badge/Scala_Steward-helping-blue.svg?style=flat&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAQCAMAAAARSr4IAAAAVFBMVEUAAACHjojlOy5NWlrKzcYRKjGFjIbp293YycuLa3pYY2LSqql4f3pCUFTgSjNodYRmcXUsPD/NTTbjRS+2jomhgnzNc223cGvZS0HaSD0XLjbaSjElhIr+AAAAAXRSTlMAQObYZgAAAHlJREFUCNdNyosOwyAIhWHAQS1Vt7a77/3fcxxdmv0xwmckutAR1nkm4ggbyEcg/wWmlGLDAA3oL50xi6fk5ffZ3E2E3QfZDCcCN2YtbEWZt+Drc6u6rlqv7Uk0LdKqqr5rk2UCRXOk0vmQKGfc94nOJyQjouF9H/wCc9gECEYfONoAAAAASUVORK5CYII=)](https://scala-steward.org)
