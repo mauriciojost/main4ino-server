@@ -44,6 +44,4 @@ jobs:
       # run tests!
       - run: cat /dev/null | set
       - run: cat /dev/null | env
-      - run: cat /dev/null | sbt -Dsbt.color=always -Dsbt.global.base=.sbt -Dsbt.boot.directory=.sbt -Dsbt.ivy.home=.ivy2 clean "set every coverageEnabled := true" test coverageReport
-      - run: cat /dev/null | sbt -Dsbt.color=always -Dsbt.global.base=.sbt -Dsbt.boot.directory=.sbt -Dsbt.ivy.home=.ivy2 coverageAggregate
-      - run: cat /dev/null | sbt coverageReport coveralls
+      - run: cat /dev/null | sbt -Dsbt.color=always -Dsbt.global.base=.sbt -Dsbt.boot.directory=.sbt -Dsbt.ivy.home=.ivy2 clean "set every coverageEnabled := true" test coverageReport && sbt -Dsbt.color=always -Dsbt.global.base=.sbt -Dsbt.boot.directory=.sbt -Dsbt.ivy.home=.ivy2 coverageAggregate && sbt coverageReport coveralls
