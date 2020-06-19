@@ -11,7 +11,7 @@ pipeline {
   agent {
     docker { 
       image 'mauriciojost/scala-sbt-ci:openjdk8-scala2.12.8-sbt1.2.8-0.2.0'
-      args '--cpus=2 --memory=4G'
+      args '--cpus=1 --memory=4G -v $HOME/.m2:/root/.m2 -v $HOME/.ivy2:/root/.ivy2 -v $HOME/.sbt:/root/.sbt'
     }
   }
   stages {
