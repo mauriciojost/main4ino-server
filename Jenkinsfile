@@ -29,7 +29,9 @@ pipeline {
       steps {
         wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'gnome-terminal']) {
           timeout(time: 15, unit: 'MINUTES') {
-            sh 'sbt -Dsbt.color=always -Dsbt.global.base=.sbt -Dsbt.boot.directory=.sbt -Dsbt.ivy.home=.ivy2 clean "set every coverageEnabled := true" test coverageReport'
+            sh 'pwd'
+            sh 'hostname'
+            sh 'sbt -Dsbt.color=always -Dsbt.global.base=/root/.sbt -Dsbt.boot.directory=/root/.sbt -Dsbt.ivy.home=/root/.ivy2 clean "set every coverageEnabled := true" test coverageReport'
           }
         }
       }
@@ -37,7 +39,7 @@ pipeline {
     stage('Coverage') {
       steps {
         wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'gnome-terminal']) {
-          sh 'sbt -Dsbt.color=always -Dsbt.global.base=.sbt -Dsbt.boot.directory=.sbt -Dsbt.ivy.home=.ivy2 coverageAggregate'
+          sh 'sbt -Dsbt.color=always -Dsbt.global.base=/root/.sbt -Dsbt.boot.directory=/root/.sbt -Dsbt.ivy.home=/root/.ivy2 coverageAggregate'
         }
         step([$class: 'ScoveragePublisher', reportDir: 'target/scala-2.12/scoverage-report', reportFile: 'scoverage.xml'])
       }
