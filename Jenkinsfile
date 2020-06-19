@@ -17,6 +17,10 @@ pipeline {
   stages {
     stage('Full fetch') {
       steps {
+        sh 'whoami'
+        sh 'hostname'
+        sh 'date'
+        sh 'pwd'
         sh 'git fetch --depth=10000'
         sh 'git fetch --tags'
       }
