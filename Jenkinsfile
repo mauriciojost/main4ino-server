@@ -11,7 +11,7 @@ pipeline {
   agent {
     docker { 
       image 'mauriciojost/scala-sbt-ci:openjdk8-scala2.12.8-sbt1.2.8-0.2.0'
-      args '--cpus=1 --memory=4G -v $HOME/.m2:/root/.m2 -v $HOME/.ivy2:/root/.ivy2 -v $HOME/.sbt:/root/.sbt'
+      args '--cpus=1 --memory=4G -v $WORKSPACE/.m2:/root/.m2 -v $WORKSPACE/.ivy2:/root/.ivy2 -v $WORKSPACE/.sbt:/root/.sbt'
     }
   }
   stages {
@@ -38,6 +38,8 @@ pipeline {
     stage('Coverage') {
       steps {
         wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'gnome-terminal']) {
+          sh 'pwd'
+          sh 'hostname'
           sh 'sbt -Dsbt.color=always -Dsbt.global.base=/root/.sbt -Dsbt.boot.directory=/root/.sbt -Dsbt.ivy.home=/root/.ivy2 coverageAggregate'
         }
         step([$class: 'ScoveragePublisher', reportDir: 'target/scala-2.12/scoverage-report', reportFile: 'scoverage.xml'])
