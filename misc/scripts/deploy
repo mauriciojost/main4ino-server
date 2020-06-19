@@ -9,10 +9,11 @@ config_dir=${1:-$root_dir/../config/}
 ports_list=${2:-"8090 8091 8092"}
 
 function print_context() {
-  whoami
-  date
-  hostname
-  jps -l
+  echo "whoami $(whoami)"
+  echo "date: $(date)"
+  echo "hostname: $(hostname)"
+  echo "jps -l: $(jps -l)"
+  echo "main4ino server: $(jps -l | grep org.mauritania.main4ino.Server)"
 }
 
 function is_port_free() {
@@ -49,6 +50,7 @@ function killem() {
   then
     echo "Context for Killing existent apps: $pids"
     jps -l
+    ps -ef | grep $pids
     echo "Killing existent apps: $pids"
     set +e
     kill $pids
@@ -74,11 +76,16 @@ function launch_instance() {
   local pid_file="$5"
   local lock_file="$6"
 
-  local tmp_dir=$(mktemp -d)
-
-  echo "Temporary unzipped directory: $tmp_dir"
-
-  find -name main4ino-server*.zip | xargs -I% unzip % -d $tmp_dir
+  local zip_path=$(find -name main4ino-server*.zip)
+  local tmp_dir=/tmp/main4ino-deployment-$(basename $zip_path)
+  if [ ! -d "$tmp_dir" ]
+  then
+    mkdir -p "$tmp_dir"
+    echo $zip_path | xargs -I% unzip % -d $tmp_dir
+    echo "Temporary unzipped directory (created): $tmp_dir"
+  else
+    echo "Temporary unzipped directory (already existed): $tmp_dir"
+  fi
 
   executable=$(find $tmp_dir -name main4ino-server -type f)
 
