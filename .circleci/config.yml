@@ -41,7 +41,7 @@ jobs:
             - ~/.ivy2
           key: v1-dependencies--{{ checksum "build.sbt" }}
 
-      # run tests!
+      # run tests! ensure environment COVERALLS_REPO_TOKEN matches https://coveralls.io/github/<ghuser>/<project-name>/settings token
       - run: cat /dev/null | set
       - run: cat /dev/null | env
       - run: cat /dev/null | sbt -Dsbt.color=always -Dsbt.global.base=.sbt -Dsbt.boot.directory=.sbt -Dsbt.ivy.home=.ivy2 clean "set every coverageEnabled := true" test coverageReport && sbt -Dsbt.color=always -Dsbt.global.base=.sbt -Dsbt.boot.directory=.sbt -Dsbt.ivy.home=.ivy2 coverageAggregate && sbt coverageReport coveralls
