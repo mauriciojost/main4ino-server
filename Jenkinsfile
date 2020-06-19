@@ -30,6 +30,7 @@ pipeline {
           timeout(time: 15, unit: 'MINUTES') {
             sh 'pwd'
             sh 'hostname'
+            echo "My branch is: ${env.BRANCH_NAME}"
             sh 'sbt -Dsbt.color=always -Dsbt.global.base=.sbt -Dsbt.boot.directory=.sbt -Dsbt.ivy.home=.ivy2 clean "set every coverageEnabled := true" test coverageReport'
           }
         }
