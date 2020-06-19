@@ -17,7 +17,6 @@ pipeline {
   stages {
     stage('Full fetch') {
       steps {
-        sh 'whoami'
         sh 'hostname'
         sh 'date'
         sh 'pwd'
