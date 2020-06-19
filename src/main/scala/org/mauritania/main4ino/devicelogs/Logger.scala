@@ -91,7 +91,7 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
           case true => readFile(path)
           case false => Stream.empty
         }
-        // _ <- logger.debug(s"Logs read: $path -> $readable")
+        _ <- logger.debug(s"Logs read: $path -> $readable")
       } yield (located)
     } yield stream
     streams.sequence[F, Stream[F, String]].map(_.reduce(_ ++ _))
