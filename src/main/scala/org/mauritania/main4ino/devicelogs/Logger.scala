@@ -80,7 +80,7 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
     f: EpochSecTimestamp,
     t: EpochSecTimestamp
   ): F[Stream[F, String]] = {
-    val partitions = (f to t).toSet.map(partitioner.partition)
+    val partitions = partitioner.partitions(f, t)
     val paths = partitions.map(part => pathFromDevice(device, part))
     val streams: List[F[Stream[F, String]]] = for {
       path <- paths.toList
