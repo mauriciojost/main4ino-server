@@ -64,8 +64,8 @@ function killem() {
 }
 
 function build_package() {
-  sbt clean test
-  sbt universal:packageBin
+  sbt -Dsbt.color=always clean test
+  sbt -Dsbt.color=always universal:packageBin
 }
 
 function launch_instance() {
