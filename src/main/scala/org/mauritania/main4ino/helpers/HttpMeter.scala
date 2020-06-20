@@ -8,6 +8,9 @@ import org.http4s.server.HttpMiddleware
 
 object HttpMeter {
 
+  final val MsWarn = 1000
+  final val MsErr = 5000
+
   private def now[F[_]: Sync]: F[Long] = Sync[F].delay(System.currentTimeMillis())
 
   def timedHttpMiddleware[F[_]: Sync]: HttpMiddleware[F] =
@@ -18,9 +21,9 @@ object HttpMeter {
           start <- OptionT.liftF(now)
           x <- k(r)
           finish <- OptionT.liftF(now)
-          _ <- OptionT.liftF(
-            logger.debug(s"< ${r.method} ${r.uri} > ${x.status} took ${finish - start}ms")
-          )
+          diff = finish - start
+          msg = s"< ${r.method} ${r.uri} > ${x.status} took ${diff}ms"
+          _ <- OptionT.liftF(if (diff > MsErr) logger.error(msg) else if (diff > MsWarn) logger.warn(msg) else logger.debug(msg))
         } yield x
       }
 
