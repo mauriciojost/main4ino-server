@@ -3,14 +3,14 @@ import sbt._
 object Dependencies {
 
     object Versions {
-        val Http4sVersion = "0.21.5"
+        val Http4sVersion = "0.21.6"
         val Specs2Version = "4.10.0"
         val DoobieVersion = "0.9.0"
         val H2Version = "1.4.200"
         val SqliteVersion = "3.32.3"
         val FlywayVersion = "6.5.0"
         val CirceVersion = "0.13.0"
-        val PureConfigVersion = "0.12.3"
+        val PureConfigVersion = "0.13.0"
         val ScalaTestVersion = "3.2.0"
         val ScalaMockVersion = "4.4.0"
         val FreePortFinder = "1.1.1"
