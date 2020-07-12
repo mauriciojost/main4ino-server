@@ -28,7 +28,7 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
 
   def setDescription(d: DeviceName, v: VersionJson, ts: EpochSecTimestamp): F[Int] = {
     val transaction = for {
-      i <- sqlInsertDescription(d, v, ts)
+      i <- sqlUpdateDescription(d, v, ts)
     } yield (i)
     transaction.transact(transactor)
   }
@@ -232,16 +232,18 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
       .withUniqueGeneratedKeys[RequestId]("id")
   }
 
-  private def sqlInsertDescription(
+  private def sqlUpdateDescription(
     dev: DeviceName,
     d: VersionJson,
     ts: EpochSecTimestamp
   ): ConnectionIO[Int] = {
-    (fr"INSERT INTO descriptions (device_name, updated, version, json) VALUES (${dev}, ${ts}, ${d.version}, ${d.json})").update.run
+    (
+      fr"MERGE INTO descriptions (device_name, updated, version, json) KEY (device_name) VALUES (${dev}, ${ts}, ${d.version}, ${d.json})"
+    ).update.run
   }
 
   private def sqlSelectDescription(d: DeviceName): ConnectionIO[Option[Description]] = {
-    (fr"SELECT device_name, updated, version, json FROM descriptions WHERE device_name = ${d} ORDER BY id DESC, updated DESC LIMIT 1")
+    (fr"SELECT device_name, updated, version, json FROM descriptions WHERE device_name = ${d}")
       .query[Description]
       .option
   }

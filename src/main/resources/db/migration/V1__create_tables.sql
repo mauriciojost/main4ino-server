@@ -31,8 +31,7 @@ CREATE TABLE reports (
 );
 
 CREATE TABLE descriptions (
-  id SERIAL PRIMARY KEY,
-  device_name VARCHAR(20),
+  device_name VARCHAR(20) PRIMARY KEY,
   updated LONG,
   version TEXT,
   json TEXT

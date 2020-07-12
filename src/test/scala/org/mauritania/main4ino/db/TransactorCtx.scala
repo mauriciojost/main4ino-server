@@ -21,7 +21,7 @@ trait TransactorCtx {
     )
   )
 
-  private def buildUrl(name: String) = s"jdbc:h2:mem:$name;MODE=PostgreSQL;DB_CLOSE_DELAY=-1"
+  private def buildUrl(name: String) = s"jdbc:h2:mem:$name;DB_CLOSE_DELAY=-1"
 
   private def randomName() = "test-" + UUID.randomUUID.toString
 
