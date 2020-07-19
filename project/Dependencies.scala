@@ -12,7 +12,7 @@ object Dependencies {
         val CirceVersion = "0.13.0"
         val PureConfigVersion = "0.13.0"
         val ScalaTestVersion = "3.2.0"
-        val ScalaMockVersion = "4.4.0"
+        val ScalaMockVersion = "5.0.0"
         val FreePortFinder = "1.1.1"
         val log4CatsSlf4jVersion = "1.1.1"
         val slf4jLog4j12Version = "1.7.30"
