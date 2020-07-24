@@ -187,12 +187,13 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
   def getDevicesSummary(
     dev: DeviceName,
     table: ReqType,
-    fromTo: FromTo,
+    fromTo: FromTo, // TODO unused
     st: Option[Status]
   ): F[Option[Device]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       devices <- repository.selectDevicesWhereTimestampStatus(table, dev, fromTo, st)
+      //devices <- repository.selectDevicesLastWhereStatus(table, dev, st)
       summary = Device.merge(devices)
       _ <- logger.debug(
         s"GET summary all devices $dev from table $table from time ${fromTo.from} until ${fromTo.to} with status $st"

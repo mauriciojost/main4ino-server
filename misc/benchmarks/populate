@@ -6,16 +6,22 @@ set -e -x
 
 USER_PASSWORD="admin:password"
 SERVER_ADDRESS="localhost:8080"
-DEV_NAME=device1
+DEV_NAME=dev1
 ACTOR1=actor1
 ACTOR2=actor2
-BODY_REPORT='{"actor1":{"p1":"v1", "p2":"v2"}, "actor2":{"p1":"vdddddddddddddddddddddddafdsas asdfadddddddddddddddddddddddddddddddd1", "p2":"v2"}}'
+BODY_REPORT1='{"actor1":{"a1p1":"a1p1", "a1p2":"a1p2"}, "actor2":{"a2p1":"a2p1", "a2p2":"a2p2"}}'
+BODY_REPORT2='{"actor1":{"a1p1":"a1p1*", "a1p2":"a1p2*"}}'
+BODY_REPORT3='{"actor2":{"a2p1":"a2p1*", "a2p2":"a2p2*"}}'
+BODY_REPORT4='{"actor1":{"a1p1":"a1p1**"}}'
 BODY_TARGET='{"p1":"v1b"}'
 DESCRIPTION='{"version":"1.0.0", "json":[{"patterns": ["^actor1.p1$"], "descriptions": ["Property 1 xx."], "examples": ["1", "2", "3"]}]}'
 
 cd $root_dir
 
-curl -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/reports" -d "$BODY_REPORT"
+curl -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/reports" -d "$BODY_REPORT1"
+curl -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/reports" -d "$BODY_REPORT2"
+curl -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/reports" -d "$BODY_REPORT3"
+curl -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/reports" -d "$BODY_REPORT4"
 
 curl -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/targets/actors/$ACTOR1" -d "$BODY_TARGET"
 

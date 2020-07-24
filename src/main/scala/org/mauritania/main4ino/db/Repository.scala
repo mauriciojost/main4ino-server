@@ -158,6 +158,17 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
     iol.map(l => Device1.asDeviceHistory(l).toSeq.sortBy(_.dbId.creation))
   }
 
+  def selectDevicesLastWhereStatus(
+    table: ReqType,
+    device: DeviceName,
+    st: Option[Status]
+  ): F[Iterable[DeviceId]] = {
+    val transaction = sqlSelectMetadataActorTupWhereDeviceStatus2(table, device, st)
+    val s = transaction.transact(transactor)
+    val iol = s.compile.toList
+    iol.map(l => Device1.asDeviceHistory(l).toSeq)
+  }
+
   def selectMaxDevice(
     table: ReqType,
     device: DeviceName,
@@ -273,6 +284,36 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
   private def sqlDeleteActorTupOrphanOfRequest(table: ReqType): ConnectionIO[Int] = {
     (fr"DELETE FROM " ++ Fragment.const(table.code) ++ fr" tu WHERE NOT EXISTS (SELECT 1 FROM " ++ Fragment
       .const(table.code + "_requests") ++ fr" re where tu.request_id = re.id)").update.run
+  }
+
+  private def sqlSelectMetadataActorTupWhereDeviceStatus2(
+    table: ReqType,
+    d: DeviceName,
+    st: Option[Status]
+  ): Stream[ConnectionIO, Device1] = {
+    val stFr = st match {
+      case Some(s) => fr"AND r.status = $s"
+      case None => fr""
+    }
+    val tableRequestsFr = Fragment.const(table.code + "_requests")
+    val tableFr = Fragment.const(table.code)
+    val fr1 = fr"SELECT max r.id, max r.creation, r.device_name, r.status, t.request_id, t.actor_name, t.property_name, t.property_value, t.creation" ++
+        fr"FROM" ++ tableRequestsFr ++ fr"as r" ++
+        fr"LEFT OUTER JOIN" ++
+        tableFr ++ fr"as t" ++
+        fr"ON r.id = t.request_id" ++
+        fr"WHERE r.device_name=$d" ++ stFr ++
+        fr"GROUP BY r.device_name, t.actor_name, t.property_name"
+    fr1.query[Device1].stream
+
+    /*
+select
+  Keys, Value, ToMax
+from
+  sometable
+where
+  ToMax = (select max(ToMax) from sometable i where i.Keys = sometable.Keys)
+     */
   }
 
   private def sqlSelectMetadataActorTupWhereDeviceStatus(
