@@ -67,6 +67,22 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
 
   private def fileSize(f: File): F[Long] = Sync[F].delay(f.length())
 
+  def filterRecord(f: EpochSecTimestamp, t: EpochSecTimestamp, partitions: Int)(line: String): Boolean = {
+    val skipRecordFiltering: Boolean = partitions > config.bypassRecordParsingIfMoreThanPartitions
+    if (skipRecordFiltering) {
+      true
+    } else {
+      val spIdx = line.indexOf(' ')
+      if (spIdx != -1) {
+        val ts = line.substring(0, spIdx).toLong
+        ts >= f && ts <= t
+      } else {
+        false
+      }
+    }
+  }
+
+
   /**
     * Retrieve full logs for the given device
     *
@@ -82,17 +98,19 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
   ): F[Stream[F, String]] = {
     val partitions = partitioner.partitions(f, t)
     val paths = partitions.map(part => pathFromDevice(device, part))
+    val filter: String => Boolean = filterRecord(f, t, partitions.length)
     val streams: List[F[Stream[F, String]]] = for {
-      path <- paths.toList
+      path <- paths
       stream = for {
         logger <- Slf4jLogger.fromClass[F](Log4CatsLogger.getClass)
         readable <- isReadableFile(path.toFile)
         located: Stream[F, String] = readable match {
-          case true => readFile(path)
+          case true => readFile(path).filterNot(l => l.isEmpty || (l.size == 1 && l.startsWith("\n")))
           case false => Stream.empty
         }
+        filtered = located.filter(filter)
         _ <- logger.debug(s"Logs read: $path -> $readable")
-      } yield (located)
+      } yield (filtered)
     } yield stream
     streams.sequence[F, Stream[F, String]].map(_.reduce(_ ++ _))
   }

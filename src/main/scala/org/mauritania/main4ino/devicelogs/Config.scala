@@ -8,7 +8,8 @@ import org.mauritania.main4ino.devicelogs.Partitioner.{EpochSecPartitioner, Part
 case class Config(
   logsBasePath: Path,
   maxLengthLogs: PosInt = Config.DefaultMaxLengthLogs,
-  partitioner: Partitioner = EpochSecPartitioner
+  partitioner: Partitioner = EpochSecPartitioner,
+  bypassRecordParsingIfMoreThanPartitions: Int = 1
 )
 
 object Config {
