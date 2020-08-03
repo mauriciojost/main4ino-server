@@ -20,7 +20,7 @@ rm -fr db*
 sbt -Ddev-logger.logs-base-path=$(mktemp -d) -Dconfig-dir=$root_dir/src/main/resources/defaultconfig/ 'runMain org.mauritania.main4ino.Server' &
 
 
-sleep 20
+sleep 50
 
 session=`curl -s -X POST "http://$user_password@$main4ino_server_address/api/v1/session"`
 
@@ -66,7 +66,7 @@ function get_last_report() {
 function get_last_report_all() {
   local device="$1"
   $curl_cmd -X GET \
-    $main4ino_server_address/api/v1/devices/$device/reports/last
+    $main4ino_server_address/api/v1/devices/$device/reports/summary
 }
 
 
@@ -77,17 +77,17 @@ function iteration_mix() {
   for l in `seq 1 $n`
   do
     description dev$l
-    insert_report $dev body$l '{"_command1":"command1text'$l'","+command2":"command2text"}'
-    insert_report $dev body$l '{"_mv1":"move1text'$l'","mv2":"move2text"}'
-    insert_report $dev clock$l '{"~hour":5, "minute":'$l'}'
-    insert_report $dev clock$l '{"~hour":3,"minute":4,"second":5}'
-    insert_report $dev clocksync$l '{"+freq":"~1'$l'h"}'
-    insert_report $dev clocksync$l '{"+freq":"~2'$l'h"}'
-    insert_report $dev clocksync$l '{"+freq":"~4'$l'h"}'
+    insert_report $dev body '{"_command1":"command1text'$l'","+command2":"command2text"}'
+    insert_report $dev body '{"_mv1":"move1text'$l'","mv2":"move2text"}'
+    insert_report $dev clock '{"~hour":5, "minute":'$l'}'
+    insert_report $dev clock '{"~hour":3,"minute":'$l',"second":5}'
+    insert_report $dev clocksync '{"+freq":"~1'$l'h"}'
+    insert_report $dev clocksync '{"+freq":"~2'$l'h"}'
+    insert_report $dev clocksync '{"+freq":"~4'$l'h"}'
 
-    get_last_report $dev body$l
-    get_last_report $dev clock$l
-    get_last_report $dev clocksync$l
+    get_last_report $dev body
+    get_last_report $dev clock
+    get_last_report $dev clocksync
     get_last_report_all $dev
     get_last_report_all $dev
     get_last_report_all $dev
@@ -108,9 +108,9 @@ function iteration_read() {
 
   for l in `seq 1 $n`
   do
-    get_last_report $dev body$l
-    get_last_report $dev clock$l
-    get_last_report $dev clocksync$l
+    get_last_report $dev body
+    get_last_report $dev clock
+    get_last_report $dev clocksync
     get_last_report_all $dev
     get_last_report_all $dev
     get_last_report_all $dev
@@ -127,20 +127,20 @@ function iteration_write() {
   for l in `seq 1 $n`
   do
     description dev$l
-    insert_report $dev body$l '{"command1":"command1text'$l'","command2":"command2text"}'
-    insert_report $dev body$l '{"mv1":"move1text'$l'","mv2":"move2text"}'
-    insert_report $dev clock$l '{"hour":5, "minute":'$l'}'
-    insert_report $dev clock$l '{"hour":3,"minute":4,"second":5}'
-    insert_report $dev clocksync$l '{"freq":"~1'$l'h"}'
-    insert_report $dev clocksync$l '{"freq":"~2'$l'h"}'
-    insert_report $dev clocksync$l '{"freq":"~4'$l'h"}'
-    insert_report $dev body$l '{"command3":"command1text'$l'","command2":"command2text"}'
-    insert_report $dev body$l '{"mv3":"move1text'$l'","mv2":"move2text"}'
-    insert_report $dev clock$l '{"hour":8, "minute":'$l'}'
-    insert_report $dev clock$l '{"hour":8,"minute":4,"second":5}'
-    insert_report $dev clocksync$l '{"freq":"~2'$l'h"}'
-    insert_report $dev clocksync$l '{"freq":"~3'$l'h"}'
-    insert_report $dev clocksync$l '{"freq":"~4'$l'h"}'
+    insert_report $dev body '{"command1":"command1text'$l'","command2":"command2text"}'
+    insert_report $dev body '{"mv1":"move1text'$l'","mv2":"move2text"}'
+    insert_report $dev clock '{"hour":5, "minute":'$l'}'
+    insert_report $dev clock '{"hour":'$l',"minute":4,"second":5}'
+    insert_report $dev clocksync '{"freq":"~1'$l'h"}'
+    insert_report $dev clocksync '{"freq":"~2'$l'h"}'
+    insert_report $dev clocksync '{"freq":"~4'$l'h"}'
+    insert_report $dev body '{"command3":"command1text'$l'","command2":"command2text"}'
+    insert_report $dev body '{"mv3":"move1text'$l'","mv2":"move2text"}'
+    insert_report $dev clock '{"hour":8, "minute":'$l'}'
+    insert_report $dev clock '{"hour":8,"minute":4,"second":5}'
+    insert_report $dev clocksync '{"freq":"~2'$l'h"}'
+    insert_report $dev clocksync '{"freq":"~3'$l'h"}'
+    insert_report $dev clocksync '{"freq":"~4'$l'h"}'
 
     insert_logs $dev
     insert_logs $dev
