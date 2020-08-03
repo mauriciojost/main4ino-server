@@ -23,7 +23,6 @@ echo ""
 read -p "Press [Enter] key to start..."
 
 
-sleep 50
 
 session=`curl -s -X POST "http://$user_password@$main4ino_server_address/api/v1/session"`
 
@@ -63,7 +62,7 @@ function get_last_report() {
   local device="$1"
   local actor="$2"
   $curl_cmd -X GET \
-    $main4ino_server_address/api/v1/devices/$device/reports/actors/$actor/summary
+    $main4ino_server_address/api/v1/devices/$device/reports/actors/$actor/last
 }
 
 function get_last_report_all() {
