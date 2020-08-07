@@ -230,8 +230,8 @@ webPortalApp.controller(
             $scope.queriedDevice = "...";
 
             $scope.tabl = "reports"; // table to get records from
-            $scope.from = -0.1; // in days, lower-bound to filter history records
-            $scope.to = 0.0; // in days, upper-bound to filter history records
+            $scope.fromHours = -1; // in hours, lower-bound to filter history records
+            $scope.toHours = 0.0; // in hours, upper-bound to filter history records
 
             $scope.search = function() {
 
@@ -240,11 +240,11 @@ webPortalApp.controller(
                 $log.log("Searching device " + $stateParams.device + " in " + $scope.tabl);
                 var date = new Date();
 
-                var msTo = 1000 * 3600 * 24 * $scope.to;
+                var msTo = 1000 * 3600 * $scope.toHours;
                 var toMs = date.getTime() + msTo;
                 var toSec = (toMs / 1000) | 0; // take to seconds and cast to int
 
-                var msFrom = 1000 * 3600 * 24 * $scope.from;
+                var msFrom = 1000 * 3600 * $scope.fromHours;
                 var fromMs = date.getTime() + msFrom;
                 var fromSec = (fromMs / 1000) | 0; // take to seconds and cast to int
 
@@ -521,8 +521,8 @@ webPortalApp.controller(
 
         $scope.session = getCookie("session");
 
-        $scope.from = -0.1; // in days, lower-bound to filter history records
-        $scope.to = 0.0; // in days, upper-bound to filter history records
+        $scope.fromHours = -1; // in hours, lower-bound to filter history records
+        $scope.toHours = 0; // in hours, upper-bound to filter history records
 
         $scope.queriedDevice = "...";
 
@@ -531,11 +531,11 @@ webPortalApp.controller(
 
             var date = new Date();
 
-            var msTo = 1000 * 3600 * 24 * $scope.to;
+            var msTo = 1000 * 3600 * $scope.toHours;
             var toMs = date.getTime() + msTo;
             var toSec = (toMs / 1000) | 0; // take to seconds and cast to int
 
-            var msFrom = 1000 * 3600 * 24 * $scope.from;
+            var msFrom = 1000 * 3600 * $scope.fromHours;
             var fromMs = date.getTime() + msFrom;
             var fromSec = (fromMs / 1000) | 0; // take to seconds and cast to int
 

@@ -11,6 +11,7 @@ main4ino_server_address="localhost:8080"
 description_body='{"version":"1.0.0", "json":[{"patterns": ["^actor1.p1$"], "descriptions": ["Property 1 xx."], "examples": ["1", "2", "3"]}]}'
 iterations=${1:-50}
 name=${2:-"noname"}
+devs=5
 
 
 # Kill previous instance if any
@@ -163,19 +164,22 @@ function fullbenchmark() {
   local k=$1
 
   echo "### MIX k=$k"
-  time iteration_mix dev1 $k
-  time iteration_mix dev2 $k
-  time iteration_mix dev3 $k
+  for d in `seq 1 $devs`
+  do
+    time iteration_mix dev$d $k
+  done
 
   echo "### WRITE k=$k"
-  time iteration_write dev1 $k
-  time iteration_write dev2 $k
-  time iteration_write dev3 $k
+  for d in `seq 1 $devs`
+  do
+    time iteration_write dev$d $k
+  done
 
   echo "### READ k=$k"
-  time iteration_read dev1 $k
-  time iteration_read dev2 $k
-  time iteration_read dev3 $k
+  for d in `seq 1 $devs`
+  do
+    time iteration_read dev$d $k
+  done
 
   echo "### DONE"
 }
