@@ -10,7 +10,7 @@ pipeline {
   }
   agent {
     docker { 
-      image 'mauriciojost/java-openjdk_8u171-scala-2.12.10-sbt-1.3.13-img-0.3.0'
+      image 'mauriciojost/scala-sbt-ci:java-openjdk_8u171-scala-2.12.10-sbt-1.3.13-img-0.3.0'
       args '--cpus=1 --memory=4G'
     }
   }
