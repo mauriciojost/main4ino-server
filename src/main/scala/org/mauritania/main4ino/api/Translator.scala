@@ -101,6 +101,7 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     } yield (response)
   }
 
+  /*
   def updateDeviceStatus(
     table: ReqType,
     device: String,
@@ -109,13 +110,14 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
   ): F[Attempt[CountResponse]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
-      updates <- repository.updateDeviceWhereRequestId(table, device, requestId, status)
-      count = updates.map(CountResponse(_))
+      updates <- repository.updateDeviceWhereRequestId(table, device, List(requestId), status)
+      count = updates.map(_.).map(CountResponse(_))
       _ <- logger.debug(
         s"Update device $device into table $table id $requestId to $status: count $count"
       )
     } yield (count)
   }
+   */
 
   def postDeviceActor(
     ap: F[ActorProps],
@@ -184,21 +186,29 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     } yield (devices)
   }
 
-  def getDevicesSummary(
+  def getSetDevicesSummary(
     dev: DeviceName,
     table: ReqType,
-    fromTo: FromTo, // TODO unused
-    st: Option[Status]
-  ): F[Option[Device]] = {
+    st: Option[Status],
+    nst: Option[Status]
+  ): F[Attempt[Option[Device]]] = {
+    val status = st.getOrElse(Status.Closed)
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
-      //devices <- repository.selectDevicesWhereTimestampStatus(table, dev, fromTo, st)
-      devices <- repository.selectDevicesLastWhereStatus(table, dev, st.getOrElse(Status.Closed))
-      summary = Device.merge(devices)
-      _ <- logger.debug(
-        s"GET summary all devices $dev from table $table from time ${fromTo.from} until ${fromTo.to} with status $st"
-      )
-    } yield (summary)
+      devices <- repository.selectDevicesLastWhereStatus(table, dev, status)
+      ids = devices.map(d => d.dbId.id).toList
+      updates <- nst match {
+        case Some(n) => repository.updateDeviceWhereRequestId (table, dev, ids, n)
+        case None => Sync[F].pure(List.empty[Attempt[Int]])
+      }
+      _ <- logger.debug(s"GET summary all devices $dev from table $table with status $status (to $nst, changes: $updates)")
+      failures = updates.filter(_.isLeft)
+      result = if (failures.isEmpty) {
+        Right(Device.merge(devices))
+      } else {
+        Left(failures.mkString(" ; "))
+      }
+    } yield (result)
   }
 
   def nowAtTimezone(tz: String): F[TimeResponse] = {

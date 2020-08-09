@@ -106,14 +106,24 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
   def updateDeviceWhereRequestId(
     table: ReqType,
     dev: DeviceName,
+    requestIds: List[RequestId],
+    status: Status
+  ): F[List[Attempt[Int]]] = {
+    val transactions = requestIds.map(r => updateDeviceWhereRequestIdTran(table, dev, r, status))
+    transactions.traverse(i => i).transact(transactor)
+  }
+
+  def updateDeviceWhereRequestIdTran(
+    table: ReqType,
+    dev: DeviceName,
     requestId: RequestId,
     status: Status
-  ): F[Either[ErrMsg, Int]] = {
+  ): ConnectionIO[Attempt[Int]] = {
     val transaction = for {
       mtd <- sqlSelectMetadataWhereRequestId(table, requestId)
       safe = mtd.exists { case (i, m) => (m.device == dev) }
       trans = mtd.exists { case (i, m) => transitionAllowed(m.status, status) }
-      inserts: ConnectionIO[Attempt[Int]] = if (!safe)
+      updates: ConnectionIO[Attempt[Int]] = if (!safe)
         Free.pure[ConnectionOp, Attempt[Int]](
           Left.apply[ErrMsg, Int](s"Request $requestId does not relate to $dev")
         )
@@ -123,10 +133,9 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
         )
       else
         sqlUpdateMetadataWhereRequestId(table, requestId, status).map(Right.apply[ErrMsg, Int])
-      nroInserts <- inserts
-    } yield (nroInserts)
-    transaction.transact(transactor)
-
+      nroUpdates <- updates
+    } yield (nroUpdates)
+    transaction
   }
 
   def selectDeviceWhereRequestId(
@@ -136,7 +145,6 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
   ): F[Attempt[DeviceId]] = {
     val transaction = for {
       t <- sqlSelectMetadataWhereRequestId(table, requestId)
-      k = t.exists { case (i, m) => m.device == dev }
       p <- sqlSelectActorTupWhereRequestIdActorStatus(table, requestId)
       j = t
         .map { case (i, m) => Repository.toDevice(i, m, p) }
@@ -161,7 +169,7 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
   def selectDevicesLastWhereStatus(
     table: ReqType,
     device: DeviceName,
-    st: Status
+    st: Status,
   ): F[Iterable[DeviceId]] = {
     val transaction = sqlSelectMetadataActorTupWhereDeviceStatus2(table, device, st)
     val s = transaction.transact(transactor)

@@ -32,6 +32,7 @@ object Url {
 
   object IdsParam extends OptionalQueryParamDecoderMatcher[Boolean]("ids")
   object StatusParam extends OptionalQueryParamDecoderMatcher[Status]("status")
+  object NewStatusParam extends OptionalQueryParamDecoderMatcher[Status]("newstatus")
 
   object MFromParam extends QueryParamDecoderMatcher[EpochSecTimestamp]("from")
   object MToParam extends QueryParamDecoderMatcher[EpochSecTimestamp]("to")
