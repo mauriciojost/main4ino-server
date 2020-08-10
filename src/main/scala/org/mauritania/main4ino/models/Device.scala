@@ -32,8 +32,6 @@ case class Device(
       (propName, propValue) <- ps.toSeq
     } yield (ActorTupIdLess(actor, propName, propValue))
 
-  def actor(s: ActorName): Option[ActorProps] = actors.get(s)
-
   def name: DeviceName = metadata.device
 
 }
