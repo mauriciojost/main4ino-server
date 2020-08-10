@@ -297,27 +297,28 @@ class Service[F[_]: Sync](
     }
 
     /**
-      * GET /devices/<dev>/targets/summary?from=1535790000&to=1535790099&status=C
+      * GET /devices/<dev>/targets/summary?status=C&newstatus=X
       *
-      * Example: GET /devices/dev1/targets/summary?from=<timestamp>&to=<timestamp>&status=<status>
+      * Example: GET /devices/dev1/targets/summary?status=<status>&newstatus=<newstatus>
       *
       * Retrieve the list of the targets summarized for the device (most recent actor-prop value wins).
       *
       * The summarized target is generated only using properties that have the given status.
       * The flag consume tells if the status of the matching properties should be changed from C (created) to X (consumed).
+      * In case of <newstatus> provided, all records used to generate such summary will be changed their status to the provided value.
       *
-      * To be used by web ui to retrieve summary of transactions in a given time period with a given status.
+      * Used by web ui to retrieve summary of transactions with a given status.
+      * Used by devices to retrieve summary on restore, and on properties update.
       *
       * Returns: OK (200) | NO_CONTENT (204)
       *
       */
-    case GET -> Root / "devices" / Dev(device) / Req(table) / "summary" :? FromParam(from) +& ToParam(
-          to
-        ) +& StatusParam(st) as _ => {
-      val x: F[Option[Device]] = tr.getDevicesSummary(device, table, FromTo(from, to), st)
+    case GET -> Root / "devices" / Dev(device) / Req(table) / "summary" :? StatusParam(st) +& NewStatusParam(nst) as _ => {
+      val x: F[Attempt[Option[Device]]] = tr.getSetDevicesSummary(device, table, st, nst)
       x.flatMap {
-        case Some(v) => Ok(v.actors.asJson, ContentTypeAppJson)
-        case None => NoContent()
+        case Right(None) => NoContent()
+        case Right(Some(v)) => Ok(v.actors.asJson, ContentTypeAppJson)
+        case Left(m) => ExpectationFailed(m)
       }
     }
 
@@ -333,6 +334,7 @@ class Service[F[_]: Sync](
       *
       * Returns: OK (200) | NOT_MODIFIED (304)
       */
+      /*
     case PUT -> Root / "devices" / Dev(device) / Req(table) / ReqId(requestId) :? StatusParam(
           st
         ) as _ => {
@@ -343,6 +345,7 @@ class Service[F[_]: Sync](
         case Left(_) => NotModified()
       }
     }
+       */
 
     /**
       * GET /devices/<dev>/targets/<request_id>

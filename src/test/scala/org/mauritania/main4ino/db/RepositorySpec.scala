@@ -43,8 +43,8 @@ class RepositorySpec extends AnyFlatSpec with Matchers with TransactorCtx with P
 
       repo.insertDeviceActor(ReqType.Targets, Device1.name, "actorx", 1L, Map("prop1" -> "val1"), 0L).unsafeRunSync() shouldBe
         Right(1)
-      repo.updateDeviceWhereRequestId(ReqType.Targets, Device1.name, 1L, Metadata.Status.Closed).unsafeRunSync() shouldBe
-        Right(1)
+      repo.updateDeviceWhereRequestId(ReqType.Targets, Device1.name, List(1L), Metadata.Status.Closed).unsafeRunSync() shouldBe
+        List(Right(1))
       repo.selectDeviceWhereRequestId(ReqType.Targets, Device1.name, 1L).unsafeRunSync() shouldBe
         Right(dAfterInsert)
 
@@ -53,10 +53,10 @@ class RepositorySpec extends AnyFlatSpec with Matchers with TransactorCtx with P
         Left("Request 2 is not open")
       repo.insertDeviceActor(ReqType.Targets, "dev2", "actorx", 2L, Map("" -> ""), 0L).unsafeRunSync() shouldBe
         Left("Request 2 does not relate to dev2")
-      repo.updateDeviceWhereRequestId(ReqType.Targets, "dev2", 1L, Metadata.Status.Closed).unsafeRunSync() shouldBe
-        Left("Request 1 does not relate to dev2")
-      repo.updateDeviceWhereRequestId(ReqType.Targets, Device1.name, 1L, Metadata.Status.Open).unsafeRunSync() shouldBe
-        Left("State transition not allowed")
+      repo.updateDeviceWhereRequestId(ReqType.Targets, "dev2", List(1L), Metadata.Status.Closed).unsafeRunSync() shouldBe
+        List(Left("Request 1 does not relate to dev2"))
+      repo.updateDeviceWhereRequestId(ReqType.Targets, Device1.name, List(1L), Metadata.Status.Open).unsafeRunSync() shouldBe
+        List(Left("State transition not allowed"))
     }
   }
 

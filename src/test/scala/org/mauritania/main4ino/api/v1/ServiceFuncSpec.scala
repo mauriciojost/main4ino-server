@@ -11,7 +11,7 @@ import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.circe._
 import org.http4s.headers.Authorization
-import org.http4s._
+import org.http4s.{Status, _}
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.{CountResponse, IdResponse, IdsOnlyResponse}
 import org.mauritania.main4ino.db.{Repository, TransactorCtx}
@@ -183,6 +183,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
     }
   }
 
+  /*
   it should "create a target/report and fill it in afterwards" in {
     withTransactor { tr =>
 
@@ -223,6 +224,8 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
 
   }
 
+   */
+
   it should "create targets and merge the properties correctly" in {
     withTransactor { tr =>
 
@@ -234,9 +237,26 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
       postExpectCreated("/devices/dev1/targets", """{"body":{"mv1":"Zz."}}""").noSpaces shouldBe IdResponse(3).asJson.noSpaces
 
       // Check the responses
-      val dev1 = getExpectOk("/devices/dev1/targets/summary?status=C")
-
+      val dev1 = getExpectOk("/devices/dev1/targets/summary?status=C&newstatus=X")
       dev1.noSpaces shouldBe """{"body":{"mv1":"Zz.","mv0":"Zz."},"clock":{"h":"7","m":"0"}}"""
+
+      // Check the responses after commit
+      val dev1b = get("/devices/dev1/targets/summary?status=C")
+      dev1b.status shouldBe Status.NoContent
+
+      // Check the responses requesting invalid commit
+      val dev1c = get("/devices/dev1/targets/summary?status=X&newstatus=C")
+      dev1c.status shouldBe Status.ExpectationFailed
+
+      postExpectCreated("/devices/dev1/targets", """{"body":{"mv2":"Zz."}}""").noSpaces shouldBe IdResponse(4).asJson.noSpaces
+
+      // Check the responses requesting invalid transition (newly created device snapshot should not be changed)
+      val dev1d = get("/devices/dev1/targets/summary?status=C&newstatus=O")
+      dev1d.status shouldBe Status.ExpectationFailed
+
+      // Check the responses after commit (should have one snapshot in status C)
+      val dev1e = get("/devices/dev1/targets/summary?status=C")
+      dev1e.status shouldBe Status.Ok
     }
 
   }
