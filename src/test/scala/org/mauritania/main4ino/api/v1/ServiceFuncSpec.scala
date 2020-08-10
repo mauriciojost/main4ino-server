@@ -19,7 +19,6 @@ import org.mauritania.main4ino.firmware.Store
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.Description
 import org.mauritania.main4ino.models.Description.VersionJson
-import org.mauritania.main4ino.models.Device.Metadata
 import org.mauritania.main4ino.security.Fixtures._
 import org.mauritania.main4ino.security._
 import org.mauritania.main4ino.{Helper, TmpDirCtx}
@@ -122,38 +121,9 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
       val dev1TargetsCount = getExpectOk("/devices/dev1/targets?ids=true&status=C")
       dev1TargetsCount.noSpaces shouldBe IdsOnlyResponse(List(1)).asJson.noSpaces
 
-      // Retrieve one actor
-      val dev1ClockTarget = getExpectOk("/devices/dev1/targets/1/actors/clock")
-      dev1ClockTarget.noSpaces shouldBe Map("h" -> "7").asJson.noSpaces
-
-      // Retrieve another actor
-      val dev1SpeakerTarget = getExpectOk("/devices/dev1/targets/1/actors/speaker")
-      dev1SpeakerTarget.noSpaces shouldBe Map("v" -> "0").asJson.noSpaces
     }
 
   }
-
-  it should "create, read a target actor" in {
-
-    withTransactor { tr =>
-      implicit val s = defaultService(tr)
-
-      // Add a multi-actor target
-      postExpectCreated("/devices/dev1/targets/actors/clock", """{"h":"7"}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
-
-      // Check the responses
-
-      // Ids existent for dev1 with status C (closed)
-      val dev1TargetsCount = getExpectOk("/devices/dev1/targets?ids=true&status=C")
-      dev1TargetsCount.noSpaces shouldBe IdsOnlyResponse(List(1)).asJson.noSpaces
-
-      // Retrieve one actor
-      val dev1ClockTarget = getExpectOk("/devices/dev1/targets/1/actors/clock")
-      dev1ClockTarget.noSpaces shouldBe Map("h" -> "7").asJson.noSpaces
-    }
-
-  }
-
 
   "The service from the device" should "create and read a target/report in different value formats (string, int, bool)" in {
     withTransactor { tr =>
@@ -182,49 +152,6 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
       r3.status shouldBe Status.NotFound
     }
   }
-
-  /*
-  it should "create a target/report and fill it in afterwards" in {
-    withTransactor { tr =>
-
-      implicit val s = defaultService(tr)
-
-      // Add a target (empty)
-      postExpectCreated("/devices/dev1/targets", """{}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
-
-      getExpectOk("/devices/dev1/targets?ids=true").noSpaces shouldBe IdsOnlyResponse(List(1)).asJson.noSpaces // not until at least one property added
-
-      postExpectCreated("/devices/dev1/targets/1/actors/actor1", """{"prop1":"val1"}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces // inserted
-      postExpectCreated("/devices/dev1/targets/1/actors/actor1", """{"prop1":"val11"}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces // inserted after
-
-      getExpectOk("/devices/dev1/targets?ids=true").noSpaces shouldBe IdsOnlyResponse(List(1)).asJson.noSpaces
-
-      // Check the responses
-      getExpectOk("/devices/dev1/targets/1").\\("actors")(0).noSpaces shouldBe ("""{"actor1":{"prop1":"val11"}}""")
-
-
-      // The request is open
-      getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).asString shouldBe Some(Metadata.Status.Open.entryName)
-
-      // Close the request
-      putExpect("/devices/dev1/targets/1?status=C", "", Status.Ok)
-      getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).asString shouldBe Some(Metadata.Status.Closed.entryName)
-
-      // Consume the request
-      putExpect("/devices/dev1/targets/1?status=X", "", Status.Ok)
-      getExpectOk("/devices/dev1/targets/1").\\("metadata")(0).\\("status")(0).asString shouldBe Some(Metadata.Status.Consumed.entryName)
-
-      // Check its not anymore available if requesting for closed requests
-      getExpectOk("/devices/dev1/targets?ids=true&status=C").noSpaces shouldBe IdsOnlyResponse(List()).asJson.noSpaces
-
-      // Attempt to set status to open again (should be ignored as the transition is not allowed)
-      putExpect("/devices/dev1/targets/1?status=O", "{}", Status.NotModified)
-
-    }
-
-  }
-
-   */
 
   it should "create targets and merge the properties correctly" in {
     withTransactor { tr =>
@@ -279,26 +206,6 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
 
   }
 
-  it should "retrieve correctly last device view per actor and status" in {
-    withTransactor { tr =>
-
-      implicit val s = defaultService(tr)
-
-      // Add a few targets
-      postExpectCreated("/devices/dev1/targets", """{"clock":{"h":"7"}}""").noSpaces shouldBe IdResponse(1).asJson.noSpaces
-      postExpectCreated("/devices/dev1/targets", """{"body":{"mv1":"Zz."}}""").noSpaces shouldBe IdResponse(2).asJson.noSpaces
-
-      // Check the responses
-      val dev1a = getExpectOk("/devices/dev1/targets/actors/clock/last?status=C")
-      dev1a.noSpaces shouldBe """{"h":"7"}"""
-
-      val dev1b = getExpectOk("/devices/dev1/targets/actors/body/last?status=C")
-      dev1b.noSpaces shouldBe """{"mv1":"Zz."}"""
-    }
-
-  }
-
-
   it should "respond with no expectation failed when no records are found" in {
     withTransactor { tr =>
 
@@ -307,8 +214,6 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
       get("/devices/dev1/targets/1").status shouldBe Status.NoContent
       get("/devices/dev1/targets/last").status shouldBe Status.NoContent
       get("/devices/dev1/targets/summary").status shouldBe Status.NoContent
-      get("/devices/dev1/targets/actors/clock/last").status shouldBe Status.NoContent
-      get("/devices/dev1/targets/actors/body/last").status shouldBe Status.NoContent
     }
 
   }

@@ -80,16 +80,6 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     } yield (device)
   }
 
-  def getDeviceActor(
-    t: ReqType,
-    dev: DeviceName,
-    actor: ActorName,
-    id: RequestId
-  ): F[Attempt[ActorProps]] = {
-    val x = getDevice(t, dev, id)
-    x.map(e => e.flatMap(d => d.device.actor(actor).toRight(s"No such actor: $actor")))
-  }
-
   def postDevice(dev: F[Device], t: ReqType): F[IdResponse] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
@@ -101,41 +91,6 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     } yield (response)
   }
 
-  /*
-  def updateDeviceStatus(
-    table: ReqType,
-    device: String,
-    requestId: RequestId,
-    status: Status
-  ): F[Attempt[CountResponse]] = {
-    for {
-      logger <- Slf4jLogger.fromClass[F](Translator.getClass)
-      updates <- repository.updateDeviceWhereRequestId(table, device, List(requestId), status)
-      count = updates.map(_.).map(CountResponse(_))
-      _ <- logger.debug(
-        s"Update device $device into table $table id $requestId to $status: count $count"
-      )
-    } yield (count)
-  }
-   */
-
-  def postDeviceActor(
-    ap: F[ActorProps],
-    dev: DeviceName,
-    act: ActorName,
-    table: ReqType,
-    id: RequestId
-  ): F[Attempt[CountResponse]] = {
-    for {
-      logger <- Slf4jLogger.fromClass[F](Translator.getClass)
-      timeUtc <- time.nowUtc
-      props <- ap
-      inserts <- repository.insertDeviceActor(table, dev, act, id, props, Time.asTimestamp(timeUtc))
-      count = inserts.map(CountResponse(_))
-      _ <- logger.debug(s"POST device $dev (actor $act) into table $table id $id: $props / $count")
-    } yield (count)
-  }
-
   def getDeviceLast(
     dev: DeviceName,
     table: ReqType,
@@ -145,19 +100,6 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)
       device <- repository.selectMaxDevice(table, dev, status)
       _ <- logger.debug(s"GET last device $dev from table $table with status $status")
-    } yield (device)
-  }
-
-  def getDeviceActorLast(
-    dev: DeviceName,
-    act: ActorName,
-    table: ReqType,
-    status: Option[Status]
-  ): F[Option[DeviceId]] = {
-    for {
-      logger <- Slf4jLogger.fromClass[F](Translator.getClass)
-      device <- repository.selectMaxDeviceActor(table, dev, act, status)
-      _ <- logger.debug(s"GET last device $dev actor $act from table $table with status $status")
     } yield (device)
   }
 

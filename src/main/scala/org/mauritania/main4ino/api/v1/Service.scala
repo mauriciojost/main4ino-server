@@ -385,103 +385,11 @@ class Service[F[_]: Sync](
     }
   }
 
-  private[v1] val deviceActorService: AuthedRoute[F, User] = {
-
-    /**
-      * POST /devices/<dev>/targets/actors/<actor>
-      *
-      * Example: POST /devices/dev1/targets/actors/clock
-      *
-      * Create a new target for a given actor with the provided actor properties.
-      *
-      * To be used by tests to push actor reports (actor by actor) creating a new transaction.
-      *
-      * Returns: CREATED (201)
-      */
-    case a @ POST -> Root / "devices" / Dev(device) / Req(table) / "actors" / Act(actor) as _ => {
-      val actorProps = a.req.decodeJson[ActorProps]
-      val dev = for {
-        p <- actorProps
-        dev = Device(device, Map(actor -> p))
-      } yield (dev)
-      val x: F[Translator.IdResponse] = tr.postDevice(dev, table)
-      x.flatMap(i => Created(i, ContentTypeAppJson))
-    }
-
-    /**
-      * POST /devices/<dev>/targets/<requestid>/actors/<actor>
-      *
-      * Example: POST /devices/dev1/targets/1000/actors/clock
-      *
-      * Create a new target for a given actor with the provided actor properties.
-      *
-      * An existent request can be filled in if the request ID is provided.
-      * To be used by devices to push actor reports (actor by actor) to a given existent transaction.
-      *
-      * Returns: CREATED (201) | NOT_MODIFIED (304)
-      */
-    case a @ POST -> Root / "devices" / Dev(device) / Req(table) / ReqId(rid) / "actors" / Act(
-          actor
-        ) as _ => {
-      val pm = a.req.decodeJson[ActorProps]
-      val x: F[Attempt[Translator.CountResponse]] =
-        tr.postDeviceActor(pm, device, actor, table, rid)
-      x.flatMap {
-        case Right(v) => Created(v.asJson, ContentTypeAppJson)
-        case Left(_) => NotModified()
-      }
-    }
-
-    /**
-      * GET /devices/<dev>/targets/actors/<actor>/last?status=<status>
-      *
-      * Example: GET /devices/dev1/targets/actors/clock/last?status=C
-      *
-      * Retrieve the last target created containing such actor with such status.
-      *
-      * To be used by devices to see the last status of a given actor (status = C, used upon restart).
-      *
-      * Returns: OK (200) | NO_CONTENT (204)
-      */
-    case GET -> Root / "devices" / Dev(device) / Req(table) / "actors" / Act(actor) / "last" :? StatusParam(
-          status
-        ) as _ => {
-      val x: F[Option[DeviceId]] = tr.getDeviceActorLast(device, actor, table, status)
-      x.flatMap { m =>
-        val v = m.flatMap(_.device.actor(actor))
-        v match {
-          case Some(x) => Ok(x.asJson, ContentTypeAppJson)
-          case None => NoContent()
-        }
-      }
-    }
-
-    /**
-      * GET /devices/<dev>/targets/<requestid>/actors/<actor>
-      *
-      * Example: GET /devices/dev1/targets/1000/actors/clock
-      *
-      * Retrieve the corresponding properties in the given request for the given actor.
-      *
-      * To be used by devices to pull actor targets (actor by actor).
-      *
-      * Returns: OK (200) | NO_CONTENT (204)
-      */
-    case GET -> Root / "devices" / Dev(device) / Req(table) / ReqId(rid) / "actors" / Act(actor) as _ => {
-      val x: F[Attempt[ActorProps]] = tr.getDeviceActor(table, device, actor, rid)
-      x.flatMap {
-        case Right(d) => Ok(d.asJson, ContentTypeAppJson)
-        case Left(_) => NoContent()
-      }
-    }
-  }
-
   private[v1] val service = AuthedRoutes.of[User, F] {
     basicService
       .orElse(loginService)
       .orElse(adminService)
       .orElse(deviceService)
-      .orElse(deviceActorService)
   }
 
   private[v1] val onFailure: AuthedRoutes[String, F] =
