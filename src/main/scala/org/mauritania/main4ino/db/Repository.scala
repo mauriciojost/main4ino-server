@@ -88,7 +88,7 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
           Left.apply[ErrMsg, Int](s"Request $requestId is not open")
         )
       else
-        sqlInsertActorTup(table, ActorTup.from(dev, actor, p), requestId, ts)
+        sqlInsertActorTup(table, ActorTup.from(actor, p), requestId, ts)
           .map(Right.apply[ErrMsg, Int])
       attempt <- inserts
     } yield (attempt)
@@ -184,29 +184,6 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
   ): F[Option[DeviceId]] = {
     val transaction = for {
       i <- sqlSelectLastRequestIdWhereDeviceStatus(table, device, status)
-      t <- i
-        .map(sqlSelectMetadataWhereRequestId(table, _))
-        .getOrElse(raw[Option[(DbId, Metadata)]](x => None))
-      p <- i
-        .map(sqlSelectActorTupWhereRequestIdActorStatus(table, _))
-        .getOrElse(raw[List[ActorTup]](x => List.empty[ActorTup]))
-    } yield {
-      (t, p) match {
-        case (Some((i, m)), l) => Some(Repository.toDevice(i, m, l))
-        case _ => None
-      }
-    }
-    transaction.transact(transactor)
-  }
-
-  def selectMaxDeviceActor(
-    table: ReqType,
-    device: DeviceName,
-    actor: ActorName,
-    status: Option[Status]
-  ): F[Option[DeviceId]] = {
-    val transaction = for {
-      i <- sqlSelectLastRequestIdWhereDeviceActorStatus(table, device, actor, status)
       t <- i
         .map(sqlSelectMetadataWhereRequestId(table, _))
         .getOrElse(raw[Option[(DbId, Metadata)]](x => None))
@@ -367,24 +344,6 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
       .unique
   }
 
-  private def sqlSelectLastRequestIdWhereDeviceActorStatus(
-    table: ReqType,
-    d: DeviceName,
-    a: ActorName,
-    s: Option[Status]
-  ): ConnectionIO[Option[RequestId]] = {
-    val stFr = s match {
-      case Some(i) => fr"AND r.status = $i"
-      case None => fr""
-    }
-    (fr"SELECT MAX(r.id) FROM" ++ Fragment.const(table.code + "_requests") ++ fr"as r LEFT OUTER JOIN" ++ Fragment
-      .const(table.code) ++ fr"as t" ++
-      fr"ON r.id = t.request_id" ++
-      fr"WHERE r.device_name=$d AND t.actor_name=$a" ++ stFr)
-      .query[Option[RequestId]]
-      .unique
-  }
-
   private def sqlSelectActorTupWhereRequestIdActorStatus(
     table: ReqType,
     requestId: RequestId,
@@ -456,11 +415,11 @@ object Repository {
     more: ActorTupIdLess,
     creation: EpochSecTimestamp
   ) {
-    def actor = more.actor
+    def actor: ActorName = more.actor
 
-    def prop = more.prop
+    def prop: PropName = more.prop
 
-    def value = more.value
+    def value: PropValue = more.value
   }
 
   case class ActorTupIdLess(
@@ -492,7 +451,6 @@ object Repository {
     }
 
     def from(
-      deviceName: DeviceName,
       actorName: ActorName,
       pm: ActorProps
     ): Iterable[ActorTupIdLess] = {
