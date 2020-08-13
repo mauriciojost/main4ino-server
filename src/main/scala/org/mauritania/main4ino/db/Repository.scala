@@ -347,14 +347,9 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
   private def sqlSelectActorTupWhereRequestIdActorStatus(
     table: ReqType,
     requestId: RequestId,
-    actor: Option[ActorName] = None
   ): ConnectionIO[List[ActorTup]] = {
-    val actorFr = actor match {
-      case Some(a) => fr"AND actor_name = $a"
-      case None => fr""
-    }
     (fr"SELECT request_id, actor_name, property_name, property_value, creation FROM " ++ Fragment
-      .const(table.code) ++ fr" WHERE request_id=$requestId" ++ actorFr)
+      .const(table.code) ++ fr" WHERE request_id=$requestId")
       .query[ActorTup]
       .accumulate
   }
