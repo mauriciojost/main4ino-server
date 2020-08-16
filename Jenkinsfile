@@ -1,3 +1,3 @@
 https://github.com/mauriciojost/jenkinslibs
-@Library jenkinslibs
+@Library(jenkinslibs)
 scalaPipeline()
