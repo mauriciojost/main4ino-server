@@ -8,7 +8,7 @@ object Dependencies {
         val DoobieVersion = "0.9.0"
         val H2Version = "1.4.200"
         val SqliteVersion = "3.32.3.1"
-        val FlywayVersion = "6.5.4"
+        val FlywayVersion = "6.5.5"
         val CirceVersion = "0.13.0"
         val PureConfigVersion = "0.13.0"
         val ScalaTestVersion = "3.2.2"
