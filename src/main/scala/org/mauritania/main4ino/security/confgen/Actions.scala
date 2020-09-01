@@ -1,5 +1,6 @@
 package org.mauritania.main4ino.security.confgen
 
+import org.mauritania.main4ino.models.DeviceName
 import org.mauritania.main4ino.security.Permission
 import org.mauritania.main4ino.security.confgen.Actions.{Action, AddRawUsers}
 
@@ -15,7 +16,8 @@ object Actions {
     name: String,
     pass: String,
     email: String,
-    granted: Map[String, Permission]
+    granted: Map[String, Permission],
+    devices: List[DeviceName]
   )
 
   sealed trait Action

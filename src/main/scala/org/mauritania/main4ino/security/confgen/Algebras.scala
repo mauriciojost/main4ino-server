@@ -24,7 +24,7 @@ object Algebras {
     )(implicit P: PasswordHasher[F, BCrypt], M: Monad[F]): F[User] =
       for {
         hashed <- Auther.hashPassword[F](u.pass)
-      } yield User(u.name, hashed, u.email, u.granted)
+      } yield User(u.name, hashed, u.email, u.granted, u.devices)
 
     def performActions(c: Config, a: List[Action]): F[Config]
     def asString(c: Config): String

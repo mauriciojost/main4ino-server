@@ -89,7 +89,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
 
   }
 
-  it should "generate a session and tell the user currently logged in" in {
+  it should "generate a session and tell the user currently logged in and its managed devices" in {
     withTransactor { tr =>
       implicit val ds = defaultService(tr)
 
@@ -102,6 +102,10 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
       val u = get("/user")
       u.status shouldBe Status.Ok
       u.as[String].unsafeRunSync() shouldBe User1.name
+
+      val d = get("/devices")
+      d.status shouldBe Status.Ok
+      d.as[String].unsafeRunSync() shouldBe "[]"
     }
 
   }

@@ -4,6 +4,7 @@ import java.nio.file.{Files, Paths}
 
 import cats.effect.{IO, Sync}
 import org.mauritania.main4ino.DecodersIO
+import org.mauritania.main4ino.models.DeviceName
 import org.mauritania.main4ino.security.confgen.Actions.{AddRawUser, AddRawUsers, Identity}
 import org.mauritania.main4ino.security.confgen.Modules.{ConfigsMonad, FilesystemSync}
 import org.mauritania.main4ino.security.Fixtures._
@@ -32,14 +33,15 @@ class ModulesSpec extends AnyWordSpec with Matchers with DecodersIO with Paralle
       implicit val ph = new MockedPasswordHasher()
       val c = new ConfigsMonad[IO]()
       val baseConfig = DefaultSecurityConfig
-      val addNewUser = AddRawUsers(List(AddRawUser("pepe", "toto", "pepe@zzz.com", Map[String, Permission]("/" -> RW))))
+      val addNewUser = AddRawUsers(List(AddRawUser("pepe", "toto", "pepe@zzz.com", Map[String, Permission]("/" -> RW), List.empty[DeviceName])))
       val newConf = c.performActions(baseConfig, List(addNewUser)).unsafeRunSync()
 
       val ExpectedNewUserEntry = User(
         name = "pepe",
         hashedpass = PasswordHash[BCrypt]("hashed-toto"),
         email = "pepe@zzz.com",
-        granted = Map[String, Permission]("/" -> RW)
+        granted = Map[String, Permission]("/" -> RW),
+        devices = List.empty[DeviceName]
       )
 
       newConf shouldBe baseConfig.copy(users = ExpectedNewUserEntry :: baseConfig.users)

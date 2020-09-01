@@ -1,6 +1,5 @@
 package org.mauritania.main4ino.api
 
-import java.nio.file.Paths
 import java.time.ZoneId
 
 import cats.effect.Sync

@@ -2,13 +2,15 @@ package org.mauritania.main4ino.security
 
 import org.http4s.Method
 import org.http4s.Uri.Path
+import org.mauritania.main4ino.models.DeviceName
 import org.mauritania.main4ino.security.Auther.UserHashedPass
 
 case class User(
   name: String,
   hashedpass: UserHashedPass,
   email: String,
-  granted: Map[Path, Permission]
+  granted: Map[Path, Permission],
+  devices: List[DeviceName]
 ) {
   def authorized(method: Method, uriPath: Path): Option[User] = {
     granted.exists { case right => canAccess(right, method, uriPath) } match {

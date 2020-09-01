@@ -132,6 +132,18 @@ class Service[F[_]: Sync](
     case a @ GET -> Root / "user" as user => {
       Ok(user.name, ContentTypeTextPlain)
     }
+
+    /**
+      * GET /devices
+      *
+      * Return the devices managed by the currently logged in user.
+      * To be used by web ui.
+      *
+      * Returns: OK (200)
+      */
+    case a @ GET -> Root / "devices" as user => {
+      Ok(user.devices.asJson, ContentTypeAppJson)
+    }
   }
 
   private[v1] val adminService: AuthedRoute[F, User] = {
