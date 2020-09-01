@@ -125,17 +125,28 @@ webPortalApp.controller(
                 $http(requs).then(
                     function(r) {
                         $log.log("Logged in: " + r.data);
-                        var devicesCookie = getCookie("devices");
-                        if (devicesCookie) {
-                            $rootScope.devices = devicesCookie.split(",");
-                        }
-                        $log.log("Devices: " + $rootScope.devices + " (total: " + $rootScope.devices.length + ")");
                         $rootScope.logged = r.data;
                     },
                     function(r) {
                         $log.log("Not logged in: " + r.data);
                     }
                 );
+                var requsDevs = {
+                    method: "GET",
+                    url: "api/v1/devices",
+                    headers: {"Session": $scope.session}
+                };
+                $http(requsDevs).then(
+                    function(r) {
+                        $log.log("Devices: " + r.data);
+                        $rootScope.devices = r.data;
+                    },
+                    function(r) {
+                        $log.log("Failed to retrieve devices");
+                        $rootScope.devices = [];
+                    }
+                );
+
                 var requsVer = {
                     method: "GET",
                     url: "api/v1/version",
@@ -156,7 +167,6 @@ webPortalApp.controller(
               $log.log("Remember credentials");
               $log.log("User: " + $scope.username);
               $log.log("Session: " + $scope.session);
-              $log.log("Devices: " + $scope.devicesStr);
                 var req = {
                     method: "POST",
                     url: "api/v1/session",
@@ -166,7 +176,6 @@ webPortalApp.controller(
                     function(r) {
                         $log.log("Logged in correctly: " + r.data);
                         setCookie("session", r.data, 100);
-                        setCookie("devices", $scope.devicesStr, 100);
                         $scope.loginUsingSession();
                     },
                     function(r) {
@@ -182,7 +191,6 @@ webPortalApp.controller(
             $scope.removeCredentials = function() {
               $log.log("Removed credentials");
               eraseCookie("session");
-              eraseCookie("devices");
               $rootScope.logged = null;
             }
 
