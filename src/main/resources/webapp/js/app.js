@@ -160,7 +160,6 @@ webPortalApp.controller(
                         $log.log("Could not figure out version: " + r.data);
                     }
                 );
-                $state.go("login", {session: $scope.session, device: $scope.device})
             }
 
             $scope.rememberCredentials = function() {
@@ -494,10 +493,12 @@ webPortalApp.controller(
                 $log.log("Changing " + device + " " + actor + " " + propName + " " + propValue);
 
                 var jsn = {};
-                jsn[propName] = propValue;
+                var jsn2 = {};
+                jsn2[propName] = propValue;
+                jsn[actor] = jsn2;
                 var req = {
                     method: "POST",
-                    url: "api/v1/devices/" + device + "/targets/actors/" + actor,
+                    url: "api/v1/devices/" + device + "/targets",
                     headers: {"Content-Type": "application/json", "Session": $scope.session},
                     data: JSON.stringify(jsn)
                 };

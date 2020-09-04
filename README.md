@@ -56,7 +56,7 @@ The corresponding REST API is [here](/src/main/scala/org/mauritania/main4ino/api
 Run the server to let it be accessible by your devices:
 
 ```
-sbt -Dconfig-dir=src/main/resources/defaultconfig/ 'runMain org.mauritania.main4ino.Server'
+sbt -Dconfig-dir=src/main/resources/defaultconfig/ 'runMain org.mauritania.main4ino.Server' # ./misc/benchmarks/populate then admin/password
 ```
 
 Default credentials are: `admin` / `password`
