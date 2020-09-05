@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -u
+
+logfile="$1"
+durationsfile=$logfile.ms_durations
+duration_upperbound_ms=3000
+cap_top=10
+
+cat $logfile | egrep 'took [0-9]+ms' | sed -E 's#.* took ([0-9]+)ms#\1^\0#g' | sort -n | tail -"$cap_top" > $durationsfile
+
+maxduration=$(tail -1 $durationsfile | awk -F^ '{print $1}')
+
+if [ "$maxduration" -gt $duration_upperbound_ms ]
+then
+  echo "# Errors of slow queries found in $logfile..."
+  cat $durationsfile
+  exit 1
+else
+  echo "# No errors found, all fine."
+fi
+
+
