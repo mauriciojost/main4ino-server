@@ -234,7 +234,7 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
     ts: EpochSecTimestamp
   ): ConnectionIO[Int] = {
     (
-      fr"MERGE INTO descriptions (device_name, updated, version, json) KEY (device_name) VALUES (${dev}, ${ts}, ${d.version}, ${d.json})"
+      fr"INSERT INTO descriptions (device_name, updated, version, json) VALUES (${dev}, ${ts}, ${d.version}, ${d.json}) ON CONFLICT (device_name) DO UPDATE SET device_name = ${dev}"
     ).update.run
   }
 
