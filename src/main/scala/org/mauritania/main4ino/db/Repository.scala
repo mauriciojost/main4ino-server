@@ -279,14 +279,15 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
     val tableRequestsFr = Fragment.const(table.code + "_requests")
     val tableFr = Fragment.const(table.code)
     val fr2 = fr"""SELECT m.id, 0 as request_creation, m.device_name, $st as status, 0 as xxx, m.actor_name, m.property_name, x.property_value, 0 as creation
-    from (
+    FROM (
       SELECT device_name, actor_name, property_name, max(id) as id
-      from (
+      FROM (
         SELECT r.id, r.device_name, t.actor_name, t.property_name, t.property_value FROM""" ++ tableRequestsFr ++ fr"""r
         JOIN""" ++ tableFr ++ fr"""as t ON r.id = t.request_id
         WHERE r.device_name=$d and r.status=$st
-      ) GROUP BY device_name, actor_name, property_name
-    ) as m
+      ) AS i 
+      GROUP BY device_name, actor_name, property_name
+    ) AS m
     JOIN """ ++ tableFr ++ fr""" as x ON m.id = x.request_id AND m.actor_name = x.actor_name AND m.property_name = x.property_name"""
 
 
