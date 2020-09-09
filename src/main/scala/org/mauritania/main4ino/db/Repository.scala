@@ -4,13 +4,15 @@ import cats.effect.Sync
 import cats.free.Free
 import cats.implicits._
 import doobie._
-import doobie.free.connection.{raw, ConnectionOp}
+import doobie.free.connection.{ConnectionOp, raw}
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.types.numeric.PosInt
 import fs2.Stream
 import io.circe.Json
 import org.mauritania.main4ino.api.{Attempt, ErrMsg}
+import org.mauritania.main4ino.db.Config.DbSyntax
+import org.mauritania.main4ino.db.Config.DbSyntax.DbSyntax
 import org.mauritania.main4ino.db.Repository.ReqType.ReqType
 import org.mauritania.main4ino.db.Repository.{ActorTup, ActorTupIdLess, Device1, FromTo}
 import org.mauritania.main4ino.models.Description.VersionJson
@@ -19,7 +21,7 @@ import org.mauritania.main4ino.models.Device.{DbId, Metadata}
 import org.mauritania.main4ino.models._
 
 // Naming regarding to SQL
-class Repository[F[_]: Sync](transactor: Transactor[F]) {
+class Repository[F[_]: Sync](syntax: DbSyntax, transactor: Transactor[F]) {
 
   implicit val StatusMeta: Meta[Status] =
     Meta[String].timap[Status](Status.withName(_))(_.entryName)
@@ -233,9 +235,16 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
     d: VersionJson,
     ts: EpochSecTimestamp
   ): ConnectionIO[Int] = {
-    (
-      fr"INSERT INTO descriptions (device_name, updated, version, json) VALUES (${dev}, ${ts}, ${d.version}, ${d.json}) ON CONFLICT (device_name) DO UPDATE SET device_name = ${dev}"
-    ).update.run
+    syntax match {
+      // $COVERAGE-OFF$
+      // Too difficult to have integration tests with PostgreSQL
+      case DbSyntax.Postgres =>
+        (fr"INSERT INTO descriptions (device_name, updated, version, json) VALUES (${dev}, ${ts}, ${d.version}, ${d.json}) ON CONFLICT (device_name) DO UPDATE SET device_name = ${dev}").update.run
+      // $COVERAGE-ON$
+      case _ =>
+        fr"MERGE INTO descriptions (device_name, updated, version, json) KEY (device_name) VALUES (${dev}, ${ts}, ${d.version}, ${d.json})".update.run
+    }
+
   }
 
   private def sqlSelectDescription(d: DeviceName): ConnectionIO[Option[Description]] = {

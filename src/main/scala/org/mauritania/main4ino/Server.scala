@@ -6,12 +6,11 @@ import java.util.concurrent._
 
 import cats.effect.{ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, Resource, Timer}
 import org.mauritania.main4ino.db.Repository.ReqType
-import org.mauritania.main4ino.api.{v1, Translator}
+import org.mauritania.main4ino.api.{Translator, v1}
 import org.mauritania.main4ino.db.{Cleaner, Database, Repository}
 import org.mauritania.main4ino.firmware.{Service, Store}
 import org.mauritania.main4ino.helpers.{ConfigLoader, Scheduler, Time}
 import org.mauritania.main4ino.security.{Auther, Permission}
-
 import cats.effect._
 import cats.implicits._
 import org.http4s.server.{Router, Server => H4Server}
@@ -22,6 +21,7 @@ import org.mauritania.main4ino.devicelogs.Logger
 import pureconfig._
 import pureconfig.generic.auto._
 import eu.timepit.refined.pureconfig._
+import org.mauritania.main4ino.db.Config.DbSyntax
 
 import scala.concurrent.ExecutionContext
 
@@ -46,7 +46,7 @@ object Server extends IOApp {
       transactor <- Database
         .transactor[F](configApp.database, blockingIoEc, Blocker.liftExecutionContext(blockingIoEc))
 
-      repo = new Repository[F](transactor)
+      repo = new Repository[F](configApp.database.syntax.getOrElse(DbSyntax.H2), transactor)
       time = new Time[F]()
 
       httpApp = router(configApp, configUsers, blockingIoEc, repo, time)
