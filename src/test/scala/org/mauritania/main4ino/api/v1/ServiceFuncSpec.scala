@@ -26,6 +26,7 @@ import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import cats._
 import cats.implicits._
 import org.http4s.dsl.Http4sDsl
+import org.mauritania.main4ino.db.Config.DbSyntax
 import org.mauritania.main4ino.devicelogs.{Config, Logger}
 import org.scalatest.ParallelTestExecution
 import org.scalatest.flatspec.AnyFlatSpec
@@ -45,7 +46,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
     new Service(
       new Auther(DefaultSecurityConfig),
       new Translator(
-        new Repository(transactor),
+        new Repository(DbSyntax.H2, transactor),
         t,
         new Logger[IO](Config(tmp), t, Helper.testExecutionContext)(Sync[IO], cs)
       ),

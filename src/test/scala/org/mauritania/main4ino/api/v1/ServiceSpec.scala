@@ -28,6 +28,7 @@ import org.scalatest.EitherValues._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.main4ino.DecodersIO
+import org.mauritania.main4ino.db.Config.DbSyntax
 import org.mauritania.main4ino.db.Repository
 import org.mauritania.main4ino.firmware.Store
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
@@ -56,7 +57,7 @@ class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with Decode
   implicit val statusEncoder = JsonEncoding.StatusEncoder
   implicit val statusDecoder = JsonEncoding.StatusDecoder
 
-  class RepositoryIO(tr: Transactor[IO]) extends Repository[IO](tr)
+  class RepositoryIO(tr: Transactor[IO]) extends Repository[IO](DbSyntax.H2, tr)
   class TimeIO extends Time[IO]
 
   "Help request" should {

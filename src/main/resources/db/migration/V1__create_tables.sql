@@ -1,6 +1,6 @@
 CREATE TABLE targets_requests (
   id SERIAL PRIMARY KEY,
-  creation LONG,
+  creation BIGINT,
   device_name VARCHAR(20),
   status VARCHAR(1) CHECK (status IN ('O', 'C', 'X', '?'))
 );
@@ -11,12 +11,12 @@ CREATE TABLE targets (
   actor_name VARCHAR(20),
   property_name VARCHAR(20),
   property_value TEXT,
-  creation LONG
+  creation BIGINT
 );
 
 CREATE TABLE reports_requests (
   id SERIAL PRIMARY KEY,
-  creation LONG,
+  creation BIGINT,
   device_name VARCHAR(20),
   status VARCHAR(1) CHECK (status IN ('O', 'C', 'X', '?'))
 );
@@ -27,12 +27,12 @@ CREATE TABLE reports (
   actor_name VARCHAR(20),
   property_name VARCHAR(20),
   property_value TEXT,
-  creation LONG
+  creation BIGINT
 );
 
 CREATE TABLE descriptions (
   device_name VARCHAR(20) PRIMARY KEY,
-  updated LONG,
+  updated BIGINT,
   version TEXT,
   json TEXT
 );

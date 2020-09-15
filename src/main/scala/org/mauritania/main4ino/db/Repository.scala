@@ -4,13 +4,15 @@ import cats.effect.Sync
 import cats.free.Free
 import cats.implicits._
 import doobie._
-import doobie.free.connection.{raw, ConnectionOp}
+import doobie.free.connection.{ConnectionOp, raw}
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import eu.timepit.refined.types.numeric.PosInt
 import fs2.Stream
 import io.circe.Json
 import org.mauritania.main4ino.api.{Attempt, ErrMsg}
+import org.mauritania.main4ino.db.Config.DbSyntax
+import org.mauritania.main4ino.db.Config.DbSyntax.DbSyntax
 import org.mauritania.main4ino.db.Repository.ReqType.ReqType
 import org.mauritania.main4ino.db.Repository.{ActorTup, ActorTupIdLess, Device1, FromTo}
 import org.mauritania.main4ino.models.Description.VersionJson
@@ -19,7 +21,7 @@ import org.mauritania.main4ino.models.Device.{DbId, Metadata}
 import org.mauritania.main4ino.models._
 
 // Naming regarding to SQL
-class Repository[F[_]: Sync](transactor: Transactor[F]) {
+class Repository[F[_]: Sync](syntax: DbSyntax, transactor: Transactor[F]) {
 
   implicit val StatusMeta: Meta[Status] =
     Meta[String].timap[Status](Status.withName(_))(_.entryName)
@@ -233,9 +235,16 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
     d: VersionJson,
     ts: EpochSecTimestamp
   ): ConnectionIO[Int] = {
-    (
-      fr"MERGE INTO descriptions (device_name, updated, version, json) KEY (device_name) VALUES (${dev}, ${ts}, ${d.version}, ${d.json})"
-    ).update.run
+    syntax match {
+      // $COVERAGE-OFF$
+      // Too difficult to have integration tests with PostgreSQL
+      case DbSyntax.Postgres =>
+        (fr"INSERT INTO descriptions (device_name, updated, version, json) VALUES (${dev}, ${ts}, ${d.version}, ${d.json}) ON CONFLICT (device_name) DO UPDATE SET device_name = ${dev}").update.run
+      // $COVERAGE-ON$
+      case _ =>
+        fr"MERGE INTO descriptions (device_name, updated, version, json) KEY (device_name) VALUES (${dev}, ${ts}, ${d.version}, ${d.json})".update.run
+    }
+
   }
 
   private def sqlSelectDescription(d: DeviceName): ConnectionIO[Option[Description]] = {
@@ -279,14 +288,15 @@ class Repository[F[_]: Sync](transactor: Transactor[F]) {
     val tableRequestsFr = Fragment.const(table.code + "_requests")
     val tableFr = Fragment.const(table.code)
     val fr2 = fr"""SELECT m.id, 0 as request_creation, m.device_name, $st as status, 0 as xxx, m.actor_name, m.property_name, x.property_value, 0 as creation
-    from (
+    FROM (
       SELECT device_name, actor_name, property_name, max(id) as id
-      from (
+      FROM (
         SELECT r.id, r.device_name, t.actor_name, t.property_name, t.property_value FROM""" ++ tableRequestsFr ++ fr"""r
         JOIN""" ++ tableFr ++ fr"""as t ON r.id = t.request_id
         WHERE r.device_name=$d and r.status=$st
-      ) GROUP BY device_name, actor_name, property_name
-    ) as m
+      ) AS i 
+      GROUP BY device_name, actor_name, property_name
+    ) AS m
     JOIN """ ++ tableFr ++ fr""" as x ON m.id = x.request_id AND m.actor_name = x.actor_name AND m.property_name = x.property_name"""
 
 
