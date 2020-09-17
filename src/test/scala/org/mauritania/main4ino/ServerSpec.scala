@@ -40,13 +40,17 @@ class ServerSpec extends AnyFlatSpec with Matchers with HttpClient with BeforeAn
 
   override def beforeAll(): Unit = {
     port = FreePortFinder.findFreeLocalPort(DynamicPortBeginning)
+    println(s"Free port found: $port")
     appFiber.join.unsafeRunAsyncAndForget()
+    println(s"App launched: $port")
     while (FreePortFinder.available(port)) {
+      println(s"Waiting for app to show up...")
       Thread.sleep(IterationMs)
     };
   }
 
   override def afterAll(): Unit = {
+    println(s"Attempting to kill the app...")
     appFiber.cancel.unsafeRunSync()
   }
 
