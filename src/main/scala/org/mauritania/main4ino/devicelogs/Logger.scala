@@ -102,14 +102,12 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
     val streams: List[F[Stream[F, String]]] = for {
       path <- paths
       stream = for {
-        logger <- Slf4jLogger.fromClass[F](Log4CatsLogger.getClass)
         readable <- isReadableFile(path.toFile)
         located: Stream[F, String] = readable match {
           case true => readFile(path).filterNot(l => l.isEmpty || (l.size == 1 && l.startsWith("\n")))
           case false => Stream.empty
         }
         filtered = located.filter(filter)
-        _ <- logger.debug(s"Logs read: $path -> $readable")
       } yield (filtered)
     } yield stream
     streams.sequence[F, Stream[F, String]].map(_.reduce(_ ++ _))
