@@ -4,7 +4,7 @@ import eu.timepit.refined.types.numeric.PosInt
 import io.circe.Json
 import org.mauritania.main4ino.Fixtures._
 import org.mauritania.main4ino.db.Config.DbSyntax
-import org.mauritania.main4ino.db.Repository.{FromTo, ReqType}
+import org.mauritania.main4ino.db.Repository.{FromTo, ReqType, Stats}
 import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status.Closed
 import org.mauritania.main4ino.models.Device.{DbId, Metadata}
@@ -213,5 +213,21 @@ class RepositorySpec extends AnyFlatSpec with Matchers with TransactorCtx with P
       repo.getDescription("dev1").unsafeRunSync() shouldBe Right(Description("dev1", 0L, VersionJson("2", json)))
     }
   }
+
+  it should "report stats" in {
+    val d1 = Device1.withDeviceName("device1")
+    val json = Json.fromString("{}")
+    withTransactor { transactor =>
+      val repo = new Repository(DbSyntax.H2, transactor)
+      repo.stats().unsafeRunSync() shouldBe Stats(reportRequests = 0, reports = 0, targetRequests = 0, targets = 0, descriptions = 0)
+      repo.setDescription("dev1", VersionJson("1", Json.Null), 0L).unsafeRunSync() shouldBe 1
+      repo.insertDevice(ReqType.Reports, d1, 0L).unsafeRunSync()
+      repo.stats().unsafeRunSync() shouldBe Stats(reportRequests = 1, reports = 5, targetRequests = 0, targets = 0, descriptions = 1)
+      repo.setDescription("dev2", VersionJson("1", Json.Null), 0L).unsafeRunSync() shouldBe 1
+      repo.insertDevice(ReqType.Targets, d1, 0L).unsafeRunSync()
+      repo.stats().unsafeRunSync() shouldBe Stats(reportRequests = 1, reports = 5, targetRequests = 1, targets = 5, descriptions = 2)
+    }
+  }
+
 
 }

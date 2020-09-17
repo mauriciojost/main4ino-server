@@ -14,11 +14,11 @@ import org.mauritania.main4ino.api.{Attempt, ErrMsg}
 import org.mauritania.main4ino.db.Config.DbSyntax
 import org.mauritania.main4ino.db.Config.DbSyntax.DbSyntax
 import org.mauritania.main4ino.db.Repository.ReqType.ReqType
-import org.mauritania.main4ino.db.Repository.{ActorTup, ActorTupIdLess, Device1, FromTo}
+import org.mauritania.main4ino.db.Repository.{ActorTup, ActorTupIdLess, Device1, FromTo, ReqType, Stats}
 import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models.Device.{DbId, Metadata}
-import org.mauritania.main4ino.models._
+import org.mauritania.main4ino.models.{RequestId, _}
 
 // Naming regarding to SQL
 class Repository[F[_]: Sync](syntax: DbSyntax, transactor: Transactor[F]) {
@@ -47,8 +47,18 @@ class Repository[F[_]: Sync](syntax: DbSyntax, transactor: Transactor[F]) {
     val transaction = for {
       m <- sqlDeleteMetadataWhereCreationIsLess(table, now - retentionSecs.value)
       _ <- sqlDeleteActorTupOrphanOfRequest(table)
-      // TODO cleanup descriptions that are not the last one per device
     } yield (m)
+    transaction.transact(transactor)
+  }
+
+  def stats(): F[Stats] = {
+    val transaction = for {
+      repReq <- (fr"SELECT count(*) FROM " ++ Fragment.const(ReqType.Reports.code + "_requests")).query[Long].unique
+      rep <- (fr"SELECT count(*) FROM " ++ Fragment.const(ReqType.Reports.code)).query[Long].unique
+      tarReq <- (fr"SELECT count(*) FROM " ++ Fragment.const(ReqType.Targets.code + "_requests")).query[Long].unique
+      tar <- (fr"SELECT count(*) FROM " ++ Fragment.const(ReqType.Targets.code)).query[Long].unique
+      descr <- (fr"SELECT count(*) FROM descriptions").query[Long].unique
+    } yield Stats(repReq, rep, tarReq, tar, descr)
     transaction.transact(transactor)
   }
 
@@ -368,6 +378,9 @@ class Repository[F[_]: Sync](syntax: DbSyntax, transactor: Transactor[F]) {
 
 object Repository {
 
+  case class Stats(reportRequests: Long, reports: Long, targetRequests: Long, targets: Long, descriptions: Long) {
+    override def toString(): String = s"repReq=$reportRequests, rep=$reports, tarReq=$targetRequests, tar=$targets, desc=$descriptions"
+  }
   case class FromTo(from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp])
 
   def toDevice(dbId: DbId, metadata: Metadata, ats: Iterable[ActorTup]): DeviceId =
