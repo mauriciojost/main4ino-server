@@ -240,6 +240,18 @@ webPortalApp.controller(
             $scope.fromHours = -1; // in hours, lower-bound to filter history records
             $scope.toHours = 0.0; // in hours, upper-bound to filter history records
 
+            $scope.readRange = function() {
+                $scope.fromHours = Number(getCookie("fromHours"));
+                $scope.toHours = Number(getCookie("toHours"));
+            }
+
+            $scope.setRange = function() {
+                setCookie("fromHours", $scope.fromHours, 100);
+                setCookie("toHours", $scope.toHours, 100);
+            }
+
+            $scope.readRange();
+
             $scope.search = function() {
 
                 $scope.queriedDevice = $stateParams.device + " (in progress)";
@@ -532,6 +544,18 @@ webPortalApp.controller(
 
         $scope.fromHours = -1; // in hours, lower-bound to filter history records
         $scope.toHours = 0; // in hours, upper-bound to filter history records
+        
+        $scope.readRange = function() {
+            $scope.fromHours = Number(getCookie("fromHours"));
+            $scope.toHours = Number(getCookie("toHours"));
+        }
+
+        $scope.setRange = function() {
+            setCookie("fromHours", $scope.fromHours, 100);
+            setCookie("toHours", $scope.toHours, 100);
+        }
+
+        $scope.readRange();
 
         $scope.queriedDevice = "...";
 
