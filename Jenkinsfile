@@ -5,5 +5,6 @@ scalaPipeline(
   dockerArgs: '--cpus=1 --memory=4G',
   timeoutMinutes: 15,
   buildsToKeep: "10",
-  email: 'mauriciojostx@gmail.com'
+  email: 'mauriciojostx@gmail.com',
+  package: '/var/lib/main4ino/server'
 )
