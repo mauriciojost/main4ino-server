@@ -241,8 +241,8 @@ webPortalApp.controller(
             $scope.toHours = 0.0; // in hours, upper-bound to filter history records
 
             $scope.readRange = function() {
-                $scope.fromHours = Number(getCookie("fromHours"));
-                $scope.toHours = Number(getCookie("toHours"));
+                $scope.fromHours = Number(getCookie("fromHours") || -1);
+                $scope.toHours = Number(getCookie("toHours") || 0);
             }
 
             $scope.setRange = function() {
@@ -546,8 +546,8 @@ webPortalApp.controller(
         $scope.toHours = 0; // in hours, upper-bound to filter history records
         
         $scope.readRange = function() {
-            $scope.fromHours = Number(getCookie("fromHours"));
-            $scope.toHours = Number(getCookie("toHours"));
+            $scope.fromHours = Number(getCookie("fromHours") || -1);
+            $scope.toHours = Number(getCookie("toHours") || 0);
         }
 
         $scope.setRange = function() {
