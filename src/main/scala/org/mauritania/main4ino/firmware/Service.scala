@@ -57,8 +57,8 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
               if (currentVersion.exists(_ == c.version)) => // same version as current
             logger.debug(s"Firmware already up-to-date: $currentVersion=$c...").flatMap(_ => NotModified())
           case Right(w @ Firmware(f, _, c)) => // different version than current, serving...
-            logger.info(s"Proposing firmware from $currentVersion to $c (file $f)...").flatMap{_ =>
-              val k = if (elf.exists(identity)) w.elfFile else f
+            val k = if (elf.exists(identity)) w.elfFile else f
+            logger.info(s"Proposing firmware from $currentVersion to $c (file $k)...").flatMap{_ =>
               StaticFile.fromFile(k, blocker, Some(a)).getOrElseF(InternalServerError())
             }
           case Left(msg) => // no such version

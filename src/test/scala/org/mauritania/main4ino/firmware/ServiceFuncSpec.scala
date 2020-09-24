@@ -28,7 +28,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
   def defaultServiceWithDirectory(tmp: Path): Service[IO] =
     new Service[IO](new Store[IO](tmp), ExecutionContext.global)(Sync[IO], Effect[IO], IO.contextShift(ExecutionContext.global))
 
-  "The service" should "download a given firmware" in {
+  "The service" should "download a given firmware and its elf file" in {
 
     implicit val s = defaultServiceWithDirectory(Dataset1)
 

@@ -1,1 +1,1 @@
-Directory with a simple readable regular firmware file.
+Directory with a simple readable regular firmware file, with its .elf file.
