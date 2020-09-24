@@ -42,6 +42,7 @@ object Url {
   object TimezoneParam extends OptionalQueryParamDecoderMatcher[String]("timezone")
 
   object VerWishParam extends QueryParamDecoderMatcher[String]("version")
+  object ElfFileParam extends OptionalQueryParamDecoderMatcher[Boolean]("elf")
 
   // Url sections
   object Req { // request type section

@@ -7,7 +7,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.{EntityEncoder, Header, Headers, HttpRoutes, Request, Response, StaticFile}
 import org.http4s.headers.`Content-Length`
 import org.http4s.dsl.Http4sDsl
-import org.mauritania.main4ino.api.v1.Url.{Platf, Proj, VerWishParam}
+import org.mauritania.main4ino.api.v1.Url.{ElfFileParam, Platf, Proj, VerWishParam}
 import cats.implicits._
 import org.mauritania.main4ino.ContentTypeAppJson
 import io.circe.syntax._
@@ -42,7 +42,7 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
       */
     case a @ GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? VerWishParam(
           versionFeatureCode
-        ) => {
+        ) :& ElfFileParam(elf) => {
       val headers = a.headers
       val currentVersion = extractCurrentVersion(headers)
       val coords = Wish(project, versionFeatureCode, platform)
@@ -55,13 +55,14 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
         response <- fa match {
           case Right(Firmware(_, _, c))
               if (currentVersion.exists(_ == c.version)) => // same version as current
-            logger.debug(s"Already up-to-date: $currentVersion=$c...").flatMap(_ => NotModified())
-          case Right(Firmware(f, _, c)) => // different version than current, serving...
-            logger.info(s"Must upgrade. Proposing upgrade from $currentVersion to $c (file $f)...").flatMap{_ =>
-              StaticFile.fromFile(f, blocker, Some(a)).getOrElseF(InternalServerError())
+            logger.debug(s"Firmware already up-to-date: $currentVersion=$c...").flatMap(_ => NotModified())
+          case Right(w @ Firmware(f, _, c)) => // different version than current, serving...
+            logger.info(s"Proposing firmware from $currentVersion to $c (file $f)...").flatMap{_ =>
+              val k = if (elf.exists(identity)) w.elfFile else f
+              StaticFile.fromFile(k, blocker, Some(a)).getOrElseF(InternalServerError())
             }
           case Left(msg) => // no such version
-            logger.warn(s"Cannot upgrade, version not found: $msg").flatMap(_ => NotFound())
+            logger.warn(s"Cannot propose firmware, version not found: $msg").flatMap(_ => NotFound())
         }
       } yield response
     }
