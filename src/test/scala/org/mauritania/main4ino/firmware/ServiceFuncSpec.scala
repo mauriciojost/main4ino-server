@@ -41,6 +41,11 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
     rf.status shouldBe Status.NotFound
     rf.body.compile.toList.unsafeRunSync() shouldBe List()
 
+    val elf = get("/firmwares/botino/esp8266/content?version=1.0.0&elf=true") // available
+    elf.status shouldBe Status.Ok
+    elf.contentLength shouldBe Some(3L)
+    elf.body.compile.toList.unsafeRunSync() shouldBe List(Byte0, Byte0, ByteEnd)
+
   }
 
   it should "reply with not found when mandatory parameters are not provided" in {

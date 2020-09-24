@@ -42,7 +42,7 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
       */
     case a @ GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? VerWishParam(
           versionFeatureCode
-        ) :& ElfFileParam(elf) => {
+        ) +& ElfFileParam(elf) => {
       val headers = a.headers
       val currentVersion = extractCurrentVersion(headers)
       val coords = Wish(project, versionFeatureCode, platform)
