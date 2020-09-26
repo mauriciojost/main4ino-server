@@ -32,13 +32,13 @@ function find_free_port() {
   local first_free=""
   for port in $ports_list
   do
-    if nc -z 127.0.0.1 $port
+    if nc -z 127.0.0.1 "$port"
     then
       echo ""
     else
       if [ -z "$first_free" ]
       then
-        first_free=$port
+        first_free="$(echo "$port" | tr -d '\n')"
       fi
     fi
   done
