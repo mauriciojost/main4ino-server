@@ -121,11 +121,6 @@ sleep 90
 
 print_context
 
-echo "STDOUT:"
-cat "$tmp_stdout_logs"
-echo "STDERR:"
-cat "$tmp_stderr_logs"
-
 if [ "$(is_port_free $target_port)" == "false" ]
 then
   echo "OK. The process is running (port $target_port taken)."
@@ -133,7 +128,13 @@ then
   exit 0
 else
   echo "KO. The process is not running (port $target_port not taken)."
+  set +e
   killem "$(cat "$pid_file")"
+  echo "STDOUT:"
+  cat "$tmp_stdout_logs"
+  echo "STDERR:"
+  cat "$tmp_stderr_logs"
+  set -e
   exit 1
 fi
 
