@@ -93,7 +93,7 @@ function launch_instance() {
     -e "$stderr_logs" \
     -p "$pid_file" \
     -l "$lock_file" \
-    nice -n 25 /bin/bash "$executable" \
+    /usr/bin/nice -n 25 /bin/bash "$executable" \
     -Dserver.port="$port" \
     -Dconfig-dir="$config_dir" \
     -Dlog4j.configuration="file://$config_dir/custom-log4j.properties" &
