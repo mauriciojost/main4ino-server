@@ -7,6 +7,7 @@ set -u
 root_dir=$(readlink -e `dirname $0`/../..)
 config_dir=${1:-$root_dir/../config/}
 ports_list=${2:-"8090 8091 8092"}
+packages_dir=${3:-"/var/lib/main4ino/server"}
 
 function print_context() {
   echo "whoami $(whoami)"
@@ -63,9 +64,8 @@ function killem() {
   fi
 }
 
-function build_package() {
-  sbt -Dsbt.color=always clean test
-  sbt -Dsbt.color=always universal:packageBin
+function latest_package() {
+  find "$packages_dir" -type f -name *.zip -printf "%T@ %Tc %p\n" | sort -n | head -1 | awk '{print $3}'
 }
 
 function launch_instance() {
@@ -75,9 +75,10 @@ function launch_instance() {
   local stderr_logs="$4"
   local pid_file="$5"
   local lock_file="$6"
+  local zip_path="$7"
+  local tmp_base_dir="/tmp"
 
-  local zip_path=$(find -name main4ino-server*.zip)
-  local tmp_dir=/tmp/main4ino-deployment-$(basename $zip_path)
+  local tmp_dir="$tmp_base_dir/main4ino-deployment-$(basename $zip_path)"
   if [ ! -d "$tmp_dir" ]
   then
     mkdir -p "$tmp_dir"
@@ -109,7 +110,7 @@ print_context
 
 old_pids=$(jps -l | grep org.mauritania.main4ino.Server | cut -d' ' -f1)
 
-build_package
+zip_path=$(latest_package)
 
 target_port=$(find_free_port "$ports_list")
 
@@ -119,7 +120,7 @@ tmp_stderr_logs=$(mktemp)
 pid_file="$config_dir/app.pid"
 lock_file="$config_dir/app.lock"
 
-launch_instance "$target_port" "$old_pids" "$tmp_stdout_logs" "$tmp_stderr_logs" "$pid_file" "$lock_file"
+launch_instance "$target_port" "$old_pids" "$tmp_stdout_logs" "$tmp_stderr_logs" "$pid_file" "$lock_file" "$zip_path"
 
 sleep 30
 
