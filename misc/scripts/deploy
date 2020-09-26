@@ -33,7 +33,6 @@ function find_free_port() {
   for port in $ports_list
   do
     if ! nc -z 127.0.0.1 "$port"
-    else
       if [ -z "$first_free" ]
       then
         first_free="$port"
