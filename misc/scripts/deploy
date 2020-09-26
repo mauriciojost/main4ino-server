@@ -65,7 +65,7 @@ function killem() {
 }
 
 function latest_package() {
-  find "$packages_dir" -type f -name *.zip -printf "%T@ %Tc %p\n" | sort -n | head -1 | awk '{print $3}'
+  find "$packages_dir" -type f -name *.zip -printf "%T@ %p\n" | sort -n | head -1 | awk '{print $2}'
 }
 
 function launch_instance() {
