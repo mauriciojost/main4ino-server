@@ -20,7 +20,10 @@ server {
         location /main4ino/dev/ {
                 proxy_pass http://localhost:8082/;
         }
-        rewrite ^/$ /main4ino/prd permanent;
+        location / {
+                alias /static/;
+        }
+
         rewrite ^/main4ino$ /main4ino/prd permanent;
         rewrite ^/main4ino/$ /main4ino/prd permanent;
 }
