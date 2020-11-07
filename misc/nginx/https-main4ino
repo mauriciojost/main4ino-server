@@ -9,11 +9,16 @@
 
 # HTTPS server (port 443)
 server {
-        listen 443;
-        server_name localhost;
+
+        listen 443; 
+        server_name martinenhome.com;
+        # certificates handled by certbot
         ssl on;
-        ssl_certificate /etc/nginx/ssl/server.crt;
-        ssl_certificate_key /etc/nginx/ssl/server.key;
+
+        location /static/ {
+                alias /var/lib/jenkins-exposed/;
+        }
+
         location /main4ino/prd/ {
                 proxy_pass http://localhost:8080/;
         }
