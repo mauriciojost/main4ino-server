@@ -2,6 +2,7 @@ package org.mauritania.main4ino.helpers
 
 import cats.effect.{Clock, Sync, Timer}
 import cats.implicits._
+import scala.concurrent.duration._
 
 import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
 
@@ -20,5 +21,5 @@ object Scheduler {
       start <- Clock[F].monotonic(MILLISECONDS)
       result <- fa
       finish <- Clock[F].monotonic(MILLISECONDS)
-    } yield (result, FiniteDuration(finish - start, MILLISECONDS))
+    } yield (result, (finish - start).millis)
 }

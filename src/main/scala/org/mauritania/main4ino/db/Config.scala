@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import eu.timepit.refined.types.numeric.{PosFloat, PosInt}
 import org.mauritania.main4ino.db.Config.{Cleanup, DbSyntax}
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 
 case class Config(
   driver: String,
@@ -22,8 +22,7 @@ object Config {
     periodSecs: PosFloat,
     retentionSecs: PosInt
   ) {
-    def periodDuration: FiniteDuration =
-      FiniteDuration((periodSecs.value * 1000).toLong, TimeUnit.MILLISECONDS)
+    def periodDuration: FiniteDuration = (periodSecs.value * 1000).toLong.millis
   }
 
   object DbSyntax { // TODO use enumeratum here ?

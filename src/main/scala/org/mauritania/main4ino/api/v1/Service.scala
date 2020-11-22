@@ -192,7 +192,7 @@ class Service[F[_]: Sync](
       * Returns: OK (200) || INTERNAL_SERVER_ERROR (500)
       */
     case a @ PUT -> Root / "devices" / Dev(device) / "logs" as _ => {
-      val d = a.req.bodyAsText
+      val d = a.req.bodyText
       val r: F[Attempt[Long]] = tr.updateLogs(device, d)
       r.flatMap {
         case Right(bytes) => Ok(CountResponse(bytes).asJson)
@@ -203,7 +203,7 @@ class Service[F[_]: Sync](
     /**
       * GET /devices/<dev>/logs
       *
-      * Example: GET /devices/dev1/logs?ignore=<ignore>&length=<length>
+      * Example: GET /devices/dev1/logs?from=<from>&to=<to>
       *
       * Retrieve the logs provided by the device.
       *
