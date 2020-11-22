@@ -3,7 +3,7 @@ package org.mauritania.main4ino.devicelogs
 import java.io.File
 import java.nio.file.{StandardOpenOption, Path => JavaPath}
 
-import cats.effect.{Blocker, ContextShift, Sync}
+import cats.effect.{Blocker, ContextShift, Sync, Timer}
 import cats.implicits._
 import fs2.{Stream, io => fs2io, text => fs2text}
 import org.mauritania.main4ino.api.Attempt
@@ -23,14 +23,15 @@ import scala.concurrent.ExecutionContext
   *
   * @tparam F
   */
-class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: ExecutionContext) {
+class Logger[F[_] : Sync : ContextShift: Timer](config: Config, time: Time[F], e: ExecutionContext) {
 
-  final private val partitioner = config.partitioner
-  final private lazy val blocker = Blocker.liftExecutionContext(ec)
-  final private lazy val ChunkSize = 1024
-  final private lazy val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+  final private[devicelogs] val partitioner : Partitioner.Partitioner = config.partitioner
+  final private[devicelogs] lazy val ec: ExecutionContext = e
+  final private[devicelogs] lazy val blocker: Blocker = Blocker.liftExecutionContext(ec)
+  final private[devicelogs] lazy val ChunkSize = 1024
+  final private[devicelogs] lazy val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
-  private def pathFromDevice(device: DeviceName, partition: Partition): JavaPath =
+  private[devicelogs] def pathFromDevice(device: DeviceName, partition: Partition): JavaPath =
     config.logsBasePath.resolve(s"$device.$partition.log")
 
   /**
@@ -82,7 +83,6 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
     }
   }
 
-
   /**
     * Retrieve full logs for the given device
     *
@@ -113,6 +113,28 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
     streams.sequence[F, Stream[F, String]].map(_.reduce(_ ++ _))
   }
 
+  /**
+    * Tail logs (live streaming)
+    *
+    * @param device device name
+    * @return the stream containing the logs for a given device
+    */
+  def tailLogs(
+    device: DeviceName,
+    f: EpochSecTimestamp,
+  ): F[Stream[F, String]] = {
+    val partition = partitioner.partition(f)
+    val path = pathFromDevice(device, partition)
+    val stream: F[Stream[F, String]] = for {
+      readable <- isReadableFile(path.toFile)
+      located: Stream[F, String] = readable match {
+        case true => tailFile(path)
+        case false => Stream.empty
+      }
+    } yield located
+    stream
+  }
+
   private[devicelogs] def readFile(
     path: JavaPath,
     chunkSize: Int = ChunkSize
@@ -121,4 +143,13 @@ class Logger[F[_] : Sync : ContextShift](config: Config, time: Time[F], ec: Exec
     val bytesLimited = bytes.takeRight(config.maxLengthLogs.value)
     bytesLimited.through(fs2text.utf8Decode).through(fs2text.lines)
   }
+
+  private[devicelogs] def tailFile(
+    path: JavaPath,
+    chunkSize: Int = ChunkSize
+  ): Stream[F, String] = {
+    val bytes = fs2io.file.tail[F](path, blocker, chunkSize)
+    bytes.through(fs2text.utf8Decode).through(fs2text.lines)
+  }
+
 }

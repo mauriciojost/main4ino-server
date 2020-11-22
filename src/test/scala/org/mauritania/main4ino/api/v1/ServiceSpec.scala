@@ -5,7 +5,7 @@ import java.time._
 import java.time.zone.ZoneRulesException
 
 import cats._
-import cats.effect._
+import cats.effect.{IO, _}
 import doobie.util.transactor.Transactor
 import fs2.Stream
 import io.circe.Json
@@ -163,7 +163,7 @@ class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with Decode
           DevLogsConfig(Paths.get("/tmp")),
           time = t,
           ExecutionContext.global
-        )(Sync[IO], cs)
+        )(Sync[IO], cs, IO.timer(Helper.testExecutionContext))
       ),
       time = t,
       firmwareService

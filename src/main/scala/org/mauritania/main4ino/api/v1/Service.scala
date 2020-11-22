@@ -218,6 +218,20 @@ class Service[F[_]: Sync](
     }
 
     /**
+      * GET /devices/<dev>/logstail
+      *
+      * Example: GET /devices/dev1/logstail
+      *
+      * Retrieve the logs provided by the device in a streaming way.
+      *
+      * Returns: OK (200)
+      */
+    case GET -> Root / "devices" / Dev(device) / "logstail" as _ => {
+      val r: F[Stream[F, String]] = tr.tailLogs(device).map(_.intersperse("\n"))
+      r.flatMap(l => Ok(l, ContentTypeTextPlain))
+    }
+
+    /**
       * PUT /devices/<dev>/descriptions
       *
       * Example: PUT /devices/dev1/descriptions

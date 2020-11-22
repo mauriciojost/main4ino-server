@@ -45,6 +45,17 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
     } yield (d)
   }
 
+  def tailLogs(
+    device: DeviceName
+  ): F[Stream[F, String]] = {
+    for {
+      logger <- Slf4jLogger.fromClass[F](Translator.getClass)
+      timeUtc <- time.nowUtc
+      d <- devLogger.tailLogs(device, Time.asTimestamp(timeUtc))
+      _ <- logger.debug(s"Tail logs for $device")
+    } yield (d)
+  }
+
   def getLastDescription(device: DeviceName): F[Attempt[Description]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](Translator.getClass)

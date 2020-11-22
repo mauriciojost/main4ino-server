@@ -3,7 +3,7 @@ package org.mauritania.main4ino.api.v1
 import java.nio.file.{Paths, Path => NioPath}
 import java.time.{Instant, ZoneId, ZonedDateTime}
 
-import cats.effect.{IO, Sync}
+import cats.effect.{IO, Sync, Timer}
 import doobie.hikari.HikariTransactor
 import fs2.Stream
 import io.circe.Json
@@ -48,7 +48,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
       new Translator(
         new Repository(DbSyntax.H2, transactor),
         t,
-        new Logger[IO](Config(tmp), t, Helper.testExecutionContext)(Sync[IO], cs)
+        new Logger[IO](Config(tmp), t, Helper.testExecutionContext)(Sync[IO], cs, IO.timer(Helper.testExecutionContext))
       ),
       t,
       new FirmwareService[IO](new Store(Paths.get("src/test/resources/firmwares/1")), Helper.testExecutionContext)

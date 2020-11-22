@@ -1,12 +1,12 @@
 package org.mauritania.main4ino.devicelogs
 
-import java.nio.file.{NoSuchFileException, Path, Paths}
+import java.nio.file.{NoSuchFileException, Path, Paths, StandardOpenOption}
 import java.time.{Instant, LocalDateTime, OffsetDateTime, ZoneId, ZoneOffset, ZonedDateTime}
 
-import cats.effect.{IO, Sync}
+import cats.effect.{Blocker, IO, Sync}
 import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
 import fs2.Stream
-import org.mauritania.main4ino.TmpDirCtx
+import org.mauritania.main4ino.{Helper, TmpDirCtx}
 import org.mauritania.main4ino.devicelogs.Partitioner.{EpochSecPartitioner, HourPartitioner, Partitioner}
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.EpochSecTimestamp
@@ -14,7 +14,11 @@ import org.scalatest.EitherValues._
 import org.scalatest.ParallelTestExecution
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import cats.implicits._
+import cats.effect.implicits._
+import org.specs2.concurrent.ExecutorServices
 
+import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import scala.io.Source
 
@@ -65,6 +69,34 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelT
     }
   }
 
+  it should "read / tail logs (live streaming)" in {
+
+    implicit val cs = IO.contextShift(Helper.testExecutionContext)
+    implicit val c = IO.ioConcurrentEffect(cs)
+		implicit val t = IO.timer(Helper.testExecutionContext)
+    withTmpDir { tmp =>
+      val logger = buildLogger(tmp = tmp, t = 0)
+      val logFile = logger.pathFromDevice("device", logger.partitioner.partition(0L))
+      logFile.toFile.createNewFile()
+      val stream = Stream("hey\nyou\nstream\n")
+      def modifyLater(file: Path): Stream[IO, Unit] = {
+        val strings = stream.covary[IO].metered(250.millis)
+        val bytes = strings.through(fs2.text.utf8Encode)
+        val sink = bytes.through(fs2.io.file.writeAll[IO](file, logger.blocker, StandardOpenOption.APPEND :: Nil))
+        sink
+      }
+
+      val readAndWrite = for {
+        r <- logger.tailLogs("device", 0L)
+        rw = r.concurrently(modifyLater(logFile)) // tail and concurrently append
+        read <- rw.take(3).compile.toList // retrieve 3 elements, just as appended to the source
+        size = read.size
+      } yield size
+
+      readAndWrite.unsafeRunSync() shouldBe 3
+
+    }
+  }
 
   it should "report a meaningful failure when cannot write file" in {
     val logger = buildLogger(Paths.get("/non/existent/path"))
@@ -127,7 +159,7 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelT
     bypass: Int = 1
   ): Logger[IO] = {
     val ec = ExecutionContext.global
-    val logger = new Logger[IO](Config(tmp, mxLen, part, bypass), new FixedTime(t), ec)(Sync[IO], IO.contextShift(ec))
+    val logger = new Logger[IO](Config(tmp, mxLen, part, bypass), new FixedTime(t), ec)(Sync[IO], IO.contextShift(ec), IO.timer(ec))
     logger
   }
 
