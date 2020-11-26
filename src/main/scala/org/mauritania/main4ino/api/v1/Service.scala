@@ -230,7 +230,7 @@ class Service[F[_]: Sync](
       * Returns: OK (200)
       */
     case GET -> Root / "devices" / Dev(device) / "logstail" as _ => {
-      val r: F[Stream[F, Text]] = tr.tailLogs(device).map(_.intersperse("\n").map(i => Text.apply(i)))
+      val r: F[Stream[F, Text]] = tr.tailLogs(device).map(_.map(i => Text.apply(i)))
       r.flatMap(i => WebSocketBuilder[F].build(i, _.drain))
     }
 
