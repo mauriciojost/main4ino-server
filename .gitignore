@@ -12,3 +12,4 @@
 /misc/scripts/client/failures.log
 /misc/scripts/client/*.bkp
 /dbh2.mv.db
+/.bsp/sbt.json
