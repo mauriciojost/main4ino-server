@@ -27,6 +27,7 @@ import org.mauritania.main4ino.{ContentTypeAppJson, ContentTypeTextPlain}
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import fs2.Stream
 import org.http4s.server.websocket.WebSocketBuilder
+import org.http4s.websocket.WebSocketFrame
 import org.http4s.websocket.WebSocketFrame.Text
 import org.mauritania.main4ino.db.Repository.FromTo
 
@@ -229,16 +230,8 @@ class Service[F[_]: Sync](
       * Returns: OK (200)
       */
     case GET -> Root / "devices" / Dev(device) / "logstail" as _ => {
-      val r: F[Stream[F, String]] = tr.tailLogs(device).map(_.intersperse("\n"))
-      r.flatMap(l => Ok(l, ContentTypeTextPlain))
-    }
-
-    case GET -> Root / "devices" / Dev(device) / "logstail2" as _ => {
       val r: F[Stream[F, Text]] = tr.tailLogs(device).map(_.intersperse("\n").map(i => Text.apply(i)))
-      val fromClient = _.evalMap {
-        case f => Sync[F].pu.delay(println(s"Unknown type: $f"))
-      }
-      r.flatMap(i => WebSocketBuilder[F].build(i, fromClient))
+      r.flatMap(i => WebSocketBuilder[F].build(i, _.drain))
     }
 
     /**
