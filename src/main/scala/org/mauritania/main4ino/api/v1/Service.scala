@@ -225,7 +225,7 @@ class Service[F[_]: Sync](
       *
       * Example: GET /devices/dev1/logstail
       *
-      * Retrieve the logs provided by the device in a streaming way.
+      * Retrieve the logs provided by the device via streaming (never ending HTTP request).
       *
       * Returns: OK (200)
       */
