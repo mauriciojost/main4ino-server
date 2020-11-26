@@ -26,6 +26,8 @@ import org.mauritania.main4ino.security.{Auther, User}
 import org.mauritania.main4ino.{ContentTypeAppJson, ContentTypeTextPlain}
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import fs2.Stream
+import org.http4s.server.websocket.WebSocketBuilder
+import org.http4s.websocket.WebSocketFrame.Text
 import org.mauritania.main4ino.db.Repository.FromTo
 
 class Service[F[_]: Sync](
@@ -172,7 +174,7 @@ class Service[F[_]: Sync](
       *
       * Forward to firmware store services (i.e. [[firmware.service]]).
       */
-    case a @ GET -> "devices" /: Dev(device) /: "firmware" /: forwarded as _ => {
+    case a@GET -> "devices" /: Dev(device) /: "firmware" /: forwarded as _ => {
       val oldUri = a.req.uri
       val newUri = oldUri.withPath(forwarded.toString)
       val newReq = a.req.withUri(newUri)
@@ -191,7 +193,7 @@ class Service[F[_]: Sync](
       *
       * Returns: OK (200) || INTERNAL_SERVER_ERROR (500)
       */
-    case a @ PUT -> Root / "devices" / Dev(device) / "logs" as _ => {
+    case a@PUT -> Root / "devices" / Dev(device) / "logs" as _ => {
       val d = a.req.bodyText
       val r: F[Attempt[Long]] = tr.updateLogs(device, d)
       r.flatMap {
@@ -229,6 +231,14 @@ class Service[F[_]: Sync](
     case GET -> Root / "devices" / Dev(device) / "logstail" as _ => {
       val r: F[Stream[F, String]] = tr.tailLogs(device).map(_.intersperse("\n"))
       r.flatMap(l => Ok(l, ContentTypeTextPlain))
+    }
+
+    case GET -> Root / "devices" / Dev(device) / "logstail2" as _ => {
+      val r: F[Stream[F, Text]] = tr.tailLogs(device).map(_.intersperse("\n").map(i => Text.apply(i)))
+      val fromClient = _.evalMap {
+        case f => Sync[F].pu.delay(println(s"Unknown type: $f"))
+      }
+      r.flatMap(i => WebSocketBuilder[F].build(i, fromClient))
     }
 
     /**
