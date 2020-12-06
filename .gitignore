@@ -13,3 +13,4 @@
 /misc/scripts/client/*.bkp
 /dbh2.mv.db
 /.bsp/sbt.json
+/src/main/resources/webapp/bower_components/

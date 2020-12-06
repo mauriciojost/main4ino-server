@@ -29,7 +29,7 @@ curl -X PUT "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/desc
 
 curl -X PUT "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/logs" -d "log"
 curl -X PUT "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/logs" -d "here"
-curl -X PUT "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/logs" -d "you"
+curl -X PUT "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/logs" -d "you on $(date)"
 
 length_secs=2000
 now_secs=$(date +'%s')

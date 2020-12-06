@@ -561,6 +561,21 @@ webPortalApp.controller(
 
         $scope.getLogs = function() {
             $log.log("Getting logs for device " + $stateParams.device);
+            const wsurl = window.location.protocol.replace('http', 'ws') + '//' + window.location.host + window.location.pathname + 'api/v1/session/' + $scope.session + '/devices/' + $stateParams.device + '/logstail';
+
+            $log.log("Websocket url: " + wsurl);
+            const socket = new WebSocket(wsurl);
+            socket.addEventListener('message', function (event) {
+                if (event.data) {
+                    var d = {};
+                    d["t"] = event.data.substr(0, event.data.indexOf(' '));
+                    d["content"] = event.data.substr(event.data.indexOf(' ')+1);
+                    console.log('Device ' + $stateParams.device + ': ', event.data);
+                    $scope.logs.push(d);
+                    window.scroll({top: Number.MAX_SAFE_INTEGER, behavior: 'smooth'}); // go down as much as possible
+                    $scope.$apply();
+                }
+            });
 
             var date = new Date();
 
@@ -591,7 +606,7 @@ webPortalApp.controller(
                 },
                 function(r) {
                     $log.log("Could not retrieve logs.");
-                    $scope.logs = "[]";
+                    $scope.logs = [];
                     $scope.queriedDevice = $stateParams.device + " (failed)";
                     BootstrapDialog.show({
                         title: "Error",
