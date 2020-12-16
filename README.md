@@ -111,3 +111,11 @@ sbt coverageAggregate
 ### Guidelines for REST
 
 - [OCTO RESTful design quick reference](https://blog.octo.com/wp-content/uploads/2014/10/RESTful-API-design-OCTO-Quick-Reference-Card-2.2.pdf)
+
+### MQTT
+
+I don't see yet the need / benefits of MQTT for this project (at least not clearly enough so that it motivates the move). 
+
+- I want my devices to go to sleep, only once the message has been delivered and I got the response that makes me make a decision on what to do
+- Scalability of message handling: can be done by sharding, no interaction between multiple devices
+- Also see [this interesting post](https://www.rtautomation.com/mqtt/whats-wrong-with-mqtt/)
