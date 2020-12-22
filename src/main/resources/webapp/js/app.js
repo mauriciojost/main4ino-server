@@ -43,6 +43,9 @@ function intoLogsJson(linesStr) {
   }
   return data;
 }
+function asDate(ms) {
+  $log.log("Date useddd: " + ms);
+}
 
 webPortalApp.config(function($stateProvider, $urlRouterProvider) {
     
@@ -113,6 +116,30 @@ webPortalApp.controller(
             $rootScope.logged = null;
             $rootScope.devices = [];
             $scope.device = $stateParams.device;
+            $rootScope.aliases = {};
+
+            $scope.setAlias = function(dev) {
+              $log.log("Alias for: " + dev);
+                var req = {
+                    method: "GET",
+                    url: "api/v1/devices/" + dev + "/reports/summary",
+                    headers: {"Content-Type": "application/json", "Session": $scope.session}
+                };
+
+                $log.log("Executing request...");
+
+                $http(req).then(
+                    function(r) {
+                        $log.log("Found: " + JSON.stringify(r.data));
+                        $rootScope.aliases[dev] = r.data.device.alias || '?';
+                        $log.log("So far: " + JSON.stringify($rootScope.aliases));
+                    },
+                    function(r) {
+                        $log.log("Problem requesting alias for: " + dev);
+                        $rootScope.aliases[dev] = '?';
+                    }
+                );
+            }
 
             $scope.loginUsingSession = function() {
               $log.log("Login with session");
@@ -140,6 +167,11 @@ webPortalApp.controller(
                     function(r) {
                         $log.log("Devices: " + r.data);
                         $rootScope.devices = r.data;
+                        $rootScope.aliases = {};
+                        for (const d of r.data) {
+                            $scope.setAlias(d);
+                        }
+                        $log.log("Aliases: " + JSON.stringify($rootScope.aliases));
                     },
                     function(r) {
                         $log.log("Failed to retrieve devices");
@@ -245,9 +277,20 @@ webPortalApp.controller(
                 $scope.toHours = Number(getCookie("toHours") || 0);
             }
 
-            $scope.setRange = function() {
+            $scope.updateRange = function() {
                 setCookie("fromHours", $scope.fromHours, 100);
                 setCookie("toHours", $scope.toHours, 100);
+
+                var date = new Date();
+                var msTo = 1000 * 3600 * $scope.toHours;
+                var toMs = date.getTime() + msTo;
+
+                var msFrom = 1000 * 3600 * $scope.fromHours;
+                var fromMs = date.getTime() + msFrom;
+                $scope.toSec = (toMs / 1000) | 0; // take to seconds and cast to int
+                $scope.fromSec = (fromMs / 1000) | 0; // take to seconds and cast to int
+                $scope.toDate = new Date(toMs).toString();
+                $scope.fromDate = new Date(fromMs).toString();
             }
 
             $scope.readRange();
@@ -257,21 +300,10 @@ webPortalApp.controller(
                 $scope.queriedDevice = $stateParams.device + " (in progress)";
 
                 $log.log("Searching device " + $stateParams.device + " in " + $scope.tabl);
-                var date = new Date();
-
-                var msTo = 1000 * 3600 * $scope.toHours;
-                var toMs = date.getTime() + msTo;
-                var toSec = (toMs / 1000) | 0; // take to seconds and cast to int
-
-                var msFrom = 1000 * 3600 * $scope.fromHours;
-                var fromMs = date.getTime() + msFrom;
-                var fromSec = (fromMs / 1000) | 0; // take to seconds and cast to int
-
-                $log.log('Query from ' + new Date(fromMs).toString() + ' to ' + new Date(toMs).toString());
 
                 var req = {
                     method: "GET",
-                    url: "api/v1/devices/" + $stateParams.device + "/" + $scope.tabl + "?from=" + fromSec + "&to=" + toSec,
+                    url: "api/v1/devices/" + $stateParams.device + "/" + $scope.tabl + "?from=" + $scope.fromSec + "&to=" + $scope.toSec,
                     headers: {"Content-Type": "application/json", "Session": $scope.session},
                     data: $scope.request
                 };
@@ -550,12 +582,41 @@ webPortalApp.controller(
             $scope.toHours = Number(getCookie("toHours") || 0);
         }
 
-        $scope.setRange = function() {
+        $scope.updateRange = function() {
             setCookie("fromHours", $scope.fromHours, 100);
             setCookie("toHours", $scope.toHours, 100);
+
+            var date = new Date();
+            var msTo = 1000 * 3600 * $scope.toHours;
+            var toMs = date.getTime() + msTo;
+
+            var msFrom = 1000 * 3600 * $scope.fromHours;
+            var fromMs = date.getTime() + msFrom;
+            $scope.toSec = (toMs / 1000) | 0; // take to seconds and cast to int
+            $scope.fromSec = (fromMs / 1000) | 0; // take to seconds and cast to int
+            $scope.toDate = new Date(toMs).toString();
+            $scope.fromDate = new Date(fromMs).toString();
         }
 
+        $scope.readLogsMode = function() {
+            $scope.logsMode = getCookie("logsMode") || 'normal';
+        }
+
+        $scope.setLogsMode = function() {
+            $scope.logs = [];
+            setCookie("logsMode", $scope.logsMode, 100);
+            if ($scope.socket) {
+                $scope.socket.close();
+            }
+        }
+
+        $scope.asDateScoped = function(d) {
+            $log.log("Date input: " + d);
+            return new Date(d * 1000);
+        };
+
         $scope.readRange();
+        $scope.readLogsMode();
 
         $scope.queriedDevice = "...";
 
@@ -563,59 +624,47 @@ webPortalApp.controller(
             $log.log("Getting logs for device " + $stateParams.device);
             const wsurl = window.location.protocol.replace('http', 'ws') + '//' + window.location.host + window.location.pathname + 'api/v1/session/' + $scope.session + '/devices/' + $stateParams.device + '/logstail';
 
-            $log.log("Websocket url: " + wsurl);
-            const socket = new WebSocket(wsurl);
-            socket.addEventListener('message', function (event) {
-                if (event.data) {
-                    var d = {};
-                    d["t"] = event.data.substr(0, event.data.indexOf(' '));
-                    d["content"] = event.data.substr(event.data.indexOf(' ')+1);
-                    console.log('Device ' + $stateParams.device + ': ', event.data);
-                    $scope.logs.push(d);
-                    window.scroll({top: Number.MAX_SAFE_INTEGER, behavior: 'smooth'}); // go down as much as possible
-                    $scope.$apply();
-                }
-            });
+            if ($scope.logsMode == 'live') {
+                $log.log("Websocket url: " + wsurl);
+                $scope.socket = new WebSocket(wsurl);
+                $scope.socket.addEventListener('message', function (event) {
+                    if (event.data) {
+                        var d = {};
+                        d["t"] = event.data.substr(0, event.data.indexOf(' '));
+                        d["content"] = event.data.substr(event.data.indexOf(' ')+1);
+                        console.log('Device ' + $stateParams.device + ': ', event.data);
+                        $scope.logs.push(d);
+                        $scope.$apply();
+                    }
+                });
+            } else {
+                var req = {
+                    method: "GET",
+                    url: "api/v1/devices/" + $stateParams.device + "/logs?from=" + $scope.fromSec + "&to=" + $scope.toSec,
+                    headers: {"Session": $scope.session}
+                };
+                $log.log("Executing request...");
+                $scope.queriedDevice = $stateParams.device + " (in progress)";
 
-            var date = new Date();
+                $http(req).then(
+                    function(r) {
+                        $log.log("Logs obtained.");
+                        $scope.logs = intoLogsJson(r.data);
+                        $scope.queriedDevice = $stateParams.device;
+                    },
+                    function(r) {
+                        $log.log("Could not retrieve logs.");
+                        $scope.logs = [];
+                        $scope.queriedDevice = $stateParams.device + " (failed)";
+                        BootstrapDialog.show({
+                            title: "Error",
+                            message: "Failed to retrieve logs."
+                        });
+                    }
+                );
 
-            var msTo = 1000 * 3600 * $scope.toHours;
-            var toMs = date.getTime() + msTo;
-            var toSec = (toMs / 1000) | 0; // take to seconds and cast to int
-
-            var msFrom = 1000 * 3600 * $scope.fromHours;
-            var fromMs = date.getTime() + msFrom;
-            var fromSec = (fromMs / 1000) | 0; // take to seconds and cast to int
-
-            $log.log('Query from ' + new Date(fromMs).toString() + ' to ' + new Date(toMs).toString());
-
-            var req = {
-                method: "GET",
-                url: "api/v1/devices/" + $stateParams.device + "/logs?from=" + fromSec + "&to=" + toSec,
-                headers: {"Session": $scope.session}
-            };
-
-            $log.log("Executing request...");
-            $scope.queriedDevice = $stateParams.device + " (in progress)";
-
-            $http(req).then(
-                function(r) {
-                    $log.log("Logs obtained.");
-                    $scope.logs = intoLogsJson(r.data);
-                    $scope.queriedDevice = $stateParams.device;
-                },
-                function(r) {
-                    $log.log("Could not retrieve logs.");
-                    $scope.logs = [];
-                    $scope.queriedDevice = $stateParams.device + " (failed)";
-                    BootstrapDialog.show({
-                        title: "Error",
-                        message: "Failed to retrieve logs."
-                    });
-                }
-            );
-
-            $log.log("Executed request.");
+                $log.log("Executed request.");
+            }
 
         };
 

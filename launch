@@ -1,0 +1,14 @@
+#!/usr/bin/env expect
+
+spawn sbt -Dconfig-dir=src/main/resources/defaultconfig/ "runMain org.mauritania.main4ino.Server"
+
+expect -re ".*requests cleaned.*" {
+    spawn "./misc/benchmarks/populate"
+}
+
+puts "Service running locally..."
+puts "Login to http://localhost:8080"
+puts "Use credentials: admin/password"
+
+interact
+

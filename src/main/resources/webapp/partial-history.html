@@ -10,8 +10,14 @@
                 <h3>1. Specify your device information</h3>
                 <br/>
                 <div>
-                    <input type="number" name="fromHours" class="form-control" ng-model="fromHours" ng-change="setRange()" placeholder="From [hours]"/>
-                    <input type="number" name="toHours" class="form-control" ng-model="toHours" ng-change="setRange()" placeholder="To [hours]"/>
+                    <div>
+                        <input type="number" name="fromHours" class="form-control" ng-model="fromHours" ng-change="updateRange()" placeholder="From [hours]"/>
+                        <h4>{{ fromDate }}</h4>
+                    </div>
+                    <div>
+                        <input type="number" name="toHours" class="form-control" ng-model="toHours" ng-change="updateRange()" placeholder="To [hours]"/>
+                        <h4>{{ toDate }}</h4>
+                    </div>
                     <div class="radio"><label><input type="radio" ng-model="tabl" value="reports">Reports</label></div>
                     <div class="radio"><label><input type="radio" ng-model="tabl" value="targets" checked>Targets</label></div>
                 </div>

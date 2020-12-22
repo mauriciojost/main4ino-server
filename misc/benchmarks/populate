@@ -12,7 +12,7 @@ ACTOR2=actor2
 BODY_REPORT1='{"actor1":{"a1p1":"a1p1", "a1p2":"a1p2"}, "actor2":{"a2p1":"a2p1", "a2p2":"a2p2"}}'
 BODY_REPORT2='{"actor1":{"a1p1":"a1p1*", "a1p2":"a1p2*"}}'
 BODY_REPORT3='{"actor2":{"a2p1":"a2p1*", "a2p2":"a2p2*"}}'
-BODY_REPORT4='{"actor1":{"a1p1":"a1p1**"}}'
+BODY_REPORT4='{"device":{"alias":"alias1"}}'
 BODY_TARGET='{"p1":"v1b"}'
 DESCRIPTION='{"version":"1.0.0", "json":[{"patterns": ["^actor1.p1$"], "descriptions": ["Property 1 xx."], "examples": ["1", "2", "3"]}]}'
 
@@ -35,4 +35,6 @@ length_secs=2000
 now_secs=$(date +'%s')
 let from_secs=$now_secs-$length_secs
 curl -X GET "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/logs?from=$from_secs&to=$now_secs"
+
+echo "DONE"
 
