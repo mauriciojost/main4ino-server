@@ -634,6 +634,7 @@ webPortalApp.controller(
             if ($scope.logsMode == 'live') {
                 $log.log("Websocket url: " + wsurl);
                 $scope.socket = new WebSocket(wsurl);
+                $scope.logs = intoLogsJson('0 Listening...');
                 $scope.socket.addEventListener('message', function (event) {
                     if (event.data) {
                         var d = {};
