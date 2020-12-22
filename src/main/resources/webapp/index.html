@@ -44,7 +44,8 @@ Examples:
     </ul>
     <ul style="display:{{ $root.logged ? 'inherit' : 'none' }};" class="nav navbar-nav">
         <li ng-repeat="(dv, alias) in $root.aliases track by $index">
-            <a ng-click="switchTo(dv)">{{ dv }}/{{ alias }}</a>
+            <a ng-click="switchTo(dv)">{{ dv }}</a>
+            <a class="small" ng-click="switchTo(dv)">{{ alias }}</a>
         </li>
     </ul>
 

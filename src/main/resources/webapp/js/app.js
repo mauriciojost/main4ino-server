@@ -119,7 +119,8 @@ webPortalApp.controller(
             $rootScope.aliases = {};
 
             $scope.setAlias = function(dev) {
-              $log.log("Alias for: " + dev);
+                $log.log("Alias for: " + dev);
+                $rootScope.aliases[dev] = '?';
                 var req = {
                     method: "GET",
                     url: "api/v1/devices/" + dev + "/reports/summary",
