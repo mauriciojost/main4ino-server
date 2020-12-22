@@ -299,6 +299,7 @@ webPortalApp.controller(
             }
 
             $scope.readRange();
+            $scope.updateRange();
 
             $scope.search = function() {
 
@@ -621,6 +622,7 @@ webPortalApp.controller(
         };
 
         $scope.readRange();
+        $scope.updateRange();
         $scope.readLogsMode();
 
         $scope.queriedDevice = "...";
