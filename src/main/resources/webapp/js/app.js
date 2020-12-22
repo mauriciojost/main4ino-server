@@ -130,8 +130,12 @@ webPortalApp.controller(
 
                 $http(req).then(
                     function(r) {
-                        $log.log("Found: " + JSON.stringify(r.data));
-                        $rootScope.aliases[dev] = r.data.device.alias || '?';
+                        try {
+                          $rootScope.aliases[dev] = r.data.device.alias || '?';
+                        } catch (error) {
+                          $log.log("Failed to load alias for " + dev + ": " + error + ": " + JSON.stringify(r.data));
+                          $rootScope.aliases[dev] = '?';
+                        }
                         $log.log("So far: " + JSON.stringify($rootScope.aliases));
                     },
                     function(r) {
