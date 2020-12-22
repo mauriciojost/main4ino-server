@@ -1,14 +1,20 @@
 #!/usr/bin/env expect
 
-spawn sbt -Dconfig-dir=src/main/resources/defaultconfig/ "runMain org.mauritania.main4ino.Server"
+set timeout 2400s
 
-expect -re ".*requests cleaned.*" {
-    spawn "./misc/benchmarks/populate"
+spawn sbt -Dsbt.log.noformat=true -Dconfig-dir=src/main/resources/defaultconfig/ "runMain org.mauritania.main4ino.Server"
+
+expect "started at" {
+    system "./misc/benchmarks/populate"
 }
 
+puts ""
 puts "Service running locally..."
 puts "Login to http://localhost:8080"
 puts "Use credentials: admin/password"
+puts ""
 
-interact
+sleep 240
+
+puts "Closing..."
 
