@@ -2,6 +2,7 @@ var DebugPropPrefix = "~";
 var StatusPropPrefix = ".";
 var SensitivePropPrefix = "_";
 var AdvancedPropPrefix = "+";
+var UnknownAlias = '';
 
 var webPortalApp = angular.module("webPortalApp", ["ui.router", "ngRoute", "ngSanitize"]);
 
@@ -120,7 +121,7 @@ webPortalApp.controller(
 
             $scope.setAlias = function(dev) {
                 $log.log("Alias for: " + dev);
-                $rootScope.aliases[dev] = '?';
+                $rootScope.aliases[dev] = UnknownAlias;
                 var req = {
                     method: "GET",
                     url: "api/v1/devices/" + dev + "/reports/summary",
@@ -132,16 +133,16 @@ webPortalApp.controller(
                 $http(req).then(
                     function(r) {
                         try {
-                          $rootScope.aliases[dev] = r.data.device.alias || '?';
+                          $rootScope.aliases[dev] = r.data.device.alias || UnknownAlias;
                         } catch (error) {
                           $log.log("Failed to load alias for " + dev + ": " + error + ": " + JSON.stringify(r.data));
-                          $rootScope.aliases[dev] = '?';
+                          $rootScope.aliases[dev] = UnknownAlias;
                         }
                         $log.log("So far: " + JSON.stringify($rootScope.aliases));
                     },
                     function(r) {
                         $log.log("Problem requesting alias for: " + dev);
-                        $rootScope.aliases[dev] = '?';
+                        $rootScope.aliases[dev] = UnknownAlias;
                     }
                 );
             }
@@ -319,13 +320,13 @@ webPortalApp.controller(
                 $http(req).then(
                     function(r) {
                         $log.log("Found: " + JSON.stringify(r.data));
-                        $scope.queriedDevice = $stateParams.device;
                         $scope.result = r.data;
+                        $scope.queriedDevice = $stateParams.device;
                     },
                     function(r) {
                         $log.log("Problem requesting: " + JSON.stringify(r.data));
-                        $scope.queriedDevice = "Failed query for " + $stateParams.device;
                         $scope.result = "[]"
+                        $scope.queriedDevice = "Failed query for " + $stateParams.device;
                         BootstrapDialog.show({
                             title: "Error",
                             message: "Failed to retrieve history: " + r.data
@@ -468,42 +469,48 @@ webPortalApp.controller(
                     data: $scope.request
                 };
 
-                var reqTargets = {
-                    method: "GET",
-                    url: "api/v1/devices/" + $stateParams.device + "/targets/summary?status=C",
-                    headers: {"Content-Type": "application/json", "Session": $scope.session},
-                    data: $scope.request
-                };
-
                 $log.log("Executing requests...");
                 $scope.queriedDevice = $stateParams.device + " (in progress)";
+
+                $scope.reportsSummary = {};
+                $scope.targetsSummaryUserInput = {};
+                $scope.targetsSummary = {};
 
                 $http(reqReports).then(
                     function(r) {
                         $log.log("Success reports: " + JSON.stringify(r.data));
                         $scope.reportsSummary = r.data;
                         $scope.targetsSummaryUserInput = r.data;
-                        $scope.queriedDevice = $stateParams.device;
+
+                        var reqTargets = {
+                            method: "GET",
+                            url: "api/v1/devices/" + $stateParams.device + "/targets/summary?status=C",
+                            headers: {"Content-Type": "application/json", "Session": $scope.session},
+                            data: $scope.request
+                        };
+
+                        $http(reqTargets).then(
+                            function(r) {
+                                $log.log("Success targets: " + JSON.stringify(r.data));
+                                $scope.targetsSummary = r.data;
+                                $scope.queriedDevice = $stateParams.device;
+                            },
+                            function(r) {
+                                $log.log("Failed to retrieve targets: " + r.data);
+                                $scope.reportsSummary = {};
+                                $scope.targetsSummaryUserInput = {};
+                                $scope.queriedDevice = $stateParams.device + " (failed: " + r.data + ")";
+                            }
+                        );
+
+
                     },
                     function(r) {
                         $log.log("Failed reports: " + r.data);
-                        $scope.reportsSummary = {};
                         $scope.queriedDevice = $stateParams.device + " (failed: " + r.data + ")";
                     }
                 );
 
-                $http(reqTargets).then(
-                    function(r) {
-                        $log.log("Success targets: " + JSON.stringify(r.data));
-                        $scope.targetsSummary = r.data;
-                        $scope.queriedDevice = $stateParams.device;
-                    },
-                    function(r) {
-                        $log.log("Failed to retrieve targets: " + r.data);
-                        $scope.targetsSummary = {};
-                        $scope.queriedDevice = $stateParams.device + " (failed: " + r.data + ")";
-                    }
-                );
 
                 $log.log("Executed requests.");
 
