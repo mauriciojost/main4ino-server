@@ -1,6 +1,6 @@
 val ScalaVersion = "2.12.10"
 
-addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.2" cross CrossVersion.full)
+addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full)
 
 enablePlugins(JavaServerAppPackaging, UniversalDeployPlugin)
 
