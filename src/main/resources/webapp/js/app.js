@@ -387,6 +387,7 @@ webPortalApp.controller(
             }
 
             $scope.initLegends = function(project, platform, version) {
+                $log.log("Loading descriptions: " + project + " / " + platform + " / " + version);
                 $scope.propLegends = [];
 
                 var reqDescs = {
