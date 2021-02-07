@@ -1,0 +1,13 @@
+{
+  "version" : "STRINGIFY_PROJ_VERSION",
+  "json" : [
+    {
+      "patterns" : ["^.*.freq$"],
+      "descriptions" : ["Frequency..."],
+      "examples" : [
+        "never     -> Never",
+        "~77s  -> Every 77 seconds"
+      ]
+    }
+  ]
+}
