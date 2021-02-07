@@ -9,9 +9,9 @@ SERVER_ADDRESS="localhost:8080"
 DEV_NAME=dev1
 ACTOR1=actor1
 ACTOR2=actor2
-BODY_REPORT1='{"device":{"alias":"dev1","platform":"esp8266","project":"botino","version":"1.0.0"},"actor1":{"freq":"~1s", "a1p1":"a1p1", "a1p2":"a1p2"}, "actor2":{"a2p1":"a2p1", "a2p2":"a2p2"}}'
-BODY_REPORT2='{"device":{"alias":"dev1","platform":"esp8266","project":"botino","version":"1.0.0"},"actor1":{"a1p1":"a1p1*", "a1p2":"a1p2*"}}'
-BODY_REPORT3='{"device":{"alias":"dev1","platform":"esp8266","project":"botino","version":"1.0.0"},"actor2":{"a2p1":"a2p1*", "a2p2":"a2p2*"}}'
+BODY_REPORT1='{"device":{"alias":"dev1","platform":"esp8266","project":"botino","~version":"1.0.0"},"actor1":{"freq":"~1s", "a1p1":"a1p1", "a1p2":"a1p2"}, "actor2":{"a2p1":"a2p1", "a2p2":"a2p2"}}'
+BODY_REPORT2='{"device":{"alias":"dev1","platform":"esp8266","project":"botino","~version":"1.0.0"},"actor1":{"a1p1":"a1p1*", "a1p2":"a1p2*"}}'
+BODY_REPORT3='{"device":{"alias":"dev1","platform":"esp8266","project":"botino","~version":"1.0.0"},"actor2":{"a2p1":"a2p1*", "a2p2":"a2p2*"}}'
 BODY_REPORT4='{"device":{"alias":"alias1"}}'
 BODY_TARGET='{"p1":"v1b"}'
 
