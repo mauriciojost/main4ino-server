@@ -42,16 +42,18 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
 
   def defaultServiceWithDirectory(transactor: HikariTransactor[IO], tmp: NioPath): Service[IO] = {
     val t = new FixedTime()
+    val st = new Store[IO](Paths.get("src/test/resources/firmwares/1"))
     implicit val cs = IO.contextShift(Helper.testExecutionContext)
     new Service(
-      new Auther(DefaultSecurityConfig),
-      new Translator(
-        new Repository(DbSyntax.H2, transactor),
-        t,
-        new Logger[IO](Config(tmp), t, Helper.testExecutionContext)(Sync[IO], cs, IO.timer(Helper.testExecutionContext))
+      auth = new Auther(DefaultSecurityConfig),
+      tr = new Translator(
+        repository = new Repository(DbSyntax.H2, transactor),
+        time = t,
+        devLogger = new Logger[IO](Config(tmp), t, Helper.testExecutionContext)(Sync[IO], cs, IO.timer(Helper.testExecutionContext)),
+        store = st
       ),
-      t,
-      new FirmwareService[IO](new Store(Paths.get("src/test/resources/firmwares/1")), Helper.testExecutionContext)
+      time = t,
+      firmware = new FirmwareService[IO](st, Helper.testExecutionContext)
     )
   }
 
@@ -244,23 +246,6 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TransactorCtx with 
         val log = get(s"/devices/dev1/logs?from=0&to=0")
         log.status should be(Status.Ok)
       }
-    }
-  }
-
-  "The service from both web ui and device" should "create and read descriptions by device name" in {
-    withTransactor { tr =>
-      implicit val s = defaultService(tr)
-
-      val r0 = get("/devices/dev1/descriptions")
-      r0.status shouldBe Status.NoContent
-
-      putExpectOk("/devices/dev1/descriptions", """{"version": "1.0.0", "json":null}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces
-
-      getExpectOk("/devices/dev1/descriptions").noSpaces shouldBe Description("dev1", Time.asTimestamp(TheTime), VersionJson("1.0.0", Json.Null)).asJson.noSpaces
-
-      putExpectOk("/devices/dev1/descriptions", """{"version": "1.1.0", "json":null}""").noSpaces shouldBe CountResponse(1).asJson.noSpaces
-
-      getExpectOk("/devices/dev1/descriptions").noSpaces shouldBe Description("dev1", Time.asTimestamp(TheTime), VersionJson("1.1.0", Json.Null)).asJson.noSpaces
     }
   }
 

@@ -2,13 +2,13 @@ package org.mauritania.main4ino.firmware
 
 import java.io.File
 import java.nio.file.Path
-
 import cats.effect.Sync
 import com.gilt.gfc.semver.SemVer
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.models.{Platform, ProjectName}
 import cats.implicits._
+import org.mauritania.main4ino.firmware.Coord.FirmwareFile
 
 object Store {
 
@@ -23,18 +23,25 @@ class Store[F[_]: Sync](basePath: Path) {
   private def listFiles(dir: File): F[List[File]] =
     Sync[F].delay(Option(dir.listFiles()).toList.flatMap(_.toList))
 
-  def getFirmware(coords: Wish): F[Attempt[Firmware]] = {
-    val resp: F[Attempt[Firmware]] = for {
+  def getFirmware(wish: Wish): F[Attempt[Coord]] = {
+    val resp: F[Attempt[Coord]] = for {
       logger <- Slf4jLogger.fromClass[F](getClass)
-      available <- listFirmwares(coords.project, coords.platform)
-      resolved = coords.resolve(available)
-      _ <- logger.debug(s"Requested firmware: $coords, resolved: $resolved")
-      checked <- resolved match {
-        case Some(v) => checkCoordsFile(v)
-        case None => Sync[F].delay[Attempt[Firmware]](Left(s"Could not resolve: $coords"))
-      }
-    } yield checked
+      coords <- listFirmwares(wish.project, wish.platform)
+      coord = wish.resolve(coords)
+      _ <- logger.debug(s"Wished firmware: $wish, resolved: $coord")
+      result = coord.toRight(s"Could not resolve: $wish")
+    } yield result
     resp
+  }
+
+  def getFirmwareFile(coord: Coord, resource: FirmwareFile = FirmwareFile.Bin): F[Attempt[File]] = {
+    for {
+      logger <- Slf4jLogger.fromClass[F](getClass)
+      projPath = basePath.resolve(coord.project)
+      file = projPath.resolve(coord.resolve(resource))
+      checked <- checkFile(file.toFile)
+      _ <- logger.debug(s"Requested firmware file: $coord/$resource -> $checked")
+    } yield checked
   }
 
   def listFirmwares(project: ProjectName, platform: Platform): F[Seq[Coord]] = {
@@ -44,17 +51,16 @@ class Store[F[_]: Sync](basePath: Path) {
     }
   }
 
-  private def checkCoordsFile(coords: Coord): F[Attempt[Firmware]] = {
-    val file = basePath.resolve(coords.project).resolve(coords.filename).toFile
+  private def checkFile(f: File): F[Attempt[File]] = {
     for {
       logger <- Slf4jLogger.fromClass[F](getClass)
-      readable <- isReadableFile(file)
-      length <- length(file)
-      _ <- logger.debug(s"Sanity checked firmware file $file/$coords: readable=$readable length=$length")
+      readable <- isReadableFile(f)
+      length <- length(f)
+      _ <- logger.debug(s"Sanity checked firmware file $f: readable=$readable length=$length")
       located = readable match {
-        case true => Right(Firmware(file, length, coords))
+        case true => Right(f)
         case false =>
-          Left(s"Could not locate/read firmware: ${coords.project}/${coords.filename} (resolved to $file)")
+          Left(s"Could not locate/read $f")
       }
     } yield located
   }

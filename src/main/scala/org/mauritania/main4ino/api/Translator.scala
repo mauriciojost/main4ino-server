@@ -21,8 +21,9 @@ import fs2.Stream
 import org.mauritania.main4ino.db.Repository
 import org.mauritania.main4ino.db.Repository.FromTo
 import org.mauritania.main4ino.devicelogs.Logger
+import org.mauritania.main4ino.firmware.{Store => Firmware}
 
-class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger: Logger[F])
+class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger: Logger[F], store: Firmware[F])
     extends Http4sDsl[F] {
 
   def updateLogs(device: DeviceName, body: Stream[F, String]): F[Attempt[Long]] = {
@@ -54,23 +55,6 @@ class Translator[F[_]: Sync](repository: Repository[F], time: Time[F], devLogger
       d <- devLogger.tailLogs(device, Time.asTimestamp(timeUtc))
       _ <- logger.debug(s"Tail logs for $device")
     } yield (d)
-  }
-
-  def getLastDescription(device: DeviceName): F[Attempt[Description]] = {
-    for {
-      logger <- Slf4jLogger.fromClass[F](Translator.getClass)
-      d <- repository.getDescription(device)
-      _ <- logger.debug(s"Got description for $device")
-    } yield (d)
-  }
-
-  def updateDescription(device: DeviceName, j: VersionJson): F[Int] = {
-    for {
-      logger <- Slf4jLogger.fromClass[F](Translator.getClass)
-      timeUtc <- time.nowUtc
-      inserts <- repository.setDescription(device, j, Time.asTimestamp(timeUtc))
-      _ <- logger.debug(s"Set description for ${device}")
-    } yield (inserts)
   }
 
   def deleteDevice(dev: DeviceName, t: ReqType): F[CountResponse] = {

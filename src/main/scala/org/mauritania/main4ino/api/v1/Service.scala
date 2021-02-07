@@ -10,24 +10,20 @@ import io.circe.syntax._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
-import org.http4s.{AuthedService, EntityDecoder, EntityEncoder, HttpService, Request, Response}
+import org.http4s.{EntityEncoder, Response}
 import org.mauritania.main4ino.BuildInfo
 import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.api.Translator
 import org.mauritania.main4ino.api.Translator.CountResponse
 import org.mauritania.main4ino.helpers.{CustomAuthMiddleware, HttpMeter, Time}
-import org.mauritania.main4ino.models.Description.VersionJson
-import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models._
-import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
+import org.mauritania.main4ino.security.Auther.UserSession
 import org.mauritania.main4ino.security.{Auther, User}
 import org.mauritania.main4ino.{ContentTypeAppJson, ContentTypeTextPlain}
 import org.mauritania.main4ino.firmware.{Service => FirmwareService}
 import fs2.Stream
 import org.http4s.server.websocket.WebSocketBuilder
-import org.http4s.websocket.WebSocketFrame
 import org.http4s.websocket.WebSocketFrame.Text
 import org.mauritania.main4ino.db.Repository.FromTo
 
@@ -232,43 +228,6 @@ class Service[F[_]: Sync](
     case GET -> Root / "devices" / Dev(device) / "logstail" as _ => {
       val r: F[Stream[F, Text]] = tr.tailLogs(device).map(_.map(i => Text.apply(i)))
       r.flatMap(i => WebSocketBuilder[F].build(i, _.drain))
-    }
-
-    /**
-      * PUT /devices/<dev>/descriptions
-      *
-      * Example: PUT /devices/dev1/descriptions
-      *
-      * Update the device description given the device ID.
-      *
-      * Device describes actors and properties with PUT, web ui uses them via GET.
-      *
-      * Returns: OK (200)
-      */
-    case a @ PUT -> Root / "devices" / Dev(device) / "descriptions" as _ => {
-      val d = a.req.decodeJson[VersionJson]
-      val r: F[CountResponse] =
-        d.flatMap(i => tr.updateDescription(device, i)).map(CountResponse(_))
-      r.flatMap { v => Ok(v.asJson, ContentTypeAppJson) }
-    }
-
-    /**
-      * GET /devices/<dev>/descriptions
-      *
-      * Example: GET /devices/dev1/descriptions
-      *
-      * Retrieve a device description given the device ID.
-      *
-      * Device describes actors and properties with PUT, web ui GET.
-      *
-      * Returns: OK (200) | NO_CONTENT (204)
-      */
-    case GET -> Root / "devices" / Dev(device) / "descriptions" as _ => {
-      val x: F[Attempt[Description]] = tr.getLastDescription(device)
-      x.flatMap {
-        case Right(v) => Ok(v.asJson, ContentTypeAppJson)
-        case Left(_) => NoContent()
-      }
     }
 
     // Targets & Reports (at device level)

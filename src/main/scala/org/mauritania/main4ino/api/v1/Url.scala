@@ -5,6 +5,7 @@ import org.http4s.{ParseFailure, QueryParamDecoder, QueryParameterValue}
 import org.http4s.dsl.impl.{OptionalQueryParamDecoderMatcher, QueryParamDecoderMatcher}
 import org.mauritania.main4ino.db.Repository.ReqType
 import org.mauritania.main4ino.db.Repository.ReqType.ReqType
+import org.mauritania.main4ino.firmware.Coord.FirmwareFile
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models.{EpochSecTimestamp, RequestId}
 
@@ -30,6 +31,17 @@ object Url {
       }
   }
 
+  implicit val firmwareFileDecoder: QueryParamDecoder[FirmwareFile] = new QueryParamDecoder[FirmwareFile] {
+    override def decode(value: QueryParameterValue): ValidatedNel[ParseFailure, FirmwareFile] =
+      FirmwareFile.withNameEither(value.value) match {
+        case Right(s) => Validated.Valid(s)
+        case Left(f) =>
+          Validated.Invalid(
+            NonEmptyList(ParseFailure(s"Could not parse: ${value.value}", f.getMessage()), Nil)
+          )
+      }
+  }
+
   object IdsParam extends OptionalQueryParamDecoderMatcher[Boolean]("ids")
   object StatusParam extends OptionalQueryParamDecoderMatcher[Status]("status")
   object NewStatusParam extends OptionalQueryParamDecoderMatcher[Status]("newstatus")
@@ -42,7 +54,7 @@ object Url {
   object TimezoneParam extends OptionalQueryParamDecoderMatcher[String]("timezone")
 
   object VerWishParam extends QueryParamDecoderMatcher[String]("version")
-  object ElfFileParam extends OptionalQueryParamDecoderMatcher[Boolean]("elf")
+  object FirmFileModeParam extends OptionalQueryParamDecoderMatcher[FirmwareFile]("mode")
 
   // Url sections
   object Req { // request type section

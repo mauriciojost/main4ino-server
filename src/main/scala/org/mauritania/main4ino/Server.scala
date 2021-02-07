@@ -83,7 +83,7 @@ object Server extends IOApp {
       "/" -> firmwareService.service,
       "/api/v1" -> new v1.Service(
         new Auther[F](configUsers),
-        new Translator(repo, time, devLogger),
+        new Translator(repo, time, devLogger, fwStore),
         time,
         firmwareService
       ).serviceWithAuthentication

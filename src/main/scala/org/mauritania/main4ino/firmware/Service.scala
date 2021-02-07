@@ -1,13 +1,12 @@
 package org.mauritania.main4ino.firmware
 
 import java.io.File
-
 import cats.effect.{Blocker, ContextShift, Effect, Sync}
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.{EntityEncoder, Header, Headers, HttpRoutes, Request, Response, StaticFile}
 import org.http4s.headers.`Content-Length`
 import org.http4s.dsl.Http4sDsl
-import org.mauritania.main4ino.api.v1.Url.{ElfFileParam, Platf, Proj, VerWishParam}
+import org.mauritania.main4ino.api.v1.Url.{FirmFileModeParam, Platf, Proj, VerWishParam}
 import cats.implicits._
 import org.mauritania.main4ino.ContentTypeAppJson
 import io.circe.syntax._
@@ -18,11 +17,12 @@ import org.mauritania.main4ino.models.FirmwareVersion
 import cats._
 import cats.data._
 import io.circe.Encoder
+import org.mauritania.main4ino.firmware.Coord.FirmwareFile
 import org.mauritania.main4ino.helpers.HttpMeter
 
 import scala.concurrent.ExecutionContext
 
-class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionContext)
+class Service[F[_]: Sync: Effect: ContextShift](store: Store[F], ec: ExecutionContext)
     extends Http4sDsl[F] {
 
   import Service._
@@ -35,32 +35,33 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
       * GET /firmwares/<project>/<platform>/content?version=<version>
       *
       * Example: GET /firmwares/botino/esp8266/content?version=3.1.8
+      * Example: GET /firmwares/botino/esp8266/content?version=3.1.8&mode=elf
+      * Example: GET /firmwares/botino/esp8266/content?version=3.1.8&mode=description
       *
       * Retrieve a firmware given a the version, the platform and the project it belongs to.
       *
       * Returns: OK (200) | NO_CONTENT (204)
       */
-    case a @ GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? VerWishParam(
-          versionFeatureCode
-        ) +& ElfFileParam(elf) => {
-      val headers = a.headers
-      val currentVersion = extractCurrentVersion(headers)
-      val coords = Wish(project, versionFeatureCode, platform)
+    case a @ GET -> Root / "firmwares" / Proj(project) / Platf(platform) / "content" :? VerWishParam(versionFeatureCode) +& FirmFileModeParam(fileType) => {
+      val currVers = extractCurrentVersion(a.headers)
+      val wish = Wish(project, versionFeatureCode, platform)
 
       for {
         logger <- Slf4jLogger.fromClass[F](getClass)
-        _ <- logger.debug(s"Requested firmware content: $coords / $currentVersion")
-        _ <- logger.debug(s"Request headers: $headers")
-        fa <- st.getFirmware(coords)
-        response <- fa match {
-          case Right(Firmware(_, _, c))
-              if (currentVersion.exists(_ == c.version)) => // same version as current
-            logger.debug(s"Firmware already up-to-date: $currentVersion=$c...").flatMap(_ => NotModified())
-          case Right(w @ Firmware(f, _, c)) => // different version than current, serving...
-            val k = if (elf.exists(identity)) w.elfFile else f
-            logger.info(s"Proposing firmware from $currentVersion to $c (file $k)...").flatMap{_ =>
-              StaticFile.fromFile(k, blocker, Some(a)).getOrElseF(InternalServerError())
-            }
+        _ <- logger.debug(s"Requested firmware: wish=$wish / device=$currVers / headers=${a.headers} / filetype=$fileType")
+        coordinate <- store.getFirmware(wish)
+        response <- coordinate match {
+          case Right(coord) if (currVers.exists(_ == coord.version)) => // same version as current
+              logger.debug(s"Firmware already up-to-date: $currVers=${coord.version}...").flatMap(_ => NotModified())
+          case Right(coord) => // different version than current, serving...
+            for {
+              file <- store.getFirmwareFile(coord, fileType.getOrElse(FirmwareFile.Bin))
+              _ <- logger.info(s"Firmware NOT up-to-date, proposing $coord / $file...")
+              fileServed <- file match {
+                case Right(f) => StaticFile.fromFile(f, blocker, Some(a)).getOrElseF(InternalServerError())
+                case Left(e) => logger.warn(s"No such file: $e").flatMap(_ => NotFound())
+              }
+            } yield fileServed
           case Left(msg) => // no such version
             logger.warn(s"Cannot propose firmware, version not found: $msg").flatMap(_ => NotFound())
         }
@@ -83,7 +84,7 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
       for {
         logger <- Slf4jLogger.fromClass[F](getClass)
         _ <- logger.debug(s"Requested firmware metadata: $coords")
-        fa <- st.getFirmware(coords)
+        fa <- store.getFirmware(coords)
         r <- fa match {
           case Right(x) => Ok(x.asJson, ContentTypeAppJson)
           case Left(_) => NoContent()
@@ -103,7 +104,7 @@ class Service[F[_]: Sync: Effect: ContextShift](st: Store[F], ec: ExecutionConte
     case a @ GET -> Root / "firmwares" / Proj(project) / Platf(platform) => {
       for {
         logger <- Slf4jLogger.fromClass[F](getClass)
-        fa <- st.listFirmwares(project, platform)
+        fa <- store.listFirmwares(project, platform)
         _ <- logger.debug(s"Listing firmwares for $project/$platform: ${fa.size} found")
         r <- Ok(fa.asJson, ContentTypeAppJson)
       } yield r

@@ -15,7 +15,6 @@ import org.mauritania.main4ino.db.Config.DbSyntax
 import org.mauritania.main4ino.db.Config.DbSyntax.DbSyntax
 import org.mauritania.main4ino.db.Repository.ReqType.ReqType
 import org.mauritania.main4ino.db.Repository.{ActorTup, ActorTupIdLess, Device1, FromTo, ReqType, Stats}
-import org.mauritania.main4ino.models.Description.VersionJson
 import org.mauritania.main4ino.models.Device.Metadata.Status
 import org.mauritania.main4ino.models.Device.{DbId, Metadata}
 import org.mauritania.main4ino.models.{RequestId, _}
@@ -27,21 +26,6 @@ class Repository[F[_]: Sync](syntax: DbSyntax, transactor: Transactor[F]) {
     Meta[String].timap[Status](Status.withName(_))(_.entryName)
   implicit val JsonMeta: Meta[Json] =
     Meta[String].timap[Json](io.circe.parser.parse(_).getOrElse(Json.Null))(_.noSpaces)
-
-  def setDescription(d: DeviceName, v: VersionJson, ts: EpochSecTimestamp): F[Int] = {
-    val transaction = for {
-      i <- sqlUpdateDescription(d, v, ts)
-    } yield (i)
-    transaction.transact(transactor)
-  }
-
-  def getDescription(device: String): F[Attempt[Description]] = {
-    val transaction = for {
-      d <- sqlSelectDescription(device)
-      y = d.toRight(s"No description for '$device'")
-    } yield (y)
-    transaction.transact(transactor)
-  }
 
   def cleanup(table: ReqType, now: EpochSecTimestamp, retentionSecs: PosInt): F[Int] = {
     val transaction = for {
@@ -57,8 +41,7 @@ class Repository[F[_]: Sync](syntax: DbSyntax, transactor: Transactor[F]) {
       rep <- (fr"SELECT count(*) FROM " ++ Fragment.const(ReqType.Reports.code)).query[Long].unique
       tarReq <- (fr"SELECT count(*) FROM " ++ Fragment.const(ReqType.Targets.code + "_requests")).query[Long].unique
       tar <- (fr"SELECT count(*) FROM " ++ Fragment.const(ReqType.Targets.code)).query[Long].unique
-      descr <- (fr"SELECT count(*) FROM descriptions").query[Long].unique
-    } yield Stats(repReq, rep, tarReq, tar, descr)
+    } yield Stats(repReq, rep, tarReq, tar)
     transaction.transact(transactor)
   }
 
@@ -240,29 +223,6 @@ class Repository[F[_]: Sync](syntax: DbSyntax, transactor: Transactor[F]) {
       .withUniqueGeneratedKeys[RequestId]("id")
   }
 
-  private def sqlUpdateDescription(
-    dev: DeviceName,
-    d: VersionJson,
-    ts: EpochSecTimestamp
-  ): ConnectionIO[Int] = {
-    syntax match {
-      // $COVERAGE-OFF$
-      // Too difficult to have integration tests with PostgreSQL
-      case DbSyntax.Postgres =>
-        (fr"INSERT INTO descriptions (device_name, updated, version, json) VALUES (${dev}, ${ts}, ${d.version}, ${d.json}) ON CONFLICT (device_name) DO UPDATE SET device_name = ${dev}").update.run
-      // $COVERAGE-ON$
-      case _ =>
-        fr"MERGE INTO descriptions (device_name, updated, version, json) KEY (device_name) VALUES (${dev}, ${ts}, ${d.version}, ${d.json})".update.run
-    }
-
-  }
-
-  private def sqlSelectDescription(d: DeviceName): ConnectionIO[Option[Description]] = {
-    (fr"SELECT device_name, updated, version, json FROM descriptions WHERE device_name = ${d}")
-      .query[Description]
-      .option
-  }
-
   private def sqlUpdateMetadataWhereRequestId(
     table: ReqType,
     r: RequestId,
@@ -378,8 +338,8 @@ class Repository[F[_]: Sync](syntax: DbSyntax, transactor: Transactor[F]) {
 
 object Repository {
 
-  case class Stats(reportRequests: Long, reports: Long, targetRequests: Long, targets: Long, descriptions: Long) {
-    override def toString(): String = s"repReq=$reportRequests, rep=$reports, tarReq=$targetRequests, tar=$targets, desc=$descriptions"
+  case class Stats(reportRequests: Long, reports: Long, targetRequests: Long, targets: Long) {
+    override def toString(): String = s"repReq=$reportRequests, rep=$reports, tarReq=$targetRequests, tar=$targets"
   }
   case class FromTo(from: Option[EpochSecTimestamp], to: Option[EpochSecTimestamp])
 

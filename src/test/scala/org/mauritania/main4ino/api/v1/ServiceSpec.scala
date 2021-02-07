@@ -163,7 +163,8 @@ class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with Decode
           DevLogsConfig(Paths.get("/tmp")),
           time = t,
           ExecutionContext.global
-        )(Sync[IO], cs, IO.timer(Helper.testExecutionContext))
+        )(Sync[IO], cs, IO.timer(Helper.testExecutionContext)),
+        store = store
       ),
       time = t,
       firmwareService

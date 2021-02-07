@@ -22,6 +22,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
   final val ByteEnd: Byte = 10.toByte
 
   final val Dataset1 = Paths.get("src", "test", "resources", "firmwares", "1")
+  final val Dataset6 = Paths.get("src", "test", "resources", "firmwares", "6")
 
   import Service._
 
@@ -41,7 +42,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
     rf.status shouldBe Status.NotFound
     rf.body.compile.toList.unsafeRunSync() shouldBe List()
 
-    val elf = get("/firmwares/botino/esp8266/content?version=1.0.0&elf=true") // available
+    val elf = get("/firmwares/botino/esp8266/content?version=1.0.0&mode=elf") // available
     elf.status shouldBe Status.Ok
     elf.contentLength shouldBe Some(3L)
     elf.body.compile.toList.unsafeRunSync() shouldBe List(Byte0, Byte0, ByteEnd)
@@ -74,17 +75,12 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
     val rs1 = get("/firmwares/botino/esp8266/metadata?version=1.0.0")
     rs1.status shouldBe Status.Ok
     rs1.bodyAsText.compile.toList.unsafeRunSync() shouldBe List(
-      Firmware(
-        file = new File("firmware-1.0.0.esp8266.bin"),
-        length = 5L,
-        coords =
-          Coord(
-            project = "botino",
-            version = "1.0.0",
-            platform = "esp8266",
-            filename = "firmware-1.0.0.esp8266.bin",
-            feature = None
-          )
+      Coord(
+        project = "botino",
+        version = "1.0.0",
+        platform = "esp8266",
+        filename = "firmware-1.0.0.esp8266.bin",
+        feature = None
       ).asJson.noSpaces
     )
     val rs2 = get("/firmwares/botino/esp8266/metadata?version=1.2.0")
@@ -107,6 +103,28 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
     )
     rs.status shouldBe Status.Ok // can be downloaded
   }
+
+  it should "handle scenario of firmware existent with description and elf" in {
+    implicit val s = defaultServiceWithDirectory(Dataset6)
+    val rsDesc = get(
+      path = "/firmwares/botino/esp8266/content?version=1.0.0&mode=description"
+    )
+    rsDesc.status shouldBe Status.Ok // existent
+    val rsElf = get(
+      path = "/firmwares/botino/esp8266/content?version=1.0.0&mode=elf"
+    )
+    rsElf.status shouldBe Status.Ok // existent
+  }
+
+  it should "handle scenario of firmware existent but no description" in {
+    implicit val s = defaultServiceWithDirectory(Dataset1)
+    val rs = get(
+      path = "/firmwares/botino/esp8266/content?version=1.0.0&mode=description"
+    )
+    rs.status shouldBe Status.NotFound // not existent
+  }
+
+
 
   private[this] def get(path: String, headers: Headers = Headers.empty)(implicit service: Service[IO]): Response[IO] = {
     val request = Request[IO](method = Method.GET, uri = Uri.unsafeFromString(path), headers = headers)

@@ -14,7 +14,7 @@ class StoreSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelTe
   "The store" should "point to an existent file given the coordinates" in {
     val path = Paths.get("src", "test", "resources", "firmwares", "1")
     val store = new Store[IO](path)
-    store.getFirmware(Wish("botino", "1.0.0", "esp8266")).unsafeRunSync().right.value.file.getName should be("firmware-1.0.0.esp8266.bin")
+    store.getFirmware(Wish("botino", "1.0.0", "esp8266")).unsafeRunSync().right.value.filename should be("firmware-1.0.0.esp8266.bin")
   }
 
   it should "report a meaningful failure when cannot find a file" in {
@@ -32,13 +32,17 @@ class StoreSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelTe
   it should "resolve latest version" in {
     val file = Paths.get("src", "test", "resources", "firmwares", "2")
     val store = new Store[IO](file)
-    store.getFirmware(Wish("botino", "LATEST", "esp8266")).unsafeRunSync().right.value.file.getName should be("firmware-2.0.0.esp8266.bin")
+    store.getFirmware(Wish("botino", "LATEST", "esp8266")).unsafeRunSync().right.value.filename should be("firmware-2.0.0.esp8266.bin")
   }
 
   it should "report a meaningful failure when cannot download a file" in {
     val file = Paths.get("src", "test", "resources", "firmwares", "3")
     val store = new Store[IO](file)
-    store.getFirmware(Wish("botino", "1.1.0", "esp8266")).unsafeRunSync().left.value should (include("Could not locate/read"))
+    val x = for {
+      a <- store.getFirmware(Wish("botino", "1.1.0", "esp8266"))
+      b <- store.getFirmwareFile(a.toOption.get)
+    } yield b
+    x.unsafeRunSync().left.value should (include("Could not locate/read"))
   }
 
   it should "report a meaningful failure when cannot find a version among available ones" in {
@@ -56,17 +60,17 @@ class StoreSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelTe
   it should "resolve latest stable version (only release versions)" in {
     val file = Paths.get("src", "test", "resources", "firmwares", "5")
     val store = new Store[IO](file)
-    store.getFirmware(Wish("botino", "LATEST", "esp8266")).unsafeRunSync().right.value.file.getName should be("firmware-1.0.1-1.esp8266.bin")
-    store.getFirmware(Wish("botino", "LATEST_STABLE", "esp8266")).unsafeRunSync().right.value.file.getName should be("firmware-1.0.0.esp8266.bin")
+    store.getFirmware(Wish("botino", "LATEST", "esp8266")).unsafeRunSync().right.value.filename should be("firmware-1.0.1-1.esp8266.bin")
+    store.getFirmware(Wish("botino", "LATEST_STABLE", "esp8266")).unsafeRunSync().right.value.filename should be("firmware-1.0.0.esp8266.bin")
   }
 
   it should "resolve latest version with feature" in {
     val file = Paths.get("src", "test", "resources", "firmwares", "6")
     val store = new Store[IO](file)
-    store.getFirmware(Wish("botino", "LATEST", "esp8266")).unsafeRunSync().right.value.file.getName should be("firmware-1.0.0.esp8266.bin")
-    store.getFirmware(Wish("botino", "LATEST_STABLE", "esp8266")).unsafeRunSync().right.value.file.getName should be("firmware-1.0.0.esp8266.bin")
-    store.getFirmware(Wish("botino", "LATEST_performance", "esp8266")).unsafeRunSync().right.value.file.getName should be("firmware-1.0.0_performance.esp8266.bin")
-    store.getFirmware(Wish("botino", "1.0.0_performance", "esp8266")).unsafeRunSync().right.value.file.getName should be("firmware-1.0.0_performance.esp8266.bin")
+    store.getFirmware(Wish("botino", "LATEST", "esp8266")).unsafeRunSync().right.value.filename should be("firmware-1.0.0.esp8266.bin")
+    store.getFirmware(Wish("botino", "LATEST_STABLE", "esp8266")).unsafeRunSync().right.value.filename should be("firmware-1.0.0.esp8266.bin")
+    store.getFirmware(Wish("botino", "LATEST_performance", "esp8266")).unsafeRunSync().right.value.filename should be("firmware-1.0.0_performance.esp8266.bin")
+    store.getFirmware(Wish("botino", "1.0.0_performance", "esp8266")).unsafeRunSync().right.value.filename should be("firmware-1.0.0_performance.esp8266.bin")
   }
 
   it should "have good orderings" in {
