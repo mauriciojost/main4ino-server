@@ -486,7 +486,7 @@ webPortalApp.controller(
                             if (r.data.device) {
                                 var project = r.data.device.project;
                                 var platform = r.data.device.platform;
-                                var version = r.data.device.version;
+                                var version = r.data.device['~version'];
                                 $scope.initLegends(project, platform, version);
                             }
                         }
