@@ -386,12 +386,12 @@ webPortalApp.controller(
                 }
             }
 
-            $scope.initLegends = function() {
+            $scope.initLegends = function(project, platform, version) {
                 $scope.propLegends = [];
 
                 var reqDescs = {
                     method: "GET",
-                    url: "api/v1/devices/" + $stateParams.device + "/descriptions",
+                    url: "api/v1/devices/" + $stateParams.device  + "/firmware/firmwares/" + project + "/" + platform + "/content?version=" + version + "&mode=description",
                     headers: {"Content-Type": "application/json", "Session": $scope.session}
                 };
 
@@ -399,7 +399,7 @@ webPortalApp.controller(
                     function(r) {
 
                         $log.log("Data raw json: " + JSON.stringify(r.data));
-                        var dt = r.data["versionJson"]["json"];
+                        var dt = r.data["json"];
                         $log.log("Json parsed: " + JSON.stringify(dt));
 
                         $log.log("Initialize property legends");
@@ -481,6 +481,14 @@ webPortalApp.controller(
                         $log.log("Success reports: " + JSON.stringify(r.data));
                         $scope.reportsSummary = r.data;
                         $scope.targetsSummaryUserInput = r.data;
+                        if (r.data) {
+                            if (r.data.device) {
+                                var project = r.data.device.project;
+                                var platform = r.data.device.platform;
+                                var version = r.data.device.version;
+                                $scope.initLegends(project, platform, version);
+                            }
+                        }
 
                         var reqTargets = {
                             method: "GET",
@@ -573,7 +581,6 @@ webPortalApp.controller(
             }
 
             if ($stateParams.device) { // proceed if device is provided
-                $scope.initLegends();
                 $scope.search();
             }
 
