@@ -31,16 +31,20 @@ function eraseCookie(name) {
     document.cookie = name+"=; Max-Age=-99999999;";
 }
 
-function intoLogsJson(linesStr) {
+function intoLogsFromLine(array, line, regex) {
+  if (line && regex.test(line)) {
+    var d = {};
+    d["t"] = line.substr(0,line.indexOf(' '));
+    d["content"] = line.substr(line.indexOf(' ')+1);
+    array.push(d);
+  }
+  return array;
+}
+function intoLogsFromLines(linesStr, regex) {
   var lines = linesStr.split("\n");
   var data = [];
   for (const line of lines) {
-      if (line) {
-        var d = {};
-        d["t"] = line.substr(0,line.indexOf(' '));
-        d["content"] = line.substr(line.indexOf(' ')+1);
-        data.push(d);
-      }
+      intoLogsFromLine(data, line, regex);
   }
   return data;
 }
@@ -597,7 +601,8 @@ webPortalApp.controller(
 
         $scope.fromHours = -1; // in hours, lower-bound to filter history records
         $scope.toHours = 0; // in hours, upper-bound to filter history records
-        
+        $scope.filter = ".*"; // regex
+
         $scope.readRange = function() {
             $scope.fromHours = Number(getCookie("fromHours") || -1);
             $scope.toHours = Number(getCookie("toHours") || 0);
@@ -606,6 +611,7 @@ webPortalApp.controller(
         $scope.updateRange = function() {
             setCookie("fromHours", $scope.fromHours, 100);
             setCookie("toHours", $scope.toHours, 100);
+            setCookie("filter", $scope.filter, 100);
 
             var date = new Date();
             var msTo = 1000 * 3600 * $scope.toHours;
@@ -649,14 +655,12 @@ webPortalApp.controller(
             if ($scope.logsMode == 'live') {
                 $log.log("Websocket url: " + wsurl);
                 $scope.socket = new WebSocket(wsurl);
-                $scope.logs = intoLogsJson('0 Listening...');
+                var filterRegex = new RegExp($scope.filter);
+                $scope.logs = intoLogsFromLines('0 Listening...', filterRegex);
                 $scope.socket.addEventListener('message', function (event) {
                     if (event.data) {
-                        var d = {};
-                        d["t"] = event.data.substr(0, event.data.indexOf(' '));
-                        d["content"] = event.data.substr(event.data.indexOf(' ')+1);
                         console.log('Device ' + $stateParams.device + ': ', event.data);
-                        $scope.logs.push(d);
+                        intoLogsFromLine($scope.logs, event.data, filterRegex);
                         $scope.$apply();
                     }
                 });
@@ -672,7 +676,7 @@ webPortalApp.controller(
                 $http(req).then(
                     function(r) {
                         $log.log("Logs obtained.");
-                        $scope.logs = intoLogsJson(r.data);
+                        $scope.logs = intoLogsFromLines(r.data, new RegExp($scope.filter));
                         $scope.queriedDevice = $stateParams.device;
                     },
                     function(r) {
