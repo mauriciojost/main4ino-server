@@ -36,7 +36,7 @@ function formatLogLine(line) {
   if (line) {
     var timeStr = line.substr(0,line.indexOf(' '))
     var contentStr = line.substr(line.indexOf(' ')+1);
-    var time = new Date(parseInt(timeStr));
+    var time = new Date(parseInt(timeStr) * 1000);
     result = '\n' + time.toISOString() + '  |  ' + contentStr;
   }
   return result;
