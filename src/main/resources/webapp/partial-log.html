@@ -18,10 +18,6 @@
                         <input type="number" name="toHours" class="form-control" ng-model="toHours" ng-change="updateRange()" placeholder="To [hours]"/>
                         <h4>{{ toDate }}</h4>
                     </div>
-                    <div>
-                        <input type="text" name="filter" class="form-control" ng-model="filter" ng-change="updateRange()" placeholder="Filter [regex]"/>
-                        <h4>{{ toDate }}</h4>
-                    </div>
                     <div class="radio"><label><input type="radio" ng-model="logsMode" ng-change="setLogsMode()" value="normal" checked>Normal</label></div>
                     <div class="radio"><label><input type="radio" ng-model="logsMode" ng-change="setLogsMode()" value="live">Live</label></div>
                 </div>
@@ -43,31 +39,19 @@
     </div>
 
     <div class="panel">
-        <div">
+        <div>
             <container>
                 <h3>3. Investigate logs for {{ queriedDevice }}</h3>
                 <br/>
                 <div>
-                    <table class="table table-sm table-dark table-hover table-condensed">
-                        <colgroup>
-                            <col span="1" style="width: 30%;">
-                            <col span="1" style="width: 70%;">
-                        </colgroup>
-                        <thead>
-                        <tr>
-                            <th>Timestamp</th>
-                            <th>Logs</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr ng-repeat="i in logs">
-                            <td class="col">{{ i.t * 1000 | date:'yyyy-MM-dd HH:mm:ss Z' }}</td>
-                            <td class="col">{{ i.content }} </td>
-                        </tr>
-                        </tbody>
-                    </table>
+                    <input type="text" name="filter" class="form-control" ng-model="filter" ng-change="updateFilter()" placeholder="Filter [regex]"/>
                 </div>
-
+                <br/>
+                <div>
+                    <pre>
+                        {{applyFilter(logs, filter)}}
+                    </pre>
+                </div>
             </container>
         </div>
     </div>
