@@ -25,10 +25,9 @@ import scala.concurrent.ExecutionContext
   */
 class Logger[F[_] : Sync : ContextShift: Timer](config: Config, time: Time[F], e: ExecutionContext) {
 
-  final private[devicelogs] val partitioner : Partitioner.Partitioner = config.partitioner
+  final private[devicelogs] lazy val partitioner : Partitioner.Partitioner = config.partitioner
   final private[devicelogs] lazy val ec: ExecutionContext = e
   final private[devicelogs] lazy val blocker: Blocker = Blocker.liftExecutionContext(ec)
-  final private[devicelogs] lazy val ChunkSize = 1024
   final private[devicelogs] lazy val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
 
   private[devicelogs] def pathFromDevice(device: DeviceName, partition: Partition): JavaPath =
@@ -104,7 +103,7 @@ class Logger[F[_] : Sync : ContextShift: Timer](config: Config, time: Time[F], e
       stream = for {
         readable <- isReadableFile(path.toFile)
         located: Stream[F, String] = readable match {
-          case true => readFile(path).filterNot(l => l.isEmpty || (l.size == 1 && l.startsWith("\n")))
+          case true => readFile(path, config.chunkSize.value).filterNot(l => l.isEmpty || (l.size == 1 && l.startsWith("\n")))
           case false => Stream.empty
         }
         filtered = located.filter(filter)
@@ -128,7 +127,7 @@ class Logger[F[_] : Sync : ContextShift: Timer](config: Config, time: Time[F], e
     val stream: F[Stream[F, String]] = for {
       readable <- isReadableFile(path.toFile)
       located: Stream[F, String] = readable match {
-        case true => tailFile(path)
+        case true => tailFile(path, config.chunkSize.value)
         case false => Stream.empty
       }
     } yield located
@@ -137,7 +136,7 @@ class Logger[F[_] : Sync : ContextShift: Timer](config: Config, time: Time[F], e
 
   private[devicelogs] def readFile(
     path: JavaPath,
-    chunkSize: Int = ChunkSize
+    chunkSize: Int
   ): Stream[F, String] = {
     val bytes = fs2io.file.readAll[F](path, blocker, chunkSize)
     val bytesLimited = bytes.takeRight(config.maxLengthLogs.value)
@@ -146,7 +145,7 @@ class Logger[F[_] : Sync : ContextShift: Timer](config: Config, time: Time[F], e
 
   private[devicelogs] def tailFile(
     path: JavaPath,
-    chunkSize: Int = ChunkSize
+    chunkSize: Int
   ): Stream[F, String] = {
     val bytes = fs2io.file.tail[F](path, blocker, chunkSize)
     bytes.through(fs2text.utf8Decode).through(fs2text.lines)
