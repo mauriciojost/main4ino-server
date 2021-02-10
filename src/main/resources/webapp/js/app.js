@@ -608,7 +608,7 @@ webPortalApp.controller(
         $scope.readRangeAndFilter = function() {
             $scope.fromHours = Number(getCookie("fromHours") || -1);
             $scope.toHours = Number(getCookie("toHours") || 0);
-            $scope.filter = getCookie("filter") | '.*';
+            $scope.filter = getCookie("filter") || '.*';
         }
 
         $scope.updateRange = function() {
