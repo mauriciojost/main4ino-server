@@ -7,7 +7,7 @@
     <div class="panel panel-info">
         <div class="panel-heading">
             <container>
-                <h3>1. Specify your device information</h3>
+                <h3>Specify logs filters and mode for {{ queriedDevice }}</h3>
                 <br/>
                 <div>
                     <div>
@@ -21,17 +21,9 @@
                     <div class="radio"><label><input type="radio" ng-model="logsMode" ng-change="setLogsMode()" value="normal" checked>Normal</label></div>
                     <div class="radio"><label><input type="radio" ng-model="logsMode" ng-change="setLogsMode()" value="live">Live</label></div>
                 </div>
-            </container>
-        </div>
-    </div>
-
-    <div class="panel panel-info">
-        <div class="panel-heading">
-            <container>
-                <h3>2. Get logs</h3>
                 <br/>
                 <div class="text-center">
-                    <button ng-click="getLogs();" type="button" class="btn btn-lg btn-primary">Get</button>
+                    <button ng-click="getLogs();" type="button" class="btn btn-lg btn-primary">Load</button>
                 </div>
                 <br/>
             </container>
@@ -41,7 +33,7 @@
     <div class="panel">
         <div>
             <container>
-                <h3>3. Investigate logs for {{ queriedDevice }}</h3>
+                <h3>Investigate logs for {{ queriedDevice }}</h3>
                 <br/>
                 <div>
                     <input type="text" name="filter" class="form-control" ng-model="filter" ng-change="updateFilter()" placeholder="Filter [regex]"/>
