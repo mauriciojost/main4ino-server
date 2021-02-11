@@ -20,8 +20,8 @@ object CustomAuthMiddleware {
       Kleisli { req: Request[F] =>
         OptionT {
           authUser(req).flatMap {
-            case Left(err) => onFailure(AuthedRequest(err, req)).value
             case Right(authedRequest) => routes(authedRequest).value
+            case Left(err) => onFailure(AuthedRequest(err, req)).value
           }
         }
       }

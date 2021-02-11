@@ -381,7 +381,7 @@ class Service[F[_]: Sync](
   }
 
   private[v1] val onFailure: AuthedRoutes[String, F] =
-    Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
+    Kleisli(req => OptionT.liftF(Forbidden(req.context)))
   private[v1] val customAuthMiddleware: AuthMiddleware[F, User] =
     CustomAuthMiddleware(Kleisli(auth.authenticateAndCheckAccess), onFailure)
   val serviceWithAuthentication: HttpRoutes[F] =
