@@ -9,10 +9,12 @@
             <container>
                 <h3>Filter properties for {{ queriedDevice }}</h3>
                 <br/>
-                <div><label><input type="checkbox" name="iStatus" ng-model="includeStatus" ng-change="setIncludes()">Include status</label></div>
-                <div><label><input type="checkbox" name="iDebug" ng-model="includeDebug" ng-change="setIncludes()">Include debug</label></div>
-                <div><label><input type="checkbox" name="iSensitive" ng-model="includeSensitive" ng-change="setIncludes()">Include sensitive</label></div>
-                <div><label><input type="checkbox" name="iAdvanced" ng-model="includeAdvanced" ng-change="setIncludes()">Include advanced</label></div>
+                <div class="row">
+                    <div class="col-md-4"><label><input type="checkbox" name="iStatus" ng-model="includeStatus" ng-change="setIncludes()">Include status</label></div>
+                    <div class="col-md-4"><label><input type="checkbox" name="iDebug" ng-model="includeDebug" ng-change="setIncludes()">Include debug</label></div>
+                    <div class="col-md-4"><label><input type="checkbox" name="iSensitive" ng-model="includeSensitive" ng-change="setIncludes()">Include sensitive</label></div>
+                    <div class="col-md-4"><label><input type="checkbox" name="iAdvanced" ng-model="includeAdvanced" ng-change="setIncludes()">Include advanced</label></div>
+                </div>
                 <br/>
                 <div class="text-center">
                     <button ng-click="search();" type="button" class="btn btn-lg btn-primary">Load</button>

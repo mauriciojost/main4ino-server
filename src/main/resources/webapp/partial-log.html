@@ -9,14 +9,20 @@
             <container>
                 <h3>Specify logs filters and mode for {{ queriedDevice }}</h3>
                 <br/>
-                <div>
-                    <div>
+                <div class="row">
+                    <div class="col-md-4">
                         <input type="number" name="fromHours" class="form-control" ng-model="fromHours" ng-change="updateRange()" placeholder="From [hours]"/>
-                        <h4>{{ fromDate }}</h4>
                     </div>
-                    <div>
+                    <div class="col-md-4">
+                        <pre>{{ fromDate }}</pre>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
                         <input type="number" name="toHours" class="form-control" ng-model="toHours" ng-change="updateRange()" placeholder="To [hours]"/>
-                        <h4>{{ toDate }}</h4>
+                    </div>
+                    <div class="col-md-4">
+                        <pre>{{ toDate }}</pre>
                     </div>
                     <div class="radio"><label><input type="radio" ng-model="logsMode" ng-change="setLogsMode()" value="normal" checked>Normal</label></div>
                     <div class="radio"><label><input type="radio" ng-model="logsMode" ng-change="setLogsMode()" value="live">Live</label></div>
