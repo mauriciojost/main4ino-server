@@ -4,9 +4,14 @@
 - [ ] Make the naming for deviceName/dev/device homogeneous: dev
 - [ ] Make the naming for actor/act/a homogeneous: act
 - [ ] Make time selection in UI nicer (phones cannot put negative)
+- [ ] Export metrics on Prometheus using [this](https://github.com/prometheus/client_java)
+- [ ] Improve web UI (tried many times, I suck at it, need someone's help)
+- [ ] Provide shortcut resources to reduce amount of queries on low power projects: PUSH (current firmware version;offset of targets; reports) and GET (time, firmware updates, targets)
+- [ ] Modularize description jsons (one for main4ino, one for mod4ino, one for ...)
 
 # DONE
 
+- [x] Fix issues with descriptions, take them from published firmware
 - [x] Speed up 'last' request from device as it takes way too long (>10secs !!!)
 - [x] Perform cleanup of repository, service v1 and its doc, and url class
 - [x] Make the DevLogger tests write to a temporary directory that is afterwards cleaned up
