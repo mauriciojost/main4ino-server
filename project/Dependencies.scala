@@ -14,7 +14,7 @@ object Dependencies {
         val ScalaTestVersion = "3.2.3"
         val ScalaMockVersion = "5.1.0"
         val FreePortFinder = "1.1.1"
-        val log4CatsSlf4jVersion = "1.1.1"
+        val log4CatsSlf4jVersion = "1.2.0"
         val slf4jLog4j12Version = "1.7.30"
         val CryptobitsVersion = "1.3"
         val GfcSemverVersion = "0.0.5"
@@ -32,7 +32,7 @@ object Dependencies {
           "io.circe" %% "circe-core" % Versions.CirceVersion,
           "io.circe" %% "circe-generic" % Versions.CirceVersion,
           "io.circe" %% "circe-parser" % Versions.CirceVersion,
-          "io.chrisdavenport" %% "log4cats-slf4j" % Versions.log4CatsSlf4jVersion,
+          "org.typelevel" %% "log4cats-slf4j" % Versions.log4CatsSlf4jVersion,
           "org.slf4j" % "slf4j-log4j12" % Versions.slf4jLog4j12Version,
           "org.http4s" %% "http4s-dsl" % Versions.Http4sVersion,
           "org.specs2" %% "specs2-core" % Versions.Specs2Version % "test",
