@@ -3,7 +3,7 @@ package org.mauritania.main4ino.api.v1
 import cats.data.{Kleisli, OptionT}
 import cats.effect.Sync
 import cats.implicits._
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import cats.implicits._
 import io.circe.generic.auto._
 import io.circe.syntax._

@@ -2,7 +2,7 @@ package org.mauritania.main4ino.helpers
 
 import cats.data.{Kleisli, OptionT}
 import cats.effect.Sync
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.http4s.Request
 import org.http4s.server.HttpMiddleware
 
