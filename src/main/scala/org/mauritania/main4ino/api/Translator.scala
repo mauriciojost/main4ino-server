@@ -4,7 +4,7 @@ import java.time.ZoneId
 
 import cats.effect.Sync
 import cats.implicits._
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.http4s.dsl.Http4sDsl
 import org.mauritania.main4ino.db.Repository.ReqType.ReqType
 import org.mauritania.main4ino.api.Translator.{

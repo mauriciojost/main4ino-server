@@ -1,7 +1,7 @@
 package org.mauritania.main4ino.db
 
 import cats.effect.{Async, ConcurrentEffect, ContextShift, Sync, Timer}
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.mauritania.main4ino.db.Repository.{ReqType, Stats}
 import org.mauritania.main4ino.helpers.Time
 import cats.effect._

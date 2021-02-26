@@ -7,7 +7,7 @@ import org.http4s.{AuthedRequest, BasicCredentials, Credentials, Headers, Method
 import org.http4s.Uri.Path
 import org.http4s.util.CaseInsensitiveString
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, ErrorMsg, UserSession}
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.http4s.headers.Authorization
 import org.mauritania.main4ino.security.Config.UsersBy
 import cats._

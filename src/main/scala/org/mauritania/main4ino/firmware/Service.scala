@@ -2,7 +2,7 @@ package org.mauritania.main4ino.firmware
 
 import java.io.File
 import cats.effect.{Blocker, ContextShift, Effect, Sync}
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.http4s.{EntityEncoder, Header, Headers, HttpRoutes, Request, Response, StaticFile}
 import org.http4s.headers.`Content-Length`
 import org.http4s.dsl.Http4sDsl

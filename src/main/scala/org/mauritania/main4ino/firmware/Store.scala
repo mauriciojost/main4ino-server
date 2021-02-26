@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.Path
 import cats.effect.Sync
 import com.gilt.gfc.semver.SemVer
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.models.{Platform, ProjectName}
 import cats.implicits._

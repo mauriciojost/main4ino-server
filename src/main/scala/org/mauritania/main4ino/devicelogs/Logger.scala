@@ -10,9 +10,9 @@ import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.{DeviceName, EpochSecTimestamp}
 import cats.implicits._
-import io.chrisdavenport.log4cats.{Logger => Log4CatsLogger}
+import org.typelevel.log4cats.{Logger => Log4CatsLogger}
 import org.mauritania.main4ino.devicelogs.Partitioner.Partition
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import scala.concurrent.ExecutionContext
 
