@@ -10,7 +10,7 @@ object Dependencies {
         val SqliteVersion = "3.34.0"
         val FlywayVersion = "7.5.3"
         val CirceVersion = "0.13.0"
-        val PureConfigVersion = "0.14.0"
+        val PureConfigVersion = "0.14.1"
         val ScalaTestVersion = "3.2.3"
         val ScalaMockVersion = "5.1.0"
         val FreePortFinder = "1.1.1"
