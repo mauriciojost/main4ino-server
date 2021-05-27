@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
 
     object Versions {
-        val Http4sVersion = "0.21.20"
+        val Http4sVersion = "0.21.24"
         val Specs2Version = "4.11.0"
         val DoobieVersion = "0.12.1"
         val H2Version = "1.4.200"
