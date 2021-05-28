@@ -1,4 +1,4 @@
-val ScalaVersion = "2.12.10"
+val ScalaVersion = "2.12.14"
 
 addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full)
 
