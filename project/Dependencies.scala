@@ -15,7 +15,7 @@ object Dependencies {
         val ScalaMockVersion = "5.1.0"
         val FreePortFinder = "1.1.1"
         val log4CatsSlf4jVersion = "1.3.1"
-        val slf4jLog4j12Version = "1.7.30"
+        val slf4jLog4j12Version = "1.7.32"
         val CryptobitsVersion = "1.3"
         val GfcSemverVersion = "0.0.5"
         val EnumeratumVersion = "1.7.0"
