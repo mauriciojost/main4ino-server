@@ -11,7 +11,7 @@ object Dependencies {
         val FlywayVersion = "7.8.2"
         val CirceVersion = "0.14.1"
         val PureConfigVersion = "0.14.0"
-        val ScalaTestVersion = "3.2.8"
+        val ScalaTestVersion = "3.2.10"
         val ScalaMockVersion = "5.1.0"
         val FreePortFinder = "1.1.1"
         val log4CatsSlf4jVersion = "1.3.1"
