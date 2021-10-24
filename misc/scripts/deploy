@@ -88,7 +88,7 @@ function launch_instance() {
 
   executable=$(find $tmp_dir -name main4ino-server -type f)
 
-  /usr/sbin/daemonize -E BUILD_ID=dontKillMe \
+  daemonize -E BUILD_ID=dontKillMe \
     -o "$stdout_logs" \
     -e "$stderr_logs" \
     -p "$pid_file" \
