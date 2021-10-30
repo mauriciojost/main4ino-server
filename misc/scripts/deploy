@@ -67,7 +67,7 @@ function latest_package() {
 }
 
 function launch_instance() {
-  local port="$1"
+  local target_port="$1"
   local old_pids="$2"
   local stdout_logs="$3"
   local stderr_logs="$4"
@@ -87,16 +87,45 @@ function launch_instance() {
   fi
 
   executable=$(find $tmp_dir -name main4ino-server -type f)
+  running_already=$(ps -ef  | grep org.mauritania.main4ino.Server | grep "$executable")
+  if [ -n "$running_already" ]
+  then
+    echo "Already running with the latest version:"
+    echo "==>> $running_already"
+    exit 0
+  else
+    echo "Not running with latest version, launching..."
+    daemonize -E BUILD_ID=dontKillMe \
+      -o "$stdout_logs" \
+      -e "$stderr_logs" \
+      -p "$pid_file" \
+      -l "$lock_file" \
+      /usr/bin/nice -n 25 /bin/bash "$executable" \
+      -Dserver.port="$target_port" \
+      -Dconfig-dir="$config_dir" \
+      -Dlog4j.configuration="file://$config_dir/custom-log4j.properties" &
 
-  daemonize -E BUILD_ID=dontKillMe \
-    -o "$stdout_logs" \
-    -e "$stderr_logs" \
-    -p "$pid_file" \
-    -l "$lock_file" \
-    /usr/bin/nice -n 25 /bin/bash "$executable" \
-    -Dserver.port="$port" \
-    -Dconfig-dir="$config_dir" \
-    -Dlog4j.configuration="file://$config_dir/custom-log4j.properties" &
+      sleep 90 # let it get stable
+
+      print_context
+
+      if [ "$(is_port_free $target_port)" == "false" ]
+      then
+        echo "OK. The new process is running (port $target_port taken)."
+        killem "$old_pids"
+        exit 0
+      else
+        echo "KO. The new process is not running (port $target_port not taken)."
+        set +e
+        killem "$(cat "$pid_file")"
+        echo "STDOUT:"
+        cat "$tmp_stdout_logs"
+        echo "STDERR:"
+        cat "$tmp_stderr_logs"
+        set -e
+        exit 1
+      fi
+  fi
 
 }
 
@@ -117,24 +146,4 @@ lock_file="$config_dir/app.port.$target_port.app.lock"
 
 launch_instance "$target_port" "$old_pids" "$tmp_stdout_logs" "$tmp_stderr_logs" "$pid_file" "$lock_file" "$zip_path"
 
-sleep 90
-
-print_context
-
-if [ "$(is_port_free $target_port)" == "false" ]
-then
-  echo "OK. The process is running (port $target_port taken)."
-  killem "$old_pids"
-  exit 0
-else
-  echo "KO. The process is not running (port $target_port not taken)."
-  set +e
-  killem "$(cat "$pid_file")"
-  echo "STDOUT:"
-  cat "$tmp_stdout_logs"
-  echo "STDERR:"
-  cat "$tmp_stderr_logs"
-  set -e
-  exit 1
-fi
 
