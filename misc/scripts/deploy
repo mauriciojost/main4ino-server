@@ -10,11 +10,13 @@ ports_list=${2:-"8090 8091 8092"}
 packages_dir=${3:-"/var/lib/main4ino/server"}
 
 function print_context() {
+  set +x
   echo "whoami $(whoami)"
   echo "date: $(date)"
   echo "hostname: $(hostname)"
   echo "jps -l: $(jps -l)"
   echo "main4ino server: $(jps -l | grep org.mauritania.main4ino.Server)"
+  set -x
 }
 
 function is_port_free() {
@@ -81,13 +83,15 @@ function launch_instance() {
   then
     mkdir -p "$tmp_dir"
     echo $zip_path | xargs -I% unzip % -d $tmp_dir
-    echo "Temporary unzipped directory (created): $tmp_dir"
+    echo "Temporary unzipped directory (just created): $tmp_dir"
   else
     echo "Temporary unzipped directory (already existed): $tmp_dir"
   fi
 
   executable=$(find $tmp_dir -name main4ino-server -type f)
-  running_already=$(ps -ef  | grep org.mauritania.main4ino.Server | grep "$executable")
+  set +e
+  running_already=$(ps -ef  | grep org.mauritania.main4ino.Server | grep "$tmp_dir")
+  set -e
   if [ -n "$running_already" ]
   then
     echo "Already running with the latest version:"
@@ -95,7 +99,7 @@ function launch_instance() {
     exit 0
   else
     echo "Not running with latest version, launching..."
-    daemonize -E BUILD_ID=dontKillMe \
+    daemonize \
       -o "$stdout_logs" \
       -e "$stderr_logs" \
       -p "$pid_file" \
@@ -105,26 +109,26 @@ function launch_instance() {
       -Dconfig-dir="$config_dir" \
       -Dlog4j.configuration="file://$config_dir/custom-log4j.properties" &
 
-      sleep 90 # let it get stable
+    sleep 90 # let it get stable
 
-      print_context
+    print_context
 
-      if [ "$(is_port_free $target_port)" == "false" ]
-      then
-        echo "OK. The new process is running (port $target_port taken)."
-        killem "$old_pids"
-        exit 0
-      else
-        echo "KO. The new process is not running (port $target_port not taken)."
-        set +e
-        killem "$(cat "$pid_file")"
-        echo "STDOUT:"
-        cat "$tmp_stdout_logs"
-        echo "STDERR:"
-        cat "$tmp_stderr_logs"
-        set -e
-        exit 1
-      fi
+    if [ "$(is_port_free $target_port)" == "false" ]
+    then
+      echo "OK. The new process is running (port $target_port taken)."
+      killem "$old_pids"
+      exit 0
+    else
+      echo "KO. The new process is not running (port $target_port not taken)."
+      set +e
+      killem "$(cat "$pid_file")"
+      echo "STDOUT:"
+      cat "$tmp_stdout_logs"
+      echo "STDERR:"
+      cat "$tmp_stderr_logs"
+      set -e
+      exit 1
+    fi
   fi
 
 }
@@ -145,5 +149,4 @@ pid_file="$config_dir/app.port.$target_port.app.pid"
 lock_file="$config_dir/app.port.$target_port.app.lock"
 
 launch_instance "$target_port" "$old_pids" "$tmp_stdout_logs" "$tmp_stderr_logs" "$pid_file" "$lock_file" "$zip_path"
-
 
