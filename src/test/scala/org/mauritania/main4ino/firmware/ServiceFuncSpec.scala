@@ -61,7 +61,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
     r.bodyAsText.compile.toList.unsafeRunSync() shouldBe List(Set(Coord("botino", "1.0.0", "esp8266", "firmware-1.0.0.esp8266.bin")).asJson.noSpaces)
   }
 
-  it should "tell that current version is up to date" in {
+  it should "tell that current version is up to date (same as latest)" in {
     implicit val s = defaultServiceWithDirectory(Dataset1)
     val rs = get(
       path = "/firmwares/botino/esp8266/content?version=1.0.0",
@@ -69,6 +69,16 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
     )
     rs.status shouldBe Status.NotModified // already up to date
   }
+
+  it should "tell that current version is up to date (greater than latest, DEV scenario)" in {
+    implicit val s = defaultServiceWithDirectory(Dataset1)
+    val rs = get(
+      path = "/firmwares/botino/esp8266/content?version=1.0.0",
+      headers = Headers.of(Header(Service.Esp8266VersionHeader, "1.0.1"))
+    )
+    rs.status shouldBe Status.NotModified // already up to date
+  }
+
 
   it should "return firmware meatadata" in {
     implicit val s = defaultServiceWithDirectory(Dataset1)

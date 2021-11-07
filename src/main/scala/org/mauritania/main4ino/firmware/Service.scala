@@ -51,7 +51,7 @@ class Service[F[_]: Sync: Effect: ContextShift](store: Store[F], ec: ExecutionCo
         _ <- logger.debug(s"Requested firmware: wish=$wish / device=$currVers / headers=${a.headers} / filetype=$fileType")
         coordinate <- store.getFirmware(wish)
         response <- coordinate match {
-          case Right(coord) if (currVers.exists(_ == coord.version)) => // same version as current
+          case Right(coord) if (currVers.exists(_ >= coord.version)) => // current version is greater or equal than resolved
               logger.debug(s"Firmware already up-to-date: $currVers=${coord.version}...").flatMap(_ => NotModified())
           case Right(coord) => // different version than current, serving...
             for {
