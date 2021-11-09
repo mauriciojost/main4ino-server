@@ -8,6 +8,7 @@ root_dir=$(readlink -e `dirname $0`/../..)
 config_dir=${1:-$root_dir/../config/}
 ports_list=${2:-"8090 8091 8092"}
 packages_dir=${3:-"/var/lib/main4ino/server"}
+package_expr=${4:-LATEST}
 
 function print_context() {
   set +x
@@ -64,8 +65,14 @@ function killem() {
   fi
 }
 
-function latest_package() {
-  find "$packages_dir" -type f -name '*.zip' -printf "%T@ %p\n" | sort -n | tail -1 | awk '{print $2}'
+function package_version_zip() {
+  local expr="$1"
+  if [ $expr == "LATEST" ]
+  then
+    find "$packages_dir" -type f -name '*.zip' -printf "%T@ %p\n" | sort -n | tail -1 | awk '{print $2}'
+  else
+    find "$packages_dir" -type f -name '*.zip' | grep "$expr"
+  fi
 }
 
 function launch_instance() {
@@ -139,7 +146,7 @@ print_context
 
 old_pids=$(jps -l | grep org.mauritania.main4ino.Server | cut -d' ' -f1)
 
-zip_path=$(latest_package)
+zip_path=$(package_version_zip "$package_expr")
 
 target_port=$(find_free_port "$ports_list")
 
