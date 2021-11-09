@@ -21,6 +21,14 @@ object Partitioner {
     def partitions(f: EpochSecTimestamp, t: EpochSecTimestamp): List[Partition] = (f to t).toList.map(partition)
   }
 
+  case object MinutePartitioner extends Partitioner {
+    private final val SecsInMinute = 60
+    private val format = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm")
+    def partition(r: EpochSecTimestamp): Partition = Instant.ofEpochSecond(r).atZone(ZoneOffset.UTC).format(format)
+    def partitions(f: EpochSecTimestamp, t: EpochSecTimestamp): List[Partition] = rangeComplete(f, t)(SecsInMinute).map(partition).toList.sorted
+  }
+
+
   case object HourPartitioner extends Partitioner {
     private final val SecsInHour = 60 * 60
     private val format = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH")
