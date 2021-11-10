@@ -6,7 +6,7 @@ enablePlugins(JavaServerAppPackaging, UniversalDeployPlugin)
 
 maintainer := "Mauricio Jost <mauriciojostx@gmail.com>"
 packageSummary := "Properties management for main4ino-enabled embedded systems."
-mainClass / Compile := Some("org.mauritania.main4ino.Server")
+mainClass in Compile := Some("org.mauritania.main4ino.Server")
 
 lazy val root = (project in file("."))
   .enablePlugins(BuildInfoPlugin)
