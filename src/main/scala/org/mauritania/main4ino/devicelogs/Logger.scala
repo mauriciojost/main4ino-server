@@ -3,7 +3,7 @@ package org.mauritania.main4ino.devicelogs
 import cats.effect.{Blocker, Concurrent, ContextShift, Sync, Timer}
 import cats.implicits._
 import fs2.io.Watcher
-import fs2.io.Watcher.Event.Created
+import fs2.io.Watcher.Event.{Created, pathOf}
 import fs2.{Stream, io => fs2io, text => fs2text}
 import org.mauritania.main4ino.api.Attempt
 import org.mauritania.main4ino.devicelogs.Partitioner.Partition
@@ -124,14 +124,10 @@ class Logger[F[_] : Sync : Concurrent : ContextShift : Timer](config: Config, ti
   ): F[Stream[F, String]] = {
     val partition = partitioner.partition(f)
     val firstPath = pathFromDevice(device, partition)
-    val stream: F[Stream[F, String]] = for {
-      readable <- isReadableFile(firstPath.toFile)
-      located: Stream[F, String] = readable match {
-        case true => tailDeviceFiles(device, firstPath, config.chunkSize.value)
-        case false => Stream.empty
-      }
+    val stream: Stream[F, String] = for {
+      located <- tailDeviceFiles(device, firstPath, config.chunkSize.value)
     } yield located
-    stream
+    Sync[F].delay(stream)
   }
 
   private[devicelogs] def readFile(
@@ -143,8 +139,9 @@ class Logger[F[_] : Sync : Concurrent : ContextShift : Timer](config: Config, ti
     bytesLimited.through(fs2text.utf8Decode).through(fs2text.lines)
   }
 
-  private[devicelogs] def belongsToDevice(d: DeviceName, p: JavaPath): Boolean =
-    p.getFileName.startsWith(d + ".")
+  private[devicelogs] def belongsToDevice(d: DeviceName, p: JavaPath): Boolean = {
+    p.getFileName.toString.startsWith(s"${d}.")
+  }
 
   private[devicelogs] def tailFile(f: JavaPath, chunkSize: Int): Stream[F, String] =
     fs2io.file.tail[F](f, blocker, chunkSize)
@@ -158,9 +155,14 @@ class Logger[F[_] : Sync : Concurrent : ContextShift : Timer](config: Config, ti
   ): Stream[F, String] = {
     val newFiles: Stream[F, JavaPath] =
       fs2io.file.watch(blocker, config.logsBasePath, Seq(Watcher.EventType.Created))
-        .map { case Created(p, _) if belongsToDevice(dev, p) => p }
+        .map {
+          case Watcher.Event.Created(p, _) if belongsToDevice(dev, p) => p
+        }
+        
     val parJoin: Stream[F, String] =
-      (Stream(firstFile) ++ newFiles)
+      (newFiles ++ Stream(firstFile))
+        .evalFilter(p => Sync[F].delay(p.toFile.exists()))
+        .changes(cats.Eq.by[JavaPath, String](_.getFileName.toString))
         .map(tailFile(_, chunkSize))
         .parJoin(config.maxOpenFilesInStreaming.value)
     parJoin

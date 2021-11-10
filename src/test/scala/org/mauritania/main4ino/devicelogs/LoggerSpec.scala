@@ -68,31 +68,35 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelT
     }
   }
 
-  it should "read / tail logs (live streaming, single file)" in {
+  it should "read / tail logs (live streaming, multiple files)" in {
 
     implicit val cs = IO.contextShift(Helper.testExecutionContext)
     implicit val c = IO.ioConcurrentEffect(cs)
 		implicit val t = IO.timer(Helper.testExecutionContext)
+    val device = "device"
     withTmpDir { tmp =>
       val logger = buildLogger(tmp = tmp, t = 0)
-      val logFile = logger.pathFromDevice("device", logger.partitioner.partition(0L))
-      logFile.toFile.createNewFile()
-      val stream = Stream("hey\nyou\nstream\n")
-      def modifyLater(file: Path): Stream[IO, Unit] = {
-        val strings = stream.covary[IO].metered(250.millis)
+      val logFile0 = logger.pathFromDevice(device, logger.partitioner.partition(0L))
+      val logFile1 = logger.pathFromDevice(device, logger.partitioner.partition(1L))
+      logFile0.toFile.createNewFile() // file exists by then, the other one will be created
+      def modifyLater(file: Path, s: Stream[fs2.Pure, String], delaySec: Int): Stream[IO, Unit] = {
+        val strings = s.covary[IO].metered(250.millis)
         val bytes = strings.through(fs2.text.utf8Encode)
-        val sink = bytes.through(fs2.io.file.writeAll[IO](file, logger.blocker, StandardOpenOption.APPEND :: Nil))
-        sink
+        val sink = bytes.through(fs2.io.file.writeAll[IO](file, logger.blocker, StandardOpenOption.APPEND :: StandardOpenOption.CREATE :: Nil))
+        sink.delayBy(delaySec.seconds)
       }
 
+      val stream1 = Stream("hey\nyou\nstream\n")
+      val stream2 = Stream("after\n")
       val readAndWrite = for {
-        r <- logger.tailLogs("device", 0L)
-        rw = r.concurrently(modifyLater(logFile)) // tail and concurrently append
-        read <- rw.take(3).compile.toList // retrieve 3 elements, just as appended to the source
-        size = read.size
-      } yield size
+        r <- logger.tailLogs(device, 0L)
+        rw = r.concurrently(modifyLater(logFile0, stream1, 3)) // tail and concurrently append
+        rww = rw.concurrently(modifyLater(logFile1, stream2, 3)) // tail and concurrently append
+        read <- rww.interruptAfter(10.seconds).compile.toList // wait for a while before checking
+      } yield read
 
-      readAndWrite.unsafeRunSync() shouldBe 3
+      val read = readAndWrite.unsafeRunSync().toSet
+      read shouldBe Set("hey", "you", "stream", "after")
 
     }
   }
