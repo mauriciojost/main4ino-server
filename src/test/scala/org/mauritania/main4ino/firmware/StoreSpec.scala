@@ -73,7 +73,7 @@ class StoreSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelTe
     store.getFirmware(Wish("botino", "1.0.0_performance", "esp8266")).unsafeRunSync().right.value.filename should be("firmware-1.0.0_performance.esp8266.bin")
   }
 
-  it should "have good orderings" in {
+  it should "have good orderings among multiple majors / minors" in {
     val v100 = List(
       "1.0.0-d5199da",
     )
@@ -106,6 +106,17 @@ class StoreSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelTe
     vmixFC.max(Store.ByCoordsVer).version should be("1.0.0-d5199da")
     vmixFC.min(Store.ByCoordsVer).version should be("0.12.0-576ae43")
 
+  }
+
+  it should "have good orderings with same majors / minors" in {
+    val v10 = List(
+      "1.0.0-555",
+      "1.0.1",
+      "1.0.1-444"
+    )
+    val v10FC = v10.map(v => Coord("", v, "", s"firmware-$v..bin"))
+    v10FC.max(Store.ByCoordsVer).version should be("1.0.1")
+    v10FC.min(Store.ByCoordsVer).version should be("1.0.0-555")
   }
 
 
