@@ -24,6 +24,7 @@ lazy val root = (project in file("."))
       "-Ypartial-unification",
       "-language:higherKinds"
     ),
+    javaOptions += "-Xmx2G",
     libraryDependencies ++= Dependencies.Dependencies,
     parallelExecution in Test := true,
 
