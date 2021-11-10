@@ -155,14 +155,14 @@ class Logger[F[_] : Sync : Concurrent : ContextShift : Timer](config: Config, ti
   ): Stream[F, String] = {
     val newFiles: Stream[F, JavaPath] =
       fs2io.file.watch(blocker, config.logsBasePath, Seq(Watcher.EventType.Created))
-        .map {
+        .collect {
           case Watcher.Event.Created(p, _) if belongsToDevice(dev, p) => p
         }
         
     val parJoin: Stream[F, String] =
-      (newFiles ++ Stream(firstFile))
-        .evalFilter(p => Sync[F].delay(p.toFile.exists()))
-        .changes(cats.Eq.by[JavaPath, String](_.getFileName.toString))
+      (Stream(firstFile) ++ newFiles )
+        //.evalFilter(p => Sync[F].delay(p.toFile.exists()))
+        //.changes(cats.Eq.by[JavaPath, String](_.getFileName.toString))
         .map(tailFile(_, chunkSize))
         .parJoin(config.maxOpenFilesInStreaming.value)
     parJoin
