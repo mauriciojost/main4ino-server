@@ -161,8 +161,7 @@ class Logger[F[_] : Sync : Concurrent : ContextShift : Timer](config: Config, ti
         
     val parJoin: Stream[F, String] =
       (Stream(firstFile) ++ newFiles )
-        //.evalFilter(p => Sync[F].delay(p.toFile.exists()))
-        //.changes(cats.Eq.by[JavaPath, String](_.getFileName.toString))
+        .evalFilter(p => Sync[F].delay(p.toFile.exists()))
         .map(tailFile(_, chunkSize))
         .parJoin(config.maxOpenFilesInStreaming.value)
     parJoin
