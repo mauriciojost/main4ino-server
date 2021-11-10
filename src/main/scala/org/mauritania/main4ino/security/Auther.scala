@@ -5,7 +5,6 @@ import java.time.Clock
 import cats.effect.Sync
 import org.http4s.{AuthedRequest, BasicCredentials, Credentials, Headers, Method, Request, Uri}
 import org.http4s.Uri.Path
-import org.http4s.util.CaseInsensitiveString
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, ErrorMsg, UserSession}
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.http4s.headers.Authorization
@@ -20,7 +19,6 @@ import cats.implicits._
 import cats.effect.{IO, Sync}
 import org.http4s.{BasicCredentials, Headers, Request, Uri}
 import org.http4s.Uri.Path
-import org.http4s.util.CaseInsensitiveString
 import org.mauritania.main4ino.security.Auther.{AccessAttempt, UserSession}
 import org.http4s.headers.Authorization
 import org.mauritania.main4ino.security.Config.UsersBy
@@ -33,6 +31,7 @@ import tsec.passwordhashers.jca._
 
 import scala.util.Try
 import scala.util.matching.Regex
+import org.typelevel.ci.CIString
 
 /**
   * Authorization and authentication
@@ -95,7 +94,7 @@ object Auther {
   type AccessAttempt = Either[ErrorMsg, User]
   type AuthenticationAttempt = Either[ErrorMsg, User]
 
-  private final lazy val HeaderSession = CaseInsensitiveString("session")
+  private final lazy val HeaderSession = CIString("session")
   private final lazy val UriTokenRegex = ("^(.*?)/token/(.*?)/(.*)$").r
   private final lazy val UriSessionRegex = ("^(.*?)/session/(.*?)/(.*)$").r
   private final lazy val GroupPre = 1
