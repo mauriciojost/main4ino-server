@@ -10,10 +10,12 @@ case class Config(
   maxLengthLogs: PosInt = Config.DefaultMaxLengthLogs,
   partitioner: Partitioner = EpochSecPartitioner,
   bypassRecordParsingIfMoreThanPartitions: Int = 1,
-  chunkSize: PosInt = Config.DefaultChunkSize
+  chunkSize: PosInt = Config.DefaultChunkSize,
+  maxOpenFilesInStreaming: PosInt = Config.DefaultConcurrentlyOpenedFilesInStreaming
 )
 
 object Config {
   final lazy val DefaultMaxLengthLogs = PosInt(524288) // 512 KB
   final lazy val DefaultChunkSize = PosInt(10240) // 10 KB
+  final lazy val DefaultConcurrentlyOpenedFilesInStreaming = PosInt(60)
 }

@@ -1,19 +1,19 @@
 package org.mauritania.main4ino.devicelogs
 
-import java.io.File
-import java.nio.file.{StandardOpenOption, Path => JavaPath}
-
-import cats.effect.{Blocker, ContextShift, Sync, Timer}
+import cats.effect.{Blocker, Concurrent, ContextShift, Sync, Timer}
 import cats.implicits._
+import fs2.io.Watcher
+import fs2.io.Watcher.Event.Created
 import fs2.{Stream, io => fs2io, text => fs2text}
 import org.mauritania.main4ino.api.Attempt
+import org.mauritania.main4ino.devicelogs.Partitioner.Partition
 import org.mauritania.main4ino.helpers.Time
 import org.mauritania.main4ino.models.{DeviceName, EpochSecTimestamp}
-import cats.implicits._
-import org.typelevel.log4cats.{Logger => Log4CatsLogger}
-import org.mauritania.main4ino.devicelogs.Partitioner.Partition
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.{Logger => Log4CatsLogger}
 
+import java.io.File
+import java.nio.file.{StandardOpenOption, Path => JavaPath}
 import scala.concurrent.ExecutionContext
 
 /**
@@ -23,9 +23,9 @@ import scala.concurrent.ExecutionContext
   *
   * @tparam F
   */
-class Logger[F[_] : Sync : ContextShift: Timer](config: Config, time: Time[F], e: ExecutionContext) {
+class Logger[F[_] : Sync : Concurrent : ContextShift : Timer](config: Config, time: Time[F], e: ExecutionContext) {
 
-  final private[devicelogs] lazy val partitioner : Partitioner.Partitioner = config.partitioner
+  final private[devicelogs] lazy val partitioner: Partitioner.Partitioner = config.partitioner
   final private[devicelogs] lazy val ec: ExecutionContext = e
   final private[devicelogs] lazy val blocker: Blocker = Blocker.liftExecutionContext(ec)
   final private[devicelogs] lazy val CreateAndAppend = Seq(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
@@ -123,11 +123,11 @@ class Logger[F[_] : Sync : ContextShift: Timer](config: Config, time: Time[F], e
     f: EpochSecTimestamp,
   ): F[Stream[F, String]] = {
     val partition = partitioner.partition(f)
-    val path = pathFromDevice(device, partition)
+    val firstPath = pathFromDevice(device, partition)
     val stream: F[Stream[F, String]] = for {
-      readable <- isReadableFile(path.toFile)
+      readable <- isReadableFile(firstPath.toFile)
       located: Stream[F, String] = readable match {
-        case true => tailFile(path, config.chunkSize.value)
+        case true => tailDeviceFiles(device, firstPath, config.chunkSize.value)
         case false => Stream.empty
       }
     } yield located
@@ -143,12 +143,26 @@ class Logger[F[_] : Sync : ContextShift: Timer](config: Config, time: Time[F], e
     bytesLimited.through(fs2text.utf8Decode).through(fs2text.lines)
   }
 
-  private[devicelogs] def tailFile(
-    path: JavaPath,
+  private[devicelogs] def belongsToDevice(d: DeviceName, p: JavaPath): Boolean =
+    p.getFileName.startsWith(d + ".")
+
+  private[devicelogs] def tailFile(f: JavaPath, chunkSize: Int): Stream[F, String] =
+    fs2io.file.tail[F](f, blocker, chunkSize)
+      .through(fs2text.utf8Decode)
+      .through(fs2text.lines)
+
+  private[devicelogs] def tailDeviceFiles(
+    dev: DeviceName,
+    firstFile: JavaPath,
     chunkSize: Int
   ): Stream[F, String] = {
-    val bytes = fs2io.file.tail[F](path, blocker, chunkSize)
-    bytes.through(fs2text.utf8Decode).through(fs2text.lines)
+    val newFiles: Stream[F, JavaPath] =
+      fs2io.file.watch(blocker, config.logsBasePath, Seq(Watcher.EventType.Created))
+        .map { case Created(p, _) if belongsToDevice(dev, p) => p }
+    val parJoin: Stream[F, String] =
+      (Stream(firstFile) ++ newFiles)
+        .map(tailFile(_, chunkSize))
+        .parJoin(config.maxOpenFilesInStreaming.value)
+    parJoin
   }
-
 }

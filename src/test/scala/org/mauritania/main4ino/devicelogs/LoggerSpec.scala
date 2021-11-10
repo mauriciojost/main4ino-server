@@ -2,8 +2,7 @@ package org.mauritania.main4ino.devicelogs
 
 import java.nio.file.{NoSuchFileException, Path, Paths, StandardOpenOption}
 import java.time.{Instant, LocalDateTime, OffsetDateTime, ZoneId, ZoneOffset, ZonedDateTime}
-
-import cats.effect.{Blocker, IO, Sync}
+import cats.effect.{Blocker, Concurrent, IO, Sync}
 import eu.timepit.refined.types.numeric.{NonNegInt, PosInt}
 import fs2.Stream
 import org.mauritania.main4ino.{Helper, TmpDirCtx}
@@ -69,7 +68,7 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelT
     }
   }
 
-  it should "read / tail logs (live streaming)" in {
+  it should "read / tail logs (live streaming, single file)" in {
 
     implicit val cs = IO.contextShift(Helper.testExecutionContext)
     implicit val c = IO.ioConcurrentEffect(cs)
@@ -159,7 +158,8 @@ class LoggerSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelT
     bypass: Int = 1
   ): Logger[IO] = {
     val ec = ExecutionContext.global
-    val logger = new Logger[IO](Config(tmp, mxLen, part, bypass), new FixedTime(t), ec)(Sync[IO], IO.contextShift(ec), IO.timer(ec))
+    implicit val cs = IO.contextShift(ec)
+    val logger = new Logger[IO](Config(tmp, mxLen, part, bypass), new FixedTime(t), ec)(Sync[IO], Concurrent[IO], cs, IO.timer(ec))
     logger
   }
 
