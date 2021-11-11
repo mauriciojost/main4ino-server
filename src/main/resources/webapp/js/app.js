@@ -678,6 +678,7 @@ webPortalApp.controller(
                     if (event.data) {
                         console.log('Device ' + $stateParams.device + ': ', event.data);
                         $scope.logs = $scope.logs + formatLogLine(event.data);
+                        $scope.$apply();
                     }
                 });
             } else {
