@@ -120,6 +120,7 @@ webPortalApp.controller(
         function($scope, $http, $log, $stateParams, $state, $rootScope) {
 
             $rootScope.logged = null;
+            $rootScope.activeState = 'login';
             $rootScope.devices = [];
             $scope.device = $stateParams.device;
             $rootScope.aliases = {};
@@ -231,33 +232,38 @@ webPortalApp.controller(
             }
 
             $scope.removeCredentials = function() {
-              $log.log("Removed credentials");
-              eraseCookie("session");
-              $rootScope.logged = null;
+                $log.log("Removed credentials");
+                eraseCookie("session");
+                $rootScope.logged = null;
             }
 
             $scope.goLogin = function() {
-              $log.log("Going to login");
-              $state.go("login", {session: $scope.session, device: $stateParams.device});
+                $log.log("Going to login");
+                $rootScope.activeState = 'login';
+                $state.go("login", {session: $scope.session, device: $stateParams.device});
             }
 
             $scope.goHistory = function() {
-              $log.log("Going to history");
-              $state.go("history", {session: $scope.session, device: $stateParams.device});
+                $log.log("Going to history");
+                $rootScope.activeState = 'history';
+                $state.go("history", {session: $scope.session, device: $stateParams.device});
             }
 
             $scope.goControl = function() {
-              $log.log("Going to control");
-              $state.go("control", {session: $scope.session, device: $stateParams.device});
+                $log.log("Going to control");
+                $rootScope.activeState = 'control';
+                $state.go("control", {session: $scope.session, device: $stateParams.device});
             }
 
             $scope.goLog = function() {
                 $log.log("Going to log");
+                $rootScope.activeState = 'log';
                 $state.go("log", {session: $scope.session, device: $stateParams.device});
             }
 
             $scope.goAdministrate = function() {
                 $log.log("Going to administrate");
+                $rootScope.activeState = 'administrate';
                 $state.go("administrate", {session: $scope.session, device: $stateParams.device});
             }
 
@@ -643,13 +649,8 @@ webPortalApp.controller(
             return result;
         }
 
-        $scope.readLogsMode = function() {
-            $scope.logsMode = getCookie("logsMode") || 'normal';
-        }
-
         $scope.setLogsMode = function() {
             $scope.logs = "";
-            setCookie("logsMode", $scope.logsMode, 100);
             if ($scope.socket) {
                 $scope.socket.close();
             }
@@ -662,7 +663,8 @@ webPortalApp.controller(
 
         $scope.readRangeAndFilter();
         $scope.updateRange();
-        $scope.readLogsMode();
+
+        $scope.logsMode = 'normal'; // default
 
         $scope.queriedDevice = "...";
 
@@ -676,8 +678,13 @@ webPortalApp.controller(
                 $scope.logs = logsFromLines('0 Listening...');
                 $scope.socket.addEventListener('message', function (event) {
                     if (event.data) {
+                        if ($scope.logsMode != 'live' || ($rootScope.activeState && $rootScope.activeState != 'log')) {
+                            console.log('Closing live logs...' + $rootScope.activeState + ' ' + $scope.logsMode);
+                            $scope.socket.close();
+                        }
                         console.log('Device ' + $stateParams.device + ': ', event.data);
                         $scope.logs = $scope.logs + formatLogLine(event.data);
+                        window.scroll({top: Number.MAX_SAFE_INTEGER, behavior: 'smooth'});
                         $scope.$apply();
                     }
                 });
