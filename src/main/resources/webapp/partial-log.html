@@ -47,7 +47,32 @@
                 <br/>
                 <div>
                     <pre>
-                        {{applyFilter(logs, filter)}}
+                        <code class="go  hljs">
+import "fmt"
+func main() {
+    fmt.Println("hello world")
+}
+                        </code>
+                    </pre>
+                    <pre>
+                        <code class="c hljs">
+                            int main(void) {
+                              return 3;
+                            }
+                        </code>
+                    </pre>
+
+                    <pre>
+                        <code>
+                            int main(void) {
+                              return 3;
+                            }
+                        </code>
+                    </pre>
+                    <pre>
+                        <code class="go hljs">
+                            {{applyFilter(logs, filter)}}
+                        </code>
                     </pre>
                 </div>
             </container>

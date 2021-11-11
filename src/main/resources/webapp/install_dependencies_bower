@@ -7,6 +7,7 @@ bower install 'angular-sanitize#1.6.1'
 bower install 'angular-ui-router#1.0.23'
 bower install 'bootstrap#3.3.7'
 bower install 'bootstrap-dialog#1.35.4'
+bower install 'highlight#11.3.1'
 #bower install 'ng-websocket#0.2.1'
 #bower install 'angular-websocket#2.0.0'
 

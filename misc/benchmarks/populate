@@ -24,7 +24,7 @@ curl -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/rep
 
 curl -X POST "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/targets/actors/$ACTOR1" -d "$BODY_TARGET"
 
-curl -X PUT "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/logs" -d "log"
+curl -X PUT "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/logs" -d "log <div>heyyou</div>"
 curl -X PUT "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/logs" -d "here"
 curl -X PUT "http://$USER_PASSWORD@$SERVER_ADDRESS/api/v1/devices/$DEV_NAME/logs" -d "you on $(date)"
 

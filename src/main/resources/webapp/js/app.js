@@ -4,7 +4,10 @@ var SensitivePropPrefix = "_";
 var AdvancedPropPrefix = "+";
 var UnknownAlias = '';
 
-var webPortalApp = angular.module("webPortalApp", ["ui.router", "ngRoute", "ngSanitize"]);
+var webPortalApp = angular.module("webPortalApp", ["hljs", "ui.router", "ngRoute", "ngSanitize"]);
+
+hljs.highlightAll();
+//hljs.initHighlightingOnLoad();
 
 function setCookie(name,value,days) {
     var expires = "";
@@ -39,7 +42,8 @@ function formatLogLine(line) {
     var time = new Date(parseInt(timeStr) * 1000);
     result = '\n' + time.toISOString() + '  |  ' + contentStr;
   }
-  return result;
+  //return result;
+  return line;
 }
 function logsFromLines(linesStr) {
   var lines = linesStr.split("\n");
@@ -47,7 +51,8 @@ function logsFromLines(linesStr) {
   for (const line of lines) {
     logs = logs + formatLogLine(line);
   }
-  return logs;
+  //return logs;
+  return linesStr;
 }
 function asDate(ms) {
   $log.log("Date used: " + ms);
