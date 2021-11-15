@@ -7,5 +7,5 @@ scalaPipeline(
   buildsToKeep: "10",
   sbtOpts: "-Dsbt.rootdir=true",
   email: 'mauriciojostx@gmail.com',
-  package: '/var/lib/main4ino/server'
+  package: '/var/lib/jenkins-exposed/artifacts/x86_64/main4ino/'
 )
