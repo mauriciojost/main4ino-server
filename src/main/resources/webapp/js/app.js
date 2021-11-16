@@ -418,6 +418,7 @@ webPortalApp.controller(
                         for(var i in dt) {
                             var o = dt[i];
                             var legend = {
+                                name: o["name"],
                                 patterns: o["patterns"],
                                 descriptions: o["descriptions"],
                                 examples: o["examples"]
@@ -428,6 +429,7 @@ webPortalApp.controller(
 
                         $scope.propLegend = function(actor, propName) {
                             var acum = {
+                                name: '',
                                 descriptions: [],
                                 examples: []
                             };
@@ -435,6 +437,7 @@ webPortalApp.controller(
                             for (x of $scope.propLegends) {
                                 for (p of x.patterns) {
                                     if ((actor + "." + propName).search(p) != -1) {
+                                        acum.name = x.name || '';
                                         acum.descriptions = acum.descriptions.concat(x.descriptions);
                                         acum.examples = acum.examples.concat(x.examples);
                                     };
@@ -453,16 +456,25 @@ webPortalApp.controller(
                           return l.examples;
                         }
 
+                        $scope.propName = function(actor, propName) {
+                          var l = $scope.propLegend(actor, propName);
+                          return l.name;
+                        }
+
 
                     },
                     function(r) {
                         $log.log("Failed descritpion: " + r.data);
                         $scope.propDescriptions = function(actor, propName) {
-                          return "?";
+                          return "";
                         }
 
                         $scope.propExamples = function(actor, propName) {
-                          return "?";
+                          return "";
+                        }
+
+                        $scope.propName = function(actor, propName) {
+                          return propName;
                         }
 
                     }

@@ -43,14 +43,15 @@
                                        class="table table-bordered myTable">
                                     <thead>
                                     <tr>
-                                        <th>{{ actorRep }} / Property</th>
-                                        <th>Target / Set</th>
+                                        <th>{{ actorRep }}'s properties</th>
+                                        <th>Value</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     <tr ng-if="isPropNameEligible(propNameRep, includeStatus, includeDebug, includeSensitive, includeAdvanced)" ng-repeat="(propNameRep, propValueRep) in propsRep track by $index">
                                         <td>
                                             <div>
+                                                <p ng-bind-html="propName(actorRep, propNameRep)"></p><
                                                 <p ng-bind-html="propDescriptions(actorRep, propNameRep)"></p>
                                                 <small><i>{{ propNameRep }}</i></small>
                                             </div>

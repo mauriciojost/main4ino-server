@@ -2,6 +2,7 @@
   "version" : "STRINGIFY_PROJ_VERSION",
   "json" : [
     {
+      "name" : "Name of the property",
       "patterns" : ["^.*.freq$"],
       "descriptions" : ["Frequency..."],
       "examples" : [
