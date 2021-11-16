@@ -44,20 +44,17 @@
                                     <thead>
                                     <tr>
                                         <th>{{ actorRep }} / Property</th>
-                                        <th>Description</th>
-                                        <th>Value</th>
                                         <th>Target / Set</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     <tr ng-if="isPropNameEligible(propNameRep, includeStatus, includeDebug, includeSensitive, includeAdvanced)" ng-repeat="(propNameRep, propValueRep) in propsRep track by $index">
-                                        <td>{{ propNameRep }}</td>
                                         <td>
                                             <div>
                                                 <p ng-bind-html="propDescriptions(actorRep, propNameRep)"></p>
+                                                <small><i>{{ propNameRep }}</i></small>
                                             </div>
                                         </td>
-                                        <td><div>{{ propValueRep }}</div></td>
                                         <td style="text-overflow:string;overflow-x:visible;overflow:visible;">
                                             <p class="text-warning">{{ targetsSummary[actorRep][propNameRep] }}</p>
                                             <form role="form">
