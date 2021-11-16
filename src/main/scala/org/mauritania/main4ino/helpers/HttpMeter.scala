@@ -19,7 +19,7 @@ object HttpMeter {
           x <- k(r)
           finish <- OptionT.liftF(now)
           diff = finish - start
-          msg = s"< ${r.method} ${r.uri} > ${x.status} took ${diff}ms"
+          msg = s"< ${r.method} ${r.uri} ${r.headers} > ${x.status} took ${diff}ms"
           _ <- OptionT.liftF(logger.debug(msg))
         } yield x
       }
