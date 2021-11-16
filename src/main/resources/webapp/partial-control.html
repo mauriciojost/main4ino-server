@@ -70,7 +70,7 @@
                                                         <ul id="color-dropdown-menu"
                                                             class="dropdown-menu dropdown-menu-right" role="menu">
                                                             <li class="input-lg" style="font-size:10px"><a ng-click="changeRequest(queriedDevice, actorRep, propNameRep, propValueRep)">{{propValueRep}} -> Current value</a></li>
-                                                            <li ng-repeat="x in propExamples(actorRep, propNameRep)"
+                                                            <li ng-repeat="x in propExamples(actorRep, propNameRep) track by $index"
                                                                 class="input-lg" style="font-size:10px"><a
                                                                     ng-click="changeRequest(queriedDevice, actorRep, propNameRep, valueFromHelp(x))">{{x}}</a>
                                                             </li>
