@@ -10,6 +10,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.EitherValues._
 import org.scalatest.ParallelTestExecution
 import org.scalatest.wordspec.AnyWordSpec
+import org.typelevel.ci._
 
 class AutherSpec extends AnyWordSpec with Matchers with ParallelTestExecution {
 
@@ -20,35 +21,35 @@ class AutherSpec extends AnyWordSpec with Matchers with ParallelTestExecution {
   "The authentication" should {
 
     "fail when no token is provided in the request" in {
-      val h = Headers.of()
+      val h = Headers()
       val u = Uri.unsafeFromString("http://main4ino.com/api/v1/")
       val t = Auther.userCredentialsFromRequest[IO](h, u)
       t shouldBe None
     }
 
     "retrieve token from header as Authorization: token <token>" in {
-      val headers = Headers.of(AuthorizationHeaderUser1)
+      val headers = Headers(AuthorizationHeaderUser1)
       val uri = Uri.unsafeFromString("http://main4ino.com/api/v1/device/...")
       val creds = Auther.userCredentialsFromRequest[IO](headers, uri)
       creds shouldBe Some((User1.id, User1Pass))
     }
 
     "retrieve token from uri as .../token/<token>/..." in {
-      val headers = Headers.of()
+      val headers = Headers()
       val uri = Uri.unsafeFromString(s"http://main4ino.com/api/v1/token/${User1Token}/device/...")
       val creds = Auther.userCredentialsFromRequest[IO](headers, uri)
       creds shouldBe Some((User1.id, User1Pass))
     }
 
     "retrieve session from uri as .../session/<session>/..." in {
-      val headers = Headers.of()
+      val headers = Headers()
       val uri = Uri.unsafeFromString(s"http://main4ino.com/api/v1/session/session1/device/...")
       val creds = Auther.sessionFromRequest(headers, uri)
       creds shouldBe Some("session1")
     }
 
     "retrieve session from header" in {
-      val headers = Headers.of(Header("session", "session1"))
+      val headers = Headers(Header("session", "session1"))Header.Rawci"session"
       val uri = Uri.unsafeFromString(s"http://main4ino.com/api/v1/device/...")
       val creds = Auther.sessionFromRequest(headers, uri)
       creds shouldBe Some("session1")
@@ -74,15 +75,15 @@ class AutherSpec extends AnyWordSpec with Matchers with ParallelTestExecution {
       val user = userWithRights("/api/")
       val auther = new Auther[IO](configFromUser(user))
 
-      val result1 = auther.authenticateAndCheckAccess(request(s"/api/time", Headers.of(AuthorizationHeaderUser1))).unsafeRunSync()
+      val result1 = auther.authenticateAndCheckAccess(request(s"/api/time", Headers(AuthorizationHeaderUser1))).unsafeRunSync()
       result1.right.value.context should be(user)
       result1.right.value.req.uri.path should be("/api/time")
 
       val badAuthorization = Authorization(BasicCredentials(User1.id, "wrong-password"))
-      val result2 = auther.authenticateAndCheckAccess(request(s"/not-allowed/time", Headers.of(badAuthorization))).unsafeRunSync
+      val result2 = auther.authenticateAndCheckAccess(request(s"/not-allowed/time", Headers(badAuthorization))).unsafeRunSync
       result2.left.value should include("Could not authenticate")
 
-      val result3 = auther.authenticateAndCheckAccess(request(s"/not-allowed/time", Headers.of(AuthorizationHeaderUser1))).unsafeRunSync
+      val result3 = auther.authenticateAndCheckAccess(request(s"/not-allowed/time", Headers(AuthorizationHeaderUser1))).unsafeRunSync
       result3.left.value should include("not authorized")
     }
 
