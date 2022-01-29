@@ -14,7 +14,7 @@ import org.mauritania.main4ino.security.{Auther, Permission}
 import cats.effect._
 import cats.implicits._
 import org.http4s.server.{Router, Server => H4Server}
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.implicits._
 import doobie.util.ExecutionContexts
 import org.mauritania.main4ino.devicelogs.Logger
