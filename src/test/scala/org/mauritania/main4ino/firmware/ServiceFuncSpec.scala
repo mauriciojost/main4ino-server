@@ -14,6 +14,7 @@ import io.circe.generic.auto._
 import scala.concurrent.ExecutionContext
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.typelevel.ci._
 
 class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with ParallelTestExecution {
 
@@ -65,7 +66,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
     implicit val s = defaultServiceWithDirectory(Dataset1)
     val rs = get(
       path = "/firmwares/botino/esp8266/content?version=1.0.0",
-      headers = Headers.of(Header(Service.Esp8266VersionHeader, "1.0.0"))
+      headers = Headers(Header(Service.Esp8266VersionHeader, "1.0.0"))Header.RawCIString(Service.Esp8266VersionHeader)
     )
     rs.status shouldBe Status.NotModified // already up to date
   }
@@ -74,7 +75,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
     implicit val s = defaultServiceWithDirectory(Dataset1)
     val rs = get(
       path = "/firmwares/botino/esp8266/content?version=1.0.0",
-      headers = Headers.of(Header(Service.Esp8266VersionHeader, "1.0.1"))
+      headers = Headers(Header(Service.Esp8266VersionHeader, "1.0.1"))Header.RawCIString(Service.Esp8266VersionHeader)
     )
     rs.status shouldBe Status.NotModified // already up to date
   }
@@ -109,7 +110,7 @@ class ServiceFuncSpec extends AnyFlatSpec with Matchers with TmpDirCtx with Para
     implicit val s = defaultServiceWithDirectory(Dataset1)
     val rs = get(
       path = "/firmwares/botino/esp8266/content?version=1.0.0",
-      headers = Headers.of(Header(Service.Esp8266VersionHeader, "1.0.0"), Header(Service.Esp32VersionHeader, "2.0.0"))
+      headers = Headers(Header(Service.Esp8266VersionHeader, "1.0.0"), Header(Service.Esp32VersionHeader, "2.0.0"))Header.RawCIString(Service.Esp8266VersionHeader)Header.RawCIString(Service.Esp32VersionHeader)
     )
     rs.status shouldBe Status.Ok // can be downloaded
   }
