@@ -247,8 +247,8 @@ class ServiceSpec extends AnyWordSpec with MockFactory with Matchers with Decode
 
   final val HeadersNoCreds = Headers.empty
   final val BasicCredsOk = BasicCredentials(User1.id, User1Pass)
-  final val HeadersCredsOk = Headers.of(Authorization(BasicCredsOk))
-  final val HeadersCredsWrong = Headers.of(Authorization(BasicCredentials(User1.id, "incorrectpassword")))
-  final val HeadersCredsInvalid = Headers.of(Authorization(BasicCredentials(User1.id, "short")))
+  final val HeadersCredsOk = Headers(Authorization(BasicCredsOk))
+  final val HeadersCredsWrong = Headers(Authorization(BasicCredentials(User1.id, "incorrectpassword")))
+  final val HeadersCredsInvalid = Headers(Authorization(BasicCredentials(User1.id, "short")))
 
 }
