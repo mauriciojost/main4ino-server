@@ -12,7 +12,6 @@ import org.mauritania.main4ino.ContentTypeAppJson
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.generic.auto._
-import org.http4s.util.CaseInsensitiveString
 import org.mauritania.main4ino.models.FirmwareVersion
 import cats._
 import cats.data._
@@ -21,6 +20,7 @@ import org.mauritania.main4ino.firmware.Coord.FirmwareFile
 import org.mauritania.main4ino.helpers.HttpMeter
 
 import scala.concurrent.ExecutionContext
+import org.typelevel.ci.CIString
 
 class Service[F[_]: Sync: Effect: ContextShift](store: Store[F], ec: ExecutionContext)
     extends Http4sDsl[F] {
@@ -113,7 +113,7 @@ class Service[F[_]: Sync: Effect: ContextShift](store: Store[F], ec: ExecutionCo
   }
 
   private[firmware] def extractCurrentVersion(h: Headers): Option[FirmwareVersion] = {
-    val currentVersions: List[Header] = VersionHeaders.flatMap(i => h.get(i).toList)
+    val currentVersions: List[Header.Raw] = VersionHeaders.flatMap(i => h.get(i).toList)
     currentVersions match {
       case Nil => None // unknown firmware version in requester
       case one :: Nil =>
@@ -139,10 +139,10 @@ object Service {
     */
   val Esp8266VersionHeader = "x-ESP8266-version"
   val Esp32VersionHeader = "x-ESP32-version"
-  val VersionHeaders: List[CaseInsensitiveString] = List(
+  val VersionHeaders: List[CIString] = List(
     Esp8266VersionHeader,
     Esp32VersionHeader
-  ).map(CaseInsensitiveString.apply)
+  ).map(CIString.apply)
 
   implicit val CirceFileEncoder: Encoder[File] = Encoder.encodeString.contramap[File](_.getName)
 
