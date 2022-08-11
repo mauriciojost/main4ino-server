@@ -4,7 +4,7 @@ addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.9.2")
 
 addSbtPlugin("org.scoverage" % "sbt-coveralls" % "1.3.1")
 
-addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.7")
+addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.10")
 
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "1.0.0")
 
