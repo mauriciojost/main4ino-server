@@ -18,7 +18,7 @@ object Dependencies {
         val slf4jLog4j12Version = "1.7.32"
         val CryptobitsVersion = "1.3"
         val GfcSemverVersion = "0.0.5"
-        val EnumeratumVersion = "1.7.0"
+        val EnumeratumVersion = "1.7.2"
         val RefinedVersion = "0.9.21"
         val GfcSemver = "0.0.5"
         val TsecVersion = "0.2.1"
